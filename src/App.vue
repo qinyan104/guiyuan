@@ -3,24 +3,21 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 
 import PublicationCanvas from './components/PublicationCanvas.vue'
 import { defaultSettings, samplePublication } from './data/sampleFamily'
+import { applyRelationshipAction, summarizeDeleteImpact, type RelationshipAction } from './features/editor/publicationOperations'
+import { useEditorHistory } from './features/history/useEditorHistory'
+import type { EditorSnapshot } from './features/history/historyCore'
+import {
+  createDraftPackage,
+  parseDraftJson,
+  parseLocalDraftState,
+  serializeDraftPackage,
+  serializeLocalDraftState,
+} from './features/persistence/draftPersistence'
+import { formatValidationIssues } from './features/validation/draftSchema'
 import { layoutPublication } from './lib/layout'
-import type { FamilyUnit, Gender, Person, PublicationData, PublicationSettings } from './types/family'
+import type { FamilyUnit, Person, PublicationData, PublicationSettings } from './types/family'
 
 const STORAGE_KEY = 'genealogy-publication-studio:v1'
-const MAX_HISTORY_ENTRIES = 80
-
-interface EditorSnapshot {
-  publication: PublicationData
-  settings: PublicationSettings
-  selectedPersonId: string
-}
-
-interface HistoryEntry {
-  id: string
-  label: string
-  time: string
-  snapshot: EditorSnapshot
-}
 
 const publication = reactive<PublicationData>(structuredClone(samplePublication))
 const settings = reactive<PublicationSettings>(structuredClone(defaultSettings))
@@ -30,44 +27,18 @@ const overviewOpen = ref(false)
 const layoutPanelOpen = ref(false)
 const editorOpen = ref(false)
 const historyOpen = ref(false)
-
-const historyPast = ref<HistoryEntry[]>([])
-const historyFuture = ref<HistoryEntry[]>([])
+const importInputRef = ref<HTMLInputElement | null>(null)
+const statusMessage = ref('')
+const errorMessage = ref('')
 
 const canvasRef = ref<InstanceType<typeof PublicationCanvas> | null>(null)
 
-let historyTimer: number | undefined
-let historyIdSeed = 0
-let isRestoringHistory = false
-let pendingHistoryLabel = ''
-let lastHistorySnapshot: EditorSnapshot | null = null
-let lastTrackedStateSerialized = ''
-
-function cloneJson<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T
-}
-
 function createEditorSnapshot(): EditorSnapshot {
-  return cloneJson({
-    publication,
-    settings,
-    selectedPersonId: selectedPersonId.value,
-  })
-}
-
-function createTrackedSnapshot(): Omit<EditorSnapshot, 'selectedPersonId'> {
-  const snapshot = createEditorSnapshot()
   return {
-    publication: snapshot.publication,
-    settings: {
-      ...snapshot.settings,
-      zoom: 0,
-    },
+    publication: JSON.parse(JSON.stringify(publication)) as PublicationData,
+    settings: JSON.parse(JSON.stringify(settings)) as PublicationSettings,
+    selectedPersonId: selectedPersonId.value,
   }
-}
-
-function serializeTrackedState(): string {
-  return JSON.stringify(createTrackedSnapshot())
 }
 
 function replaceReactiveObject<T extends object>(target: T, source: T) {
@@ -78,104 +49,16 @@ function replaceReactiveObject<T extends object>(target: T, source: T) {
   Object.assign(target, source)
 }
 
-function formatHistoryTime(date = new Date()): string {
-  return date.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  })
-}
-
-function inferHistoryLabel(previousSnapshot: EditorSnapshot, currentSnapshot: EditorSnapshot): string {
-  if (pendingHistoryLabel) {
-    return pendingHistoryLabel
-  }
-
-  if (JSON.stringify(previousSnapshot.publication) !== JSON.stringify(currentSnapshot.publication)) {
-    const person = selectedPerson.value
-    return person ? `编辑 ${person.name} 信息` : '编辑人物关系'
-  }
-
-  return '调整版式设置'
-}
-
-function commitHistory(label = pendingHistoryLabel) {
-  if (isRestoringHistory || !lastHistorySnapshot) {
-    return
-  }
-
-  const currentTrackedStateSerialized = serializeTrackedState()
-  if (currentTrackedStateSerialized === lastTrackedStateSerialized) {
-    pendingHistoryLabel = ''
-    return
-  }
-
-  const currentSnapshot = createEditorSnapshot()
-  const entryLabel = label || inferHistoryLabel(lastHistorySnapshot, currentSnapshot)
-  const entry: HistoryEntry = {
-    id: `h${Date.now()}-${historyIdSeed++}`,
-    label: entryLabel,
-    time: formatHistoryTime(),
-    snapshot: lastHistorySnapshot,
-  }
-
-  historyPast.value = [...historyPast.value, entry].slice(-MAX_HISTORY_ENTRIES)
-  historyFuture.value = []
-  lastHistorySnapshot = currentSnapshot
-  lastTrackedStateSerialized = currentTrackedStateSerialized
-  pendingHistoryLabel = ''
-}
-
-function flushPendingHistory() {
-  if (historyTimer !== undefined) {
-    window.clearTimeout(historyTimer)
-    historyTimer = undefined
-  }
-
-  commitHistory()
-}
-
-function scheduleHistoryCommit() {
-  if (isRestoringHistory) {
-    return
-  }
-
-  if (historyTimer !== undefined) {
-    window.clearTimeout(historyTimer)
-  }
-
-  historyTimer = window.setTimeout(() => {
-    historyTimer = undefined
-    commitHistory()
-  }, 420)
-}
-
-function markHistory(label: string) {
-  flushPendingHistory()
-  pendingHistoryLabel = label
-}
-
-function initializeHistoryBaseline() {
-  lastHistorySnapshot = createEditorSnapshot()
-  lastTrackedStateSerialized = serializeTrackedState()
-  historyPast.value = []
-  historyFuture.value = []
-  pendingHistoryLabel = ''
-}
-
-function restoreHistorySnapshot(snapshot: EditorSnapshot) {
-  const restoredSnapshot = cloneJson(snapshot)
+function restoreEditorSnapshot(snapshot: EditorSnapshot) {
   const currentZoom = settings.zoom
   const currentSelectedPersonId = selectedPersonId.value
 
-  isRestoringHistory = true
-  replaceReactiveObject(publication, restoredSnapshot.publication)
-  replaceReactiveObject(settings, restoredSnapshot.settings)
+  replaceReactiveObject(publication, snapshot.publication)
+  replaceReactiveObject(settings, snapshot.settings)
   settings.zoom = currentZoom
 
-  if (publication.people[restoredSnapshot.selectedPersonId]) {
-    selectedPersonId.value = restoredSnapshot.selectedPersonId
+  if (publication.people[snapshot.selectedPersonId]) {
+    selectedPersonId.value = snapshot.selectedPersonId
   } else if (publication.people[currentSelectedPersonId]) {
     selectedPersonId.value = currentSelectedPersonId
   } else {
@@ -189,39 +72,24 @@ function restoreHistorySnapshot(snapshot: EditorSnapshot) {
   if (!selectedPersonId.value) {
     editorOpen.value = false
   }
-
-  lastHistorySnapshot = createEditorSnapshot()
-  lastTrackedStateSerialized = serializeTrackedState()
-  window.setTimeout(() => {
-    isRestoringHistory = false
-  }, 0)
 }
 
-function undoChange() {
-  flushPendingHistory()
-  const entry = historyPast.value[historyPast.value.length - 1]
-  if (!entry) {
-    return
-  }
-
-  const currentSnapshot = createEditorSnapshot()
-  historyPast.value = historyPast.value.slice(0, -1)
-  historyFuture.value = [{ ...entry, snapshot: currentSnapshot }, ...historyFuture.value]
-  restoreHistorySnapshot(entry.snapshot)
-}
-
-function redoChange() {
-  flushPendingHistory()
-  const entry = historyFuture.value[0]
-  if (!entry) {
-    return
-  }
-
-  const currentSnapshot = createEditorSnapshot()
-  historyFuture.value = historyFuture.value.slice(1)
-  historyPast.value = [...historyPast.value, { ...entry, snapshot: currentSnapshot }].slice(-MAX_HISTORY_ENTRIES)
-  restoreHistorySnapshot(entry.snapshot)
-}
+const {
+  historyPast,
+  historyFuture,
+  canUndo,
+  canRedo,
+  visibleHistoryEntries,
+  initializeHistoryBaseline,
+  scheduleHistoryCommit,
+  markHistory,
+  undoChange,
+  redoChange,
+  disposeHistory,
+} = useEditorHistory({
+  createSnapshot: createEditorSnapshot,
+  restoreSnapshot: restoreEditorSnapshot,
+})
 
 function listFamilies(): FamilyUnit[] {
   return Object.values(publication.families)
@@ -231,141 +99,12 @@ function isPersonId(value: string | undefined): value is string {
   return typeof value === 'string' && value.length > 0
 }
 
-function getNextEntityId(prefix: 'p' | 'f'): string {
-  const collection = prefix === 'p' ? Object.keys(publication.people) : Object.keys(publication.families)
-  let maxId = 0
-
-  collection.forEach((id) => {
-    if (!id.startsWith(prefix)) {
-      return
-    }
-
-    const numeric = Number(id.slice(1))
-    if (Number.isFinite(numeric)) {
-      maxId = Math.max(maxId, numeric)
-    }
-  })
-
-  return `${prefix}${maxId + 1}`
-}
-
-function createPerson(input: { name: string; gender: Gender; note?: string }): Person {
-  const id = getNextEntityId('p')
-  const person: Person = {
-    id,
-    name: input.name,
-    gender: input.gender,
-    note: input.note,
-  }
-
-  publication.people[id] = person
-  return person
-}
-
 function findAdultFamilyIdForPerson(personId: string): string | undefined {
   return listFamilies().find((family) => family.adults.includes(personId))?.id
 }
 
 function findParentFamilyIdForPerson(personId: string): string | undefined {
   return listFamilies().find((family) => family.children.includes(personId))?.id
-}
-
-function ensureAdultFamily(personId: string): FamilyUnit {
-  const existingFamilyId = findAdultFamilyIdForPerson(personId)
-  if (existingFamilyId) {
-    return publication.families[existingFamilyId]
-  }
-
-  const familyId = getNextEntityId('f')
-  const family: FamilyUnit = {
-    id: familyId,
-    adults: [personId],
-    children: [],
-  }
-
-  publication.families[familyId] = family
-  return family
-}
-
-function normalizeFamilyMembers(family: FamilyUnit) {
-  const normalizedAdults: string[] = []
-  family.adults.forEach((adultId) => {
-    if (isPersonId(adultId) && publication.people[adultId] && !normalizedAdults.includes(adultId)) {
-      normalizedAdults.push(adultId)
-    }
-  })
-
-  const normalizedChildren: string[] = []
-  family.children.forEach((childId) => {
-    if (publication.people[childId] && !normalizedAdults.includes(childId) && !normalizedChildren.includes(childId)) {
-      normalizedChildren.push(childId)
-    }
-  })
-
-  family.adults = normalizedAdults
-  family.children = normalizedChildren
-}
-
-function ensureVisibleFamilyForPerson(personId: string): string | undefined {
-  if (!publication.people[personId]) {
-    return undefined
-  }
-
-  const familyId = findAdultFamilyIdForPerson(personId)
-  if (familyId) {
-    return familyId
-  }
-
-  return ensureAdultFamily(personId).id
-}
-
-function pruneFamilies() {
-  Object.values(publication.families).forEach((family) => normalizeFamilyMembers(family))
-
-  Object.values(publication.families)
-    .filter((family) => family.adults.length === 0)
-    .forEach((family) => {
-      const orphanChildIds = [...family.children]
-      delete publication.families[family.id]
-
-      orphanChildIds.forEach((childId) => {
-        ensureVisibleFamilyForPerson(childId)
-      })
-    })
-
-  Object.values(publication.families).forEach((family) => normalizeFamilyMembers(family))
-}
-
-function syncSelectionAndFocus(input: {
-  focusCandidates?: Array<string | undefined>
-  selectionCandidates?: Array<string | undefined>
-  resetView?: boolean
-} = {}) {
-  const previousFocusId = publication.focusFamilyId
-  const nextFocusId =
-    [...(input.focusCandidates ?? []), publication.focusFamilyId, Object.keys(publication.families)[0]].find(
-      (familyId): familyId is string => Boolean(familyId && publication.families[familyId]),
-    ) ?? ''
-
-  const nextSelectedPersonId =
-    [...(input.selectionCandidates ?? []), selectedPersonId.value, Object.keys(publication.people)[0]].find(
-      (personId): personId is string => Boolean(personId && publication.people[personId]),
-    ) ?? ''
-
-  publication.focusFamilyId = nextFocusId
-  selectedPersonId.value = nextSelectedPersonId
-
-  if (!nextSelectedPersonId) {
-    editorOpen.value = false
-  }
-
-  if (input.resetView || previousFocusId !== nextFocusId) {
-    canvasRef.value?.resetView?.()
-  }
-}
-
-function getPersonName(personId: string): string {
-  return publication.people[personId]?.name ?? personId
 }
 
 const peopleList = computed(() => Object.values(publication.people))
@@ -473,9 +212,6 @@ const isSelectedBranchFocused = computed(() => {
 })
 
 const branchActionLabel = computed(() => (isSelectedBranchFocused.value ? '已是当前宗支' : '设为当前宗支'))
-const canUndo = computed(() => historyPast.value.length > 0)
-const canRedo = computed(() => historyFuture.value.length > 0)
-const visibleHistoryEntries = computed(() => [...historyPast.value].reverse().slice(0, 10))
 
 const documentedFieldCount = computed(() =>
   peopleList.value.reduce(
@@ -620,27 +356,37 @@ function serializeSvg(): string | null {
   return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(svgElement)}`
 }
 
-function downloadSvg() {
-  const serialized = serializeSvg()
-  if (!serialized) {
-    return
-  }
-
-  const blob = new Blob([serialized], { type: 'image/svg+xml;charset=utf-8' })
+function downloadTextFile(fileName: string, content: string, type: string) {
+  const blob = new Blob([content], { type })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `${sanitizeFileName(publication.title)}.svg`
+  link.download = fileName
   link.click()
   URL.revokeObjectURL(url)
+}
+
+function downloadSvg() {
+  const serialized = serializeSvg()
+  if (!serialized) {
+    errorMessage.value = '当前画布还没有可导出的 SVG。'
+    statusMessage.value = ''
+    return
+  }
+
+  errorMessage.value = ''
+  downloadTextFile(`${sanitizeFileName(publication.title)}.svg`, serialized, 'image/svg+xml;charset=utf-8')
 }
 
 function printPublication() {
   const serialized = serializeSvg()
   if (!serialized) {
+    errorMessage.value = '当前画布还没有可导出的 SVG。'
+    statusMessage.value = ''
     return
   }
 
+  errorMessage.value = ''
   const pageSize = settings.paper === 'A3' ? 'A3 landscape' : 'A4 landscape'
   const printWindow = window.open('', '_blank', 'width=1440,height=960')
 
@@ -669,179 +415,127 @@ function printPublication() {
   printWindow.onload = () => printWindow.print()
 }
 
-function addSpouse() {
-  const person = selectedPerson.value
-  if (!person || !canAddSpouse.value) {
+function exportJson() {
+  const draft = createDraftPackage(publication, settings)
+  downloadTextFile(`${sanitizeFileName(publication.title)}.json`, serializeDraftPackage(draft), 'application/json;charset=utf-8')
+  statusMessage.value = '已导出 JSON 草稿。'
+  errorMessage.value = ''
+}
+
+function openJsonImport() {
+  importInputRef.value?.click()
+}
+
+async function handleJsonImport(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+
+  if (!file) {
     return
   }
 
-  markHistory(`新增配偶 · ${person.name}`)
-  const spouseGender: Gender = person.gender === 'male' ? 'female' : person.gender === 'female' ? 'male' : 'unknown'
-  const spouse = createPerson({
-    name: '待命名配偶',
-    gender: spouseGender,
-    note: '配偶',
-  })
+  if (!window.confirm('导入 JSON 会覆盖当前草稿，是否继续？')) {
+    return
+  }
 
-  const family = ensureAdultFamily(person.id)
-  family.adults = [person.id, spouse.id]
-  selectedPersonId.value = spouse.id
-  editorOpen.value = true
+  const parsed = parseDraftJson(await file.text())
+  if (!parsed.ok) {
+    errorMessage.value = formatValidationIssues(parsed.issues)
+    statusMessage.value = ''
+    return
+  }
+
+  markHistory('导入 JSON 草稿')
+  replaceReactiveObject(publication, parsed.value.publication)
+  replaceReactiveObject(settings, parsed.value.settings)
+  selectedPersonId.value = Object.keys(publication.people)[0] ?? ''
+  errorMessage.value = ''
+  statusMessage.value = '已导入 JSON 草稿。'
+  initializeHistoryBaseline()
+  canvasRef.value?.resetView?.()
+}
+
+function applyEditorAction(action: RelationshipAction, confirmation?: string) {
+  if (confirmation && !window.confirm(confirmation)) {
+    return
+  }
+
+  const result = applyRelationshipAction(publication, action)
+  if (!result.ok) {
+    errorMessage.value = formatValidationIssues(result.issues)
+    statusMessage.value = ''
+    return
+  }
+
+  errorMessage.value = ''
+  markHistory(result.value.historyLabel)
+  replaceReactiveObject(publication, result.value.publication)
+  publication.focusFamilyId = result.value.focusFamilyId
+  selectedPersonId.value = result.value.selectedPersonId
+  editorOpen.value = Boolean(selectedPersonId.value)
+  canvasRef.value?.resetView?.()
+}
+
+function addSpouse() {
+  if (selectedPerson.value) {
+    applyEditorAction({ type: 'add-spouse', personId: selectedPerson.value.id })
+  }
 }
 
 function addChild() {
-  const person = selectedPerson.value
-  if (!person) {
-    return
+  if (selectedPerson.value) {
+    applyEditorAction({ type: 'add-child', personId: selectedPerson.value.id })
   }
-
-  markHistory(`新增子女 · ${person.name}`)
-  const child = createPerson({
-    name: '待命名子女',
-    gender: 'unknown',
-    note: '子女',
-  })
-
-  const family = ensureAdultFamily(person.id)
-  family.children = [...family.children, child.id]
-  selectedPersonId.value = child.id
-  editorOpen.value = true
 }
 
 function addParents() {
-  const person = selectedPerson.value
-  if (!person || hasCompleteParents.value) {
-    return
+  if (selectedPerson.value) {
+    applyEditorAction({ type: 'add-parents', personId: selectedPerson.value.id })
   }
-
-  markHistory(`新增父母 · ${person.name}`)
-  const parentFamilyId = findParentFamilyIdForPerson(person.id)
-
-  if (!parentFamilyId) {
-    const father = createPerson({ name: '待命名父亲', gender: 'male', note: '父亲' })
-    const mother = createPerson({ name: '待命名母亲', gender: 'female', note: '母亲' })
-    const familyId = getNextEntityId('f')
-
-    publication.families[familyId] = {
-      id: familyId,
-      adults: [father.id, mother.id],
-      children: [person.id],
-    }
-    publication.focusFamilyId = familyId
-    selectedPersonId.value = father.id
-    editorOpen.value = true
-    canvasRef.value?.resetView?.()
-    return
-  }
-
-  const family = publication.families[parentFamilyId]
-  const existingParent = family.adults.filter(isPersonId).map((adultId) => publication.people[adultId]).find(Boolean) ?? null
-  const parentGender: Gender =
-    existingParent?.gender === 'male' ? 'female' : existingParent?.gender === 'female' ? 'male' : 'unknown'
-  const parent = createPerson({
-    name: parentGender === 'male' ? '待命名父亲' : parentGender === 'female' ? '待命名母亲' : '待命名父母',
-    gender: parentGender,
-    note: parentGender === 'male' ? '父亲' : parentGender === 'female' ? '母亲' : '父母',
-  })
-
-  const existingAdultIds = family.adults.filter(isPersonId)
-  family.adults =
-    parentGender === 'male' ? [parent.id, ...existingAdultIds] : [...existingAdultIds, parent.id]
-  selectedPersonId.value = parent.id
-  editorOpen.value = true
 }
 
 function focusSelectedBranch() {
-  const person = selectedPerson.value
-  if (!person) {
-    return
+  if (selectedPerson.value) {
+    applyEditorAction({ type: 'focus-branch', personId: selectedPerson.value.id })
   }
-
-  markHistory(`设为当前宗支 · ${person.name}`)
-  const family = ensureAdultFamily(person.id)
-  if (family.adults[0] !== person.id) {
-    family.adults = [person.id, ...family.adults.filter((adultId) => adultId !== person.id)]
-  }
-
-  syncSelectionAndFocus({
-    focusCandidates: [family.id],
-    selectionCandidates: [person.id],
-  })
-  editorOpen.value = true
 }
 
 function swapPartnerOrder() {
-  const family = selectedAdultFamily.value
-  if (!family || family.adults.filter(isPersonId).length < 2) {
-    return
+  if (selectedPerson.value) {
+    applyEditorAction({ type: 'swap-partners', personId: selectedPerson.value.id })
   }
-
-  markHistory('切换夫妻位置')
-  family.adults = [...family.adults].reverse()
 }
 
 function moveChild(childId: string, direction: -1 | 1) {
-  const family = selectedAdultFamily.value
-  if (!family) {
-    return
+  if (selectedPerson.value) {
+    applyEditorAction({ type: 'move-child', parentPersonId: selectedPerson.value.id, childId, direction })
   }
-
-  const currentIndex = family.children.indexOf(childId)
-  const nextIndex = currentIndex + direction
-  if (currentIndex < 0 || nextIndex < 0 || nextIndex >= family.children.length) {
-    return
-  }
-
-  markHistory(`调整子女顺序 · ${getPersonName(childId)}`)
-  const nextChildren = [...family.children]
-  ;[nextChildren[currentIndex], nextChildren[nextIndex]] = [nextChildren[nextIndex], nextChildren[currentIndex]]
-  family.children = nextChildren
 }
 
 function removeSpouseRelation() {
   const person = selectedPerson.value
   const spouse = selectedSpouse.value
-  const family = selectedAdultFamily.value
-
-  if (!person || !spouse || !family) {
+  if (!person || !spouse) {
     return
   }
 
-  if (!window.confirm(`将解除 ${person.name} 与 ${spouse.name} 的配偶关系，是否继续？`)) {
-    return
-  }
-
-  markHistory(`解除配偶关系 · ${person.name}`)
-  family.adults = family.adults.filter((adultId) => adultId !== spouse.id)
-  ensureVisibleFamilyForPerson(spouse.id)
-  pruneFamilies()
-  syncSelectionAndFocus({
-    focusCandidates: [publication.focusFamilyId, family.id],
-    selectionCandidates: [person.id, spouse.id],
-  })
+  applyEditorAction(
+    { type: 'remove-spouse', personId: person.id },
+    `将解除 ${person.name} 与 ${spouse.name} 的配偶关系，是否继续？`,
+  )
 }
 
 function removeParentsRelation() {
   const person = selectedPerson.value
-  const family = selectedParentFamily.value
-
-  if (!person || !family) {
+  if (!person || !selectedParents.value.length) {
     return
   }
 
-  const parentNames = family.adults.filter(isPersonId).map(getPersonName).join('、')
-  if (!window.confirm(`将解除 ${person.name} 与 ${parentNames || '父母'} 的关系，是否继续？`)) {
-    return
-  }
-
-  markHistory(`解除父母关系 · ${person.name}`)
-  family.children = family.children.filter((childId) => childId !== person.id)
-  const ownFamilyId = ensureVisibleFamilyForPerson(person.id)
-  pruneFamilies()
-  syncSelectionAndFocus({
-    focusCandidates: [ownFamilyId, publication.focusFamilyId, family.id],
-    selectionCandidates: [person.id],
-  })
+  applyEditorAction(
+    { type: 'remove-parents', personId: person.id },
+    `将解除 ${person.name} 与 ${selectedParents.value.map((parent) => parent.name).join('、')} 的父母关系，是否继续？`,
+  )
 }
 
 function deleteSelectedPerson() {
@@ -850,42 +544,22 @@ function deleteSelectedPerson() {
     return
   }
 
-  const spouseId = selectedSpouse.value?.id
-  const childIds = selectedChildren.value.map((child) => child.id)
-  const parentIds = selectedParents.value.map((parent) => parent.id)
-  const adultFamilyId = findAdultFamilyIdForPerson(person.id)
-  const parentFamilyId = findParentFamilyIdForPerson(person.id)
-  const relationSummary: string[] = []
+  const impact = summarizeDeleteImpact(publication, person.id)
+  const summary = impact
+    ? [
+        impact.spouseNames.length ? `配偶：${impact.spouseNames.join('、')}` : '',
+        impact.parentNames.length ? `父母：${impact.parentNames.join('、')}` : '',
+        impact.childNames.length ? `子女：${impact.childNames.join('、')}` : '',
+        impact.removedFamilyIds.length ? `清理家庭：${impact.removedFamilyIds.join('、')}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n')
+    : ''
 
-  if (spouseId) {
-    relationSummary.push(`配偶 ${getPersonName(spouseId)}`)
-  }
-  if (childIds.length) {
-    relationSummary.push(`${childIds.length} 位子女`)
-  }
-  if (parentIds.length) {
-    relationSummary.push(`${parentIds.length} 条父母关系`)
-  }
-
-  const summaryText = relationSummary.length ? `，并同步清理其${relationSummary.join('、')}` : ''
-  if (!window.confirm(`将删除人物“${person.name}”${summaryText}。是否继续？`)) {
-    return
-  }
-
-  markHistory(`删除人物 · ${person.name}`)
-  Object.values(publication.families).forEach((family) => {
-    family.adults = family.adults.filter((adultId) => adultId !== person.id)
-    family.children = family.children.filter((childId) => childId !== person.id)
-  })
-  delete publication.people[person.id]
-
-  pruneFamilies()
-
-  const childBranchFamilyIds = childIds.map((childId) => findAdultFamilyIdForPerson(childId))
-  syncSelectionAndFocus({
-    focusCandidates: [adultFamilyId, ...childBranchFamilyIds, parentFamilyId],
-    selectionCandidates: [spouseId, ...childIds, ...parentIds],
-  })
+  applyEditorAction(
+    { type: 'delete-person', personId: person.id },
+    `将删除人物“${person.name}”。${summary ? `\n${summary}\n` : '\n'}是否继续？`,
+  )
 }
 
 function restoreSample() {
@@ -894,12 +568,15 @@ function restoreSample() {
   }
 
   markHistory('恢复示例族谱')
-  Object.assign(publication, structuredClone(samplePublication))
-  Object.assign(settings, structuredClone(defaultSettings))
+  replaceReactiveObject(publication, structuredClone(samplePublication))
+  replaceReactiveObject(settings, structuredClone(defaultSettings))
   selectedPersonId.value = publication.families[publication.focusFamilyId]?.adults[0] ?? Object.keys(publication.people)[0] ?? ''
   layoutPanelOpen.value = false
   overviewOpen.value = false
   editorOpen.value = false
+  historyOpen.value = false
+  errorMessage.value = ''
+  statusMessage.value = ''
   canvasRef.value?.resetView?.()
 }
 
@@ -981,28 +658,17 @@ function applyDraft(raw: string | null) {
     return
   }
 
-  try {
-    const draft = JSON.parse(raw) as {
-      publication?: PublicationData
-      settings?: PublicationSettings
-      selectedPersonId?: string
-    }
-
-    if (draft.publication) {
-      Object.assign(publication, draft.publication)
-    }
-
-    if (draft.settings) {
-      Object.assign(settings, draft.settings)
-    }
-
-    const draftPersonId = draft.selectedPersonId
-    if (draftPersonId && (draft.publication?.people?.[draftPersonId] || publication.people[draftPersonId])) {
-      selectedPersonId.value = draftPersonId
-    }
-  } catch {
+  const parsed = parseLocalDraftState(raw)
+  if (!parsed.ok) {
     localStorage.removeItem(STORAGE_KEY)
+    errorMessage.value = formatValidationIssues(parsed.issues)
+    statusMessage.value = ''
+    return
   }
+
+  replaceReactiveObject(publication, parsed.value.publication)
+  replaceReactiveObject(settings, parsed.value.settings)
+  selectedPersonId.value = parsed.value.selectedPersonId ?? Object.keys(publication.people)[0] ?? ''
 }
 
 applyDraft(localStorage.getItem(STORAGE_KEY))
@@ -1013,10 +679,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (historyTimer !== undefined) {
-    window.clearTimeout(historyTimer)
-  }
-
+  disposeHistory()
   window.removeEventListener('keydown', handleHistoryShortcut)
 })
 
@@ -1030,23 +693,17 @@ watch(
 )
 
 watch(
-  () => serializeTrackedState(),
+  () => [publication, settings],
   () => {
     scheduleHistoryCommit()
   },
+  { deep: true },
 )
 
 watch(
   () => [publication, settings, selectedPersonId.value],
   () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        publication,
-        settings,
-        selectedPersonId: selectedPersonId.value,
-      }),
-    )
+    localStorage.setItem(STORAGE_KEY, serializeLocalDraftState(publication, settings, selectedPersonId.value))
   },
   { deep: true },
 )
@@ -1064,11 +721,20 @@ watch(
       </div>
 
       <div class="topbar__actions">
+        <input ref="importInputRef" class="visually-hidden" type="file" accept="application/json,.json" @change="handleJsonImport" />
+        <button class="btn btn--secondary" type="button" @click="openJsonImport">导入 JSON</button>
+        <button class="btn btn--secondary" type="button" @click="exportJson">导出 JSON</button>
         <button class="btn btn--secondary" type="button" @click="restoreSample">恢复示例</button>
         <button class="btn btn--secondary" type="button" @click="downloadSvg">导出 SVG</button>
         <button class="btn btn--primary" type="button" @click="printPublication">打印排版</button>
       </div>
     </header>
+
+    <div v-if="errorMessage || statusMessage" class="feedback-strip" :class="{ 'feedback-strip--error': errorMessage }">
+      <strong>{{ errorMessage ? '需要处理' : '操作完成' }}</strong>
+      <span>{{ errorMessage || statusMessage }}</span>
+      <button type="button" @click="errorMessage = ''; statusMessage = ''">关闭</button>
+    </div>
 
     <main class="workspace">
       <section class="editor-workspace">

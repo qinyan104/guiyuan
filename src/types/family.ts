@@ -67,3 +67,57 @@ export interface PublicationLayout {
   paperPixelHeight: number
   titleAreaHeight: number
 }
+
+export const DRAFT_PACKAGE_VERSION = 1
+
+export interface DraftPackage {
+  version: typeof DRAFT_PACKAGE_VERSION
+  savedAt: string
+  publication: PublicationData
+  settings: PublicationSettings
+}
+
+export interface LocalDraftState extends DraftPackage {
+  selectedPersonId?: string
+}
+
+export type ValidationIssueCode =
+  | 'invalid-json'
+  | 'invalid-root'
+  | 'missing-publication'
+  | 'missing-settings'
+  | 'missing-people'
+  | 'missing-families'
+  | 'missing-focus-family'
+  | 'invalid-person'
+  | 'invalid-family'
+  | 'missing-person-reference'
+  | 'duplicate-family-member'
+  | 'invalid-settings'
+  | 'unsupported-draft-version'
+  | 'operation-conflict'
+
+export interface ValidationIssue {
+  code: ValidationIssueCode
+  message: string
+  path: string
+}
+
+export type ValidationResult<T> =
+  | {
+      ok: true
+      value: T
+    }
+  | {
+      ok: false
+      issues: ValidationIssue[]
+    }
+
+export interface PublicationOperationPayload {
+  publication: PublicationData
+  selectedPersonId: string
+  focusFamilyId: string
+  historyLabel: string
+}
+
+export type PublicationOperationResult = ValidationResult<PublicationOperationPayload>
