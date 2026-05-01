@@ -1,5 +1,5 @@
 import http from './http'
-import type { PublicationData, PublicationSettings } from '../types/family'
+import type { PublicationData, PublicationSettings, PublicationInfo } from '../types/family'
 
 export interface ApiResponse<T> {
   code: number
@@ -11,6 +11,7 @@ export interface PublicationSummary {
   title: string
   subtitle: string
   description?: string
+  info?: PublicationInfo
   createdAt: string
   updatedAt: string
 }
@@ -37,11 +38,11 @@ export async function createPublication(
   title?: string,
 ): Promise<number> {
   const resp = await http.post<ApiResponse<{ id: number }>>('/publications', {
-    title: title || publication.title || '未命名族谱',
-    subtitle: publication.subtitle || '',
+    title: title || publication.title,
+    subtitle: publication.subtitle,
     publication,
     settings,
-    info: publication.info ?? null,
+    info: publication.info,
   })
   return resp.data.data.id
 }
@@ -56,7 +57,20 @@ export async function updatePublication(
     subtitle: publication.subtitle,
     publication,
     settings,
-    info: publication.info ?? null,
+    info: publication.info,
+  })
+}
+
+export async function updatePublicationMetadata(
+  id: number,
+  title: string,
+  subtitle: string,
+  info: PublicationInfo | null,
+): Promise<void> {
+  await http.put(`/publications/${id}/metadata`, {
+    title,
+    subtitle,
+    info,
   })
 }
 

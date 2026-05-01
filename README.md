@@ -51,7 +51,7 @@ npm install
 npm run dev
 ```
 
-前端运行在 `http://localhost:5173`，打开浏览器访问即可。
+前端运行在 `http://localhost:5173`，打开浏览器访问即可。API 请求将自动代理至 `localhost:8080`。如需更改后端地址，可修改 `frontend/.env.development` 中的 `VITE_API_BASE_URL`。
 
 ## 技术栈
 

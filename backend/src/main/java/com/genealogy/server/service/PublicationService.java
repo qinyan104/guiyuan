@@ -48,6 +48,7 @@ public class PublicationService {
             if (p.getPublicationInfoJson() != null) {
                 try {
                     Map<String, Object> info = objectMapper.readValue(p.getPublicationInfoJson(), new TypeReference<>() {});
+                    m.put("info", info);
                     Object desc = info.get("description");
                     if (desc instanceof String s && !s.isBlank()) {
                         m.put("description", s.length() > 80 ? s.substring(0, 80) + "..." : s);
@@ -220,6 +221,21 @@ public class PublicationService {
         familyRepository.deleteByPublicationId(publicationId);
         personRepository.deleteByPublicationId(publicationId);
         publicationRepository.deleteById(publicationId);
+    }
+
+    /**
+     * 更新族谱元数据（不触及人物和家庭关系）
+     */
+    @Transactional
+    public void updatePublicationMetadata(Long publicationId, String title, String subtitle, String infoJson) {
+        Publication pub = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new NotFoundException("族谱不存在"));
+
+        if (title != null) pub.setTitle(title);
+        if (subtitle != null) pub.setSubtitle(subtitle);
+        pub.setPublicationInfoJson(infoJson);
+
+        publicationRepository.save(pub);
     }
 
     // ─── 内部方法 ────────────────────────────────────────────────

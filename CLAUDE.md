@@ -32,9 +32,9 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 ## 前端架构
 
 - **路由**：`src/router/index.ts` — 7 条路由，含登录守卫和管理员权限守卫
-- **API 层**：`src/api/` — axios 封装，baseURL 硬编码 `http://localhost:8080/api`，无 Vite proxy
+- **API 层**：`src/api/` — axios 封装，使用 `VITE_API_BASE_URL` 环境变量及 Vite Proxy (`/api` -> `8080`)
 - **状态管理**：无全局 store，状态分布在 composables 中（usePublicationState、usePanelState 等）
-- **核心编辑器**：`views/WorkbenchView.vue` 协调 composables（历史、持久化、文件操作、关系编辑）
+- **核心编辑器**：`views/WorkbenchView.vue` 协调历史管理、自动同步（带 `syncStatus` 反馈）与文件操作
 - **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置和连线
 - **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）
 - **草稿持久化**：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化
@@ -53,7 +53,7 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 
 ## 关键约定
 
-- 草稿设置值有范围限制，导入时自动 clamp：cardWidth [142,176]、zoom [0.55,1.35]、fontScale [0.88,1.18]、paddingX [72,220]、paddingY [48,180]
+- 草稿设置值有范围限制，导入时自动 clamp：cardWidth [142,176]、zoom [0.55,1.35]、fontScale [0.88,1.18] ···
 - localStorage 操作必须包 try/catch（隐私模式可能不可用）
 - 撤销/重做历史：使用 `structuredClone()` 进行状态深拷贝以确保性能，严禁使用 `JSON.parse(JSON.stringify())` 以防大型族谱卡顿。
 - 撤销/重做历史不记录 zoom 变化（zoom 被视为视图状态，非编辑历史）
@@ -61,6 +61,5 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 
 ## 已知限制
 
-- 前端 API baseURL 硬编码为 `http://localhost:8080/api`，无环境变量切换机制
 - Token 存内存，重启后全部失效；仅适合单实例部署
 - 草稿关系校验不强制"一人只属于一个家庭"，业务代码默认该前提成立

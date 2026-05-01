@@ -74,6 +74,16 @@ public class PublicationController {
         return ApiResponse.success("族谱已保存", null);
     }
 
+    @PutMapping("/{id}/metadata")
+    public ApiResponse<Void> updateMetadata(@PathVariable Long id, @RequestBody com.genealogy.server.dto.UpdateMetadataRequest body, HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+        resolveUserId(request);
+        String infoJson = serializeSettings(body.getInfo());
+        publicationService.updatePublicationMetadata(id, body.getTitle(), body.getSubtitle(), infoJson);
+        logAction(username, "UPDATE_PUB_META", "更新族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」的信息", id);
+        return ApiResponse.success("族谱信息已更新", null);
+    }
+
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");

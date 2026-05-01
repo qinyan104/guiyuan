@@ -5,17 +5,32 @@ import {
   listPublications,
   createPublication,
   deletePublication,
+  updatePublicationMetadata,
   type PublicationSummary,
 } from '../api/publication'
 import { samplePublication, defaultSettings } from '../data/sampleFamily'
+import type { PublicationInfo } from '../types/family'
 
 const router = useRouter()
 
 const publications = ref<PublicationSummary[]>([])
 const loading = ref(true)
+
 const showCreateDialog = ref(false)
 const newTitle = ref('')
 const newSubtitle = ref('')
+
+const showEditDialog = ref(false)
+const editingId = ref<number | null>(null)
+const editForm = ref({
+  title: '',
+  subtitle: '',
+  description: '',
+  ancestralOrigin: '',
+  hallName: '',
+  familyMotto: '',
+})
+
 const deleteConfirmId = ref<number | null>(null)
 
 async function loadPublications() {
@@ -33,6 +48,40 @@ onMounted(loadPublications)
 
 function openPublication(id: number) {
   router.push({ name: 'workbench', params: { id } })
+}
+
+function openEditDialog(pub: PublicationSummary) {
+  editingId.value = pub.id
+  editForm.value = {
+    title: pub.title || '',
+    subtitle: pub.subtitle || '',
+    description: pub.info?.description || '',
+    ancestralOrigin: pub.info?.ancestralOrigin || '',
+    hallName: pub.info?.hallName || '',
+    familyMotto: pub.info?.familyMotto || '',
+  }
+  showEditDialog.value = true
+}
+
+async function handleEditSave() {
+  if (!editingId.value) return
+
+  const title = editForm.value.title.trim() || '未命名族谱'
+  const subtitle = editForm.value.subtitle.trim()
+  const info: PublicationInfo = {
+    description: editForm.value.description.trim(),
+    ancestralOrigin: editForm.value.ancestralOrigin.trim(),
+    hallName: editForm.value.hallName.trim(),
+    familyMotto: editForm.value.familyMotto.trim(),
+  }
+
+  try {
+    await updatePublicationMetadata(editingId.value, title, subtitle, info)
+    showEditDialog.value = false
+    await loadPublications()
+  } catch (err: any) {
+    alert('保存失败: ' + (err.message || '未知错误'))
+  }
 }
 
 async function handleCreate() {
@@ -116,13 +165,22 @@ function formatDate(dateStr: string) {
         </div>
         <div class="pub-card__footer">
           <span class="pub-card__date">{{ formatDate(pub.updatedAt) }}</span>
-          <button
-            class="pub-card__delete"
-            title="删除"
-            @click.stop="deleteConfirmId = pub.id"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
+          <div class="pub-card__actions">
+            <button
+              class="pub-card__action-btn"
+              title="编辑信息"
+              @click.stop="openEditDialog(pub)"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </button>
+            <button
+              class="pub-card__action-btn pub-card__delete"
+              title="删除"
+              @click.stop="deleteConfirmId = pub.id"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
         </div>
 
         <div v-if="deleteConfirmId === pub.id" class="pub-card__confirm" @click.stop>
@@ -151,6 +209,43 @@ function formatDate(dateStr: string) {
           <div class="dialog__actions">
             <button class="btn-dialog-cancel" @click="showCreateDialog = false">取消</button>
             <button class="btn-dialog-confirm" @click="handleCreate">创建</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Edit Dialog -->
+    <Teleport to="body">
+      <div v-if="showEditDialog" class="dialog-overlay" @click.self="showEditDialog = false">
+        <div class="dialog dialog--large">
+          <h2 class="dialog__title">编辑族谱信息</h2>
+          <div class="dialog__field">
+            <label>族谱标题</label>
+            <input v-model="editForm.title" type="text" placeholder="例：张氏家谱" />
+          </div>
+          <div class="dialog__field">
+            <label>副标题</label>
+            <input v-model="editForm.subtitle" type="text" placeholder="例：第三修 · 二〇二六年" />
+          </div>
+          <div class="dialog__field">
+            <label>家族起源地</label>
+            <input v-model="editForm.ancestralOrigin" type="text" placeholder="例：山西洪洞" />
+          </div>
+          <div class="dialog__field">
+            <label>堂号</label>
+            <input v-model="editForm.hallName" type="text" placeholder="例：三槐堂" />
+          </div>
+          <div class="dialog__field">
+            <label>家训</label>
+            <textarea v-model="editForm.familyMotto" rows="2" placeholder="例：耕读传家，勤俭立业"></textarea>
+          </div>
+          <div class="dialog__field">
+            <label>简介</label>
+            <textarea v-model="editForm.description" rows="3" placeholder="简要介绍族谱的修撰背景..."></textarea>
+          </div>
+          <div class="dialog__actions">
+            <button class="btn-dialog-cancel" @click="showEditDialog = false">取消</button>
+            <button class="btn-dialog-confirm" @click="handleEditSave">保存</button>
           </div>
         </div>
       </div>
@@ -291,6 +386,33 @@ function formatDate(dateStr: string) {
   color: var(--text-soft, #888);
 }
 
+.pub-card__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pub-card__action-btn {
+  background: none;
+  border: none;
+  color: var(--text-soft, #aaa);
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.pub-card__action-btn:hover {
+  color: var(--accent-amber, #a96e35);
+  background: rgba(169, 110, 53, 0.08);
+}
+
+.pub-card__action-btn.pub-card__delete:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
 .pub-card__delete {
   background: none;
   border: none;
@@ -303,7 +425,7 @@ function formatDate(dateStr: string) {
   align-items: center;
 }
 
-.pub-card__delete:hover {
+.pub-card__confirm {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.08);
 }
@@ -376,6 +498,10 @@ function formatDate(dateStr: string) {
   box-shadow: 0 24px 64px rgba(0,0,0,0.15);
 }
 
+.dialog--large {
+  max-width: 500px;
+}
+
 .dialog__title {
   margin: 0 0 0.75rem;
   font-size: 1.15rem;
@@ -414,7 +540,23 @@ function formatDate(dateStr: string) {
   box-sizing: border-box;
 }
 
-.dialog__field input:focus {
+.dialog__field textarea {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
+  border-radius: 10px;
+  background: var(--bg-shell, #f5f0e8);
+  color: var(--text-main, #1a1a1a);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.dialog__field input:focus,
+.dialog__field textarea:focus {
   border-color: var(--accent-amber, #a96e35);
 }
 
