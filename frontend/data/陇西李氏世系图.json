@@ -1,0 +1,841 @@
+{
+  "version": 1,
+  "savedAt": "2026-04-17T14:18:58.768Z",
+  "publication": {
+    "title": "陇西李氏世系图",
+    "subtitle": "出版工作台示例 · 参考 Family Echo 交互与空白模板版式",
+    "focusFamilyId": "f1",
+    "people": {
+      "p1": {
+        "id": "p1",
+        "name": "李承祚",
+        "gender": "male",
+        "birth": "1921年二月",
+        "death": "1996年九月",
+        "age": "75岁",
+        "note": "一世祖"
+      },
+      "p2": {
+        "id": "p2",
+        "name": "沈素琴",
+        "gender": "female",
+        "birth": "1924年六月",
+        "death": "2008年四月",
+        "age": "84岁",
+        "note": "元配"
+      },
+      "p3": {
+        "id": "p3",
+        "name": "李文岳",
+        "gender": "male",
+        "birth": "1948年三月",
+        "death": "2019年十一月",
+        "age": "71岁",
+        "note": "长房"
+      },
+      "p4": {
+        "id": "p4",
+        "name": "李文川",
+        "gender": "male",
+        "birth": "1951年八月",
+        "death": "2022年五月",
+        "age": "71岁",
+        "note": "次房"
+      },
+      "p5": {
+        "id": "p5",
+        "name": "李文澜",
+        "gender": "female",
+        "birth": "1955年十月",
+        "note": "三房"
+      },
+      "p6": {
+        "id": "p6",
+        "name": "陈淑珍",
+        "gender": "female",
+        "birth": "1950年正月",
+        "death": "2021年二月",
+        "age": "71岁",
+        "note": "长房配"
+      },
+      "p7": {
+        "id": "p7",
+        "name": "李修远",
+        "gender": "male",
+        "birth": "1975年五月",
+        "note": "长孙"
+      },
+      "p8": {
+        "id": "p8",
+        "name": "李清和",
+        "gender": "female",
+        "birth": "1978年十一月",
+        "note": "长孙女"
+      },
+      "p9": {
+        "id": "p9",
+        "name": "赵慧兰",
+        "gender": "female",
+        "birth": "1953年二月",
+        "note": "次房配"
+      },
+      "p10": {
+        "id": "p10",
+        "name": "李明诚",
+        "gender": "male",
+        "birth": "1979年七月",
+        "note": "次孙"
+      },
+      "p11": {
+        "id": "p11",
+        "name": "李明玉",
+        "gender": "female",
+        "birth": "1983年六月",
+        "note": "次孙女"
+      },
+      "p12": {
+        "id": "p12",
+        "name": "李明哲",
+        "gender": "male",
+        "birth": "1987年十月",
+        "note": "三孙"
+      },
+      "p13": {
+        "id": "p13",
+        "name": "周清和",
+        "gender": "female",
+        "birth": "1977年三月",
+        "note": "长孙配"
+      },
+      "p14": {
+        "id": "p14",
+        "name": "李景行",
+        "gender": "male",
+        "birth": "2003年五月",
+        "note": "曾孙"
+      },
+      "p15": {
+        "id": "p15",
+        "name": "李景安",
+        "gender": "male",
+        "birth": "2006年九月",
+        "note": "曾孙"
+      },
+      "p16": {
+        "id": "p16",
+        "name": "苏月仪",
+        "gender": "female",
+        "birth": "1982年十二月",
+        "note": "次孙配"
+      },
+      "p17": {
+        "id": "p17",
+        "name": "李知微",
+        "gender": "female",
+        "birth": "2010年八月",
+        "note": "玄孙女"
+      },
+      "p18": {
+        "id": "p18",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p19": {
+        "id": "p19",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p20": {
+        "id": "p20",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p21": {
+        "id": "p21",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p22": {
+        "id": "p22",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p23": {
+        "id": "p23",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p24": {
+        "id": "p24",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p25": {
+        "id": "p25",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p26": {
+        "id": "p26",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p27": {
+        "id": "p27",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p28": {
+        "id": "p28",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p29": {
+        "id": "p29",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p30": {
+        "id": "p30",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p31": {
+        "id": "p31",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p32": {
+        "id": "p32",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p33": {
+        "id": "p33",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p34": {
+        "id": "p34",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子"
+      },
+      "p35": {
+        "id": "p35",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p36": {
+        "id": "p36",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p37": {
+        "id": "p37",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p38": {
+        "id": "p38",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p39": {
+        "id": "p39",
+        "name": "待命名子女",
+        "gender": "male",
+        "note": "子女"
+      },
+      "p40": {
+        "id": "p40",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p41": {
+        "id": "p41",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p42": {
+        "id": "p42",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p43": {
+        "id": "p43",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p44": {
+        "id": "p44",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p45": {
+        "id": "p45",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p46": {
+        "id": "p46",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p47": {
+        "id": "p47",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p48": {
+        "id": "p48",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p49": {
+        "id": "p49",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p50": {
+        "id": "p50",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p51": {
+        "id": "p51",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p52": {
+        "id": "p52",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p53": {
+        "id": "p53",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p54": {
+        "id": "p54",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p55": {
+        "id": "p55",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p56": {
+        "id": "p56",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p57": {
+        "id": "p57",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p58": {
+        "id": "p58",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p59": {
+        "id": "p59",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p60": {
+        "id": "p60",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p61": {
+        "id": "p61",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p62": {
+        "id": "p62",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p63": {
+        "id": "p63",
+        "name": "待命名配偶",
+        "gender": "male",
+        "note": "配偶"
+      },
+      "p64": {
+        "id": "p64",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p65": {
+        "id": "p65",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p66": {
+        "id": "p66",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p67": {
+        "id": "p67",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p68": {
+        "id": "p68",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p69": {
+        "id": "p69",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p70": {
+        "id": "p70",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p71": {
+        "id": "p71",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p72": {
+        "id": "p72",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p73": {
+        "id": "p73",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p74": {
+        "id": "p74",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p75": {
+        "id": "p75",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p76": {
+        "id": "p76",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p77": {
+        "id": "p77",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p78": {
+        "id": "p78",
+        "name": "待命名配偶",
+        "gender": "unknown",
+        "note": "配偶"
+      },
+      "p79": {
+        "id": "p79",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p80": {
+        "id": "p80",
+        "name": "待命名子女",
+        "gender": "unknown",
+        "note": "子女"
+      },
+      "p81": {
+        "id": "p81",
+        "name": "待命名儿子",
+        "gender": "male",
+        "note": "儿子"
+      }
+    },
+    "families": {
+      "f1": {
+        "id": "f1",
+        "adults": [
+          "p1",
+          "p2"
+        ],
+        "children": [
+          "p3",
+          "p4",
+          "p5",
+          "p80"
+        ]
+      },
+      "f2": {
+        "id": "f2",
+        "adults": [
+          "p3",
+          "p6"
+        ],
+        "children": [
+          "p7",
+          "p8"
+        ]
+      },
+      "f3": {
+        "id": "f3",
+        "adults": [
+          "p4",
+          "p9"
+        ],
+        "children": [
+          "p10",
+          "p11",
+          "p12"
+        ]
+      },
+      "f4": {
+        "id": "f4",
+        "adults": [
+          "p7",
+          "p13"
+        ],
+        "children": [
+          "p14",
+          "p15",
+          "p23"
+        ]
+      },
+      "f5": {
+        "id": "f5",
+        "adults": [
+          "p10",
+          "p16"
+        ],
+        "children": [
+          "p17",
+          "p21",
+          "p22"
+        ]
+      },
+      "f6": {
+        "id": "f6",
+        "adults": [
+          "p12"
+        ],
+        "children": [
+          "p18",
+          "p20",
+          "p38"
+        ]
+      },
+      "f7": {
+        "id": "f7",
+        "adults": [
+          "p18",
+          "p19"
+        ],
+        "children": [
+          "p39",
+          "p41",
+          "p48"
+        ]
+      },
+      "f8": {
+        "id": "f8",
+        "adults": [
+          "p20",
+          "p25"
+        ],
+        "children": [
+          "p24",
+          "p27",
+          "p30",
+          "p33"
+        ]
+      },
+      "f9": {
+        "id": "f9",
+        "adults": [
+          "p24",
+          "p26"
+        ],
+        "children": []
+      },
+      "f10": {
+        "id": "f10",
+        "adults": [
+          "p27",
+          "p28"
+        ],
+        "children": [
+          "p29",
+          "p31",
+          "p32"
+        ]
+      },
+      "f11": {
+        "id": "f11",
+        "adults": [
+          "p14"
+        ],
+        "children": [
+          "p34",
+          "p37"
+        ]
+      },
+      "f12": {
+        "id": "f12",
+        "adults": [
+          "p34",
+          "p35"
+        ],
+        "children": [
+          "p36"
+        ]
+      },
+      "f13": {
+        "id": "f13",
+        "adults": [
+          "p39",
+          "p40"
+        ],
+        "children": [
+          "p81"
+        ]
+      },
+      "f14": {
+        "id": "f14",
+        "adults": [
+          "p41",
+          "p42"
+        ],
+        "children": []
+      },
+      "f15": {
+        "id": "f15",
+        "adults": [
+          "p37"
+        ],
+        "children": [
+          "p43"
+        ]
+      },
+      "f16": {
+        "id": "f16",
+        "adults": [
+          "p21"
+        ],
+        "children": [
+          "p44",
+          "p46"
+        ]
+      },
+      "f17": {
+        "id": "f17",
+        "adults": [
+          "p44",
+          "p45"
+        ],
+        "children": [
+          "p52",
+          "p53",
+          "p54"
+        ]
+      },
+      "f18": {
+        "id": "f18",
+        "adults": [
+          "p46",
+          "p50"
+        ],
+        "children": [
+          "p47",
+          "p51",
+          "p55"
+        ]
+      },
+      "f19": {
+        "id": "f19",
+        "adults": [
+          "p36",
+          "p77"
+        ],
+        "children": [
+          "p49"
+        ]
+      },
+      "f20": {
+        "id": "f20",
+        "adults": [
+          "p38",
+          "p56"
+        ],
+        "children": [
+          "p57",
+          "p58"
+        ]
+      },
+      "f21": {
+        "id": "f21",
+        "adults": [
+          "p49",
+          "p78"
+        ],
+        "children": [
+          "p59",
+          "p79"
+        ]
+      },
+      "f22": {
+        "id": "f22",
+        "adults": [
+          "p57"
+        ],
+        "children": [
+          "p60"
+        ]
+      },
+      "f23": {
+        "id": "f23",
+        "adults": [
+          "p30",
+          "p61"
+        ],
+        "children": []
+      },
+      "f24": {
+        "id": "f24",
+        "adults": [
+          "p5",
+          "p63"
+        ],
+        "children": [
+          "p62"
+        ]
+      },
+      "f25": {
+        "id": "f25",
+        "adults": [
+          "p62",
+          "p65"
+        ],
+        "children": [
+          "p64"
+        ]
+      },
+      "f26": {
+        "id": "f26",
+        "adults": [
+          "p64",
+          "p66"
+        ],
+        "children": [
+          "p67"
+        ]
+      },
+      "f27": {
+        "id": "f27",
+        "adults": [
+          "p67",
+          "p68"
+        ],
+        "children": [
+          "p69"
+        ]
+      },
+      "f28": {
+        "id": "f28",
+        "adults": [
+          "p69",
+          "p70"
+        ],
+        "children": [
+          "p71",
+          "p72",
+          "p73",
+          "p74",
+          "p75",
+          "p76"
+        ]
+      }
+    }
+  },
+  "settings": {
+    "paper": "A3",
+    "cardWidth": 158,
+    "generationGap": 170,
+    "siblingGap": 88,
+    "partnerGap": 96,
+    "fontScale": 1,
+    "zoom": 0.55,
+    "showDeath": true,
+    "showAge": true,
+    "showNote": true,
+    "paddingX": 120,
+    "paddingY": 88
+  }
+}
