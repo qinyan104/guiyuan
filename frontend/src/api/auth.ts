@@ -103,7 +103,7 @@ export async function adminChangeRole(id: number, role: string): Promise<void> {
 
 export async function adminBackupDatabase(): Promise<void> {
   const token = getToken()
-  const resp = await fetch('http://localhost:8080/api/admin/backup', {
+  const resp = await fetch('/api/admin/backup', {
     headers: { 'Authorization': `Bearer ${token}` },
   })
   if (!resp.ok) {

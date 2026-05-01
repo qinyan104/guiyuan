@@ -55,6 +55,7 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 
 - 草稿设置值有范围限制，导入时自动 clamp：cardWidth [142,176]、zoom [0.55,1.35]、fontScale [0.88,1.18]、paddingX [72,220]、paddingY [48,180]
 - localStorage 操作必须包 try/catch（隐私模式可能不可用）
+- 撤销/重做历史：使用 `structuredClone()` 进行状态深拷贝以确保性能，严禁使用 `JSON.parse(JSON.stringify())` 以防大型族谱卡顿。
 - 撤销/重做历史不记录 zoom 变化（zoom 被视为视图状态，非编辑历史）
 - 打印导出标题必须经 HTML 转义（`escapeHtml()` 已在 `publicationExport.ts` 中实现）
 

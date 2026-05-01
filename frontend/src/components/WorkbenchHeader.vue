@@ -20,6 +20,7 @@ withDefaults(
     sampleGroups?: SampleGroup[]
     currentTheme?: ThemeId
     currentUsername?: string
+    syncStatus?: 'saved' | 'pending' | 'syncing' | 'error'
   }>(),
   {
     fileName: '',
@@ -28,6 +29,7 @@ withDefaults(
     sampleGroups: () => [],
     currentTheme: 'parchment' as ThemeId,
     currentUsername: '',
+    syncStatus: 'saved',
   },
 )
 
@@ -57,6 +59,17 @@ const emit = defineEmits<{
         族谱列表
       </button>
       <h1>族谱无限画布</h1>
+      <div class="sync-status" :class="[`sync-status--${syncStatus}`]">
+        <span class="sync-icon">
+          <svg v-if="syncStatus === 'syncing'" class="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          <svg v-else-if="syncStatus === 'saved'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg v-else-if="syncStatus === 'error'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/></svg>
+        </span>
+        <span class="sync-text">
+          {{ syncStatus === 'syncing' ? '正在同步...' : syncStatus === 'saved' ? '已同步到云端' : syncStatus === 'error' ? '同步失败' : '等待同步...' }}
+        </span>
+      </div>
     </div>
 
     <div class="topbar__actions" aria-label="工作台操作">
@@ -257,5 +270,58 @@ const emit = defineEmits<{
 .topbar__back-btn:hover {
   color: var(--text-main, #1a1a1a);
   background: var(--bg-hover, rgba(0,0,0,0.04));
+}
+
+.topbar__intro h1 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  margin-left: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.sync-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sync-text {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.sync-status--saved {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.sync-status--syncing, .sync-status--pending {
+  color: var(--accent-amber, #a96e35);
+  background: rgba(169, 110, 53, 0.08);
+}
+
+.sync-status--error {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.spinner {
+  animation: rotate 1.5s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

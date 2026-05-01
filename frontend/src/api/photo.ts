@@ -12,7 +12,7 @@ export async function uploadPhoto(personId: string, publicationId: number, file:
 }
 
 export function getPhotoUrl(photoId: number): string {
-  return `http://localhost:8080/api/photos/${photoId}`
+  return `/api/photos/${photoId}`
 }
 
 export async function deletePhoto(photoId: number): Promise<void> {

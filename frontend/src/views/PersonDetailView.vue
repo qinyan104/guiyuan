@@ -112,7 +112,7 @@ function statusLabel(p: Person): string {
 function photoUrl(avatarUrl?: string): string {
   if (!avatarUrl) return ''
   if (avatarUrl.startsWith('http')) return avatarUrl
-  return `http://localhost:8080${avatarUrl}`
+  return avatarUrl
 }
 
 function goToPerson(id: string) {

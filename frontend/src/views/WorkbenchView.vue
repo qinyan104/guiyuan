@@ -270,6 +270,10 @@ watch(
   { deep: true },
 )
 
+// ─── Sync Status ────────────────────────────────────────────────
+type SyncStatus = 'saved' | 'pending' | 'syncing' | 'error'
+const syncStatus = ref<SyncStatus>('saved')
+
 let serverSaveTimeout: ReturnType<typeof setTimeout> | null = null
 
 function saveLocalDraft() {
@@ -284,6 +288,7 @@ function saveLocalDraft() {
 }
 
 async function saveToServer() {
+  syncStatus.value = 'syncing'
   try {
     if (serverPublicationId.value) {
       await updatePublication(serverPublicationId.value, pub.publication, pub.settings)
@@ -291,8 +296,10 @@ async function saveToServer() {
       const id = await createPublication(pub.publication, pub.settings)
       serverPublicationId.value = id
     }
+    syncStatus.value = 'saved'
   } catch (err) {
     console.error('自动保存到服务器失败:', err)
+    syncStatus.value = 'error'
   }
 }
 
@@ -300,6 +307,7 @@ watch(
   () => [pub.publication, pub.settings, pub.selectedPersonId.value],
   () => {
     saveLocalDraft()
+    syncStatus.value = 'pending'
 
     // Debounced server save (3 seconds after last change)
     if (serverSaveTimeout) clearTimeout(serverSaveTimeout)
@@ -318,6 +326,7 @@ watch(
       :sample-groups="builtinSampleGroups"
       :current-theme="theme.currentTheme.value"
       :current-username="currentUsername"
+      :sync-status="syncStatus"
       @import-json="fileOps.importDraftFromFileEvent"
       @open-file="fileOps.openDraftFile"
       @create-blank="relActions.createBlankDraft"
