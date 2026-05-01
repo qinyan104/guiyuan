@@ -33,6 +33,10 @@ function issue(code: ValidationIssue['code'], path: string, message: string): Va
   return { code, path, message }
 }
 
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
 function validatePerson(personId: string, value: unknown): ValidationIssue[] {
   if (!isRecord(value)) {
     return [issue('invalid-person', `people.${personId}`, `人物 ${personId} 必须是对象。`)]
@@ -146,15 +150,15 @@ export function validatePublicationData(input: unknown): ValidationIssue[] {
   const publication = input as Partial<PublicationData>
   const issues: ValidationIssue[] = []
 
-  if (!isString(publication.title)) {
-    issues.push(issue('invalid-root', 'title', '族谱标题必须是字符串。'))
+  if (!isString(publication.title) || !publication.title.trim()) {
+    issues.push(issue('invalid-root', 'title', '族谱标题不能为空。'))
   }
 
-  if (!isString(publication.subtitle)) {
-    issues.push(issue('invalid-root', 'subtitle', '族谱副标题必须是字符串。'))
+  if (!isString(publication.subtitle) || !publication.subtitle.trim()) {
+    issues.push(issue('invalid-root', 'subtitle', '族谱副标题不能为空。'))
   }
 
-  if (!isString(publication.focusFamilyId)) {
+  if (!isString(publication.focusFamilyId) || !publication.focusFamilyId.trim()) {
     issues.push(issue('invalid-root', 'focusFamilyId', '当前宗支 ID 必须是字符串。'))
   }
 
@@ -218,6 +222,20 @@ export function normalizePublicationData(publication: PublicationData): Publicat
   return next
 }
 
+export function normalizeSettings(settings: PublicationSettings): PublicationSettings {
+  return {
+    ...settings,
+    cardWidth: clampNumber(settings.cardWidth, 142, 176),
+    generationGap: clampNumber(settings.generationGap, 120, 220),
+    siblingGap: clampNumber(settings.siblingGap, 56, 140),
+    partnerGap: clampNumber(settings.partnerGap, 72, 128),
+    fontScale: clampNumber(settings.fontScale, 0.88, 1.18),
+    zoom: clampNumber(settings.zoom, 0.55, 1.35),
+    paddingX: clampNumber(settings.paddingX, 72, 220),
+    paddingY: clampNumber(settings.paddingY, 48, 180),
+  }
+}
+
 export function validateSettings(input: unknown): ValidationIssue[] {
   if (!isRecord(input)) {
     return [issue('missing-settings', 'settings', '排版设置必须是对象。')]
@@ -230,13 +248,25 @@ export function validateSettings(input: unknown): ValidationIssue[] {
     issues.push(issue('invalid-settings', 'settings.paper', '纸张尺寸必须是 A3 或 A4。'))
   }
 
-  ;(['cardWidth', 'generationGap', 'siblingGap', 'partnerGap', 'fontScale', 'zoom', 'paddingX', 'paddingY'] as const).forEach(
-    (field) => {
-      if (typeof settings[field] !== 'number' || !Number.isFinite(settings[field])) {
-        issues.push(issue('invalid-settings', `settings.${field}`, `${field} 必须是数字。`))
-      }
-    },
-  )
+  ;([
+    ['cardWidth', 142, 176],
+    ['generationGap', 120, 220],
+    ['siblingGap', 56, 140],
+    ['partnerGap', 72, 128],
+    ['fontScale', 0.88, 1.18],
+    ['zoom', 0.55, 1.35],
+    ['paddingX', 72, 220],
+    ['paddingY', 48, 180],
+  ] as const).forEach(([field, min, max]) => {
+    if (typeof settings[field] !== 'number' || !Number.isFinite(settings[field])) {
+      issues.push(issue('invalid-settings', `settings.${field}`, `${field} 必须是数字。`))
+      return
+    }
+
+    if (settings[field] < min || settings[field] > max) {
+      issues.push(issue('invalid-settings', `settings.${field}`, `${field} 必须在 ${min} 到 ${max} 之间。`))
+    }
+  })
 
   ;(['showDeath', 'showAge', 'showNote'] as const).forEach((field) => {
     if (typeof settings[field] !== 'boolean') {

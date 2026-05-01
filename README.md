@@ -1,130 +1,63 @@
 # 族谱管理系统
 
-一个以族谱可视化编辑为核心、支持本地部署与数据自主掌控的家族记忆系统项目。
+家族族谱的创建、编辑与出版预览工具。
 
-当前项目处于“从作品走向产品”的过渡阶段：前端已经具备较强的谱图编辑与展示能力，后端已经具备基础账号与文件上传能力，后续将逐步补齐服务端持久化、业务主数据、资料归档与长期演进能力。
+## 功能
 
-## 项目目标
+- 可视化族谱树编辑器，支持添加配偶、子女、父母关系
+- 多主题切换（古卷、水墨、青瓷、檀木等 7 套）
+- JSON 草稿导入/导出，支持 File System Access API 原生文件操作
+- SVG 导出和 A3/A4 打印排版
+- 族谱信息管理（简介、起源地、堂号、家训）
+- 用户登录、管理员后台（用户管理、审计日志）
 
-- 做出真正符合中文家族场景的族谱工具
-- 保持强可视化体验，而不是退化成普通后台
-- 支持本地部署，让数据归用户自己所有
-- 逐步从编辑器演进为家族记忆系统
+## 环境要求
 
-## 当前目录结构
+- Java 17+
+- Node.js 18+
+- MySQL 8+
 
-```text
-backend/     Spring Boot 后端
-frontend/    Vue 3 + TypeScript 前端
+## 快速开始
+
+### 1. 数据库
+
+创建 MySQL 数据库：
+
+```sql
+CREATE DATABASE genealogy CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-根目录下的重要文档：
+默认连接 `localhost:3306/genealogy`，用户名 `root`，密码 `123456`。可通过环境变量覆盖：
 
-- [PROJECT_FUTURE_ROADMAP.md](C:/Users/HX/Desktop/族谱管理系统/PROJECT_FUTURE_ROADMAP.md)：中长期路线规划
-- [PRODUCT_VISION.md](C:/Users/HX/Desktop/族谱管理系统/PRODUCT_VISION.md)：产品愿景、定位与用户视角
-- [PROJECT_CURRENT_STATE.md](C:/Users/HX/Desktop/族谱管理系统/PROJECT_CURRENT_STATE.md)：当前阶段总结
-- [ARCHITECTURE.md](C:/Users/HX/Desktop/族谱管理系统/ARCHITECTURE.md)：架构说明
-- [HANDOFF.md](C:/Users/HX/Desktop/族谱管理系统/HANDOFF.md)：接手说明与当前开发建议
+```bash
+export DB_USERNAME=your_user
+export DB_PASSWORD=your_password
+```
 
-## 技术栈
+### 2. 启动后端
 
-### 前端
-
-- Vue 3
-- TypeScript
-- Vite
-- Vitest
-- Axios
-
-### 后端
-
-- Spring Boot 3
-- Spring Web
-- Spring Data JPA
-- MySQL
-
-## 当前阶段概览
-
-当前最核心的成果在前端：
-
-- 族谱可视化画布
-- 人物编辑
-- 关系维护
-- 本地草稿恢复
-- 导入导出
-- SVG 输出
-- 打印支持
-- 撤销重做与编辑历史
-
-当前后端主要能力：
-
-- 用户注册与登录
-- 图片上传
-- MySQL 基础接入
-
-当前仍未完成的关键能力：
-
-- 族谱项目服务端持久化
-- 族谱主数据的后端建模
-- 项目级保存/打开/继续编辑
-- 真正意义上的后台管理能力
-
-## 本地启动
-
-### 启动后端
-
-进入 [backend](C:/Users/HX/Desktop/族谱管理系统/backend) 目录后运行：
-
-```powershell
+```bash
+cd backend
 ./mvnw spring-boot:run
 ```
 
-默认端口：
+后端运行在 `http://localhost:8080`，首次启动自动建表。
 
-- `http://localhost:8080`
+### 3. 启动前端
 
-注意：
-
-- 需要本地 MySQL
-- 数据库名当前为 `genealogy`
-- 相关配置见 [application.properties](C:/Users/HX/Desktop/族谱管理系统/backend/src/main/resources/application.properties)
-
-### 启动前端
-
-进入 [frontend](C:/Users/HX/Desktop/族谱管理系统/frontend) 目录后运行：
-
-```powershell
+```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-Vite 默认开发地址通常为：
+前端运行在 `http://localhost:5173`，打开浏览器访问即可。
 
-- `http://localhost:5173`
+## 技术栈
 
-## 测试与构建
-
-前端：
-
-```powershell
-npm run test
-npm run build
-```
-
-后端：
-
-```powershell
-./mvnw test
-```
-
-## 后续开发建议
-
-如果要继续推进项目，建议先阅读以下文档：
-
-1. [PROJECT_FUTURE_ROADMAP.md](C:/Users/HX/Desktop/族谱管理系统/PROJECT_FUTURE_ROADMAP.md)
-2. [PRODUCT_VISION.md](C:/Users/HX/Desktop/族谱管理系统/PRODUCT_VISION.md)
-3. [PROJECT_CURRENT_STATE.md](C:/Users/HX/Desktop/族谱管理系统/PROJECT_CURRENT_STATE.md)
-4. [ARCHITECTURE.md](C:/Users/HX/Desktop/族谱管理系统/ARCHITECTURE.md)
-5. [HANDOFF.md](C:/Users/HX/Desktop/族谱管理系统/HANDOFF.md)
-
-再查看当前代码与 `git status`，这样最容易快速接上上下文。
+| 层 | 技术 |
+|---|---|
+| 前端 | Vue 3, Vite 6, TypeScript, vue-router, axios |
+| 后端 | Spring Boot 3.3, Spring Data JPA, Spring Security |
+| 数据库 | MySQL 8 |
+| 构建 | Maven (后端), Vite (前端) |

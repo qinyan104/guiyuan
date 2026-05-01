@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { blankPublication, samplePublication } from '../../data/sampleFamily'
+import { blankPublication, defaultSettings, samplePublication } from '../../data/sampleFamily'
 import type { BuiltinSampleRecord } from '../../data/builtinDynastySamples'
 import { builtinSamples } from '../../data/builtinDynastySamples'
-import { validatePublicationData } from './draftSchema'
+import { normalizeSettings, validatePublicationData, validateSettings } from './draftSchema'
 
 describe('validatePublicationData', () => {
   it('accepts the bundled sample publication', () => {
@@ -62,5 +62,87 @@ describe('validatePublicationData', () => {
         }),
       ]),
     )
+  })
+
+  it('rejects an empty title', () => {
+    const broken = { ...samplePublication, title: '   ' }
+    expect(validatePublicationData(broken)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'invalid-root', path: 'title' }),
+      ]),
+    )
+  })
+
+  it('rejects an empty subtitle', () => {
+    const broken = { ...samplePublication, subtitle: '' }
+    expect(validatePublicationData(broken)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'invalid-root', path: 'subtitle' }),
+      ]),
+    )
+  })
+})
+
+describe('validateSettings', () => {
+  it('accepts the default settings', () => {
+    expect(validateSettings(defaultSettings)).toEqual([])
+  })
+
+  it('rejects a negative cardWidth', () => {
+    const bad = { ...defaultSettings, cardWidth: -10 }
+    expect(validateSettings(bad)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'invalid-settings', path: 'settings.cardWidth' }),
+      ]),
+    )
+  })
+
+  it('rejects a zoom below minimum', () => {
+    const bad = { ...defaultSettings, zoom: 0.1 }
+    expect(validateSettings(bad)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'invalid-settings', path: 'settings.zoom' }),
+      ]),
+    )
+  })
+
+  it('rejects a zoom above maximum', () => {
+    const bad = { ...defaultSettings, zoom: 2.0 }
+    expect(validateSettings(bad)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'invalid-settings', path: 'settings.zoom' }),
+      ]),
+    )
+  })
+
+  it('rejects Infinity values', () => {
+    const bad = { ...defaultSettings, paddingX: Infinity }
+    expect(validateSettings(bad)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'invalid-settings', path: 'settings.paddingX' }),
+      ]),
+    )
+  })
+})
+
+describe('normalizeSettings', () => {
+  it('clamps out-of-range values back to valid bounds', () => {
+    const raw = { ...defaultSettings, zoom: 0.01, cardWidth: 999, paddingY: -50 }
+    const result = normalizeSettings(raw)
+
+    expect(result.zoom).toBe(0.55)
+    expect(result.cardWidth).toBe(176)
+    expect(result.paddingY).toBe(48)
+  })
+
+  it('leaves valid values untouched', () => {
+    const result = normalizeSettings(defaultSettings)
+    expect(result.cardWidth).toBe(defaultSettings.cardWidth)
+    expect(result.generationGap).toBe(defaultSettings.generationGap)
+    expect(result.siblingGap).toBe(defaultSettings.siblingGap)
+    expect(result.zoom).toBe(defaultSettings.zoom)
+    expect(result.fontScale).toBe(defaultSettings.fontScale)
+    expect(result.paddingX).toBe(defaultSettings.paddingX)
+    expect(result.paddingY).toBe(defaultSettings.paddingY)
   })
 })

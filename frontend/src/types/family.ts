@@ -24,12 +24,21 @@ export interface FamilyUnit {
   branchMode?: FamilyBranchMode
 }
 
+export interface PublicationInfo {
+  description?: string
+  ancestralOrigin?: string
+  hallName?: string
+  familyMotto?: string
+  revisionNotes?: string
+}
+
 export interface PublicationData {
   title: string
   subtitle: string
   focusFamilyId: string
   people: Record<string, Person>
   families: Record<string, FamilyUnit>
+  info?: PublicationInfo
 }
 
 export interface PublicationSettings {

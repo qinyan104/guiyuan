@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FamilyBranchMode, Gender, Person } from '../types/family'
+import { uploadPhoto, getPhotoUrl } from '../api/photo'
 
 interface PersonDetailItem {
   label: string
@@ -15,9 +16,10 @@ interface ChildOrderItem {
 
 type EditablePersonField = 'name' | 'birth' | 'death' | 'age' | 'titleName' | 'clan' | 'note' | 'avatarUrl'
 
-defineProps<{
+const props = defineProps<{
   open: boolean
   person: Person
+  publicationId: number | null
   suggestion: string
   lineageSuggestion: string
   details: PersonDetailItem[]
@@ -51,6 +53,7 @@ const emit = defineEmits<{
   (event: 'update-person-gender', gender: Gender): void
   (event: 'apply-note-suggestion', value: string): void
   (event: 'delete-person'): void
+  (event: 'view-detail'): void
 }>()
 
 function updatePersonField(field: EditablePersonField, event: Event) {
@@ -64,22 +67,15 @@ function updatePersonGender(event: Event) {
 async function uploadAvatar(event: Event) {
   const input = event.target as HTMLInputElement
   if (!input.files || input.files.length === 0) return
-  
-  const file = input.files[0]
-  const formData = new FormData()
-  formData.append('file', file)
+  if (!props.publicationId) {
+    alert('请先保存族谱到服务器后再上传照片')
+    return
+  }
 
+  const file = input.files[0]
   try {
-    const response = await fetch('http://localhost:8080/api/upload', {
-      method: 'POST',
-      body: formData
-    })
-    const result = await response.json()
-    if (result.code === 200) {
-      emit('update-person-field', { field: 'avatarUrl', value: result.data })
-    } else {
-      alert('上传失败: ' + result.message)
-    }
+    const photoId = await uploadPhoto(props.person.id, props.publicationId, file)
+    emit('update-person-field', { field: 'avatarUrl', value: getPhotoUrl(photoId) })
   } catch (error) {
     console.error('上传出错', error)
     alert('上传出错，请检查后端服务是否启动')
@@ -306,6 +302,13 @@ async function uploadAvatar(event: Event) {
             </button>
           </div>
         </div>
+
+        <section class="detail-link-zone">
+          <button class="relation-btn relation-btn--secondary" type="button" @click="$emit('view-detail')">
+            查看详情页
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </section>
 
         <section class="danger-zone">
           <div>

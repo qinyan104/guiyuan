@@ -1548,6 +1548,26 @@ textarea {
   transition-duration: 50ms;
 }
 
+.detail-link-zone {
+  margin-bottom: 12px;
+}
+
+.detail-link-zone .relation-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.relation-btn--secondary {
+  background: transparent;
+  border-color: rgba(124, 98, 69, 0.12);
+  color: var(--accent-amber, #a96e35);
+}
+
+.relation-btn--secondary:hover:not(:disabled) {
+  background: rgba(169, 110, 53, 0.06);
+  border-color: rgba(169, 110, 53, 0.24);
+}
+
 .danger-zone {
   display: flex;
   justify-content: space-between;

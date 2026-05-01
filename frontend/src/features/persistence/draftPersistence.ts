@@ -8,7 +8,7 @@ import {
   type ValidationIssue,
   type ValidationResult,
 } from '../../types/family'
-import { normalizePublicationData, validatePublicationData, validateSettings } from '../validation/draftSchema'
+import { normalizePublicationData, normalizeSettings, validatePublicationData, validateSettings } from '../validation/draftSchema'
 
 function cloneJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
@@ -64,7 +64,7 @@ function coerceDraftPackage(input: unknown, savedAt = new Date().toISOString()):
   }
 
   const publicationIssues = validatePublicationData(rawPublication)
-  const settings = mergeSettings(rawSettings)
+  const settings = normalizeSettings(mergeSettings(rawSettings))
   const settingsIssues = validateSettings(settings)
   const issues = [...publicationIssues, ...settingsIssues]
 
@@ -95,7 +95,7 @@ export function createDraftPackage(
     version: DRAFT_PACKAGE_VERSION,
     savedAt,
     publication: normalizePublicationData(cloneJson(publication)),
-    settings: mergeSettings(cloneJson(settings)),
+    settings: normalizeSettings(mergeSettings(cloneJson(settings))),
   }
 }
 

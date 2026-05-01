@@ -64,11 +64,27 @@ export const THEME_OPTIONS: ThemeOption[] = [
 
 const STORAGE_KEY = 'genealogy-publication-studio:theme'
 
+function safeStorageGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function safeStorageSet(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // ignore storage failures
+  }
+}
+
 export function useTheme() {
   const currentTheme = ref<ThemeId>(loadTheme())
 
   function loadTheme(): ThemeId {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = safeStorageGet(STORAGE_KEY)
     if (stored && THEME_OPTIONS.some((t) => t.id === stored)) {
       return stored as ThemeId
     }
@@ -78,7 +94,7 @@ export function useTheme() {
   function setTheme(themeId: ThemeId) {
     currentTheme.value = themeId
     document.documentElement.setAttribute('data-theme', themeId)
-    localStorage.setItem(STORAGE_KEY, themeId)
+    safeStorageSet(STORAGE_KEY, themeId)
   }
 
   // Apply on init

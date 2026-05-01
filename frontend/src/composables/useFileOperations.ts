@@ -31,6 +31,7 @@ interface FileOperationsDeps {
   initializeHistoryBaseline: () => void
   canvasRef: Ref<{ getSvgElement?: () => SVGSVGElement | null; resetView?: () => void } | null>
   layout: PublicationStateReturn['layout']
+  onImport?: () => void
 }
 
 export function useFileOperations(deps: FileOperationsDeps) {
@@ -51,6 +52,8 @@ export function useFileOperations(deps: FileOperationsDeps) {
     replaceReactiveObject,
     getDefaultSelectedPersonId,
   } = pub
+
+  const onImport = deps.onImport
 
   const draftFileHandle = shallowRef<DraftFileHandle | null>(null)
   const draftFileName = ref('')
@@ -91,7 +94,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     link.href = url
     link.download = fileName
     link.click()
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => URL.revokeObjectURL(url), 0)
   }
 
   function createCurrentDraftJson(): string {
@@ -127,6 +130,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     statusMessage.value = options.statusMessage
     initializeHistoryBaseline()
     canvasRef.value?.resetView?.()
+    onImport?.()
     void nextTick(() => {
       isApplyingFileDraft = false
     })
@@ -214,9 +218,10 @@ export function useFileOperations(deps: FileOperationsDeps) {
       return
     }
 
+    const title = publication.title.trim() || '族谱出版预览'
     const pages = createPrintLayoutPages(layout.value, settings.paper)
     const pageSvgMarkups = pages.map((page) =>
-      serializeStandaloneSvg(createPrintPageSvg(svg, page, publication.title), false),
+      serializeStandaloneSvg(createPrintPageSvg(svg, page, title), false),
     )
     const printWindow = window.open('', '_blank', 'width=1440,height=960')
 
@@ -231,7 +236,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     printWindow.document.open()
     printWindow.document.write(
       createPrintDocument({
-        title: publication.title.trim() || '族谱出版预览',
+        title,
         paper: settings.paper,
         pages,
         pageSvgMarkups,

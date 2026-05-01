@@ -20,6 +20,9 @@ public class User {
     @Column
     private String nickname;
 
+    @Column(nullable = false)
+    private String role = "USER";
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -36,6 +39,8 @@ public class User {
     public void setPassword(String password) { this.password = password; }
     public String getNickname() { return nickname; }
     public void setNickname(String nickname) { this.nickname = nickname; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

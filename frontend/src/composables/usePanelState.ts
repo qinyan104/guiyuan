@@ -5,12 +5,14 @@ export function usePanelState() {
   const layoutPanelOpen = ref(false)
   const editorOpen = ref(false)
   const historyOpen = ref(false)
+  const infoPanelOpen = ref(false)
 
   function toggleLayoutPanel() {
     layoutPanelOpen.value = !layoutPanelOpen.value
     if (layoutPanelOpen.value) {
       overviewOpen.value = false
       historyOpen.value = false
+      infoPanelOpen.value = false
     }
   }
 
@@ -19,6 +21,7 @@ export function usePanelState() {
     if (overviewOpen.value) {
       layoutPanelOpen.value = false
       historyOpen.value = false
+      infoPanelOpen.value = false
     }
   }
 
@@ -27,6 +30,16 @@ export function usePanelState() {
     if (historyOpen.value) {
       layoutPanelOpen.value = false
       overviewOpen.value = false
+      infoPanelOpen.value = false
+    }
+  }
+
+  function toggleInfoPanel() {
+    infoPanelOpen.value = !infoPanelOpen.value
+    if (infoPanelOpen.value) {
+      layoutPanelOpen.value = false
+      overviewOpen.value = false
+      historyOpen.value = false
     }
   }
 
@@ -35,6 +48,7 @@ export function usePanelState() {
     overviewOpen.value = false
     editorOpen.value = false
     historyOpen.value = false
+    infoPanelOpen.value = false
   }
 
   return {
@@ -42,9 +56,11 @@ export function usePanelState() {
     layoutPanelOpen,
     editorOpen,
     historyOpen,
+    infoPanelOpen,
     toggleLayoutPanel,
     toggleOverviewPanel,
     toggleHistoryPanel,
+    toggleInfoPanel,
     closeAllPanels,
   }
 }

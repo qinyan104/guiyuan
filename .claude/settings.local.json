@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vue-tsc *)",
+      "Bash(npx vitest *)",
+      "Bash(./mvnw compile *)",
+      "Bash(./mvnw clean *)",
+      "Bash(./mvnw package *)",
+      "Bash(java -Dfile.encoding=UTF-8 -jar target/genealogy-server-0.0.1-SNAPSHOT.jar)"
+    ]
+  }
+}

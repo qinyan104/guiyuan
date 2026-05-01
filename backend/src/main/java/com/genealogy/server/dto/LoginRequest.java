@@ -1,7 +1,15 @@
 package com.genealogy.server.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class LoginRequest {
+    @NotBlank(message = "用户名不能为空")
+    @Size(min = 2, max = 30, message = "用户名长度 2-30 个字符")
     private String username;
+
+    @NotBlank(message = "密码不能为空")
+    @Size(min = 4, max = 100, message = "密码长度 4-100 个字符")
     private String password;
 
     public String getUsername() { return username; }

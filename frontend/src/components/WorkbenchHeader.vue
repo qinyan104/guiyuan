@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-
 import type { ThemeId } from '../composables/useTheme'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 
@@ -14,7 +12,7 @@ interface SampleGroup {
   samples: SampleOption[]
 }
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     fileName?: string
     dirty?: boolean
@@ -45,69 +43,39 @@ const emit = defineEmits<{
   (event: 'print-publication'): void
   (event: 'change-theme', themeId: ThemeId): void
   (event: 'logout'): void
+  (event: 'go-back'): void
+  (event: 'view-stats'): void
+  (event: 'view-timeline'): void
 }>()
-
-const importInputRef = ref<HTMLInputElement | null>(null)
-
-const fileLabel = computed(() => props.fileName || '未绑定文件')
-const fileStateLabel = computed(() => (props.dirty ? '待保存' : '已保存'))
-const saveAsLabel = computed(() => (props.nativeFileAccess ? '另存为' : '下载 JSON'))
-const fileStateClass = computed(() =>
-  props.dirty ? 'topbar__status-state topbar__status-state--dirty' : 'topbar__status-state topbar__status-state--saved',
-)
-
-function openJsonImport() {
-  importInputRef.value?.click()
-}
-
-function openDraftFile() {
-  if (props.nativeFileAccess) {
-    emit('open-file')
-    return
-  }
-
-  openJsonImport()
-}
 </script>
 
 <template>
   <header class="topbar">
     <div class="topbar__intro">
-      <p class="topbar__eyebrow">Genealogy Publication</p>
+      <button class="topbar__back-btn" @click="emit('go-back')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        族谱列表
+      </button>
       <h1>族谱无限画布</h1>
     </div>
 
     <div class="topbar__actions" aria-label="工作台操作">
-      <div class="topbar__status-card">
-        <span class="topbar__status-label">草稿文件</span>
-        <strong class="topbar__status-name">{{ fileLabel }}</strong>
-        <em :class="fileStateClass">{{ fileStateLabel }}</em>
-      </div>
-
       <div class="topbar__action-strip">
-        <input
-          ref="importInputRef"
-          class="visually-hidden"
-          type="file"
-          accept="application/json,.json"
-          @change="emit('import-json', $event)"
-        />
-
         <div class="dropdown">
-          <button class="btn btn--secondary dropdown-trigger" type="button">文件 <span class="caret">▾</span></button>
+          <button class="btn btn--secondary dropdown-trigger" type="button">族谱 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu">
-            <button class="dropdown-item" type="button" @click="openDraftFile">打开本地文件...</button>
+            <button class="dropdown-item" type="button" @click="emit('go-back')">返回族谱列表</button>
+            <div class="dropdown-divider"></div>
             <button class="dropdown-item" type="button" @click="emit('create-blank')">新建空白族谱</button>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="emit('save-file')">保存</button>
-            <button class="dropdown-item" type="button" @click="emit('save-file-as')">{{ saveAsLabel }}...</button>
-            <div class="dropdown-divider"></div>
             <button class="dropdown-item" type="button" @click="emit('restore-sample')">恢复默认示例</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" type="button" @click="emit('view-stats')">统计分析</button>
+            <button class="dropdown-item" type="button" @click="emit('view-timeline')">家族时间线</button>
           </div>
         </div>
 
         <div v-if="sampleGroups.length" class="dropdown">
-          <button class="btn btn--secondary dropdown-trigger" type="button">王朝示例 <span class="caret">▾</span></button>
+          <button class="btn btn--secondary dropdown-trigger" type="button">王朝示例 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu dropdown-menu--samples">
             <template v-for="(group, groupIndex) in sampleGroups" :key="group.label">
               <p class="dropdown-section-title">{{ group.label }}</p>
@@ -126,7 +94,7 @@ function openDraftFile() {
         </div>
 
         <div class="dropdown">
-          <button class="btn btn--secondary dropdown-trigger" type="button">导出 <span class="caret">▾</span></button>
+          <button class="btn btn--secondary dropdown-trigger" type="button">导出 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu">
             <button class="dropdown-item" type="button" @click="emit('download-svg')">导出高清 SVG</button>
             <button class="dropdown-item" type="button" @click="emit('print-publication')">进入打印排版模式</button>
@@ -139,7 +107,7 @@ function openDraftFile() {
 
         <div class="dropdown dropdown--right">
           <button class="btn btn--ghost dropdown-trigger user-trigger" type="button">
-            <span class="user-avatar">👤</span>
+            <span class="user-avatar">&#x1F464;</span>
             <span class="user-name">{{ currentUsername || '管理员' }}</span>
           </button>
           <div class="dropdown-menu">
@@ -268,5 +236,26 @@ function openDraftFile() {
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--text-main);
+}
+
+.topbar__back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  color: var(--text-soft, #888);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  margin-right: 0.75rem;
+}
+
+.topbar__back-btn:hover {
+  color: var(--text-main, #1a1a1a);
+  background: var(--bg-hover, rgba(0,0,0,0.04));
 }
 </style>
