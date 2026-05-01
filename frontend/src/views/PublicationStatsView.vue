@@ -204,6 +204,8 @@ function historyActionLabel(action: string): string {
     UPDATE_PUB: '保存修改',
     DELETE_PUB: '删除族谱',
     BACKUP: '数据库备份',
+    UPDATE_PUB_META: '修改信息',
+    UPDATE_PERSON: '编辑人物',
   }
   return map[action] || action
 }
@@ -211,6 +213,8 @@ function historyActionLabel(action: string): string {
 function historyActionClass(action: string): string {
   if (action.includes('DELETE')) return 'history-tag history-tag--danger'
   if (action.includes('CREATE')) return 'history-tag history-tag--success'
+  if (action === 'UPDATE_PUB_META') return 'history-tag history-tag--purple'
+  if (action === 'UPDATE_PERSON') return 'history-tag history-tag--indigo'
   if (action.includes('UPDATE')) return 'history-tag history-tag--info'
   return 'history-tag'
 }
@@ -237,6 +241,28 @@ function formatHistoryDate(dateStr: string) {
     <div v-if="loading" class="loading-state">加载中...</div>
 
     <main v-else class="stats-content">
+      <!-- Family Profile Hero -->
+      <section v-if="pubData" class="family-hero">
+        <div class="family-hero__header">
+          <h2 class="family-hero__title">{{ pubData.title }}</h2>
+          <p v-if="pubData.subtitle" class="family-hero__subtitle">{{ pubData.subtitle }}</p>
+        </div>
+        <div class="family-hero__meta" v-if="pubData.info?.ancestralOrigin || pubData.info?.hallName || pubData.info?.familyMotto">
+          <div class="meta-item" v-if="pubData.info.ancestralOrigin">
+            <span class="meta-label">起源地</span>
+            <span class="meta-value">{{ pubData.info.ancestralOrigin }}</span>
+          </div>
+          <div class="meta-item" v-if="pubData.info.hallName">
+            <span class="meta-label">堂号</span>
+            <span class="meta-value">{{ pubData.info.hallName }}</span>
+          </div>
+          <div class="meta-item" v-if="pubData.info.familyMotto">
+            <span class="meta-label">家训</span>
+            <span class="meta-value">{{ pubData.info.familyMotto }}</span>
+          </div>
+        </div>
+      </section>
+
       <!-- Overview Cards -->
       <div class="overview-grid">
         <div class="ov-card">
@@ -443,6 +469,59 @@ function formatHistoryDate(dateStr: string) {
   max-width: 1000px;
   margin: 0 auto;
   padding: 1.5rem 2rem 3rem;
+}
+
+/* ── Family Hero ── */
+.family-hero {
+  background: var(--bg-panel, #fff);
+  border: 1px solid var(--border-color, rgba(0,0,0,0.06));
+  border-radius: 14px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.family-hero__title {
+  font-size: 1.75rem;
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 800;
+  color: var(--text-main, #1a1a1a);
+  margin: 0 0 0.25rem;
+}
+
+.family-hero__subtitle {
+  font-size: 1rem;
+  color: var(--text-soft, #888);
+  margin: 0 0 1rem;
+}
+
+.family-hero__meta {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border-color, rgba(0,0,0,0.06));
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.meta-label {
+  font-size: 0.72rem;
+  color: var(--text-soft, #888);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.meta-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main, #1a1a1a);
 }
 
 /* ── Overview Cards ── */
@@ -763,6 +842,16 @@ function formatHistoryDate(dateStr: string) {
 .history-tag--info {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
+}
+
+.history-tag--purple {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+
+.history-tag--indigo {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
 }
 
 .history-user {

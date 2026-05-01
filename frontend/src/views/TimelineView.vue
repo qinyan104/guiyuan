@@ -296,12 +296,13 @@ function goBack() {
   position: relative;
   padding: 0.6rem 0 0.6rem 1rem;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.2s;
   border-radius: 10px;
 }
 
 .tl-event:hover {
-  background: var(--bg-hover, rgba(0,0,0,0.02));
+  background: var(--bg-hover, rgba(0,0,0,0.03));
+  transform: translateX(4px);
 }
 
 .tl-event__dot {
