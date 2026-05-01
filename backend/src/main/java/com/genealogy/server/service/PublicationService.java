@@ -224,6 +224,28 @@ public class PublicationService {
     }
 
     /**
+     * 更新单个人物的信息（不涉及关系）
+     */
+    @Transactional
+    public void updatePerson(Long publicationId, String personId, Map<String, Object> data) {
+        Person person = personRepository.findByPublicationIdAndPersonId(publicationId, personId)
+                .orElseThrow(() -> new NotFoundException("人物不存在"));
+
+        if (data.containsKey("name")) person.setName((String) data.get("name"));
+        if (data.containsKey("gender")) person.setGender((String) data.get("gender"));
+        if (data.containsKey("birth")) person.setBirth((String) data.get("birth"));
+        if (data.containsKey("death")) person.setDeath((String) data.get("death"));
+        if (data.containsKey("deceased")) person.setDeceased((Boolean) data.get("deceased"));
+        if (data.containsKey("age")) person.setAge((String) data.get("age"));
+        if (data.containsKey("titleName")) person.setTitleName((String) data.get("titleName"));
+        if (data.containsKey("clan")) person.setClan((String) data.get("clan"));
+        if (data.containsKey("note")) person.setNote((String) data.get("note"));
+        if (data.containsKey("highlightRole")) person.setHighlightRole((String) data.get("highlightRole"));
+
+        personRepository.save(person);
+    }
+
+    /**
      * 更新族谱元数据（不触及人物和家庭关系）
      */
     @Transactional

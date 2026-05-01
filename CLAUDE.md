@@ -34,6 +34,7 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 - **路由**：`src/router/index.ts` — 7 条路由，含登录守卫和管理员权限守卫
 - **API 层**：`src/api/` — axios 封装，使用 `VITE_API_BASE_URL` 环境变量及 Vite Proxy (`/api` -> `8080`)
 - **状态管理**：无全局 store，状态分布在 composables 中（usePublicationState、usePanelState 等）
+- **核心管理**：`views/PublicationListView.vue` 负责族谱列表 CRUD 及元数据（简介、堂号等）编辑
 - **核心编辑器**：`views/WorkbenchView.vue` 协调历史管理、自动同步（带 `syncStatus` 反馈）与文件操作
 - **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置和连线
 - **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）

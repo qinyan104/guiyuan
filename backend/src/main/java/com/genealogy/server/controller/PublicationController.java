@@ -84,6 +84,19 @@ public class PublicationController {
         return ApiResponse.success("族谱信息已更新", null);
     }
 
+    @PutMapping("/{pubId}/people/{personId}")
+    public ApiResponse<Void> updatePerson(
+            @PathVariable Long pubId,
+            @PathVariable String personId,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+        resolveUserId(request);
+        publicationService.updatePerson(pubId, personId, body);
+        logAction(username, "UPDATE_PERSON", "更新人物「" + body.getOrDefault("name", personId) + "」的详细信息", pubId);
+        return ApiResponse.success("个人信息已更新", null);
+    }
+
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");

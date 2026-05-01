@@ -1,5 +1,5 @@
 import http from './http'
-import type { PublicationData, PublicationSettings, PublicationInfo } from '../types/family'
+import type { PublicationData, PublicationSettings, PublicationInfo, Person } from '../types/family'
 
 export interface ApiResponse<T> {
   code: number
@@ -72,6 +72,14 @@ export async function updatePublicationMetadata(
     subtitle,
     info,
   })
+}
+
+export async function updatePerson(
+  pubId: number,
+  personId: string,
+  personData: Partial<Person>,
+): Promise<void> {
+  await http.put(`/publications/${pubId}/people/${personId}`, personData)
 }
 
 export async function deletePublication(id: number): Promise<void> {
