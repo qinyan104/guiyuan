@@ -97,6 +97,25 @@ const minimapData = computed(() => {
   }
 })
 
+const BUFFER_SIZE = 500
+
+const visibleWorldRect = computed(() => {
+  const zoom = props.settings.zoom
+  const visibleWorldWidth = viewportWidth.value / zoom
+  const visibleWorldHeight = viewportHeight.value / zoom
+
+  // 计算当前视口中心在世界坐标系中的位置
+  const worldLeft = props.layout.width / 2 - visibleWorldWidth / 2 - panX.value / zoom
+  const worldTop = props.layout.height / 2 - visibleWorldHeight / 2 - panY.value / zoom
+
+  return {
+    left: worldLeft - BUFFER_SIZE,
+    top: worldTop - BUFFER_SIZE,
+    right: worldLeft + visibleWorldWidth + BUFFER_SIZE,
+    bottom: worldTop + visibleWorldHeight + BUFFER_SIZE,
+  }
+})
+
 function drawMinimapCanvas() {
   if (rafId) cancelAnimationFrame(rafId)
   rafId = requestAnimationFrame(() => {
