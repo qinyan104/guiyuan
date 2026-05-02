@@ -116,6 +116,22 @@ const visibleWorldRect = computed(() => {
   }
 })
 
+const visibleCards = computed(() => {
+  const rect = visibleWorldRect.value
+  return props.layout.cards.filter((card) => {
+    // 简单的矩形碰撞检测：卡片是否与视口(含缓冲区)相交
+    const cardRight = card.x + card.width
+    const cardBottom = card.y + card.height
+
+    return !(
+      card.x > rect.right ||
+      cardRight < rect.left ||
+      card.y > rect.bottom ||
+      cardBottom < rect.top
+    )
+  })
+})
+
 function drawMinimapCanvas() {
   if (rafId) cancelAnimationFrame(rafId)
   rafId = requestAnimationFrame(() => {
@@ -390,7 +406,7 @@ defineExpose({
 
           <g filter="url(#cardShadow)">
             <PersonCardSvg
-              v-for="card in layout.cards"
+              v-for="card in visibleCards"
               :key="card.personId"
               :data-person-id="card.personId"
               :person="resolvePerson(card.personId)"
