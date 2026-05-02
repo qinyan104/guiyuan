@@ -19,7 +19,8 @@ const emit = defineEmits<{
 
 const svgRef = ref<SVGSVGElement | null>(null)
 const viewportRef = ref<HTMLDivElement | null>(null)
-const minimapRef = ref<HTMLDivElement | null>(null)
+const minimapContainerRef = ref<HTMLDivElement | null>(null)
+const minimapCanvasRef = ref<HTMLCanvasElement | null>(null)
 const isDragging = ref(false)
 const panX = ref(0)
 const panY = ref(0)
@@ -33,10 +34,18 @@ let dragStartY = 0
 let panStartX = 0
 let panStartY = 0
 let resizeObserver: ResizeObserver | null = null
+let rafId: number | null = null
 
 const MINIMAP_WIDTH = 220
 const MINIMAP_HEIGHT = 164
 const DRAG_SELECT_THRESHOLD = 5
+
+const MINIMAP_COLORS = {
+  male: '#4b7bec',
+  female: '#eb3b5a',
+  unknown: '#a5b1c2',
+  selected: '#f7b731',
+}
 
 const stageStyle = computed(() => ({
   width: `${props.layout.width * props.settings.zoom}px`,
@@ -88,13 +97,46 @@ const minimapData = computed(() => {
   }
 })
 
-const minimapNodes = computed(() =>
-  props.layout.cards.map((card) => ({
-    id: card.personId,
-    left: minimapData.value.paperOffsetX + (card.x + card.width / 2) * minimapData.value.scale,
-    top: minimapData.value.paperOffsetY + (card.y + card.height / 2) * minimapData.value.scale,
-    selected: card.personId === props.selectedPersonId,
-  })),
+function drawMinimapCanvas() {
+  if (rafId) cancelAnimationFrame(rafId)
+  rafId = requestAnimationFrame(() => {
+    const canvas = minimapCanvasRef.value
+    if (!canvas) return
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    const scale = minimapData.value.scale
+
+    props.layout.cards.forEach((card) => {
+      const person = props.publication.people[card.personId]
+      const isSelected = card.personId === props.selectedPersonId
+
+      if (isSelected) {
+        ctx.fillStyle = MINIMAP_COLORS.selected
+      } else {
+        ctx.fillStyle = person?.gender === 'female' ? MINIMAP_COLORS.female : person?.gender === 'male' ? MINIMAP_COLORS.male : MINIMAP_COLORS.unknown
+      }
+
+      const x = (card.x + card.width / 2) * scale
+      const y = (card.y + card.height / 2) * scale
+      const size = isSelected ? 4 : 3
+
+      ctx.fillRect(x - size / 2, y - size / 2, size, size)
+    })
+  })
+}
+
+import { watch } from 'vue'
+
+watch(
+  () => [props.layout.cards, props.selectedPersonId, minimapData.value.scale],
+  () => {
+    drawMinimapCanvas()
+  },
+  { immediate: true, deep: true },
 )
 
 function resolvePerson(personId: string): Person {
@@ -191,11 +233,11 @@ function handleWheel(event: WheelEvent) {
 }
 
 function updatePanFromMinimap(clientX: number, clientY: number) {
-  if (!minimapRef.value) {
+  if (!minimapContainerRef.value) {
     return
   }
 
-  const rect = minimapRef.value.getBoundingClientRect()
+  const rect = minimapContainerRef.value.getBoundingClientRect()
   const localX = clientX - rect.left
   const localY = clientY - rect.top
   const worldX = clamp((localX - minimapData.value.paperOffsetX) / minimapData.value.scale, 0, props.layout.width)
@@ -208,7 +250,7 @@ function updatePanFromMinimap(clientX: number, clientY: number) {
 function handleMinimapPointerDown(event: PointerEvent) {
   event.stopPropagation()
   isMinimapDragging.value = true
-  minimapRef.value?.setPointerCapture(event.pointerId)
+  minimapContainerRef.value?.setPointerCapture(event.pointerId)
   updatePanFromMinimap(event.clientX, event.clientY)
 }
 
@@ -229,8 +271,8 @@ function handleMinimapPointerUp(event: PointerEvent) {
   event.stopPropagation()
   isMinimapDragging.value = false
 
-  if (minimapRef.value?.hasPointerCapture(event.pointerId)) {
-    minimapRef.value.releasePointerCapture(event.pointerId)
+  if (minimapContainerRef.value?.hasPointerCapture(event.pointerId)) {
+    minimapContainerRef.value.releasePointerCapture(event.pointerId)
   }
 }
 
@@ -343,7 +385,7 @@ defineExpose({
     </div>
 
     <div
-      ref="minimapRef"
+      ref="minimapContainerRef"
       class="canvas-minimap"
       @pointerdown="handleMinimapPointerDown"
       @pointermove="handleMinimapPointerMove"
@@ -365,12 +407,11 @@ defineExpose({
             height: `${minimapData.paperHeight}px`,
           }"
         >
-          <div
-            v-for="node in minimapNodes"
-            :key="node.id"
-            class="canvas-minimap__node"
-            :class="{ 'canvas-minimap__node--selected': node.selected }"
-            :style="{ left: `${node.left - minimapData.paperOffsetX}px`, top: `${node.top - minimapData.paperOffsetY}px` }"
+          <canvas
+            ref="minimapCanvasRef"
+            :width="minimapData.paperWidth"
+            :height="minimapData.paperHeight"
+            class="canvas-minimap__canvas"
           />
 
           <div
