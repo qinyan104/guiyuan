@@ -1691,19 +1691,9 @@ textarea {
   border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.1));
 }
 
-.canvas-minimap__node {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--minimap-node);
-  transform: translate(-50%, -50%);
-}
-
-.canvas-minimap__node--selected {
-  width: 6px;
-  height: 6px;
-  background: var(--minimap-node-selected);
+.canvas-minimap__canvas {
+  display: block;
+  pointer-events: none;
 }
 
 .canvas-minimap__viewport {

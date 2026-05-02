@@ -320,6 +320,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
+  if (rafId) cancelAnimationFrame(rafId)
 })
 
 defineExpose({
