@@ -256,7 +256,7 @@ function formatHistoryDate(dateStr: string) {
             <span class="meta-label">堂号</span>
             <span class="meta-value">{{ pubData.info.hallName }}</span>
           </div>
-          <div class="meta-item" v-if="pubData.info.familyMotto">
+          <div class="meta-item meta-item--motto" v-if="pubData.info.familyMotto">
             <span class="meta-label">家训</span>
             <span class="meta-value">{{ pubData.info.familyMotto }}</span>
           </div>
@@ -266,26 +266,32 @@ function formatHistoryDate(dateStr: string) {
       <!-- Overview Cards -->
       <div class="overview-grid">
         <div class="ov-card">
+          <div class="ov-card__bg">族</div>
           <span class="ov-card__number">{{ totalCount }}</span>
           <span class="ov-card__label">总人数</span>
         </div>
         <div class="ov-card ov-card--male">
+          <div class="ov-card__bg">♂</div>
           <span class="ov-card__number">{{ maleCount }}</span>
           <span class="ov-card__label">男性</span>
         </div>
         <div class="ov-card ov-card--female">
+          <div class="ov-card__bg">♀</div>
           <span class="ov-card__number">{{ femaleCount }}</span>
           <span class="ov-card__label">女性</span>
         </div>
-        <div class="ov-card">
+        <div class="ov-card ov-card--gen">
+          <div class="ov-card__bg">世代</div>
           <span class="ov-card__number">{{ generationCount || '-' }}</span>
-          <span class="ov-card__label">世代</span>
+          <span class="ov-card__label">世代数</span>
         </div>
-        <div class="ov-card">
+        <div class="ov-card ov-card--alive">
+          <div class="ov-card__bg">👥</div>
           <span class="ov-card__number">{{ aliveCount }}</span>
           <span class="ov-card__label">在世</span>
         </div>
-        <div class="ov-card">
+        <div class="ov-card ov-card--deceased">
+          <div class="ov-card__bg">✝</div>
           <span class="ov-card__number">{{ deceasedCount }}</span>
           <span class="ov-card__label">已故</span>
         </div>
@@ -468,107 +474,159 @@ function formatHistoryDate(dateStr: string) {
 .stats-content {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 1.5rem 2rem 3rem;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 /* ── Family Hero ── */
 .family-hero {
-  background: var(--bg-panel, #fff);
+  background: linear-gradient(135deg, var(--bg-panel, #fff) 0%, #fffdfa 100%);
   border: 1px solid var(--border-color, rgba(0,0,0,0.06));
-  border-radius: 14px;
-  padding: 1.5rem 2rem;
-  margin-bottom: 1.5rem;
+  border-radius: 20px;
+  padding: 3rem 2rem;
   text-align: center;
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
 }
 
 .family-hero__title {
-  font-size: 1.75rem;
+  font-size: 2.25rem;
   font-family: 'Noto Serif SC', serif;
-  font-weight: 800;
+  font-weight: 900;
   color: var(--text-main, #1a1a1a);
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
 }
 
 .family-hero__subtitle {
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: var(--text-soft, #888);
-  margin: 0 0 1rem;
+  margin: 0 0 2rem;
+  font-weight: 500;
 }
 
 .family-hero__meta {
   display: flex;
   justify-content: center;
-  gap: 2rem;
+  gap: 3rem;
   flex-wrap: wrap;
-  padding-top: 1rem;
-  border-top: 1px dashed var(--border-color, rgba(0,0,0,0.06));
+  padding-top: 2rem;
+  border-top: 1px dashed var(--border-color, rgba(0,0,0,0.1));
 }
 
 .meta-item {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
+  position: relative;
+  padding: 0 1rem;
 }
 
+.meta-item::after {
+  content: "";
+  position: absolute;
+  right: -1.5rem;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: var(--border-color, rgba(0,0,0,0.06));
+}
+
+.meta-item:last-child::after { display: none; }
+
 .meta-label {
-  font-size: 0.72rem;
-  color: var(--text-soft, #888);
-  font-weight: 600;
+  font-size: 0.7rem;
+  color: var(--text-soft, #999);
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.15em;
 }
 
 .meta-value {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: var(--text-main, #1a1a1a);
+  color: var(--accent-ink, #6a4b2f);
+  font-family: 'Noto Serif SC', serif;
+}
+
+.meta-item--motto .meta-value {
+  font-style: italic;
+  color: var(--accent-amber, #a96e35);
 }
 
 /* ── Overview Cards ── */
 .overview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
 }
 
 .ov-card {
   background: var(--bg-panel, #fff);
   border: 1px solid var(--border-color, rgba(0,0,0,0.06));
-  border-radius: 12px;
-  padding: 1rem;
-  text-align: center;
+  border-radius: 16px;
+  padding: 1.5rem 1.25rem;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  cursor: default;
+}
+
+.ov-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 20px -10px rgba(0,0,0,0.08);
+}
+
+.ov-card__bg {
+  position: absolute;
+  right: -10px;
+  bottom: -15px;
+  font-size: 5rem;
+  font-weight: 900;
+  opacity: 0.04;
+  user-select: none;
+  pointer-events: none;
+  font-family: 'Noto Serif SC', serif;
 }
 
 .ov-card__number {
   display: block;
-  font-size: 1.5rem;
-  font-weight: 800;
+  font-size: 2rem;
+  font-weight: 900;
   color: var(--text-main, #1a1a1a);
-  line-height: 1.2;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+  position: relative;
 }
 
 .ov-card__label {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-soft, #888);
   font-weight: 600;
+  position: relative;
 }
 
 .ov-card--male .ov-card__number { color: #3b82f6; }
 .ov-card--female .ov-card__number { color: #ec4899; }
+.ov-card--gen .ov-card__number { color: var(--accent-amber, #a96e35); }
+.ov-card--alive .ov-card__number { color: #10b981; }
+.ov-card--deceased .ov-card__number { color: #6b7280; }
 
 /* ── Charts Grid ── */
 .charts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .chart-card {
   background: var(--bg-panel, #fff);
   border: 1px solid var(--border-color, rgba(0,0,0,0.06));
-  border-radius: 14px;
-  padding: 1.25rem;
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
 
 .chart-card--wide {
@@ -576,27 +634,41 @@ function formatHistoryDate(dateStr: string) {
 }
 
 .chart-title {
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--text-main, #1a1a1a);
-  margin: 0 0 1rem;
+  margin: 0 0 1.5rem;
   font-family: 'Noto Serif SC', serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-title::before {
+  content: "";
+  width: 4px;
+  height: 1rem;
+  background: var(--accent-amber, #a96e35);
+  border-radius: 2px;
 }
 
 .chart-empty {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--text-soft, #aaa);
   text-align: center;
-  padding: 1.5rem 0;
+  padding: 2rem 0;
+  border: 1px dashed var(--border-color, rgba(0,0,0,0.1));
+  border-radius: 12px;
 }
 
 /* ── Gender Bar ── */
 .gender-bar {
   display: flex;
-  height: 32px;
-  border-radius: 8px;
+  height: 40px;
+  border-radius: 20px;
   overflow: hidden;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .gender-bar__male {
@@ -605,9 +677,9 @@ function formatHistoryDate(dateStr: string) {
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 0.75rem;
-  font-weight: 700;
-  transition: width 0.5s ease;
+  font-size: 0.85rem;
+  font-weight: 800;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .gender-bar__female {
@@ -616,94 +688,99 @@ function formatHistoryDate(dateStr: string) {
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 0.75rem;
-  font-weight: 700;
-  transition: width 0.5s ease;
+  font-size: 0.85rem;
+  font-weight: 800;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .gender-legend,
 .timeline-legend {
   display: flex;
-  gap: 1.25rem;
-  font-size: 0.75rem;
+  gap: 1.5rem;
+  font-size: 0.8rem;
   color: var(--text-soft, #888);
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
   font-weight: 600;
 }
 
 .legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
 }
 
 .legend-dot--male { background: #3b82f6; }
 .legend-dot--female { background: #ec4899; }
-.legend-dot--birth { background: #16a34a; }
-.legend-dot--death { background: #888; }
+.legend-dot--birth { background: #10b981; }
+.legend-dot--death { background: #6b7280; }
 
 /* ── Bar Chart ── */
 .bar-chart {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .bar-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .bar-label {
-  width: 56px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  width: 60px;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--text-soft, #888);
   text-align: right;
   flex-shrink: 0;
 }
 
 .bar-label--surname {
-  width: 24px;
-  font-size: 0.85rem;
+  width: 32px;
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--text-main, #1a1a1a);
   text-align: center;
+  font-family: 'Noto Serif SC', serif;
 }
 
 .bar-track {
   flex: 1;
-  height: 18px;
+  height: 12px;
   background: var(--bg-shell, #f0ebe3);
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--accent-ink, #6a4b2f), var(--accent-amber, #a96e35));
-  border-radius: 4px;
-  transition: width 0.5s ease;
-  min-width: 2px;
+  border-radius: 6px;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 4px;
+  box-shadow: 0 0 10px rgba(169, 110, 53, 0.2);
 }
 
 .bar-fill--lifespan {
-  background: linear-gradient(90deg, #16a34a, #4ade80);
+  background: linear-gradient(90deg, #10b981, #34d399);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
 }
 
 .bar-fill--surname {
   background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
 }
 
 .bar-value {
-  width: 28px;
-  font-size: 0.72rem;
-  font-weight: 700;
+  width: 32px;
+  font-size: 0.8rem;
+  font-weight: 800;
   color: var(--text-main, #1a1a1a);
   text-align: left;
   flex-shrink: 0;
@@ -712,8 +789,11 @@ function formatHistoryDate(dateStr: string) {
 /* ── Lifespan Summary ── */
 .lifespan-summary {
   display: flex;
-  gap: 1.25rem;
-  margin-bottom: 0.5rem;
+  gap: 2rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--bg-shell, #f9f7f2);
+  border-radius: 12px;
 }
 
 .ls-item {
@@ -722,34 +802,37 @@ function formatHistoryDate(dateStr: string) {
 }
 
 .ls-value {
-  font-size: 1.25rem;
-  font-weight: 800;
+  font-size: 1.5rem;
+  font-weight: 900;
   color: var(--text-main, #1a1a1a);
+  line-height: 1.2;
 }
 
 .ls-label {
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: var(--text-soft, #888);
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* ── Timeline Chart ── */
 .timeline-chart {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.6rem;
 }
 
 .timeline-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .timeline-label {
   width: 50px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--text-soft, #888);
   text-align: right;
   flex-shrink: 0;
@@ -759,22 +842,22 @@ function formatHistoryDate(dateStr: string) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .timeline-bar {
-  height: 12px;
-  border-radius: 3px;
-  transition: width 0.5s ease;
-  min-width: 2px;
+  height: 10px;
+  border-radius: 5px;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 4px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding-right: 4px;
+  padding-right: 6px;
 }
 
 .timeline-bar--birth {
-  background: linear-gradient(90deg, #16a34a, #4ade80);
+  background: linear-gradient(90deg, #10b981, #34d399);
 }
 
 .timeline-bar--death {
@@ -782,98 +865,129 @@ function formatHistoryDate(dateStr: string) {
 }
 
 .timeline-bar__val {
-  font-size: 0.6rem;
-  font-weight: 700;
+  font-size: 0.65rem;
+  font-weight: 800;
   color: #fff;
 }
 
-.timeline-legend {
-  margin-top: 0.5rem;
-}
-
-/* ── History List ── */
+/* ── History List (Timeline) ── */
 .history-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.history-list::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2px;
+  background: var(--border-color, rgba(0,0,0,0.06));
 }
 
 .history-item {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.55rem 0;
-  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.04));
-  font-size: 0.82rem;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 0;
+  position: relative;
 }
 
-.history-item:last-child {
-  border-bottom: none;
+.history-item::before {
+  content: "";
+  position: absolute;
+  left: -1.5rem;
+  top: 1.4rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bg-panel, #fff);
+  border: 2px solid var(--accent-amber, #a96e35);
+  transform: translateX(-3px);
+  z-index: 1;
 }
 
 .history-time {
-  width: 70px;
-  font-size: 0.72rem;
-  color: var(--text-soft, #888);
+  width: 100px;
+  font-size: 0.75rem;
+  color: var(--text-soft, #999);
+  font-weight: 600;
+  padding-top: 0.25rem;
   flex-shrink: 0;
 }
 
 .history-tag {
   display: inline-block;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  background: rgba(100,100,100,0.1);
-  color: var(--text-sub, #555);
+  padding: 0.2rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: rgba(100,100,100,0.06);
+  color: var(--text-sub, #666);
   flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.03);
 }
 
 .history-tag--danger {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.08);
   color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.1);
 }
 
 .history-tag--success {
-  background: rgba(22, 163, 74, 0.1);
-  color: #16a34a;
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.1);
 }
 
 .history-tag--info {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(59, 130, 246, 0.08);
   color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.1);
 }
 
 .history-tag--purple {
-  background: rgba(168, 85, 247, 0.1);
+  background: rgba(168, 85, 247, 0.08);
   color: #a855f7;
+  border-color: rgba(168, 85, 247, 0.1);
 }
 
 .history-tag--indigo {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(99, 102, 241, 0.08);
   color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.1);
 }
 
 .history-user {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-main, #1a1a1a);
   flex-shrink: 0;
+  font-size: 0.85rem;
+  padding-top: 0.15rem;
 }
 
 .history-detail {
   color: var(--text-soft, #888);
-  font-size: 0.78rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.85rem;
+  padding-top: 0.15rem;
+  flex: 1;
 }
 
-@media (max-width: 700px) {
-  .stats-content { padding: 1rem; }
-  .overview-grid { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 850px) {
   .charts-grid { grid-template-columns: 1fr; }
-  .lifespan-summary { flex-wrap: wrap; }
-  .history-item { flex-wrap: wrap; }
-  .history-detail { width: 100%; }
+  .family-hero__meta { gap: 1.5rem; }
+  .meta-item::after { display: none; }
+}
+
+@media (max-width: 600px) {
+  .stats-content { padding: 1rem; }
+  .overview-grid { grid-template-columns: repeat(2, 1fr); }
+  .history-item { flex-direction: column; gap: 0.5rem; padding-left: 0.5rem; }
+  .history-time { width: auto; }
+  .history-item::before { top: 1rem; }
 }
 </style>
+
