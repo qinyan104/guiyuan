@@ -124,6 +124,27 @@ function formatDate(dateStr: string) {
     minute: '2-digit',
   })
 }
+
+async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
+  if (creatingTemplate.value) return
+
+  creatingTemplate.value = true
+  const baseTitle = sample.publication.title || sample.label
+  const newTitle = baseTitle + ' (副本)'
+
+  try {
+    const id = await createPublication(
+      sample.publication,
+      defaultSettings,
+      newTitle,
+    )
+    router.push({ name: 'workbench', params: { id } })
+  } catch (err: any) {
+    alert('创建模板失败: ' + (err.message || '未知错误'))
+  } finally {
+    creatingTemplate.value = false
+  }
+}
 </script>
 
 <template>
