@@ -166,51 +166,77 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
       <p>加载中...</p>
     </div>
 
-    <div v-else-if="publications.length === 0" class="list-empty">
-      <div class="list-empty__icon">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-      </div>
-      <h3>暂无族谱</h3>
-      <p>点击「新建族谱」开始创建你的第一份族谱</p>
-    </div>
+    <div v-else>
+      <div class="template-section">
+        <h2 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          王朝世系模板
+        </h2>
 
-    <div v-else class="publication-grid">
-      <div
-        v-for="pub in publications"
-        :key="pub.id"
-        class="pub-card"
-        @click="openPublication(pub.id)"
-      >
-        <div class="pub-card__body">
-          <h3 class="pub-card__title">{{ pub.title || '未命名族谱' }}</h3>
-          <p class="pub-card__subtitle">{{ pub.subtitle || '暂无副标题' }}</p>
-          <p v-if="pub.description" class="pub-card__description">{{ pub.description }}</p>
-        </div>
-        <div class="pub-card__footer">
-          <span class="pub-card__date">{{ formatDate(pub.updatedAt) }}</span>
-          <div class="pub-card__actions">
-            <button
-              class="pub-card__action-btn"
-              title="编辑信息"
-              @click.stop="openEditDialog(pub)"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-            </button>
-            <button
-              class="pub-card__action-btn pub-card__delete"
-              title="删除"
-              @click.stop="deleteConfirmId = pub.id"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
+        <div class="template-grid">
+          <div
+            v-for="sample in builtinSamples"
+            :key="sample.id"
+            class="template-card"
+            @click="handleCreateFromTemplate(sample)"
+          >
+            <div class="template-card__icon">
+              {{ sample.id === 'tang' ? '⛩️' : '🏛️' }}
+            </div>
+            <div class="template-card__info">
+              <h3>{{ sample.publication.title }}</h3>
+              <p>{{ sample.publication.subtitle }}</p>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div v-if="deleteConfirmId === pub.id" class="pub-card__confirm" @click.stop>
-          <p>确认删除此族谱？</p>
-          <div class="pub-card__confirm-btns">
-            <button class="btn-confirm-yes" @click="handleDelete(pub.id)">删除</button>
-            <button class="btn-confirm-no" @click="deleteConfirmId = null">取消</button>
+      <div v-if="publications.length === 0" class="list-empty">
+        <div class="list-empty__icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        </div>
+        <h3>暂无族谱</h3>
+        <p>点击「新建族谱」开始创建你的第一份族谱</p>
+      </div>
+
+      <div v-else class="publication-grid">
+        <div
+          v-for="pub in publications"
+          :key="pub.id"
+          class="pub-card"
+          @click="openPublication(pub.id)"
+        >
+          <div class="pub-card__body">
+            <h3 class="pub-card__title">{{ pub.title || '未命名族谱' }}</h3>
+            <p class="pub-card__subtitle">{{ pub.subtitle || '暂无副标题' }}</p>
+            <p v-if="pub.description" class="pub-card__description">{{ pub.description }}</p>
+          </div>
+          <div class="pub-card__footer">
+            <span class="pub-card__date">{{ formatDate(pub.updatedAt) }}</span>
+            <div class="pub-card__actions">
+              <button
+                class="pub-card__action-btn"
+                title="编辑信息"
+                @click.stop="openEditDialog(pub)"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+              </button>
+              <button
+                class="pub-card__action-btn pub-card__delete"
+                title="删除"
+                @click.stop="deleteConfirmId = pub.id"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div v-if="deleteConfirmId === pub.id" class="pub-card__confirm" @click.stop>
+            <p>确认删除此族谱？</p>
+            <div class="pub-card__confirm-btns">
+              <button class="btn-confirm-yes" @click="handleDelete(pub.id)">删除</button>
+              <button class="btn-confirm-no" @click="deleteConfirmId = null">取消</button>
+            </div>
           </div>
         </div>
       </div>
@@ -271,6 +297,14 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
             <button class="btn-dialog-confirm" @click="handleEditSave">保存</button>
           </div>
         </div>
+      </div>
+    </Teleport>
+
+    <!-- Global Loading Overlay -->
+    <Teleport to="body">
+      <div v-if="creatingTemplate" class="creating-overlay">
+        <div class="spinner"></div>
+        <p>正在从模板生成世系图...</p>
       </div>
     </Teleport>
   </div>
@@ -612,4 +646,110 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
   font-size: 0.85rem;
 }
 
+.template-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(169, 110, 53, 0.04);
+  border-radius: 20px;
+  border: 1px dashed rgba(169, 110, 53, 0.2);
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--accent-ink, #6a4b2f);
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.template-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid rgba(169, 110, 53, 0.15);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.template-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(169, 110, 53, 0.12);
+  border-color: var(--accent-amber, #a96e35);
+}
+
+.template-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--accent-ink), var(--accent-amber));
+}
+
+.template-card__icon {
+  font-size: 1.5rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(169, 110, 53, 0.08);
+  border-radius: 10px;
+}
+
+.template-card__info h3 {
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--text-main, #1a1a1a);
+}
+
+.template-card__info p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-soft, #888);
+}
+
+/* Global Loading Overlay */
+.creating-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  color: var(--accent-ink, #6a4b2f);
+  font-weight: 600;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(169, 110, 53, 0.2);
+  border-top-color: var(--accent-amber, #a96e35);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>
