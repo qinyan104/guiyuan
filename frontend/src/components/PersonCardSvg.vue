@@ -135,6 +135,10 @@ const detailStartY = computed(() => {
 
 const noteY = computed(() => props.card.height * 0.47)
 
+const currentTheme = computed(() => document.documentElement.getAttribute('data-theme'))
+const isSu = computed(() => currentTheme.value === 'su-style')
+const isOu = computed(() => currentTheme.value === 'ou-style')
+
 function handleSelect() {
   emit('select', props.person.id)
 }
@@ -142,8 +146,23 @@ function handleSelect() {
 
 <template>
   <g class="person-card" :class="cardClasses" :transform="`translate(${card.x}, ${card.y})`" @click="handleSelect">
+    <defs v-if="isSu">
+      <clipPath :id="`avatar-clip-su-${person.id}`">
+        <circle :cx="card.width / 2" :cy="photoY + photoHeight / 2" :r="photoWidth / 2" />
+      </clipPath>
+    </defs>
+
     <rect class="person-card__panel" :width="card.width" :height="card.height" rx="22" ry="22" />
     <rect class="person-card__inner" x="8" y="8" :width="card.width - 16" :height="card.height - 16" rx="18" ry="18" />
+
+    <!-- Ou Style Folded Edge Effect -->
+    <path
+      v-if="isOu"
+      :d="`M ${card.width - 35} 8 L ${card.width - 8} 35 L ${card.width - 8} 8 Z`"
+      fill="var(--accent-amber)"
+      opacity="0.3"
+    />
+
     <rect
       v-if="imperialBadge"
       class="person-card__accent-frame"
@@ -156,6 +175,9 @@ function handleSelect() {
       ry="20"
     />
     <rect class="person-card__header" x="16" y="16" :width="card.width - 32" height="28" rx="14" ry="14" />
+
+    <!-- Ou Header Line -->
+    <line v-if="isOu" x1="16" y1="16" :x2="card.width - 16" y2="16" stroke="var(--accent-amber)" stroke-width="3" />
 
     <g v-if="imperialBadge">
       <rect
@@ -202,6 +224,14 @@ function handleSelect() {
       {{ person.name }}
     </text>
 
+    <!-- Su Style Name Seal -->
+    <g v-if="isSu" class="card-seal">
+      <rect :x="card.width - 42" :y="85" width="24" height="24" fill="none" stroke="var(--accent-amber)" stroke-width="1.5" />
+      <text :x="card.width - 30" :y="102" font-size="8" text-anchor="middle" fill="var(--accent-amber)" font-family="KaiTi, serif">
+        {{ person.name.slice(0, 2) }}
+      </text>
+    </g>
+
     <g v-if="lineageBadgeLines.length">
       <rect
         class="person-card__lineage-pill"
@@ -232,8 +262,8 @@ function handleSelect() {
         :width="photoWidth"
         :height="photoHeight"
         fill="rgba(169, 110, 53, 0.05)"
-        rx="4"
-        ry="4"
+        :rx="isOu ? 0 : 4"
+        :ry="isOu ? 0 : 4"
       />
       <image
         :href="person.avatarUrl"
@@ -242,6 +272,7 @@ function handleSelect() {
         :width="photoWidth"
         :height="photoHeight"
         preserveAspectRatio="xMidYMid meet"
+        :clip-path="isSu ? `url(#avatar-clip-su-${person.id})` : undefined"
       />
       <rect
         :x="card.width / 2 - photoWidth / 2"
@@ -251,8 +282,8 @@ function handleSelect() {
         fill="none"
         stroke="var(--border-color)"
         stroke-width="1.5"
-        rx="4"
-        ry="4"
+        :rx="isOu ? 0 : (isSu ? photoWidth / 2 : 4)"
+        :ry="isOu ? 0 : (isSu ? photoWidth / 2 : 4)"
       />
     </g>
     <g v-else>
