@@ -99,8 +99,8 @@ async function uploadAvatar(event: Event) {
 
         <div class="editor-focus">
           <div class="editor-focus__title" style="display: flex; align-items: center; gap: 16px;">
-            <div class="avatar-upload" style="position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: rgba(120,120,120,0.1); border: 1px solid var(--border-color); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-              <img v-if="person.avatarUrl" :src="person.avatarUrl" style="width: 100%; height: 100%; object-fit: cover;" />
+            <div class="avatar-upload" style="position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: rgba(169, 110, 53, 0.05); border: 1px solid var(--border-color); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+              <img v-if="person.avatarUrl" :src="person.avatarUrl" style="width: 100%; height: 100%; object-fit: contain;" />
               <div v-else style="font-size: 28px; opacity: 0.5;">👤</div>
               <input type="file" accept="image/*" @change="uploadAvatar" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" title="上传照片" />
             </div>

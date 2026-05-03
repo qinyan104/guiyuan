@@ -226,6 +226,15 @@ function handleSelect() {
     </g>
 
     <g v-if="settings.showPhoto && person.avatarUrl">
+      <rect
+        :x="card.width / 2 - photoWidth / 2"
+        :y="photoY"
+        :width="photoWidth"
+        :height="photoHeight"
+        fill="rgba(169, 110, 53, 0.05)"
+        rx="4"
+        ry="4"
+      />
       <image
         :href="person.avatarUrl"
         :x="card.width / 2 - photoWidth / 2"
@@ -239,7 +248,7 @@ function handleSelect() {
         :y="photoY"
         :width="photoWidth"
         :height="photoHeight"
-        fill="rgba(120,120,120,0.05)"
+        fill="none"
         stroke="var(--border-color)"
         stroke-width="1.5"
         rx="4"
