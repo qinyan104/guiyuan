@@ -30,6 +30,57 @@ const viewportWidth = ref(0)
 const viewportHeight = ref(0)
 const isMinimapDragging = ref(false)
 
+// Theme adaptation
+const currentTheme = ref(document.documentElement.getAttribute('data-theme') || 'parchment')
+const isSu = computed(() => currentTheme.value === 'su-style')
+const isOu = computed(() => currentTheme.value === 'ou-style')
+
+const junctions = computed(() => {
+  if (!isSu.value) return []
+  const junctionPoints = new Set<string>()
+  const endpoints = new Set<string>()
+
+  props.layout.lines.forEach(line => {
+    const p1 = `${line.x1},${line.y1}`
+    const p2 = `${line.x2},${line.y2}`
+    if (endpoints.has(p1)) junctionPoints.add(p1)
+    if (endpoints.has(p2)) junctionPoints.add(p2)
+    endpoints.add(p1)
+    endpoints.add(p2)
+  })
+
+  // Detect T-junctions
+  props.layout.lines.forEach(line => {
+    const p1 = { x: line.x1, y: line.y1 }
+    const p2 = { x: line.x2, y: line.y2 }
+    props.layout.lines.forEach(other => {
+      const op1 = { x: other.x1, y: other.y1 }
+      const op2 = { x: other.x2, y: other.y2 }
+      if (!((op1.x === p1.x && op1.y === p1.y) || (op1.x === p2.x && op1.y === p2.y))) {
+        if (isPointOnSegment(op1, p1, p2)) junctionPoints.add(`${op1.x},${op1.y}`)
+      }
+      if (!((op2.x === p1.x && op2.y === p1.y) || (op2.x === p2.x && op2.y === p2.y))) {
+        if (isPointOnSegment(op2, p1, p2)) junctionPoints.add(`${op2.x},${op2.y}`)
+      }
+    })
+  })
+
+  return Array.from(junctionPoints).map(s => {
+    const [x, y] = s.split(',').map(Number)
+    return { x, y }
+  })
+})
+
+function isPointOnSegment(p: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }) {
+  if (a.x === b.x && p.x === a.x) {
+    return p.y > Math.min(a.y, b.y) && p.y < Math.max(a.y, b.y)
+  }
+  if (a.y === b.y && p.y === a.y) {
+    return p.x > Math.min(a.x, b.x) && p.x < Math.max(a.x, b.x)
+  }
+  return false
+}
+
 function setPan(x: number, y: number) {
   emit('update:panX', x)
   emit('update:panY', y)
@@ -323,6 +374,15 @@ onMounted(() => {
     resizeObserver = new ResizeObserver(() => updateViewportSize())
     resizeObserver.observe(viewportRef.value)
   }
+
+  const observer = new MutationObserver(() => {
+    const theme = document.documentElement.getAttribute('data-theme')
+    if (theme && theme !== currentTheme.value) {
+      currentTheme.value = theme as any
+    }
+  })
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+  onBeforeUnmount(() => observer.disconnect())
 })
 
 onBeforeUnmount(() => {
@@ -363,7 +423,14 @@ defineExpose({
             <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="160%">
               <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#6d4f31" flood-opacity="0.12" />
             </filter>
+            <!-- Ou Grid Pattern -->
+            <pattern v-if="isOu" id="ou-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--line-soft)" stroke-width="0.5"/>
+            </pattern>
           </defs>
+
+          <!-- Ou Grid Background -->
+          <rect v-if="isOu" width="100%" height="100%" fill="url(#ou-grid)" />
 
           <g class="tree-lines">
             <line
@@ -373,6 +440,15 @@ defineExpose({
               :y1="line.y1"
               :x2="line.x2"
               :y2="line.y2"
+            />
+            <!-- Su-style Pearl Connectors -->
+            <circle
+              v-for="(pt, idx) in junctions"
+              :key="`junction-${idx}`"
+              :cx="pt.x"
+              :cy="pt.y"
+              r="2.5"
+              class="su-pearl"
             />
           </g>
 

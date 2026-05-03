@@ -763,6 +763,12 @@
   color-scheme: light;
 }
 
+.su-pearl {
+  fill: var(--bg-paper);
+  stroke: var(--tree-line-color);
+  stroke-width: 1.8;
+}
+
 /* ─── Theme: Ou Style (Traditional Grid) ─── */
 [data-theme="ou-style"] {
   --bg-shell: #e8d5b5;
