@@ -9,12 +9,14 @@ import {
   type PublicationSummary,
 } from '../api/publication'
 import { samplePublication, defaultSettings } from '../data/sampleFamily'
+import { builtinSamples } from '../data/builtinDynastySamples'
 import type { PublicationInfo } from '../types/family'
 
 const router = useRouter()
 
 const publications = ref<PublicationSummary[]>([])
 const loading = ref(true)
+const creatingTemplate = ref(false)
 
 const showCreateDialog = ref(false)
 const newTitle = ref('')
