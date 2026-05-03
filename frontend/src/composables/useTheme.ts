@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue'
 
-export type ThemeId = 'parchment' | 'ink-wash' | 'celadon' | 'rosewood' | 'frosted-glass' | 'star-sea' | 'aurora'
+export type ThemeId = 'parchment' | 'su-style' | 'ou-style' | 'ink-wash' | 'celadon' | 'rosewood' | 'frosted-glass' | 'star-sea' | 'aurora'
 
 export interface ThemeOption {
   id: ThemeId
@@ -17,6 +17,20 @@ export const THEME_OPTIONS: ThemeOption[] = [
     nameEn: 'Parchment',
     description: '暖色调古卷风格，原始主题',
     preview: ['#efe3cf', '#a96e35', '#6a4b2f', '#67724f'],
+  },
+  {
+    id: 'su-style',
+    name: '苏派',
+    nameEn: 'Su Style',
+    description: '垂珠墨韵，苏式园林简约风格',
+    preview: ['#f2ebdc', '#fff9ef', '#3a3226', '#a96e35'],
+  },
+  {
+    id: 'ou-style',
+    name: '欧派',
+    nameEn: 'Ou Style',
+    description: '绢本朱砂，传统欧式严谨格律',
+    preview: ['#e8d5b5', '#fcf8f0', '#1a1a1a', '#b22222'],
   },
   {
     id: 'ink-wash',

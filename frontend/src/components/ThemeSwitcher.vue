@@ -10,6 +10,7 @@ const emit = defineEmits<{
   (event: 'change-theme', themeId: ThemeId): void
 }>()
 
+const themes = THEME_OPTIONS
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
 
@@ -50,7 +51,7 @@ onBeforeUnmount(() => {
         <p class="theme-switcher__title">选择主题 / Theme</p>
         <div class="theme-switcher__grid">
           <button
-            v-for="theme in THEME_OPTIONS"
+            v-for="theme in themes"
             :key="theme.id"
             class="theme-option"
             :class="{ 'theme-option--active': currentTheme === theme.id }"
