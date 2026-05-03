@@ -791,6 +791,10 @@
   color-scheme: light;
 }
 
+[data-theme="ou-style"] .tree-lines line {
+  stroke-linecap: butt;
+}
+
 /* ─── Theme Switcher Component ─── */
 [data-theme="ink-wash"] .auth-page,
 [data-theme="rosewood"] .auth-page,
