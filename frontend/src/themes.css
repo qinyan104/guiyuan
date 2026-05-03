@@ -741,6 +741,50 @@
   background: var(--bg-panel-strong);
 }
 
+/* ─── Theme: Su Style (Minimalist Scroll) ─── */
+[data-theme="su-style"] {
+  --bg-shell: #f2ebdc;
+  --bg-panel: rgba(255, 252, 246, 0.85);
+  --bg-panel-strong: rgba(255, 253, 250, 0.95);
+  --bg-paper: #fff9ef;
+  --line-soft: rgba(117, 90, 57, 0.12);
+  --text-main: #3a3226;
+  --text-sub: #6b5035;
+  --text-soft: #8a6845;
+  --accent-amber: #a96e35;
+  --accent-earth: #6a4b2f;
+  --accent-ink: #3c5363;
+  --tree-line-color: rgba(58, 50, 38, 0.8);
+  --canvas-bg: var(--bg-shell);
+  --card-panel-fill: var(--bg-panel);
+  --card-panel-stroke: #6f5943;
+  --card-selected-stroke: #ab6d30;
+  --filter-paper: url(#su-paper-texture);
+  color-scheme: light;
+}
+
+/* ─── Theme: Ou Style (Traditional Grid) ─── */
+[data-theme="ou-style"] {
+  --bg-shell: #e8d5b5;
+  --bg-panel: rgba(255, 254, 252, 0.9);
+  --bg-panel-strong: #fffefc;
+  --bg-paper: #fcf8f0;
+  --line-soft: rgba(178, 34, 34, 0.15); /* Cinnabar Red Grid */
+  --text-main: #1a1a1a;
+  --text-sub: #333333;
+  --text-soft: #666666;
+  --accent-amber: #b22222; /* Cinnabar */
+  --accent-earth: #4a4a4a;
+  --accent-ink: #1a1a1a;
+  --tree-line-color: rgba(26, 26, 26, 0.9);
+  --canvas-bg: var(--bg-shell);
+  --card-panel-fill: var(--bg-panel);
+  --card-panel-stroke: #1a1a1a;
+  --card-selected-stroke: #b22222;
+  --filter-paper: url(#ou-silk-texture);
+  color-scheme: light;
+}
+
 /* ─── Theme Switcher Component ─── */
 [data-theme="ink-wash"] .auth-page,
 [data-theme="rosewood"] .auth-page,
