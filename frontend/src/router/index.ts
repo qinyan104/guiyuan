@@ -43,30 +43,36 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/publication/:id',
-    name: 'workbench',
-    component: () => import('../views/WorkbenchView.vue'),
-    props: (route) => ({ publicationId: Number(route.params.id) }),
-  },
-  {
-    path: '/publication/:pubId/person/:personId',
-    name: 'person-detail',
-    component: () => import('../views/PersonDetailView.vue'),
-    props: (route) => ({
-      publicationId: Number(route.params.pubId),
-      personId: route.params.personId as string,
-    }),
-  },
-  {
-    path: '/publication/:pubId/stats',
-    name: 'publication-stats',
-    component: () => import('../views/PublicationStatsView.vue'),
-    props: (route) => ({ publicationId: Number(route.params.pubId) }),
-  },
-  {
-    path: '/publication/:pubId/timeline',
-    name: 'publication-timeline',
-    component: () => import('../views/TimelineView.vue'),
-    props: (route) => ({ publicationId: Number(route.params.pubId) }),
+    component: () => import('../views/PublicationLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'workbench',
+        component: () => import('../views/WorkbenchView.vue'),
+        props: (route) => ({ publicationId: Number(route.params.id) }),
+      },
+      {
+        path: 'person/:personId',
+        name: 'person-detail',
+        component: () => import('../views/PersonDetailView.vue'),
+        props: (route) => ({
+          publicationId: Number(route.params.id),
+          personId: route.params.personId as string,
+        }),
+      },
+      {
+        path: 'stats',
+        name: 'publication-stats',
+        component: () => import('../views/PublicationStatsView.vue'),
+        props: (route) => ({ publicationId: Number(route.params.id) }),
+      },
+      {
+        path: 'timeline',
+        name: 'publication-timeline',
+        component: () => import('../views/TimelineView.vue'),
+        props: (route) => ({ publicationId: Number(route.params.id) }),
+      },
+    ],
   },
 ]
 

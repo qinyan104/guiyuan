@@ -11,7 +11,7 @@ public class Photo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "person_db_id", nullable = false)
+    @Column(name = "person_db_id", nullable = true)
     private Long personDbId;
 
     @Lob

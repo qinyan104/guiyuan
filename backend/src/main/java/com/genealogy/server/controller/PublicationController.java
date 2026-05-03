@@ -47,7 +47,12 @@ public class PublicationController {
     @GetMapping("/{id}")
     public ApiResponse<Map<String, Object>> get(@PathVariable Long id, HttpServletRequest request) {
         resolveUserId(request); // 确保已登录
-        return ApiResponse.success(publicationService.loadPublication(id));
+        try {
+            return ApiResponse.success(publicationService.loadPublication(id));
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(PublicationController.class).error("获取族谱 {} 失败: {}", id, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @PostMapping
