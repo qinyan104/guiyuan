@@ -1,23 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue'
-import type { PublicationInfo, PublicationSettings } from '../types/family'
-
-interface MetricCard {
-  id: string
-  label: string
-  value: string
-  meta: string
-  progress: number
-  tone: string
-}
-
-interface TaskCard {
-  id: string
-  title: string
-  count: number
-  description: string
-  tone: string
-}
+import type { PublicationSettings } from '../types/family'
 
 interface HistoryDisplayEntry {
   id: string
@@ -27,9 +10,7 @@ interface HistoryDisplayEntry {
 
 const props = defineProps<{
   layoutPanelOpen: boolean
-  overviewOpen: boolean
   historyOpen: boolean
-  infoPanelOpen: boolean
   focusFamilyLabel: string
   canReturnToMainBranch: boolean
   canUndo: boolean
@@ -40,9 +21,6 @@ const props = defineProps<{
   selectedPersonMeta: string
   canFocusSelectedBranch: boolean
   settings: PublicationSettings
-  publicationInfo: PublicationInfo
-  metricCards: MetricCard[]
-  taskCards: TaskCard[]
   historyPastCount: number
   historyFutureCount: number
   visibleHistoryEntries: HistoryDisplayEntry[]
@@ -50,9 +28,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'toggle-layout'): void
-  (event: 'toggle-overview'): void
   (event: 'toggle-history'): void
-  (event: 'toggle-info'): void
   (event: 'return-main-branch'): void
   (event: 'reset-canvas-view'): void
   (event: 'undo'): void
@@ -62,11 +38,8 @@ const emit = defineEmits<{
   (event: 'reveal-selected-person'): void
   (event: 'focus-selected-branch'): void
   (event: 'close-layout'): void
-  (event: 'close-overview'): void
   (event: 'close-history'): void
-  (event: 'close-info'): void
   (event: 'update-settings', patch: Partial<PublicationSettings>): void
-  (event: 'update-info', patch: Partial<PublicationInfo>): void
 }>()
 
 function updateSetting<K extends keyof PublicationSettings>(key: K, value: PublicationSettings[K]) {
@@ -96,13 +69,7 @@ function onClickOutside(e: MouseEvent) {
 
   // Otherwise, close any open panels
   if (props.layoutPanelOpen) emit('close-layout')
-  if (props.overviewOpen) emit('close-overview')
   if (props.historyOpen) emit('close-history')
-  if (props.infoPanelOpen) emit('close-info')
-}
-
-function updateInfoField(field: keyof PublicationInfo, value: string) {
-  emit('update-info', { [field]: value } as Partial<PublicationInfo>)
 }
 
 onMounted(() => {
@@ -126,26 +93,6 @@ onBeforeUnmount(() => {
       >
         <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="3" y="3" width="14" height="14" rx="2"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="10" y1="8" x2="10" y2="17"/></svg>
         版式
-      </button>
-      <button
-        class="tool-btn tool-btn--panel"
-        :class="{ 'tool-btn--active': infoPanelOpen }"
-        type="button"
-        :aria-pressed="infoPanelOpen"
-        @click="$emit('toggle-info')"
-      >
-        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="3" y="3" width="14" height="14" rx="2"/><line x1="7" y1="8" x2="13" y2="8"/><line x1="7" y1="11" x2="11" y2="11"/></svg>
-        族谱信息
-      </button>
-      <button
-        class="tool-btn tool-btn--panel"
-        :class="{ 'tool-btn--active': overviewOpen }"
-        type="button"
-        :aria-pressed="overviewOpen"
-        @click="$emit('toggle-overview')"
-      >
-        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg>
-        摘要
       </button>
       <button
         class="tool-btn tool-btn--panel"
@@ -208,8 +155,6 @@ onBeforeUnmount(() => {
         </button>
       </div>
     </div>
-
-
 
     <div class="zoom-control">
       <button class="zoom-control__btn" type="button" aria-label="缩小" @click="$emit('adjust-zoom', -0.05)">
@@ -283,107 +228,6 @@ onBeforeUnmount(() => {
           <input :checked="settings.showPhoto" type="checkbox" @change="updateSetting('showPhoto', readCheckedValue($event))" />
           <span>显示照片</span>
         </label>
-      </div>
-    </section>
-  </Transition>
-
-  <Transition name="float-panel">
-    <section v-if="infoPanelOpen" class="floating-panel floating-panel--left">
-      <div class="floating-panel__header">
-        <div>
-          <p class="floating-panel__eyebrow">Info</p>
-          <h2>族谱信息</h2>
-        </div>
-        <button class="floating-panel__close" type="button" @click="$emit('close-info')">
-          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
-          关闭
-        </button>
-      </div>
-
-      <label class="field">
-        <span>族谱简介</span>
-        <textarea
-          :value="publicationInfo.description ?? ''"
-          rows="4"
-          placeholder="简要描述本族谱的内容与范围"
-          @input="updateInfoField('description', ($event.target as HTMLTextAreaElement).value)"
-        />
-      </label>
-
-      <label class="field">
-        <span>家族起源地</span>
-        <input
-          :value="publicationInfo.ancestralOrigin ?? ''"
-          type="text"
-          placeholder="例：安徽凤阳"
-          @input="updateInfoField('ancestralOrigin', ($event.target as HTMLInputElement).value)"
-        />
-      </label>
-
-      <label class="field">
-        <span>堂号 / 郡望</span>
-        <input
-          :value="publicationInfo.hallName ?? ''"
-          type="text"
-          placeholder="例：凤阳朱氏"
-          @input="updateInfoField('hallName', ($event.target as HTMLInputElement).value)"
-        />
-      </label>
-
-      <label class="field">
-        <span>家训家规</span>
-        <textarea
-          :value="publicationInfo.familyMotto ?? ''"
-          rows="3"
-          placeholder="记录家族祖训或家规"
-          @input="updateInfoField('familyMotto', ($event.target as HTMLTextAreaElement).value)"
-        />
-      </label>
-
-      <label class="field">
-        <span>修谱说明</span>
-        <textarea
-          :value="publicationInfo.revisionNotes ?? ''"
-          rows="3"
-          placeholder="记录本次修谱的缘由、依据或说明"
-          @input="updateInfoField('revisionNotes', ($event.target as HTMLTextAreaElement).value)"
-        />
-      </label>
-    </section>
-  </Transition>
-
-  <Transition name="float-panel">
-    <section v-if="overviewOpen" class="floating-panel floating-panel--left">
-      <div class="floating-panel__header">
-        <div>
-          <p class="floating-panel__eyebrow">Overview</p>
-          <h2>出版摘要</h2>
-        </div>
-        <button class="floating-panel__close" type="button" @click="$emit('close-overview')">
-          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
-          关闭
-        </button>
-      </div>
-
-      <div class="metrics-grid">
-        <article v-for="card in metricCards" :key="card.id" class="metric-tile" :class="`metric-tile--${card.tone}`">
-          <span class="metric-tile__label">{{ card.label }}</span>
-          <strong class="metric-tile__value">{{ card.value }}</strong>
-          <p class="metric-tile__meta">{{ card.meta }}</p>
-          <div class="metric-tile__track">
-            <div class="metric-tile__fill" :style="{ width: `${card.progress}%` }" />
-          </div>
-        </article>
-      </div>
-
-      <div class="task-stack">
-        <article v-for="task in taskCards" :key="task.id" class="task-row" :class="`task-row--${task.tone}`">
-          <div class="task-row__head">
-            <strong>{{ task.title }}</strong>
-            <span>{{ task.count ? `待处理 ${task.count}` : '已完善' }}</span>
-          </div>
-          <p>{{ task.description }}</p>
-        </article>
       </div>
     </section>
   </Transition>

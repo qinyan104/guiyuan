@@ -1,105 +1,105 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { getPublication, getPublicationHistory, type PublicationLoadResult, type PublicationHistoryEntry } from '../api/publication'
-import type { Person, PublicationData, Gender } from '../types/family'
+import { getPublicationHistory, type PublicationHistoryEntry } from '../api/publication'
+import type { Person, FamilyUnit } from '../types/family'
 
 const props = defineProps<{ publicationId: number }>()
 const router = useRouter()
 
-const loading = ref(true)
-const pubData = ref<PublicationData | null>(null)
+// ─── Shared Context ─────────────────────────────────────────────
+const { pub, serverPublicationId } = inject('publication-context') as any
+const pubData = computed(() => pub.publication)
+
+const loadingHistory = ref(true)
 const history = ref<PublicationHistoryEntry[]>([])
 
-async function load() {
-  loading.value = true
+async function loadHistory() {
+  if (!serverPublicationId.value) {
+    loadingHistory.value = false
+    return
+  }
+  loadingHistory.value = true
   try {
-    const result: PublicationLoadResult = await getPublication(props.publicationId)
-    pubData.value = result.publication
-  } catch { /* ignore */ }
-  finally { loading.value = false }
-
-  try {
-    history.value = await getPublicationHistory(props.publicationId)
+    history.value = await getPublicationHistory(serverPublicationId.value)
   } catch { history.value = [] }
+  finally { loadingHistory.value = false }
 }
 
-onMounted(load)
+onMounted(loadHistory)
 
 const people = computed<Person[]>(() => pubData.value ? Object.values(pubData.value.people) : [])
-const families = computed(() => pubData.value ? Object.values(pubData.value.families) : [])
+const families = computed<FamilyUnit[]>(() => pubData.value ? Object.values(pubData.value.families) : [])
 
-// ── Overview ──
+// ── Data Cleaning & Accuracy ──
 const totalCount = computed(() => people.value.length)
 const maleCount = computed(() => people.value.filter(p => p.gender === 'male').length)
 const femaleCount = computed(() => people.value.filter(p => p.gender === 'female').length)
 const deceasedCount = computed(() => people.value.filter(p => p.deceased).length)
 const aliveCount = computed(() => totalCount.value - deceasedCount.value)
 
-// ── Generation count ──
-const generationCount = computed(() => {
-  if (!pubData.value || families.value.length === 0) return 0
-  const f = pubData.value.families
-  const rootId = pubData.value.focusFamilyId
-  if (!rootId || !f[rootId]) return 0
-  let count = 0
-  let currentId: string | undefined = rootId
-  const visited = new Set<string>()
-  while (currentId && !visited.has(currentId)) {
-    visited.add(currentId)
-    count++
-    const family = f[currentId]
-    if (!family) break
-    // Find child family
-    let nextId: string | undefined
-    for (const childId of family.children) {
-      const childFamily = Object.values(f).find(fa => fa.adults.includes(childId))
-      if (childFamily && !visited.has(childFamily.id)) {
-        nextId = childFamily.id
-        break
-      }
-    }
-    currentId = nextId
-  }
-  return count
-})
-
-// ── Gender ratio bar ──
-const malePercent = computed(() => totalCount.value ? Math.round(maleCount.value / totalCount.value * 100) : 0)
-const femalePercent = computed(() => totalCount.value ? 100 - malePercent.value : 0)
-
-// ── Generation distribution ──
-function assignGenerations(): Map<string, number> {
+// ── Generation Calculation (BFS Engine) ──
+const generationMap = computed(() => {
   const genMap = new Map<string, number>()
   if (!pubData.value) return genMap
+  
   const f = pubData.value.families
   const rootId = pubData.value.focusFamilyId
   if (!rootId || !f[rootId]) return genMap
 
-  function walk(familyId: string, gen: number) {
-    const family = f[familyId]
-    if (!family) return
-    for (const adultId of family.adults) {
-      if (adultId && !genMap.has(adultId)) genMap.set(adultId, gen)
-    }
-    for (const childId of family.children) {
-      if (!genMap.has(childId)) genMap.set(childId, gen + 1)
-      const childFamily = Object.values(f).find(fa => fa.adults.includes(childId))
-      if (childFamily) walk(childFamily.id, gen + 1)
+  const queue: { personId: string; gen: number }[] = []
+  
+  // Initialize with root family adults
+  const rootFamily = f[rootId]
+  for (const adultId of rootFamily.adults) {
+    if (adultId && !genMap.has(adultId)) {
+      genMap.set(adultId, 1)
+      queue.push({ personId: adultId, gen: 1 })
     }
   }
-  walk(rootId, 1)
-  // Assign uncategorized
+
+  // BFS Traversal
+  let head = 0
+  while (head < queue.length) {
+    const { personId, gen } = queue[head++]
+    
+    // Find all families where this person is an adult
+    for (const fam of Object.values(f)) {
+      if (fam.adults.includes(personId)) {
+        // Add spouses at same generation
+        for (const spouseId of fam.adults) {
+          if (spouseId && !genMap.has(spouseId)) {
+            genMap.set(spouseId, gen)
+            queue.push({ personId: spouseId, gen })
+          }
+        }
+        // Add children at gen + 1
+        for (const childId of fam.children) {
+          if (childId && !genMap.has(childId)) {
+            genMap.set(childId, gen + 1)
+            queue.push({ personId: childId, gen: gen + 1 })
+          }
+        }
+      }
+    }
+  }
+
+  // Assign gen 0 to disconnected people
   for (const p of people.value) {
     if (!genMap.has(p.id)) genMap.set(p.id, 0)
   }
+  
   return genMap
-}
+})
+
+const generationCount = computed(() => {
+  const values = Array.from(generationMap.value.values()).filter(v => v > 0)
+  return values.length > 0 ? Math.max(...values) : 0
+})
 
 const generationDist = computed(() => {
-  const genMap = assignGenerations()
   const dist = new Map<number, number>()
-  genMap.forEach((gen) => {
+  generationMap.value.forEach((gen) => {
     dist.set(gen, (dist.get(gen) || 0) + 1)
   })
   return Array.from(dist.entries()).sort((a, b) => a[0] - b[0])
@@ -107,7 +107,39 @@ const generationDist = computed(() => {
 
 const maxGenCount = computed(() => Math.max(1, ...generationDist.value.map(d => d[1])))
 
-// ── Lifespan stats ──
+// ── Gender ratio ──
+const malePercent = computed(() => totalCount.value ? Math.round(maleCount.value / totalCount.value * 100) : 0)
+const femalePercent = computed(() => totalCount.value ? 100 - malePercent.value : 0)
+
+// ── Surname Statistics (Compound Surname Support) ──
+const compoundSurnames = ['欧阳', '太史', '端木', '上官', '司马', '东方', '独孤', '南宫', '夏侯', '诸葛', '尉迟', '皇甫', '公孙', '慕容', '令狐', '闾丘', '宰父', '谷梁', '轩辕', '申屠', '乐正', '亚里', '司徒', '司空', '段干', '钟离', '闾丘', '可朱', '呼延', '归海', '乐正', '羊舌', '微生', '梁丘', '左丘', '东门', '西门']
+
+const surnameDist = computed(() => {
+  const map = new Map<string, number>()
+  for (const p of people.value) {
+    if (!p.name) continue
+    let surname = ''
+    if (p.name.length >= 2) {
+      const double = p.name.substring(0, 2)
+      if (compoundSurnames.includes(double)) {
+        surname = double
+      }
+    }
+    if (!surname && p.name.length >= 1) {
+      surname = p.name.charAt(0)
+    }
+    if (surname) {
+      map.set(surname, (map.get(surname) || 0) + 1)
+    }
+  }
+  return Array.from(map.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+})
+
+const maxSurnameCount = computed(() => Math.max(1, ...surnameDist.value.map(d => d[1])))
+
+// ── Lifespan Accuracy ──
 function parseYear(s?: string): number | null {
   if (!s) return null
   const m = s.match(/\d{3,4}/)
@@ -117,8 +149,13 @@ function parseYear(s?: string): number | null {
 const lifespans = computed(() => {
   return people.value
     .filter(p => p.birth && p.death)
-    .map(p => ({ name: p.name, years: parseYear(p.death)! - parseYear(p.birth)! }))
-    .filter(l => l.years > 0 && l.years < 150)
+    .map(p => {
+      const by = parseYear(p.birth)
+      const dy = parseYear(p.death)
+      if (by === null || dy === null) return null
+      return { name: p.name, years: dy - by }
+    })
+    .filter((l): l is { name: string, years: number } => l !== null && l.years >= 0 && l.years <= 120)
 })
 
 const avgLifespan = computed(() => {
@@ -137,7 +174,6 @@ const minLifespan = computed(() => {
   return lifespans.value.reduce((a, b) => a.years < b.years ? a : b)
 })
 
-// ── Lifespan distribution (decades) ──
 const lifespanBuckets = computed(() => {
   const buckets = new Map<string, number>()
   for (const l of lifespans.value) {
@@ -149,7 +185,7 @@ const lifespanBuckets = computed(() => {
 
 const maxBucketCount = computed(() => Math.max(1, ...lifespanBuckets.value.map(d => d[1])))
 
-// ── Century timeline ──
+// ── Century distribution ──
 const centuryData = computed(() => {
   const births = new Map<number, number>()
   const deaths = new Map<number, number>()
@@ -178,24 +214,8 @@ const centuryData = computed(() => {
 
 const maxCenturyCount = computed(() => Math.max(1, ...centuryData.value.map(d => Math.max(d.births, d.deaths))))
 
-// ── Surname distribution ──
-const surnameDist = computed(() => {
-  const map = new Map<string, number>()
-  for (const p of people.value) {
-    if (p.name.length >= 1) {
-      const surname = p.name.charAt(0)
-      map.set(surname, (map.get(surname) || 0) + 1)
-    }
-  }
-  return Array.from(map.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-})
-
-const maxSurnameCount = computed(() => Math.max(1, ...surnameDist.value.map(d => d[1])))
-
 function goBack() {
-  router.push({ name: 'workbench', params: { id: props.publicationId } })
+  router.push({ name: 'workbench' })
 }
 
 function historyActionLabel(action: string): string {
@@ -234,13 +254,11 @@ function formatHistoryDate(dateStr: string) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         返回工作台
       </button>
-      <h1 class="stats-nav__title">统计分析</h1>
-      <div></div>
+      <h1 class="stats-nav__title">家族统计分析</h1>
+      <div class="nav-spacer"></div>
     </header>
 
-    <div v-if="loading" class="loading-state">加载中...</div>
-
-    <main v-else class="stats-content">
+    <main class="stats-content">
       <!-- Family Profile Hero -->
       <section v-if="pubData" class="family-hero">
         <div class="family-hero__header">
@@ -248,17 +266,17 @@ function formatHistoryDate(dateStr: string) {
           <p v-if="pubData.subtitle" class="family-hero__subtitle">{{ pubData.subtitle }}</p>
         </div>
         <div class="family-hero__meta" v-if="pubData.info?.ancestralOrigin || pubData.info?.hallName || pubData.info?.familyMotto">
-          <div class="meta-item" v-if="pubData.info.ancestralOrigin">
-            <span class="meta-label">起源地</span>
-            <span class="meta-value">{{ pubData.info.ancestralOrigin }}</span>
+          <div class="seal-item" v-if="pubData.info.ancestralOrigin">
+            <span class="seal-label">祖籍</span>
+            <span class="seal-value">{{ pubData.info.ancestralOrigin }}</span>
           </div>
-          <div class="meta-item" v-if="pubData.info.hallName">
-            <span class="meta-label">堂号</span>
-            <span class="meta-value">{{ pubData.info.hallName }}</span>
+          <div class="seal-item" v-if="pubData.info.hallName">
+            <span class="seal-label">堂号</span>
+            <span class="seal-value">{{ pubData.info.hallName }}</span>
           </div>
-          <div class="meta-item meta-item--motto" v-if="pubData.info.familyMotto">
-            <span class="meta-label">家训</span>
-            <span class="meta-value">{{ pubData.info.familyMotto }}</span>
+          <div class="seal-item seal-item--motto" v-if="pubData.info.familyMotto">
+            <span class="seal-label">家训</span>
+            <span class="seal-value">{{ pubData.info.familyMotto }}</span>
           </div>
         </div>
       </section>
@@ -267,33 +285,45 @@ function formatHistoryDate(dateStr: string) {
       <div class="overview-grid">
         <div class="ov-card">
           <div class="ov-card__bg">族</div>
-          <span class="ov-card__number">{{ totalCount }}</span>
-          <span class="ov-card__label">总人数</span>
+          <div class="ov-card__content">
+            <span class="ov-card__number">{{ totalCount }}</span>
+            <span class="ov-card__label">总人数</span>
+          </div>
         </div>
         <div class="ov-card ov-card--male">
           <div class="ov-card__bg">♂</div>
-          <span class="ov-card__number">{{ maleCount }}</span>
-          <span class="ov-card__label">男性</span>
+          <div class="ov-card__content">
+            <span class="ov-card__number">{{ maleCount }}</span>
+            <span class="ov-card__label">男性</span>
+          </div>
         </div>
         <div class="ov-card ov-card--female">
           <div class="ov-card__bg">♀</div>
-          <span class="ov-card__number">{{ femaleCount }}</span>
-          <span class="ov-card__label">女性</span>
+          <div class="ov-card__content">
+            <span class="ov-card__number">{{ femaleCount }}</span>
+            <span class="ov-card__label">女性</span>
+          </div>
         </div>
         <div class="ov-card ov-card--gen">
           <div class="ov-card__bg">世代</div>
-          <span class="ov-card__number">{{ generationCount || '-' }}</span>
-          <span class="ov-card__label">世代数</span>
+          <div class="ov-card__content">
+            <span class="ov-card__number">{{ generationCount || '-' }}</span>
+            <span class="ov-card__label">世代数</span>
+          </div>
         </div>
         <div class="ov-card ov-card--alive">
-          <div class="ov-card__bg">👥</div>
-          <span class="ov-card__number">{{ aliveCount }}</span>
-          <span class="ov-card__label">在世</span>
+          <div class="ov-card__bg">世</div>
+          <div class="ov-card__content">
+            <span class="ov-card__number">{{ aliveCount }}</span>
+            <span class="ov-card__label">在世</span>
+          </div>
         </div>
         <div class="ov-card ov-card--deceased">
-          <div class="ov-card__bg">✝</div>
-          <span class="ov-card__number">{{ deceasedCount }}</span>
-          <span class="ov-card__label">已故</span>
+          <div class="ov-card__bg">卒</div>
+          <div class="ov-card__content">
+            <span class="ov-card__number">{{ deceasedCount }}</span>
+            <span class="ov-card__label">已故</span>
+          </div>
         </div>
       </div>
 
@@ -301,13 +331,13 @@ function formatHistoryDate(dateStr: string) {
       <div class="charts-grid">
         <!-- Gender Ratio -->
         <section class="chart-card">
-          <h2 class="chart-title">性别比例</h2>
+          <h2 class="chart-title">人口性别比例</h2>
           <div class="gender-bar">
             <div class="gender-bar__male" :style="{ width: malePercent + '%' }">
-              <span v-if="malePercent > 15">♂ {{ malePercent }}%</span>
+              <span v-if="malePercent > 15">{{ malePercent }}%</span>
             </div>
             <div class="gender-bar__female" :style="{ width: femalePercent + '%' }">
-              <span v-if="femalePercent > 15">♀ {{ femalePercent }}%</span>
+              <span v-if="femalePercent > 15">{{ femalePercent }}%</span>
             </div>
           </div>
           <div class="gender-legend">
@@ -318,11 +348,11 @@ function formatHistoryDate(dateStr: string) {
 
         <!-- Generation Distribution -->
         <section class="chart-card">
-          <h2 class="chart-title">世代分布</h2>
+          <h2 class="chart-title">世代人口分布</h2>
           <div v-if="generationDist.length === 0" class="chart-empty">暂无数据</div>
           <div v-else class="bar-chart">
             <div v-for="[gen, count] in generationDist" :key="gen" class="bar-row">
-              <span class="bar-label">第{{ gen }}代</span>
+              <span class="bar-label">{{ gen === 0 ? '未知' : '第' + gen + '代' }}</span>
               <div class="bar-track">
                 <div class="bar-fill" :style="{ width: (count / maxGenCount * 100) + '%' }"></div>
               </div>
@@ -333,20 +363,20 @@ function formatHistoryDate(dateStr: string) {
 
         <!-- Lifespan Stats -->
         <section class="chart-card">
-          <h2 class="chart-title">寿命统计</h2>
-          <div v-if="lifespans.length === 0" class="chart-empty">需要生卒年数据才能计算</div>
+          <h2 class="chart-title">家族寿命概况</h2>
+          <div v-if="lifespans.length === 0" class="chart-empty">需要完善生卒年数据以生成报告</div>
           <template v-else>
             <div class="lifespan-summary">
               <div class="ls-item">
-                <span class="ls-value">{{ avgLifespan }}</span>
+                <span class="ls-value">{{ avgLifespan }}<small>岁</small></span>
                 <span class="ls-label">平均寿命</span>
               </div>
               <div class="ls-item" v-if="maxLifespan">
-                <span class="ls-value">{{ maxLifespan.years }}</span>
+                <span class="ls-value">{{ maxLifespan.years }}<small>岁</small></span>
                 <span class="ls-label">最高寿 · {{ maxLifespan.name }}</span>
               </div>
               <div class="ls-item" v-if="minLifespan">
-                <span class="ls-value">{{ minLifespan.years }}</span>
+                <span class="ls-value">{{ minLifespan.years }}<small>岁</small></span>
                 <span class="ls-label">最低寿 · {{ minLifespan.name }}</span>
               </div>
             </div>
@@ -364,7 +394,7 @@ function formatHistoryDate(dateStr: string) {
 
         <!-- Century Timeline -->
         <section class="chart-card">
-          <h2 class="chart-title">世纪分布（出生 / 去世）</h2>
+          <h2 class="chart-title">历史跨度（出生/逝世）</h2>
           <div v-if="centuryData.length === 0" class="chart-empty">暂无数据</div>
           <div v-else class="timeline-chart">
             <div v-for="c in centuryData" :key="c.century" class="timeline-row">
@@ -380,14 +410,14 @@ function formatHistoryDate(dateStr: string) {
             </div>
             <div class="timeline-legend">
               <span class="legend-item"><span class="legend-dot legend-dot--birth"></span>出生</span>
-              <span class="legend-item"><span class="legend-dot legend-dot--death"></span>去世</span>
+              <span class="legend-item"><span class="legend-dot legend-dot--death"></span>逝世</span>
             </div>
           </div>
         </section>
 
         <!-- Surname Distribution -->
         <section class="chart-card chart-card--wide">
-          <h2 class="chart-title">姓氏分布（前10）</h2>
+          <h2 class="chart-title">家族姓氏分布 (TOP 10)</h2>
           <div v-if="surnameDist.length === 0" class="chart-empty">暂无数据</div>
           <div v-else class="bar-chart bar-chart--horizontal">
             <div v-for="[surname, count] in surnameDist" :key="surname" class="bar-row">
@@ -402,14 +432,29 @@ function formatHistoryDate(dateStr: string) {
 
         <!-- Modification History -->
         <section class="chart-card chart-card--wide">
-          <h2 class="chart-title">修改历史</h2>
-          <div v-if="history.length === 0" class="chart-empty">暂无修改记录</div>
-          <div v-else class="history-list">
-            <div v-for="entry in history" :key="entry.id" class="history-item">
-              <span class="history-time">{{ formatHistoryDate(entry.createdAt) }}</span>
-              <span :class="historyActionClass(entry.action)">{{ historyActionLabel(entry.action) }}</span>
-              <span class="history-user">{{ entry.username }}</span>
-              <span class="history-detail">{{ entry.detail || '-' }}</span>
+          <h2 class="chart-title">修订志记录</h2>
+          <div v-if="loadingHistory" class="chart-empty">正在调取家族修订志...</div>
+          <div v-else-if="history.length === 0" class="chart-empty">尚无修订记录</div>
+          <div v-else class="history-timeline">
+            <div v-for="entry in history" :key="entry.id" class="history-event">
+              <div class="history-event__line">
+                <div class="history-event__dot"></div>
+              </div>
+              <div class="history-event__content">
+                <div class="history-event__meta">
+                  <span class="history-event__time">{{ formatHistoryDate(entry.createdAt) }}</span>
+                  <div class="history-event__actor">
+                    <svg class="actor-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    {{ entry.username }}
+                  </div>
+                </div>
+                <div class="history-event__body">
+                  <span :class="historyActionClass(entry.action)">{{ historyActionLabel(entry.action) }}</span>
+                  <span class="history-event__detail">{{ entry.detail || '系统常规更新' }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -419,9 +464,13 @@ function formatHistoryDate(dateStr: string) {
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
+
 .stats-page {
   min-height: 100vh;
-  background: var(--bg-shell, #f5f0e8);
+  background: var(--bg-shell, #efe3cf);
+  background-image: var(--shell-bg-image);
+  color: var(--text-main, #2c2420);
 }
 
 .stats-nav {
@@ -429,10 +478,10 @@ function formatHistoryDate(dateStr: string) {
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
-  height: 52px;
-  background: var(--bg-panel, rgba(255,255,255,0.85));
-  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.06));
-  backdrop-filter: blur(12px);
+  height: 60px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--line-soft);
+  backdrop-filter: blur(20px);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -441,178 +490,185 @@ function formatHistoryDate(dateStr: string) {
 .nav-back {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.5rem;
   background: none;
-  border: none;
-  color: var(--text-sub, #555);
-  font-size: 0.82rem;
+  border: 1px solid var(--line-soft);
+  color: var(--accent-earth, #6a4b2f);
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0.3rem 0.5rem;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  transition: all 0.2s ease;
 }
 
 .nav-back:hover {
-  color: var(--text-main, #1a1a1a);
-  background: var(--bg-hover, rgba(0,0,0,0.04));
+  background: rgba(169, 110, 53, 0.05);
+  border-color: var(--accent-amber);
+  transform: translateX(-2px);
 }
 
 .stats-nav__title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-main, #1a1a1a);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-main);
   margin: 0;
+  font-family: 'Noto Serif SC', serif;
+  letter-spacing: 0.1em;
 }
 
-.loading-state {
-  text-align: center;
-  padding: 4rem;
-  color: var(--text-soft, #888);
-}
+.nav-spacer { width: 100px; }
 
 .stats-content {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2.5rem 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 /* ── Family Hero ── */
 .family-hero {
-  background: linear-gradient(135deg, var(--bg-panel, #fff) 0%, #fffdfa 100%);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.06));
-  border-radius: 20px;
-  padding: 3rem 2rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 24px;
+  padding: 3.5rem 2rem;
   text-align: center;
-  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.family-hero::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l15 30H15z' fill='%23a96e35' fill-opacity='0.02'/%3E%3C/svg%3E");
+  pointer-events: none;
 }
 
 .family-hero__title {
-  font-size: 2.25rem;
+  font-size: 2.8rem;
   font-family: 'Noto Serif SC', serif;
   font-weight: 900;
-  color: var(--text-main, #1a1a1a);
+  color: var(--text-main);
   margin: 0 0 0.5rem;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .family-hero__subtitle {
-  font-size: 1.1rem;
-  color: var(--text-soft, #888);
-  margin: 0 0 2rem;
+  font-size: 1.25rem;
+  color: var(--accent-earth);
+  margin: 0 0 2.5rem;
   font-weight: 500;
+  font-family: 'Noto Serif SC', serif;
+  opacity: 0.7;
 }
 
 .family-hero__meta {
   display: flex;
   justify-content: center;
-  gap: 3rem;
+  gap: 2.5rem;
   flex-wrap: wrap;
-  padding-top: 2rem;
-  border-top: 1px dashed var(--border-color, rgba(0,0,0,0.1));
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--line-soft);
 }
 
-.meta-item {
+.seal-item {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  position: relative;
-  padding: 0 1rem;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 100px;
 }
 
-.meta-item::after {
-  content: "";
-  position: absolute;
-  right: -1.5rem;
-  top: 20%;
-  height: 60%;
-  width: 1px;
-  background: var(--border-color, rgba(0,0,0,0.06));
-}
-
-.meta-item:last-child::after { display: none; }
-
-.meta-label {
-  font-size: 0.7rem;
-  color: var(--text-soft, #999);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-}
-
-.meta-value {
-  font-size: 1.1rem;
+.seal-label {
+  font-size: 0.75rem;
+  color: var(--accent-amber);
   font-weight: 700;
-  color: var(--accent-ink, #6a4b2f);
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--accent-amber);
+  border-radius: 4px;
+  letter-spacing: 0.1em;
+  background: rgba(169, 110, 53, 0.05);
+}
+
+.seal-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
   font-family: 'Noto Serif SC', serif;
 }
 
-.meta-item--motto .meta-value {
+.seal-item--motto .seal-value {
+  color: #8b2d1c;
   font-style: italic;
-  color: var(--accent-amber, #a96e35);
 }
 
 /* ── Overview Cards ── */
 .overview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.25rem;
 }
 
 .ov-card {
-  background: var(--bg-panel, #fff);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.06));
-  border-radius: 16px;
-  padding: 1.5rem 1.25rem;
-  text-align: left;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 20px;
+  padding: 1.75rem 1.5rem;
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
-  cursor: default;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
 }
 
 .ov-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 20px -10px rgba(0,0,0,0.08);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+  border-color: var(--accent-amber);
 }
 
 .ov-card__bg {
   position: absolute;
-  right: -10px;
+  right: -5px;
   bottom: -15px;
-  font-size: 5rem;
+  font-size: 5.5rem;
   font-weight: 900;
+  color: var(--accent-earth);
   opacity: 0.04;
   user-select: none;
   pointer-events: none;
   font-family: 'Noto Serif SC', serif;
+  transition: opacity 0.3s ease;
+}
+
+.ov-card:hover .ov-card__bg {
+  opacity: 0.08;
 }
 
 .ov-card__number {
   display: block;
-  font-size: 2rem;
+  font-size: 2.25rem;
   font-weight: 900;
-  color: var(--text-main, #1a1a1a);
+  color: var(--text-main);
   line-height: 1;
-  margin-bottom: 0.25rem;
-  position: relative;
+  margin-bottom: 0.4rem;
+  font-family: 'Noto Serif SC', serif;
 }
 
 .ov-card__label {
-  font-size: 0.8rem;
-  color: var(--text-soft, #888);
+  font-size: 0.85rem;
+  color: var(--text-soft);
   font-weight: 600;
-  position: relative;
 }
 
-.ov-card--male .ov-card__number { color: #3b82f6; }
-.ov-card--female .ov-card__number { color: #ec4899; }
-.ov-card--gen .ov-card__number { color: var(--accent-amber, #a96e35); }
-.ov-card--alive .ov-card__number { color: #10b981; }
-.ov-card--deceased .ov-card__number { color: #6b7280; }
+.ov-card--male .ov-card__number { color: var(--accent-ink); }
+.ov-card--female .ov-card__number { color: #8b2d1c; }
+.ov-card--gen .ov-card__number { color: var(--accent-amber); }
+.ov-card--alive .ov-card__number { color: var(--accent-olive); }
+.ov-card--deceased .ov-card__number { color: var(--text-soft); }
 
 /* ── Charts Grid ── */
 .charts-grid {
@@ -622,11 +678,11 @@ function formatHistoryDate(dateStr: string) {
 }
 
 .chart-card {
-  background: var(--bg-panel, #fff);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.06));
-  border-radius: 18px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  background: var(--bg-panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 20px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
 
 .chart-card--wide {
@@ -634,166 +690,173 @@ function formatHistoryDate(dateStr: string) {
 }
 
 .chart-title {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 800;
-  color: var(--text-main, #1a1a1a);
-  margin: 0 0 1.5rem;
+  color: var(--text-main);
+  margin: 0 0 1.75rem;
   font-family: 'Noto Serif SC', serif;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .chart-title::before {
   content: "";
-  width: 4px;
-  height: 1rem;
-  background: var(--accent-amber, #a96e35);
-  border-radius: 2px;
+  width: 5px;
+  height: 1.2rem;
+  background: var(--accent-amber);
+  border-radius: 3px;
+  box-shadow: 0 0 8px rgba(169, 110, 53, 0.4);
 }
 
 .chart-empty {
-  font-size: 0.85rem;
-  color: var(--text-soft, #aaa);
+  font-size: 0.9rem;
+  color: var(--text-soft);
   text-align: center;
-  padding: 2rem 0;
-  border: 1px dashed var(--border-color, rgba(0,0,0,0.1));
-  border-radius: 12px;
+  padding: 3rem 0;
+  background: var(--bg-shell);
+  border: 1px dashed var(--line-soft);
+  border-radius: 16px;
 }
 
 /* ── Gender Bar ── */
 .gender-bar {
   display: flex;
-  height: 40px;
-  border-radius: 20px;
+  height: 44px;
+  border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 1rem;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 1.25rem;
+  background: var(--bg-shell);
+  padding: 4px;
 }
 
 .gender-bar__male {
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  background: var(--metric-ink, linear-gradient(135deg, #3c5363, #5a7a90));
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 0.85rem;
-  font-weight: 800;
-  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 0.9rem;
+  font-weight: 900;
+  border-radius: 8px 0 0 8px;
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 10px rgba(60, 83, 99, 0.2);
 }
 
 .gender-bar__female {
-  background: linear-gradient(90deg, #ec4899, #f472b6);
+  background: linear-gradient(135deg, #8b2d1c, #b04a3a);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 0.85rem;
-  font-weight: 800;
-  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 0.9rem;
+  font-weight: 900;
+  border-radius: 0 8px 8px 0;
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 10px rgba(139, 45, 28, 0.2);
 }
 
 .gender-legend,
 .timeline-legend {
   display: flex;
-  gap: 1.5rem;
-  font-size: 0.8rem;
-  color: var(--text-soft, #888);
+  gap: 1.75rem;
+  font-size: 0.85rem;
+  color: var(--text-sub);
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   font-weight: 600;
 }
 
 .legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
 }
 
-.legend-dot--male { background: #3b82f6; }
-.legend-dot--female { background: #ec4899; }
-.legend-dot--birth { background: #10b981; }
-.legend-dot--death { background: #6b7280; }
+.legend-dot--male { background: var(--accent-ink); }
+.legend-dot--female { background: #8b2d1c; }
+.legend-dot--birth { background: var(--accent-olive); }
+.legend-dot--death { background: var(--text-soft); }
 
 /* ── Bar Chart ── */
 .bar-chart {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .bar-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .bar-label {
-  width: 60px;
-  font-size: 0.75rem;
+  width: 65px;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-soft, #888);
+  color: var(--text-soft);
   text-align: right;
   flex-shrink: 0;
 }
 
 .bar-label--surname {
-  width: 32px;
-  font-size: 1rem;
+  width: 40px;
+  font-size: 1.1rem;
   font-weight: 800;
-  color: var(--text-main, #1a1a1a);
+  color: var(--text-main);
   text-align: center;
   font-family: 'Noto Serif SC', serif;
 }
 
 .bar-track {
   flex: 1;
-  height: 12px;
-  background: var(--bg-shell, #f0ebe3);
-  border-radius: 6px;
+  height: 14px;
+  background: var(--bg-shell);
+  border-radius: 7px;
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent-ink, #6a4b2f), var(--accent-amber, #a96e35));
-  border-radius: 6px;
-  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--metric-amber, linear-gradient(90deg, #4a3421, #a96e35));
+  border-radius: 7px;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
   min-width: 4px;
-  box-shadow: 0 0 10px rgba(169, 110, 53, 0.2);
+  box-shadow: 0 0 12px rgba(169, 110, 53, 0.25);
 }
 
 .bar-fill--lifespan {
-  background: linear-gradient(90deg, #10b981, #34d399);
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+  background: var(--metric-olive, linear-gradient(90deg, #1e7a5c, #3ec29a));
+  box-shadow: 0 0 12px rgba(103, 114, 79, 0.25);
 }
 
 .bar-fill--surname {
-  background: linear-gradient(90deg, #8b5cf6, #a78bfa);
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+  background: var(--metric-earth, linear-gradient(90deg, #7c4dff, #b388ff));
+  box-shadow: 0 0 12px rgba(118, 79, 47, 0.25);
 }
 
 .bar-value {
-  width: 32px;
-  font-size: 0.8rem;
+  width: 35px;
+  font-size: 0.9rem;
   font-weight: 800;
-  color: var(--text-main, #1a1a1a);
+  color: var(--text-main);
   text-align: left;
-  flex-shrink: 0;
 }
 
 /* ── Lifespan Summary ── */
 .lifespan-summary {
   display: flex;
-  gap: 2rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: var(--bg-shell, #f9f7f2);
-  border-radius: 12px;
+  gap: 2.5rem;
+  margin-bottom: 1.25rem;
+  padding: 1.5rem;
+  background: rgba(169, 110, 53, 0.04);
+  border-radius: 16px;
+  border: 1px solid var(--line-soft);
 }
 
 .ls-item {
@@ -802,38 +865,46 @@ function formatHistoryDate(dateStr: string) {
 }
 
 .ls-value {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 900;
-  color: var(--text-main, #1a1a1a);
-  line-height: 1.2;
+  color: var(--text-main);
+  line-height: 1.1;
+  font-family: 'Noto Serif SC', serif;
+}
+
+.ls-value small {
+  font-size: 0.85rem;
+  margin-left: 2px;
+  color: var(--text-soft);
 }
 
 .ls-label {
   font-size: 0.75rem;
-  color: var(--text-soft, #888);
+  color: var(--accent-amber);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  margin-top: 0.25rem;
 }
 
 /* ── Timeline Chart ── */
 .timeline-chart {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.75rem;
 }
 
 .timeline-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .timeline-label {
-  width: 50px;
-  font-size: 0.75rem;
+  width: 55px;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-soft, #888);
+  color: var(--text-soft);
   text-align: right;
   flex-shrink: 0;
 }
@@ -842,152 +913,146 @@ function formatHistoryDate(dateStr: string) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .timeline-bar {
-  height: 10px;
-  border-radius: 5px;
-  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  min-width: 4px;
+  height: 12px;
+  border-radius: 6px;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 6px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding-right: 6px;
+  padding-right: 8px;
 }
 
 .timeline-bar--birth {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: var(--metric-olive, linear-gradient(90deg, #1e7a5c, #3ec29a));
 }
 
 .timeline-bar--death {
-  background: linear-gradient(90deg, #6b7280, #9ca3af);
+  background: linear-gradient(90deg, #5a5e66, #9ca3af);
 }
 
 .timeline-bar__val {
-  font-size: 0.65rem;
-  font-weight: 800;
+  font-size: 0.7rem;
+  font-weight: 900;
   color: #fff;
 }
 
-/* ── History List (Timeline) ── */
-.history-list {
+/* ── History Timeline ── */
+.history-timeline {
   display: flex;
   flex-direction: column;
-  position: relative;
-  padding-left: 1.5rem;
+  gap: 0;
 }
 
-.history-list::before {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 0.5rem;
-  bottom: 0.5rem;
-  width: 2px;
-  background: var(--border-color, rgba(0,0,0,0.06));
-}
-
-.history-item {
+.history-event {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem 0;
+  gap: 1.5rem;
+}
+
+.history-event__line {
+  width: 2px;
+  background: var(--line-soft);
   position: relative;
+  margin-left: 8px;
 }
 
-.history-item::before {
-  content: "";
-  position: absolute;
-  left: -1.5rem;
-  top: 1.4rem;
-  width: 8px;
-  height: 8px;
+.history-event:last-child .history-event__line {
+  background: linear-gradient(to bottom, var(--line-soft) 20px, transparent);
+}
+
+.history-event__dot {
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: var(--bg-panel, #fff);
-  border: 2px solid var(--accent-amber, #a96e35);
-  transform: translateX(-3px);
-  z-index: 1;
+  background: var(--bg-paper);
+  border: 3px solid var(--accent-amber);
+  position: absolute;
+  left: -6px;
+  top: 1.25rem;
+  box-shadow: 0 0 0 4px rgba(169, 110, 53, 0.1);
+  z-index: 2;
 }
 
-.history-time {
-  width: 100px;
-  font-size: 0.75rem;
-  color: var(--text-soft, #999);
-  font-weight: 600;
-  padding-top: 0.25rem;
-  flex-shrink: 0;
+.history-event__content {
+  flex: 1;
+  padding: 1rem 0 2rem;
+}
+
+.history-event__meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.history-event__time {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-amber);
+}
+
+.history-event__actor {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+  background: var(--bg-shell);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+
+.actor-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--accent-earth);
+}
+
+.history-event__body {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-soft);
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
 .history-tag {
-  display: inline-block;
-  padding: 0.2rem 0.75rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 6px;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  background: rgba(100,100,100,0.06);
-  color: var(--text-sub, #666);
-  flex-shrink: 0;
-  border: 1px solid rgba(0,0,0,0.03);
+  border: 1px solid transparent;
 }
 
-.history-tag--danger {
-  background: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.1);
+.history-tag--danger { background: var(--danger-bg); color: var(--danger-title); border-color: var(--danger-border); }
+.history-tag--success { background: rgba(103, 114, 79, 0.1); color: var(--accent-olive); border-color: rgba(103, 114, 79, 0.2); }
+.history-tag--info { background: rgba(60, 83, 99, 0.1); color: var(--accent-ink); border-color: rgba(60, 83, 99, 0.2); }
+.history-tag--purple { background: rgba(124, 77, 255, 0.1); color: #7c4dff; border-color: rgba(124, 77, 255, 0.2); }
+.history-tag--indigo { background: rgba(55, 48, 163, 0.1); color: #3730a3; border-color: rgba(55, 48, 163, 0.2); }
+
+.history-event__detail {
+  font-size: 0.9rem;
+  color: var(--text-sub);
+  font-weight: 500;
 }
 
-.history-tag--success {
-  background: rgba(16, 185, 129, 0.08);
-  color: #10b981;
-  border-color: rgba(16, 185, 129, 0.1);
-}
-
-.history-tag--info {
-  background: rgba(59, 130, 246, 0.08);
-  color: #3b82f6;
-  border-color: rgba(59, 130, 246, 0.1);
-}
-
-.history-tag--purple {
-  background: rgba(168, 85, 247, 0.08);
-  color: #a855f7;
-  border-color: rgba(168, 85, 247, 0.1);
-}
-
-.history-tag--indigo {
-  background: rgba(99, 102, 241, 0.08);
-  color: #6366f1;
-  border-color: rgba(99, 102, 241, 0.1);
-}
-
-.history-user {
-  font-weight: 700;
-  color: var(--text-main, #1a1a1a);
-  flex-shrink: 0;
-  font-size: 0.85rem;
-  padding-top: 0.15rem;
-}
-
-.history-detail {
-  color: var(--text-soft, #888);
-  font-size: 0.85rem;
-  padding-top: 0.15rem;
-  flex: 1;
-}
-
-@media (max-width: 850px) {
+@media (max-width: 900px) {
   .charts-grid { grid-template-columns: 1fr; }
-  .family-hero__meta { gap: 1.5rem; }
-  .meta-item::after { display: none; }
 }
 
 @media (max-width: 600px) {
-  .stats-content { padding: 1rem; }
+  .family-hero__title { font-size: 2rem; }
+  .family-hero__meta { gap: 1.5rem; }
   .overview-grid { grid-template-columns: repeat(2, 1fr); }
-  .history-item { flex-direction: column; gap: 0.5rem; padding-left: 0.5rem; }
-  .history-time { width: auto; }
-  .history-item::before { top: 1rem; }
+  .history-event__meta { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .history-event__body { flex-direction: column; align-items: flex-start; }
 }
 </style>
-

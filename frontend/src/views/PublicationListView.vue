@@ -8,7 +8,7 @@ import {
   updatePublicationMetadata,
   type PublicationSummary,
 } from '../api/publication'
-import { samplePublication, defaultSettings } from '../data/sampleFamily'
+import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { builtinSamples } from '../data/builtinDynastySamples'
 import type { PublicationInfo } from '../types/family'
 
@@ -91,7 +91,7 @@ async function handleCreate() {
   const subtitle = newSubtitle.value.trim()
   try {
     const id = await createPublication(
-      { ...samplePublication, title, subtitle },
+      { ...blankPublication, title, subtitle },
       defaultSettings,
       title,
     )

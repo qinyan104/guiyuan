@@ -10,11 +10,15 @@ const props = defineProps<{
   settings: PublicationSettings
   layout: PublicationLayout
   selectedPersonId: string
+  panX: number
+  panY: number
 }>()
 
 const emit = defineEmits<{
   (event: 'select-person', personId: string): void
   (event: 'update-zoom', zoom: number): void
+  (event: 'update:panX', x: number): void
+  (event: 'update:panY', y: number): void
 }>()
 
 const svgRef = ref<SVGSVGElement | null>(null)
@@ -22,11 +26,14 @@ const viewportRef = ref<HTMLDivElement | null>(null)
 const minimapContainerRef = ref<HTMLDivElement | null>(null)
 const minimapCanvasRef = ref<HTMLCanvasElement | null>(null)
 const isDragging = ref(false)
-const panX = ref(0)
-const panY = ref(0)
 const viewportWidth = ref(0)
 const viewportHeight = ref(0)
 const isMinimapDragging = ref(false)
+
+function setPan(x: number, y: number) {
+  emit('update:panX', x)
+  emit('update:panY', y)
+}
 
 let pendingSelectPersonId = ''
 let dragStartX = 0
@@ -55,13 +62,12 @@ const stageStyle = computed(() => ({
 }))
 
 const viewportStyle = computed(() => ({
-  '--grid-offset-x': `${panX.value}px`,
-  '--grid-offset-y': `${panY.value}px`,
+  '--grid-offset-x': `${props.panX}px`,
+  '--grid-offset-y': `${props.panY}px`,
 }))
 
 const cameraStyle = computed(() => ({
-  left: `calc(50% + ${panX.value}px)`,
-  top: `calc(50% + ${panY.value}px)`,
+  transform: `translate3d(calc(-50% + ${props.panX}px), calc(-50% + ${props.panY}px), 0)`,
 }))
 
 const minimapData = computed(() => {
@@ -73,8 +79,8 @@ const minimapData = computed(() => {
   const paperOffsetY = (MINIMAP_HEIGHT - paperHeight) / 2
   const visibleWorldWidth = viewportWidth.value / props.settings.zoom
   const visibleWorldHeight = viewportHeight.value / props.settings.zoom
-  const worldLeft = props.layout.width / 2 - visibleWorldWidth / 2 - panX.value / props.settings.zoom
-  const worldTop = props.layout.height / 2 - visibleWorldHeight / 2 - panY.value / props.settings.zoom
+  const worldLeft = props.layout.width / 2 - visibleWorldWidth / 2 - props.panX / props.settings.zoom
+  const worldTop = props.layout.height / 2 - visibleWorldHeight / 2 - props.panY / props.settings.zoom
   const worldRight = worldLeft + visibleWorldWidth
   const worldBottom = worldTop + visibleWorldHeight
   const clippedLeft = clamp(worldLeft, 0, props.layout.width)
@@ -95,41 +101,6 @@ const minimapData = computed(() => {
       height: Math.max(16, (clippedBottom - clippedTop) * scale),
     },
   }
-})
-
-const BUFFER_SIZE = 500
-
-const visibleWorldRect = computed(() => {
-  const zoom = props.settings.zoom
-  const visibleWorldWidth = viewportWidth.value / zoom
-  const visibleWorldHeight = viewportHeight.value / zoom
-
-  // 计算当前视口中心在世界坐标系中的位置
-  const worldLeft = props.layout.width / 2 - visibleWorldWidth / 2 - panX.value / zoom
-  const worldTop = props.layout.height / 2 - visibleWorldHeight / 2 - panY.value / zoom
-
-  return {
-    left: worldLeft - BUFFER_SIZE,
-    top: worldTop - BUFFER_SIZE,
-    right: worldLeft + visibleWorldWidth + BUFFER_SIZE,
-    bottom: worldTop + visibleWorldHeight + BUFFER_SIZE,
-  }
-})
-
-const visibleCards = computed(() => {
-  const rect = visibleWorldRect.value
-  return props.layout.cards.filter((card) => {
-    // 简单的矩形碰撞检测：卡片是否与视口(含缓冲区)相交
-    const cardRight = card.x + card.width
-    const cardBottom = card.y + card.height
-
-    return !(
-      card.x > rect.right ||
-      cardRight < rect.left ||
-      card.y > rect.bottom ||
-      cardBottom < rect.top
-    )
-  })
 })
 
 function drawMinimapCanvas() {
@@ -201,8 +172,8 @@ function handlePointerDown(event: PointerEvent) {
   isDragging.value = true
   dragStartX = event.clientX
   dragStartY = event.clientY
-  panStartX = panX.value
-  panStartY = panY.value
+  panStartX = props.panX
+  panStartY = props.panY
   viewportRef.value?.setPointerCapture(event.pointerId)
 }
 
@@ -218,8 +189,7 @@ function handlePointerMove(event: PointerEvent) {
     pendingSelectPersonId = ''
   }
 
-  panX.value = panStartX + deltaX
-  panY.value = panStartY + deltaY
+  setPan(panStartX + deltaX, panStartY + deltaY)
 }
 
 function finishDrag(event: PointerEvent) {
@@ -258,11 +228,13 @@ function handleWheel(event: WheelEvent) {
   const rect = viewportRef.value.getBoundingClientRect()
   const pointerX = event.clientX - rect.left
   const pointerY = event.clientY - rect.top
-  const worldX = props.layout.width / 2 + (pointerX - rect.width / 2 - panX.value) / currentZoom
-  const worldY = props.layout.height / 2 + (pointerY - rect.height / 2 - panY.value) / currentZoom
+  const worldX = props.layout.width / 2 + (pointerX - rect.width / 2 - props.panX) / currentZoom
+  const worldY = props.layout.height / 2 + (pointerY - rect.height / 2 - props.panY) / currentZoom
 
-  panX.value = pointerX - rect.width / 2 - (worldX - props.layout.width / 2) * nextZoom
-  panY.value = pointerY - rect.height / 2 - (worldY - props.layout.height / 2) * nextZoom
+  const nextPanX = pointerX - rect.width / 2 - (worldX - props.layout.width / 2) * nextZoom
+  const nextPanY = pointerY - rect.height / 2 - (worldY - props.layout.height / 2) * nextZoom
+  
+  setPan(nextPanX, nextPanY)
 
   emit('update-zoom', nextZoom)
 }
@@ -278,8 +250,10 @@ function updatePanFromMinimap(clientX: number, clientY: number) {
   const worldX = clamp((localX - minimapData.value.paperOffsetX) / minimapData.value.scale, 0, props.layout.width)
   const worldY = clamp((localY - minimapData.value.paperOffsetY) / minimapData.value.scale, 0, props.layout.height)
 
-  panX.value = (props.layout.width / 2 - worldX) * props.settings.zoom
-  panY.value = (props.layout.height / 2 - worldY) * props.settings.zoom
+  setPan(
+    (props.layout.width / 2 - worldX) * props.settings.zoom,
+    (props.layout.height / 2 - worldY) * props.settings.zoom
+  )
 }
 
 function handleMinimapPointerDown(event: PointerEvent) {
@@ -312,8 +286,7 @@ function handleMinimapPointerUp(event: PointerEvent) {
 }
 
 function resetView() {
-  panX.value = 0
-  panY.value = 0
+  setPan(0, 0)
 }
 
 function revealPerson(personId: string, options: RevealPersonOptions = {}) {
@@ -330,8 +303,8 @@ function revealPerson(personId: string, options: RevealPersonOptions = {}) {
     layoutWidth: props.layout.width,
     layoutHeight: props.layout.height,
     zoom: props.settings.zoom,
-    panX: panX.value,
-    panY: panY.value,
+    panX: props.panX,
+    panY: props.panY,
     card,
     ...options,
   })
@@ -340,8 +313,7 @@ function revealPerson(personId: string, options: RevealPersonOptions = {}) {
     return
   }
 
-  panX.value = nextPan.panX
-  panY.value = nextPan.panY
+  setPan(nextPan.panX, nextPan.panY)
 }
 
 onMounted(() => {
@@ -404,9 +376,9 @@ defineExpose({
             />
           </g>
 
-          <g filter="url(#cardShadow)">
+          <g :filter="isDragging ? null : 'url(#cardShadow)'">
             <PersonCardSvg
-              v-for="card in visibleCards"
+              v-for="card in layout.cards"
               :key="card.personId"
               :data-person-id="card.personId"
               :person="resolvePerson(card.personId)"

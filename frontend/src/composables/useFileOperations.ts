@@ -10,6 +10,7 @@ import {
 } from '../features/export/publicationExport'
 import {
   createDraftPackage,
+  createPortablePublication,
   parseDraftJson,
   serializeDraftPackage,
 } from '../features/persistence/draftPersistence'
@@ -245,15 +246,22 @@ export function useFileOperations(deps: FileOperationsDeps) {
     printWindow.document.close()
   }
 
-  function exportJson() {
-    const draft = createDraftPackage(publication, settings)
-    downloadTextFile(
-      `${sanitizeFileName(publication.title)}.json`,
-      serializeDraftPackage(draft),
-      'application/json;charset=utf-8',
-    )
-    statusMessage.value = '已导出 JSON 草稿。'
-    errorMessage.value = ''
+  async function exportJson() {
+    statusMessage.value = '正在导出 (处理图片中)...'
+    try {
+      const portablePub = await createPortablePublication(publication)
+      const draft = createDraftPackage(portablePub, settings)
+      downloadTextFile(
+        `${sanitizeFileName(publication.title)}.json`,
+        serializeDraftPackage(draft),
+        'application/json;charset=utf-8',
+      )
+      statusMessage.value = '已导出 JSON 草稿 (包含图片)。'
+      errorMessage.value = ''
+    } catch (err) {
+      errorMessage.value = getErrorMessage(err, '导出失败')
+      statusMessage.value = ''
+    }
   }
 
   async function importDraftFromFileEvent(event: Event) {

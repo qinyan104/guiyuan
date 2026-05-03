@@ -4,7 +4,6 @@ import type { FamilyBranchMode, Gender } from '../types/family'
 import { applyRelationshipAction, summarizeDeleteImpact, type RelationshipAction } from '../features/editor/publicationOperations'
 import { formatValidationIssues } from '../features/validation/draftSchema'
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
-import { defaultSampleId, getBuiltinSampleById } from '../data/builtinDynastySamples'
 
 import type { PublicationStateReturn } from './usePublicationState'
 
@@ -14,7 +13,6 @@ interface RelationshipActionsDeps {
   errorMessage: Ref<string>
   editorOpen: Ref<boolean>
   layoutPanelOpen: Ref<boolean>
-  overviewOpen: Ref<boolean>
   historyOpen: Ref<boolean>
   markHistory: (label: string) => void
   initializeHistoryBaseline: () => void
@@ -33,7 +31,6 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     errorMessage,
     editorOpen,
     layoutPanelOpen,
-    overviewOpen,
     historyOpen,
     markHistory,
     initializeHistoryBaseline,
@@ -184,38 +181,6 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     )
   }
 
-  function loadBuiltinSample(sampleId: string) {
-    const sample = getBuiltinSampleById(sampleId)
-    if (!sample) {
-      errorMessage.value = '未找到对应的内置示例图。'
-      statusMessage.value = ''
-      return
-    }
-
-    if (!window.confirm(`将会覆盖当前草稿，并加载“${sample.label}”示例图。是否继续？`)) return
-
-    markHistory(`加载示例图：${sample.label}`)
-    replaceReactiveObject(publication, structuredClone(sample.publication))
-    replaceReactiveObject(settings, structuredClone(defaultSettings))
-    selectedPersonId.value = getDefaultSelectedPersonId(sample.publication)
-    draftFileHandle.value = null
-    draftFileName.value = ''
-    hasUnsavedFileChanges.value = true
-    layoutPanelOpen.value = false
-    overviewOpen.value = false
-    editorOpen.value = false
-    historyOpen.value = false
-    errorMessage.value = ''
-    statusMessage.value = `已加载示例图：${sample.label}`
-    nextTick(() => {
-      canvasRef.value?.resetView?.()
-    })
-  }
-
-  function restoreSample() {
-    loadBuiltinSample(defaultSampleId)
-  }
-
   function createBlankDraft() {
     if (!shouldReplaceCurrentDraft()) return
 
@@ -226,7 +191,6 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     draftFileName.value = ''
     hasUnsavedFileChanges.value = true
     layoutPanelOpen.value = false
-    overviewOpen.value = false
     editorOpen.value = true
     historyOpen.value = false
     errorMessage.value = ''
@@ -250,8 +214,6 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     removeSpouseRelation,
     removeParentsRelation,
     deleteSelectedPerson,
-    loadBuiltinSample,
-    restoreSample,
     createBlankDraft,
   }
 }

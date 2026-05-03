@@ -103,6 +103,46 @@ export function serializeDraftPackage(draft: DraftPackage): string {
   return JSON.stringify(draft, null, 2)
 }
 
+/**
+ * 将族谱数据转换为便携格式：将所有 /api/photos/ 链接替换为 Base64 编码的图片数据
+ */
+export async function createPortablePublication(publication: PublicationData): Promise<PublicationData> {
+  const next = JSON.parse(JSON.stringify(publication)) as PublicationData
+  const people = Object.values(next.people)
+
+  const tasks = people.map(async (person) => {
+    if (person.avatarUrl && isPortablePhotoUrl(person.avatarUrl)) {
+      try {
+        const response = await fetch(person.avatarUrl)
+        if (!response.ok) return
+        
+        const blob = await response.blob()
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(blob)
+        })
+        person.avatarUrl = base64
+      } catch (e) {
+        console.error(`无法转换图片为 Base64 (person: ${person.name}):`, e)
+      }
+    }
+  })
+
+  await Promise.all(tasks)
+  return next
+}
+
+function isPortablePhotoUrl(avatarUrl: string): boolean {
+  return (
+    avatarUrl.startsWith('/api/photos/') ||
+    avatarUrl.startsWith('/uploads/') ||
+    avatarUrl.startsWith('uploads/') ||
+    avatarUrl.includes('/uploads/')
+  )
+}
+
 export function parseDraftJson(raw: string): ValidationResult<DraftPackage> {
   const parsed = parseJson(raw)
   if (!parsed.ok) {

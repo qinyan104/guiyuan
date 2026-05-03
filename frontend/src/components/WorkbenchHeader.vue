@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { ThemeId } from '../composables/useTheme'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 
@@ -12,12 +13,17 @@ interface SampleGroup {
   samples: SampleOption[]
 }
 
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+function triggerFileInput() {
+  fileInputRef.value?.click()
+}
+
 withDefaults(
   defineProps<{
     fileName?: string
     dirty?: boolean
     nativeFileAccess?: boolean
-    sampleGroups?: SampleGroup[]
     currentTheme?: ThemeId
     currentUsername?: string
     syncStatus?: 'saved' | 'pending' | 'syncing' | 'error'
@@ -26,7 +32,6 @@ withDefaults(
     fileName: '',
     dirty: false,
     nativeFileAccess: false,
-    sampleGroups: () => [],
     currentTheme: 'parchment' as ThemeId,
     currentUsername: '',
     syncStatus: 'saved',
@@ -37,12 +42,11 @@ const emit = defineEmits<{
   (event: 'import-json', payload: Event): void
   (event: 'open-file'): void
   (event: 'create-blank'): void
-  (event: 'load-sample', sampleId: string): void
   (event: 'save-file'): void
   (event: 'save-file-as'): void
-  (event: 'restore-sample'): void
   (event: 'download-svg'): void
   (event: 'print-publication'): void
+  (event: 'export-json'): void
   (event: 'change-theme', themeId: ThemeId): void
   (event: 'logout'): void
   (event: 'go-back'): void
@@ -53,12 +57,17 @@ const emit = defineEmits<{
 
 <template>
   <header class="topbar">
+    <!-- 隐藏的文件输入框 -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept=".json"
+      style="display: none"
+      @change="emit('import-json', $event)"
+    />
+
     <div class="topbar__intro">
-      <button class="topbar__back-btn" @click="emit('go-back')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        族谱列表
-      </button>
-      <h1>族谱无限画布</h1>
+      <h1 class="clickable-title" @click="emit('go-back')">族谱管理系统</h1>
       <div class="sync-status" :class="[`sync-status--${syncStatus}`]">
         <span class="sync-icon">
           <svg v-if="syncStatus === 'syncing'" class="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -75,34 +84,12 @@ const emit = defineEmits<{
     <div class="topbar__actions" aria-label="工作台操作">
       <div class="topbar__action-strip">
         <div class="dropdown">
-          <button class="btn btn--secondary dropdown-trigger" type="button">族谱 <span class="caret">&#x25BE;</span></button>
+          <button class="btn btn--secondary dropdown-trigger" type="button">分析 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu">
-            <button class="dropdown-item" type="button" @click="emit('go-back')">返回族谱列表</button>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="emit('create-blank')">新建空白族谱</button>
-            <button class="dropdown-item" type="button" @click="emit('restore-sample')">恢复默认示例</button>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="emit('view-stats')">统计分析</button>
+            <button class="dropdown-item" type="button" @click="emit('view-stats')">统计报告</button>
             <button class="dropdown-item" type="button" @click="emit('view-timeline')">家族时间线</button>
-          </div>
-        </div>
-
-        <div v-if="sampleGroups.length" class="dropdown">
-          <button class="btn btn--secondary dropdown-trigger" type="button">王朝示例 <span class="caret">&#x25BE;</span></button>
-          <div class="dropdown-menu dropdown-menu--samples">
-            <template v-for="(group, groupIndex) in sampleGroups" :key="group.label">
-              <p class="dropdown-section-title">{{ group.label }}</p>
-              <button
-                v-for="sample in group.samples"
-                :key="sample.id"
-                class="dropdown-item"
-                type="button"
-                @click="emit('load-sample', sample.id)"
-              >
-                {{ sample.label }}
-              </button>
-              <div v-if="groupIndex < sampleGroups.length - 1" class="dropdown-divider"></div>
-            </template>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" type="button" @click="triggerFileInput">导入 JSON 草稿</button>
           </div>
         </div>
 
@@ -110,6 +97,7 @@ const emit = defineEmits<{
           <button class="btn btn--secondary dropdown-trigger" type="button">导出 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu">
             <button class="dropdown-item" type="button" @click="emit('download-svg')">导出高清 SVG</button>
+            <button class="dropdown-item" type="button" @click="emit('export-json')">导出 JSON 草稿 (含图片)</button>
             <button class="dropdown-item" type="button" @click="emit('print-publication')">进入打印排版模式</button>
           </div>
         </div>
@@ -133,6 +121,18 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
+.clickable-title {
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.clickable-title:hover {
+  background: var(--bg-hover);
+  color: var(--accent-amber);
+}
+
 .dropdown {
   position: relative;
   display: inline-block;
