@@ -16,7 +16,7 @@ const USER_ROLE_LABELS: Record<Exclude<UserRoleTab, 'all'>, string> = {
 }
 
 function hasUserRoleLabel(role: string): role is Exclude<UserRoleTab, 'all'> {
-  return role in USER_ROLE_LABELS
+  return role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'USER'
 }
 
 export function buildUserRoleSummary(users: AdminUser[]) {

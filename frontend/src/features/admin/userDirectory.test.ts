@@ -43,6 +43,6 @@ describe('userDirectory helpers', () => {
   })
 
   it('returns unknown roles unchanged', () => {
-    expect(getUserRoleLabel('AUDITOR' as never)).toBe('AUDITOR')
+    expect(getUserRoleLabel('AUDITOR')).toBe('AUDITOR')
   })
 })
