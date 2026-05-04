@@ -69,7 +69,7 @@ const ADMIN_PAGE_META: Record<AdminRouteName, AdminPageMeta> = {
 }
 
 export function getAdminPageMeta(routeName: unknown): AdminPageMeta {
-  if (typeof routeName === 'string' && routeName in ADMIN_PAGE_META) {
+  if (typeof routeName === 'string' && Object.hasOwn(ADMIN_PAGE_META, routeName)) {
     return ADMIN_PAGE_META[routeName as AdminRouteName]
   }
   return ADMIN_PAGE_META.dashboard
