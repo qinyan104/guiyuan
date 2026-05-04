@@ -9,6 +9,10 @@ const ROLE_LABELS: Record<UserRoleTab, string> = {
   USER: '普通用户',
 }
 
+function hasUserRoleLabel(role: string): role is Exclude<UserRoleTab, 'all'> {
+  return role in ROLE_LABELS
+}
+
 export function buildUserRoleSummary(users: AdminUser[]) {
   return (['all', 'SUPER_ADMIN', 'ADMIN', 'USER'] as const).map((tab) => ({
     tab,
@@ -23,7 +27,7 @@ export function filterUsersByRole(users: AdminUser[], activeTab: UserRoleTab) {
 }
 
 export function getUserRoleLabel(role: AdminUser['role']) {
-  return ROLE_LABELS[role]
+  return hasUserRoleLabel(role) ? ROLE_LABELS[role] : ROLE_LABELS.USER
 }
 
 export function isProtectedUser(user: Pick<AdminUser, 'role'>) {

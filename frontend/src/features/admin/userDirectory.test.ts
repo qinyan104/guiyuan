@@ -27,6 +27,10 @@ describe('userDirectory helpers', () => {
     expect(filterUsersByRole(users, 'ADMIN').map((user) => user.username)).toEqual(['editor'])
   })
 
+  it('returns all users for the all tab', () => {
+    expect(filterUsersByRole(users, 'all').map((user) => user.username)).toEqual(['root', 'editor', 'viewer'])
+  })
+
   it('protects super admin rows', () => {
     expect(isProtectedUser(users[0])).toBe(true)
     expect(isProtectedUser(users[2])).toBe(false)
@@ -34,5 +38,7 @@ describe('userDirectory helpers', () => {
 
   it('maps role enums to readable labels', () => {
     expect(getUserRoleLabel('ADMIN')).toBe('管理员')
+    expect(getUserRoleLabel('SUPER_ADMIN')).toBe('超级管理员')
+    expect(getUserRoleLabel('USER')).toBe('普通用户')
   })
 })
