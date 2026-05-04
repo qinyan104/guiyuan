@@ -18,16 +18,28 @@ export function getAuditActionMeta(action: string) {
   return ACTION_META[action] ?? { label: action, tone: 'neutral' as const }
 }
 
+function getLocalDayKey(value: string | Date) {
+  const date = typeof value === 'string' ? new Date(value) : value
+
+  return [date.getFullYear(), date.getMonth(), date.getDate()].join('-')
+}
+
 export function summarizeAuditLogs(logs: AuditLogEntry[], now = new Date()) {
-  const todayKey = now.toISOString().slice(0, 10)
-  const todayCount = logs.filter((log) => log.createdAt.slice(0, 10) === todayKey).length
+  const todayKey = getLocalDayKey(now)
+  const todayCount = logs.filter((log) => getLocalDayKey(log.createdAt) === todayKey).length
   const riskCount = logs.filter((log) => getAuditActionMeta(log.action).tone === 'danger').length
-  const latestBackup = logs.find((log) => log.action === 'BACKUP')
+  const latestBackupAt = logs.reduce<string | null>((latest, log) => {
+    if (log.action !== 'BACKUP') {
+      return latest
+    }
+
+    return latest === null || log.createdAt > latest ? log.createdAt : latest
+  }, null)
 
   return {
     totalCount: logs.length,
     todayCount,
     riskCount,
-    latestBackupAt: latestBackup?.createdAt ?? null,
+    latestBackupAt,
   }
 }
