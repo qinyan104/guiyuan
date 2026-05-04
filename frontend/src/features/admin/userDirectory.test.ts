@@ -41,4 +41,8 @@ describe('userDirectory helpers', () => {
     expect(getUserRoleLabel('SUPER_ADMIN')).toBe('超级管理员')
     expect(getUserRoleLabel('USER')).toBe('普通用户')
   })
+
+  it('returns unknown roles unchanged', () => {
+    expect(getUserRoleLabel('AUDITOR' as never)).toBe('AUDITOR')
+  })
 })
