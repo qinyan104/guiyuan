@@ -148,7 +148,15 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
 </script>
 
 <template>
-  <div>
+  <div class="zen-container">
+    <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+      <filter id="ink-filter">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 25 -10" result="ink" />
+        <feComposite in="SourceGraphic" in2="ink" operator="atop"/>
+      </filter>
+    </svg>
+
     <div class="list-header">
       <div>
         <h1 class="list-header__title">族谱管理</h1>
@@ -311,6 +319,20 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
 </template>
 
 <style scoped>
+.zen-container {
+  position: fixed;
+  inset: 0;
+  background-color: #f4f2eb;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-blend-mode: multiply;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 2.5rem;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
 .list-header {
   display: flex;
   align-items: center;
