@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject } from 'vue'
+import { ref, inject, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { buildAuthHeaders } from '../api/auth'
 import type { ThemeId } from '../composables/useTheme'
@@ -141,6 +141,19 @@ async function handlePreviewPdf(options: any) {
   }
 }
 
+const userDropdownOpen = ref(false)
+const userInitials = computed(() => {
+  const name = props.currentUsername || '总'
+  return name.charAt(0).toUpperCase()
+})
+function toggleUserDropdown() {
+  userDropdownOpen.value = !userDropdownOpen.value
+}
+function goToSettings() {
+  userDropdownOpen.value = false
+  router.push({ name: 'settings' })
+}
+
 withDefaults(
   defineProps<{
     fileName?: string
@@ -229,14 +242,30 @@ const emit = defineEmits<{
         <ThemeSwitcher :current-theme="currentTheme" @change-theme="emit('change-theme', $event)" />
         <span class="topbar__action-divider" aria-hidden="true" />
 
-        <div class="dropdown dropdown--right">
-          <button class="btn btn--ghost dropdown-trigger user-trigger" type="button">
-            <span class="user-avatar">&#x1F464;</span>
-            <span class="user-name">{{ currentUsername || '管理员' }}</span>
+        <div class="user-dropdown-container">
+          <button class="user-profile-pill" @click="toggleUserDropdown" :class="{'is-open': userDropdownOpen}">
+            <div class="avatar-ring">
+              <span class="avatar-text">{{ userInitials }}</span>
+            </div>
+            <span class="username">{{ currentUsername || '总编' }}</span>
+            <svg class="dropdown-chevron" :class="{'rotated': userDropdownOpen}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </button>
-          <div class="dropdown-menu">
-            <button class="dropdown-item text-danger" type="button" @click="emit('logout')">安全退出</button>
-          </div>
+
+          <!-- Dropdown Popover -->
+          <transition name="glass-pop">
+            <div v-if="userDropdownOpen" class="user-popover">
+              <div class="popover-header">
+                <span class="popover-title">当前账号</span>
+                <div class="popover-account">{{ currentUsername || '总编' }}</div>
+              </div>
+              <div class="popover-menu">
+                <button class="menu-item" @click="goToSettings">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  偏好设置
+                </button>
+              </div>
+            </div>
+          </transition>
         </div>
       </div>
     </div>
@@ -361,6 +390,164 @@ const emit = defineEmits<{
 .text-danger:hover {
   background: rgba(239, 68, 68, 0.08);
   color: #dc2626;
+}
+
+/* ── User Profile Popover ── */
+.user-dropdown-container {
+  position: relative;
+}
+
+.user-profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px 4px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.user-profile-pill:hover,
+.user-profile-pill.is-open {
+  background: rgba(0,0,0,0.04);
+}
+:global([data-theme="ink-wash"]) .user-profile-pill:hover,
+:global([data-theme="rosewood"]) .user-profile-pill:hover,
+:global([data-theme="star-sea"]) .user-profile-pill:hover,
+:global([data-theme="ink-wash"]) .user-profile-pill.is-open,
+:global([data-theme="rosewood"]) .user-profile-pill.is-open,
+:global([data-theme="star-sea"]) .user-profile-pill.is-open {
+  background: rgba(255,255,255,0.08);
+}
+
+.avatar-ring {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--glass-border-highlight, rgba(255,255,255,0.8)), var(--glass-border-shadow, rgba(0,0,0,0.05)));
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-text {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-panel, #fff);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--text-main);
+}
+:global([data-theme="ink-wash"]) .avatar-text,
+:global([data-theme="rosewood"]) .avatar-text,
+:global([data-theme="star-sea"]) .avatar-text {
+  background: rgba(40,40,40,1);
+  color: #fff;
+}
+
+.username {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  letter-spacing: 0.05em;
+}
+
+.dropdown-chevron {
+  color: var(--text-soft);
+  transition: transform 0.2s ease;
+}
+.dropdown-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.user-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 220px;
+  border-radius: 20px;
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--glass-border-shadow, rgba(0,0,0,0.05));
+  padding: 8px;
+  z-index: 9999;
+  transform-origin: top right;
+}
+
+:global([data-theme="ink-wash"]) .user-popover,
+:global([data-theme="rosewood"]) .user-popover,
+:global([data-theme="star-sea"]) .user-popover {
+  background: rgba(20, 20, 20, 0.85);
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+}
+
+.popover-header {
+  padding: 12px 12px 8px;
+  margin-bottom: 4px;
+}
+.popover-title {
+  font-family: monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--text-soft);
+  text-transform: uppercase;
+}
+.popover-account {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 4px;
+}
+
+.popover-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.menu-item:hover {
+  background: rgba(0,0,0,0.04);
+}
+:global([data-theme="ink-wash"]) .menu-item:hover,
+:global([data-theme="rosewood"]) .menu-item:hover,
+:global([data-theme="star-sea"]) .menu-item:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+/* Popover Transitions */
+.glass-pop-enter-active,
+.glass-pop-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-pop-enter-from,
+.glass-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-8px);
 }
 
 .user-trigger {
