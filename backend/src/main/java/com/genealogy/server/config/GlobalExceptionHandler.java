@@ -3,6 +3,7 @@ package com.genealogy.server.config;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
+import com.genealogy.server.exception.GoneException;
 import com.genealogy.server.exception.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -31,6 +32,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleBadRequest(BadRequestException e) {
         return ApiResponse.error(400, e.getMessage());
+    }
+
+    @ExceptionHandler(GoneException.class)
+    @ResponseStatus(HttpStatus.GONE)
+    public ApiResponse<Void> handleGone(GoneException e) {
+        return ApiResponse.error(410, e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
