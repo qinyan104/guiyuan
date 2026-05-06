@@ -211,15 +211,21 @@ function formatDate(dateStr: string) {
             </div>
           </div>
           <span class="col-role">
-            <select
+            <div
               v-if="canManageRoles && !isProtected(user)"
-              :value="user.role"
-              class="glass-select"
-              @change="handleRoleChange(user.id, ($event.target as HTMLSelectElement).value)"
+              class="inline-role-toggle"
             >
-              <option value="USER">普通编委</option>
-              <option value="ADMIN">管理员</option>
-            </select>
+              <button 
+                class="toggle-btn" 
+                :class="{ 'is-active': user.role === 'USER' }"
+                @click="user.role !== 'USER' && handleRoleChange(user.id, 'USER')"
+              >普通</button>
+              <button 
+                class="toggle-btn admin" 
+                :class="{ 'is-active': user.role === 'ADMIN' }"
+                @click="user.role !== 'ADMIN' && handleRoleChange(user.id, 'ADMIN')"
+              >管理</button>
+            </div>
             <span
               v-else
               class="role-badge"
@@ -653,18 +659,47 @@ function formatDate(dateStr: string) {
   color: #fdba74;
 }
 
-.glass-select {
-  padding: 6px 12px;
+.inline-role-toggle {
+  display: inline-flex;
+  background: var(--glass-border-shadow, rgba(0,0,0,0.06));
   border-radius: 8px;
-  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
-  background: rgba(255,255,255,0.4);
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-main);
-  outline: none;
+  padding: 3px;
 }
-.glass-select:focus {
-  border-color: var(--text-main);
+:global([data-theme="ink-wash"]) .inline-role-toggle,
+:global([data-theme="rosewood"]) .inline-role-toggle,
+:global([data-theme="star-sea"]) .inline-role-toggle {
+  background: rgba(255,255,255,0.05);
+}
+.toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.toggle-btn.is-active {
+  background: var(--bg-panel, #fff);
+  color: var(--text-main);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.toggle-btn.admin.is-active {
+  background: var(--text-main);
+  color: var(--bg-panel, #fff);
+}
+:global([data-theme="ink-wash"]) .toggle-btn.is-active,
+:global([data-theme="rosewood"]) .toggle-btn.is-active,
+:global([data-theme="star-sea"]) .toggle-btn.is-active {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+:global([data-theme="ink-wash"]) .toggle-btn.admin.is-active,
+:global([data-theme="rosewood"]) .toggle-btn.admin.is-active,
+:global([data-theme="star-sea"]) .toggle-btn.admin.is-active {
+  background: var(--accent-amber);
 }
 
 .col-date {
