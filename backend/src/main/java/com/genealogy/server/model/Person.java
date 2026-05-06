@@ -50,6 +50,15 @@ public class Person {
     @Column(name = "photo_id")
     private Long photoId;
 
+    @Column(name = "is_mount_point", nullable = false)
+    private Boolean isMountPoint = false;
+
+    @Column(name = "target_publication_id")
+    private Long targetPublicationId;
+
+    @Column(name = "target_root_person_id")
+    private Long targetRootPersonId;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -86,6 +95,16 @@ public class Person {
     public void setHighlightRole(String highlightRole) { this.highlightRole = highlightRole; }
     public Long getPhotoId() { return photoId; }
     public void setPhotoId(Long photoId) { this.photoId = photoId; }
+
+    public Boolean getIsMountPoint() { return isMountPoint; }
+    public void setIsMountPoint(Boolean isMountPoint) { this.isMountPoint = isMountPoint; }
+
+    public Long getTargetPublicationId() { return targetPublicationId; }
+    public void setTargetPublicationId(Long targetPublicationId) { this.targetPublicationId = targetPublicationId; }
+
+    public Long getTargetRootPersonId() { return targetRootPersonId; }
+    public void setTargetRootPersonId(Long targetRootPersonId) { this.targetRootPersonId = targetRootPersonId; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
