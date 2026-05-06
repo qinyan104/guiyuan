@@ -148,692 +148,711 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
 </script>
 
 <template>
-  <div class="archive-container">
-    <!-- Editorial Header -->
-    <header class="archive-header">
-      <div class="archive-header__meta">
-        <span class="dot-label dot-label--signal">System / Genealogy</span>
-        <span class="archive-header__count">{{ publications.length }} VOLUMES</span>
+  <div class="gallery-stage">
+    <!-- Header -->
+    <header class="gallery-header">
+      <div class="header-left">
+        <div class="header-meta">ARCHIVE GALLERY // {{ publications.length }} VOLUMES</div>
+        <h1 class="header-title">谱系陈列馆</h1>
+        <p class="header-desc">家族史料的数字编研与归档中心</p>
       </div>
-      <div class="archive-header__main">
-        <h1 class="archive-header__title">谱系陈列馆</h1>
-        <p class="archive-header__tagline">归档、研究与家族史的视觉编研</p>
-      </div>
-      <div class="archive-header__actions">
-        <button class="pill-btn pill-btn--black" @click="showCreateDialog = true">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          新建存档
+      <div class="header-right">
+        <button class="glass-pill-btn primary-action" @click="showCreateDialog = true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新建宗谱存档
         </button>
       </div>
     </header>
 
-    <div v-if="loading" class="archive-status">
-      <div class="spinner-dot"></div>
-      <span>RETRIEVING ARCHIVES...</span>
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>正在开启藏经阁...</p>
     </div>
 
-    <div v-else class="archive-content">
-      <!-- Curated Collection (Templates) -->
-      <section class="collection-section">
+    <div v-else class="gallery-content">
+      
+      <!-- Template Section (Built-in) -->
+      <section class="gallery-section">
         <div class="section-eyebrow">
-          <span class="dot-label dot-label--ember">Curated Collections</span>
-          <h2 class="section-title">王朝世系模板</h2>
+          <span class="dot-ember"></span> 经典王朝世系模板
         </div>
-
-        <div class="collection-grid">
-          <div
-            v-for="sample in builtinSamples"
-            :key="sample.id"
-            class="collection-item"
-            @click="handleCreateFromTemplate(sample)"
-          >
-            <div class="collection-item__indicator"></div>
-            <div class="collection-item__body">
-              <h3 class="collection-item__title">{{ sample.publication.title }}</h3>
-              <p class="collection-item__subtitle">{{ sample.publication.subtitle }}</p>
+        <div class="template-grid">
+          <div v-for="sample in builtinSamples" :key="sample.id" class="glass-card template-card" @click="handleCreateFromTemplate(sample)">
+            <div class="template-bg"></div>
+            <div class="template-content">
+              <h3 class="template-title">{{ sample.publication.title }}</h3>
+              <p class="template-subtitle">{{ sample.publication.subtitle }}</p>
             </div>
-            <div class="collection-item__arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <div class="template-action">
+              以该模版建立 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Archive Exhibits -->
-      <section class="exhibit-section">
+      <!-- Archive Section -->
+      <section class="gallery-section">
         <div class="section-eyebrow">
-          <span class="dot-label">Private Archives</span>
-          <h2 class="section-title">个人研究存档</h2>
+          <span class="dot-ink"></span> 私人研究档案
         </div>
 
-        <div v-if="publications.length === 0" class="exhibit-empty">
-          <p>陈列柜暂空。请通过右上方「新建存档」开始编研。</p>
+        <div v-if="publications.length === 0" class="empty-gallery glass-card">
+          陈列柜空空如也，请点击右上角「新建宗谱」开始。
         </div>
 
-        <div v-else class="exhibit-grid">
-          <article
-            v-for="pub in publications"
-            :key="pub.id"
-            class="exhibit-card"
-            @click="openPublication(pub.id)"
-          >
-            <div class="exhibit-card__canvas">
-              <div class="exhibit-card__num">{{ pub.id.toString().padStart(3, '0') }}</div>
-              <div class="exhibit-card__initials">{{ pub.title?.substring(0, 1) || '典' }}</div>
+        <div v-else class="archive-grid">
+          <article v-for="pub in publications" :key="pub.id" class="glass-card archive-card" @click="openPublication(pub.id)">
+            <!-- Visual Left Pane -->
+            <div class="archive-visual">
+              <div class="visual-meta">NO. {{ pub.id.toString().padStart(3, '0') }}</div>
+              <div class="visual-seal">{{ pub.title?.substring(0, 1) || '典' }}</div>
             </div>
-            <div class="exhibit-card__content">
-              <header class="exhibit-card__header">
-                <h3 class="exhibit-card__title">{{ pub.title || '未命名存档' }}</h3>
-                <span class="exhibit-card__date">{{ formatDate(pub.updatedAt) }}</span>
-              </header>
-              <p class="exhibit-card__subtitle">{{ pub.subtitle || 'NO SUBTITLE' }}</p>
+            
+            <!-- Content Right Pane -->
+            <div class="archive-details">
+              <div class="archive-main">
+                <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
+                <p class="archive-subtitle">{{ pub.subtitle || '暂无副标题' }}</p>
+                <div class="archive-tags">
+                  <span v-if="pub.info?.hallName" class="meta-tag">{{ pub.info.hallName }}</span>
+                  <span v-if="pub.info?.ancestralOrigin" class="meta-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> {{ pub.info.ancestralOrigin }}</span>
+                </div>
+              </div>
               
-              <footer class="exhibit-card__footer">
-                <div class="exhibit-card__tags">
-                  <span v-if="pub.info?.hallName" class="tag">{{ pub.info.hallName }}</span>
-                  <span v-if="pub.info?.ancestralOrigin" class="tag">{{ pub.info.ancestralOrigin }}</span>
-                </div>
-                <div class="exhibit-card__actions">
-                  <button class="action-btn" title="EDIT" @click.stop="openEditDialog(pub)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <div class="archive-footer">
+                <span class="archive-date">{{ formatDate(pub.updatedAt) }} 更新</span>
+                <div class="archive-actions" @click.stop>
+                  <button class="icon-btn" title="编辑属性" @click="openEditDialog(pub)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
-                  <button class="action-btn action-btn--danger" title="DELETE" @click.stop="deleteConfirmId = pub.id">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <button class="icon-btn danger" title="焚毁档案" @click="deleteConfirmId = pub.id">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 </div>
-              </footer>
-            </div>
-
-            <div v-if="deleteConfirmId === pub.id" class="exhibit-confirm" @click.stop>
-              <p>PERMANENTLY DELETE?</p>
-              <div class="exhibit-confirm__btns">
-                <button class="pill-btn pill-btn--black pill-btn--sm" @click="handleDelete(pub.id)">DELETE</button>
-                <button class="pill-btn pill-btn--white pill-btn--sm" @click="deleteConfirmId = null">CANCEL</button>
               </div>
             </div>
+
+            <!-- Delete Confirm Overlay -->
+            <transition name="fade">
+              <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
+                <p>焚毁此宗谱将彻底抹除数据，是否确认？</p>
+                <div class="delete-btns">
+                  <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认焚毁</button>
+                  <button class="glass-pill-btn" @click="deleteConfirmId = null">暂且保留</button>
+                </div>
+              </div>
+            </transition>
           </article>
         </div>
       </section>
     </div>
 
-    <!-- Create Dialog (Minimalist) -->
+    <!-- Modals: Glass Sheets -->
     <Teleport to="body">
-      <div v-if="showCreateDialog" class="modal-overlay" @click.self="showCreateDialog = false">
-        <div class="modal-sheet">
-          <header class="modal-sheet__header">
-            <h2 class="modal-sheet__title">NEW ARCHIVE</h2>
-            <button class="modal-close" @click="showCreateDialog = false">&times;</button>
-          </header>
-          <div class="modal-sheet__body">
-            <div class="input-field">
-              <label>TITLE</label>
-              <input v-model="newTitle" type="text" placeholder="e.g. 陇西李氏世系图" @keyup.enter="handleCreate" />
+      <!-- Create Archive Sheet -->
+      <transition name="sheet-slide">
+        <div v-if="showCreateDialog" class="glass-modal-overlay" @click.self="showCreateDialog = false">
+          <div class="glass-sheet">
+            <header class="sheet-header">
+              <h2 class="sheet-title">开宗立派</h2>
+              <button class="sheet-close" @click="showCreateDialog = false">&times;</button>
+            </header>
+            <div class="sheet-body">
+              <div class="glass-input-group">
+                <label>宗谱名称 TITLE</label>
+                <input v-model="newTitle" type="text" placeholder="例: 陇西李氏世系图" @keyup.enter="handleCreate" />
+              </div>
+              <div class="glass-input-group">
+                <label>修谱卷号 SUBTITLE</label>
+                <input v-model="newSubtitle" type="text" placeholder="例: 丙午年重修版" @keyup.enter="handleCreate" />
+              </div>
             </div>
-            <div class="input-field">
-              <label>SUBTITLE</label>
-              <input v-model="newSubtitle" type="text" placeholder="e.g. 2026 EDITION" @keyup.enter="handleCreate" />
-            </div>
+            <footer class="sheet-footer">
+              <button class="glass-pill-btn" @click="showCreateDialog = false">取消</button>
+              <button class="glass-pill-btn primary" @click="handleCreate">建档立案</button>
+            </footer>
           </div>
-          <footer class="modal-sheet__footer">
-            <button class="pill-btn pill-btn--white" @click="showCreateDialog = false">CANCEL</button>
-            <button class="pill-btn pill-btn--black" @click="handleCreate">CREATE VOLUME</button>
-          </footer>
         </div>
-      </div>
-    </Teleport>
+      </transition>
 
-    <!-- Edit Dialog (Editorial Form) -->
-    <Teleport to="body">
-      <div v-if="showEditDialog" class="modal-overlay" @click.self="showEditDialog = false">
-        <div class="modal-sheet modal-sheet--lg">
-          <header class="modal-sheet__header">
-            <h2 class="modal-sheet__title">EDIT METADATA</h2>
-            <button class="modal-close" @click="showEditDialog = false">&times;</button>
-          </header>
-          <div class="modal-sheet__body grid-2-col">
-            <div class="input-field">
-              <label>TITLE</label>
-              <input v-model="editForm.title" type="text" />
+      <!-- Edit Metadata Sheet -->
+      <transition name="sheet-slide">
+        <div v-if="showEditDialog" class="glass-modal-overlay" @click.self="showEditDialog = false">
+          <div class="glass-sheet large">
+            <header class="sheet-header">
+              <h2 class="sheet-title">修缮档案属性</h2>
+              <button class="sheet-close" @click="showEditDialog = false">&times;</button>
+            </header>
+            <div class="sheet-body grid-form">
+              <div class="glass-input-group">
+                <label>宗谱名称 TITLE</label>
+                <input v-model="editForm.title" type="text" />
+              </div>
+              <div class="glass-input-group">
+                <label>修谱卷号 SUBTITLE</label>
+                <input v-model="editForm.subtitle" type="text" />
+              </div>
+              <div class="glass-input-group">
+                <label>郡望/祖籍 ORIGIN</label>
+                <input v-model="editForm.ancestralOrigin" type="text" placeholder="例: 陇西/颍川" />
+              </div>
+              <div class="glass-input-group">
+                <label>家族堂号 HALL NAME</label>
+                <input v-model="editForm.hallName" type="text" placeholder="例: 三槐堂" />
+              </div>
+              <div class="glass-input-group full">
+                <label>传世家训 FAMILY MOTTO</label>
+                <textarea v-model="editForm.familyMotto" rows="2" placeholder="例: 诗书传家，忠厚继世"></textarea>
+              </div>
+              <div class="glass-input-group full">
+                <label>宗谱总序 DESCRIPTION</label>
+                <textarea v-model="editForm.description" rows="3" placeholder="记述家族源流与修谱历程..."></textarea>
+              </div>
             </div>
-            <div class="input-field">
-              <label>SUBTITLE</label>
-              <input v-model="editForm.subtitle" type="text" />
-            </div>
-            <div class="input-field">
-              <label>ANCESTRAL ORIGIN</label>
-              <input v-model="editForm.ancestralOrigin" type="text" />
-            </div>
-            <div class="input-field">
-              <label>HALL NAME (堂号)</label>
-              <input v-model="editForm.hallName" type="text" />
-            </div>
-            <div class="input-field full-width">
-              <label>FAMILY MOTTO (家训)</label>
-              <textarea v-model="editForm.familyMotto" rows="2"></textarea>
-            </div>
-            <div class="input-field full-width">
-              <label>DESCRIPTION</label>
-              <textarea v-model="editForm.description" rows="3"></textarea>
-            </div>
+            <footer class="sheet-footer">
+              <button class="glass-pill-btn" @click="showEditDialog = false">放弃修改</button>
+              <button class="glass-pill-btn primary" @click="handleEditSave">封装保存</button>
+            </footer>
           </div>
-          <footer class="modal-sheet__footer">
-            <button class="pill-btn pill-btn--white" @click="showEditDialog = false">DISCARD</button>
-            <button class="pill-btn pill-btn--black" @click="handleEditSave">SAVE CHANGES</button>
-          </footer>
         </div>
-      </div>
-    </Teleport>
+      </transition>
 
-    <Teleport to="body">
-      <div v-if="creatingTemplate" class="loading-scrim">
-        <div class="spinner-dot"></div>
-        <p>GENERATING VOLUME FROM TEMPLATE...</p>
-      </div>
+      <!-- Loading Template Overlay -->
+      <transition name="fade">
+        <div v-if="creatingTemplate" class="glass-modal-overlay loading-overlay">
+          <div class="spinner"></div>
+          <p class="loading-text">正在从模板拓印宗谱结构...</p>
+        </div>
+      </transition>
     </Teleport>
   </div>
 </template>
 
 <style scoped>
-.archive-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 80px 40px;
-  min-height: 100vh;
-  position: relative;
-}
-
-/* Editorial Header */
-.archive-header {
+.gallery-stage {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 80px;
-  border-bottom: 1px solid var(--line-soft);
-  padding-bottom: 40px;
 }
 
-.archive-header__meta {
+/* ── Header ── */
+.gallery-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
+  padding: 0 8px;
 }
-
-.archive-header__count {
-  font-family: var(--font-inter, sans-serif);
-  font-size: 11px;
+.header-meta {
+  font-family: monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--text-soft, #888);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+.header-title {
+  font-size: 2.5rem;
+  font-family: 'Noto Serif SC', serif;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  color: var(--text-main, #1a1a1a);
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.05em;
+}
+.header-desc {
+  font-size: 0.95rem;
   color: var(--text-soft);
+  margin: 0;
+}
+.header-right {
+  margin-bottom: 0.5rem;
 }
 
-.archive-header__main {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.archive-header__title {
-  font-family: "Waldenburg", Georgia, serif;
-  font-size: 48px;
-  font-weight: 300;
-  letter-spacing: -0.02em;
+/* ── Glass Pill Button ── */
+.glass-pill-btn {
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.4));
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.6));
+  border-radius: 999px;
+  padding: 0.6rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--text-main);
-  margin: 0;
-}
-
-.archive-header__tagline {
-  font-family: var(--font-inter, sans-serif);
-  font-size: 16px;
-  color: var(--text-sub);
-  margin: 0;
-}
-
-.archive-header__actions {
-  margin-top: 12px;
-}
-
-/* Pill Buttons */
-.pill-btn {
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 0 20px;
-  height: 40px;
-  border-radius: 9999px;
-  font-family: var(--font-inter, sans-serif);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid var(--line-soft);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
 }
-
-.pill-btn--black {
-  background: var(--text-main, #000);
+.glass-pill-btn:hover {
+  background: var(--bg-panel, #fff);
+  border-color: var(--text-main);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+}
+.glass-pill-btn.primary {
+  background: var(--text-main, #1a1a1a);
   color: var(--bg-shell, #fff);
-  border-color: var(--text-main, #000);
+  border-color: transparent;
 }
-
-.pill-btn--black:hover {
+.glass-pill-btn.primary:hover {
   opacity: 0.85;
-  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.glass-pill-btn.danger {
+  background: #ff4704;
+  color: #fff;
+  border-color: transparent;
 }
 
-.pill-btn--white {
+:global([data-theme="ink-wash"]) .glass-pill-btn,
+:global([data-theme="rosewood"]) .glass-pill-btn,
+:global([data-theme="star-sea"]) .glass-pill-btn {
+  background: rgba(0,0,0,0.4);
+  border-color: rgba(255,255,255,0.1);
+  color: #fff;
+}
+:global([data-theme="ink-wash"]) .glass-pill-btn:hover,
+:global([data-theme="rosewood"]) .glass-pill-btn:hover,
+:global([data-theme="star-sea"]) .glass-pill-btn:hover {
   background: #fff;
   color: #000;
 }
-
-.pill-btn--white:hover {
-  background: var(--card-hover-fill);
-  transform: translateY(-1px);
+:global([data-theme="ink-wash"]) .glass-pill-btn.primary,
+:global([data-theme="rosewood"]) .glass-pill-btn.primary,
+:global([data-theme="star-sea"]) .glass-pill-btn.primary {
+  background: linear-gradient(135deg, var(--accent-ink), var(--accent-amber));
+  color: #fff;
 }
 
-.pill-btn--sm {
-  height: 32px;
-  padding: 0 14px;
-  font-size: 11px;
+/* ── Sections ── */
+.gallery-section {
+  margin-bottom: 3rem;
 }
-
-/* Dot Labels */
-.dot-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-soft);
-}
-
-.dot-label::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--line-soft);
-}
-
-.dot-label--signal::before { background: #0447ff; }
-.dot-label--ember::before { background: #ff4704; }
-
-/* Section Styles */
-.collection-section {
-  margin-bottom: 80px;
-}
-
 .section-eyebrow {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 24px;
-}
-
-.section-title {
-  font-family: "Waldenburg", Georgia, serif;
-  font-size: 24px;
-  font-weight: 300;
-  color: var(--text-main);
-  margin: 0;
-}
-
-/* Collection Grid */
-.collection-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-}
-
-.collection-item {
-  display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 24px;
-  background: #fff;
-  border: 0.5px solid var(--line-soft);
-  border-radius: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--text-soft);
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+}
+.dot-ember { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-amber, #ff4704); }
+.dot-ink { width: 6px; height: 6px; border-radius: 50%; background: var(--text-main, #0447ff); }
+
+/* ── Glass Cards ── */
+.glass-card {
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.4));
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.6));
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 
+    0 12px 32px -12px rgba(0,0,0,0.05),
+    inset 0 0 0 1px var(--glass-border-shadow, rgba(255,255,255,0.2));
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
   position: relative;
-  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 1.143px 0px, rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  cursor: pointer;
+}
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 48px -12px rgba(0,0,0,0.1);
+}
+:global([data-theme="ink-wash"]) .glass-card,
+:global([data-theme="rosewood"]) .glass-card,
+:global([data-theme="star-sea"]) .glass-card {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
 }
 
-.collection-item:hover {
-  transform: scale(1.01);
-  border-color: var(--text-main);
+/* ── Template Grid ── */
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
 }
-
-.collection-item__indicator {
-  width: 2px;
-  height: 40px;
-  background: var(--text-main);
+.template-card {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 140px;
+  justify-content: space-between;
 }
-
-.collection-item__title {
-  font-family: "Waldenburg", Georgia, serif;
-  font-size: 18px;
-  font-weight: 300;
-  margin: 0 0 4px;
+.template-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  pointer-events: none;
+}
+.template-content {
+  position: relative;
+  z-index: 1;
+}
+.template-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.3rem;
+  margin: 0 0 0.25rem;
   color: var(--text-main);
+  font-weight: 600;
 }
-
-.collection-item__subtitle {
-  font-size: 12px;
+.template-subtitle {
+  font-size: 0.8rem;
   color: var(--text-soft);
   margin: 0;
 }
-
-.collection-item__arrow {
-  margin-left: auto;
-  opacity: 0.3;
-  transition: opacity 0.2s;
+.template-action {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-amber);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s ease;
 }
-
-.collection-item:hover .collection-item__arrow {
+.template-card:hover .template-action {
   opacity: 1;
+  transform: translateX(0);
 }
 
-/* Exhibit Cards */
-.exhibit-grid {
+/* ── Archive Grid ── */
+.archive-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 24px;
 }
-
-.exhibit-card {
+.archive-card {
   display: flex;
-  gap: 0;
-  background: #fff;
-  border-radius: 16px;
-  border: 0.5px solid var(--line-soft);
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 1.143px 0px, rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
-  position: relative;
+  flex-direction: row;
+  min-height: 180px;
 }
-
-.exhibit-card:hover {
-  border-color: var(--text-main);
-  transform: translateY(-2px);
-}
-
-.exhibit-card__canvas {
-  width: 100px;
-  background: #000;
-  color: #fff;
+.archive-visual {
+  width: 90px;
+  background: var(--text-main, #1a1a1a);
+  color: var(--bg-panel, #fff);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 16px;
-  flex-shrink: 0;
-}
-
-.exhibit-card__num {
-  font-family: var(--font-inter);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  opacity: 0.6;
-}
-
-.exhibit-card__initials {
-  font-family: "Waldenburg", Georgia, serif;
-  font-size: 32px;
-  font-weight: 300;
-}
-
-.exhibit-card__content {
-  flex: 1;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-}
-
-.exhibit-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 4px;
-}
-
-.exhibit-card__title {
-  font-family: "Waldenburg", Georgia, serif;
-  font-size: 20px;
-  font-weight: 300;
-  margin: 0;
-  color: var(--text-main);
-}
-
-.exhibit-card__date {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text-soft);
-}
-
-.exhibit-card__subtitle {
-  font-size: 13px;
-  color: var(--text-sub);
-  margin: 0 0 16px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.exhibit-card__footer {
-  margin-top: auto;
-  display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 1.25rem 0.5rem;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color, rgba(0,0,0,0.1));
 }
-
-.exhibit-card__tags {
-  display: flex;
-  gap: 8px;
+.visual-meta {
+  font-family: monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
 }
-
-.tag {
-  font-size: 9px;
-  padding: 2px 8px;
-  background: var(--card-hover-fill);
-  border-radius: 4px;
-  color: var(--text-soft);
-  font-weight: 700;
-}
-
-.exhibit-card__actions {
-  display: flex;
-  gap: 4px;
-}
-
-.action-btn {
-  width: 28px;
-  height: 28px;
+.visual-seal {
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.6rem;
+  font-weight: 300;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+}
+.archive-details {
+  flex: 1;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.archive-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 0.3rem;
+}
+.archive-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  margin: 0 0 1rem;
+}
+.archive-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(0,0,0,0.04);
+  padding: 4px 8px;
   border-radius: 6px;
+  color: var(--text-sub);
+}
+:global([data-theme="ink-wash"]) .meta-tag,
+:global([data-theme="rosewood"]) .meta-tag,
+:global([data-theme="star-sea"]) .meta-tag {
+  background: rgba(255,255,255,0.08);
+}
+.archive-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border-color, rgba(0,0,0,0.1));
+}
+.archive-date {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+.archive-actions {
+  display: flex;
+  gap: 4px;
+}
+.icon-btn {
+  width: 32px;
+  height: 32px;
   border: none;
   background: transparent;
   color: var(--text-soft);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
 }
-
-.action-btn:hover {
-  background: var(--card-hover-fill);
+.icon-btn:hover {
+  background: rgba(0,0,0,0.05);
   color: var(--text-main);
 }
-
-.action-btn--danger:hover {
-  background: #fff5f5;
+.icon-btn.danger:hover {
+  background: rgba(255, 71, 4, 0.1);
   color: #ff4704;
 }
 
-/* Confirm Overlay */
-.exhibit-confirm {
+/* ── Delete Confirm ── */
+.delete-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  z-index: 5;
+  z-index: 10;
 }
-
-.exhibit-confirm p {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+:global([data-theme="ink-wash"]) .delete-overlay,
+:global([data-theme="rosewood"]) .delete-overlay,
+:global([data-theme="star-sea"]) .delete-overlay {
+  background: rgba(0, 0, 0, 0.95);
+}
+.delete-overlay p {
+  font-size: 0.9rem;
+  font-weight: 700;
   color: #ff4704;
+  margin: 0;
 }
-
-.exhibit-confirm__btns {
+.delete-btns {
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 
-/* Modals */
-.modal-overlay {
+.empty-gallery {
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  border: 1px dashed var(--border-color, rgba(0,0,0,0.2));
+  border-radius: 20px;
+}
+
+/* ── Glass Modals ── */
+.glass-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(253, 252, 252, 0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  padding: 24px;
+}
+:global([data-theme="ink-wash"]) .glass-modal-overlay,
+:global([data-theme="rosewood"]) .glass-modal-overlay,
+:global([data-theme="star-sea"]) .glass-modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
 }
 
-.modal-sheet {
-  background: #fff;
-  border: 0.5px solid var(--line-soft);
-  border-radius: 24px;
+.glass-sheet {
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.8));
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.6));
+  border-radius: 28px;
   width: 100%;
-  max-width: 440px;
+  max-width: 480px;
+  padding: 32px;
   box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
-  padding: 40px;
   position: relative;
+  overflow: hidden;
 }
-
-.modal-sheet--lg {
+.glass-sheet.large {
   max-width: 680px;
 }
+:global([data-theme="ink-wash"]) .glass-sheet,
+:global([data-theme="rosewood"]) .glass-sheet,
+:global([data-theme="star-sea"]) .glass-sheet {
+  background: rgba(20, 20, 20, 0.85);
+  border-color: rgba(255,255,255,0.1);
+}
 
-.modal-sheet__header {
+.sheet-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 2rem;
 }
-
-.modal-sheet__title {
-  font-family: var(--font-inter);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+.sheet-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: var(--text-main);
+  margin: 0;
 }
-
-.modal-close {
+.sheet-close {
   background: none;
   border: none;
-  font-size: 24px;
-  cursor: pointer;
+  font-size: 28px;
+  line-height: 1;
   color: var(--text-soft);
+  cursor: pointer;
 }
+.sheet-close:hover { color: var(--text-main); }
 
-.input-field {
+.glass-input-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 1.5rem;
 }
-
-.grid-2-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 24px;
-}
-
-.full-width {
-  grid-column: 1 / 3;
-}
-
-.input-field label {
-  font-size: 10px;
-  font-weight: 800;
+.glass-input-group label {
+  font-size: 0.75rem;
+  font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--text-soft);
 }
-
-.input-field input,
-.input-field textarea {
-  padding: 12px 0;
-  border: none;
-  border-bottom: 1px solid var(--text-main);
-  background: transparent;
-  font-family: var(--font-inter);
-  font-size: 15px;
+.glass-input-group input,
+.glass-input-group textarea {
+  background: rgba(255,255,255,0.5);
+  border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: 1rem;
   color: var(--text-main);
   outline: none;
+  transition: all 0.2s;
+}
+.glass-input-group input:focus,
+.glass-input-group textarea:focus {
+  background: #fff;
+  border-color: var(--text-main);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+:global([data-theme="ink-wash"]) .glass-input-group input,
+:global([data-theme="rosewood"]) .glass-input-group input,
+:global([data-theme="star-sea"]) .glass-input-group input {
+  background: rgba(0,0,0,0.4);
+  border-color: rgba(255,255,255,0.1);
+}
+:global([data-theme="ink-wash"]) .glass-input-group input:focus,
+:global([data-theme="rosewood"]) .glass-input-group input:focus,
+:global([data-theme="star-sea"]) .glass-input-group input:focus {
+  background: rgba(0,0,0,0.6);
+  border-color: var(--text-main);
 }
 
-.input-field input::placeholder {
-  color: var(--text-soft);
+.grid-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 20px;
+}
+.glass-input-group.full {
+  grid-column: 1 / 3;
 }
 
-.modal-sheet__footer {
+.sheet-footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 1rem;
 }
 
-/* Status & Scrims */
-.archive-status,
-.loading-scrim {
-  display: flex;
+/* Loading Overlay */
+.loading-overlay {
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 80px 0;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.2em;
-  color: var(--text-soft);
+  gap: 1.5rem;
 }
-
-.loading-scrim {
-  position: fixed;
-  inset: 0;
-  background: rgba(253, 252, 252, 0.9);
-  z-index: 3000;
+.loading-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: 0.1em;
 }
-
-.spinner-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--text-main);
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(0,0,0,0.1);
+  border-top-color: var(--accent-amber, #a96e35);
   border-radius: 50%;
-  animation: pulse 1s ease-in-out infinite;
+  animation: spin 1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+:global([data-theme="ink-wash"]) .spinner,
+:global([data-theme="rosewood"]) .spinner,
+:global([data-theme="star-sea"]) .spinner {
+  border-color: rgba(255,255,255,0.1);
+  border-top-color: var(--accent-amber);
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-@keyframes pulse {
-  0% { transform: scale(0.8); opacity: 0.3; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(0.8); opacity: 0.3; }
-}
+/* Transitions */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
-.exhibit-empty {
-  padding: 60px 0;
-  text-align: center;
-  color: var(--text-soft);
-  font-size: 14px;
-  border: 1px dashed var(--line-soft);
-  border-radius: 16px;
+.sheet-slide-enter-active, .sheet-slide-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sheet-slide-enter-from { opacity: 0; transform: translateY(40px) scale(0.95); }
+.sheet-slide-leave-to { opacity: 0; transform: translateY(20px) scale(0.98); }
+
+@media (max-width: 768px) {
+  .archive-card { flex-direction: column; }
+  .archive-visual { width: 100%; height: 80px; flex-direction: row; padding: 1rem 1.5rem; border-right: none; border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.1)); }
+  .visual-meta { writing-mode: horizontal-tb; transform: none; }
+  .grid-form { grid-template-columns: 1fr; }
+  .glass-input-group.full { grid-column: 1 / 2; }
 }
 </style>
