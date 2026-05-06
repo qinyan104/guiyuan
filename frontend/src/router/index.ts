@@ -9,6 +9,12 @@ const routes: RouteRecordRaw[] = [
     meta: { public: true },
   },
   {
+    path: '/share/:token',
+    name: 'share',
+    component: () => import('../views/ShareView.vue'),
+    meta: { public: true },
+  },
+  {
     path: '/',
     component: () => import('../views/AdminLayout.vue'),
     children: [
