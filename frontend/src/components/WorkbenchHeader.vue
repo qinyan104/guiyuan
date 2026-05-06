@@ -141,20 +141,7 @@ async function handlePreviewPdf(options: any) {
   }
 }
 
-const userDropdownOpen = ref(false)
-const userInitials = computed(() => {
-  const name = props.currentUsername || '总'
-  return name.charAt(0).toUpperCase()
-})
-function toggleUserDropdown() {
-  userDropdownOpen.value = !userDropdownOpen.value
-}
-function goToSettings() {
-  userDropdownOpen.value = false
-  router.push({ name: 'settings' })
-}
-
-withDefaults(
+const props = withDefaults(
   defineProps<{
     fileName?: string
     dirty?: boolean
@@ -188,6 +175,20 @@ const emit = defineEmits<{
   (event: 'view-stats'): void
   (event: 'view-timeline'): void
 }>()
+
+const userDropdownOpen = ref(false)
+const userInitials = computed(() => {
+  const name = props.currentUsername || '总'
+  return name.charAt(0).toUpperCase()
+})
+function toggleUserDropdown() {
+  userDropdownOpen.value = !userDropdownOpen.value
+}
+function goToSettings() {
+  userDropdownOpen.value = false
+  router.push({ name: 'settings' })
+}
+
 </script>
 
 <template>
@@ -259,10 +260,7 @@ const emit = defineEmits<{
                 <div class="popover-account">{{ currentUsername || '总编' }}</div>
               </div>
               <div class="popover-menu">
-                <button class="menu-item" @click="goToSettings">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                  偏好设置
-                </button>
+                <div class="popover-hint">您正在编辑无限画布</div>
               </div>
             </div>
           </transition>
@@ -513,6 +511,14 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.popover-hint {
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  font-style: italic;
+  text-align: center;
 }
 
 .menu-item {
