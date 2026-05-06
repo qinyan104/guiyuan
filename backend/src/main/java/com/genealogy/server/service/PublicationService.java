@@ -9,10 +9,12 @@ import com.genealogy.server.model.FamilyMember;
 import com.genealogy.server.model.Person;
 import com.genealogy.server.model.Photo;
 import com.genealogy.server.model.Publication;
+import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.repository.FamilyMemberRepository;
 import com.genealogy.server.repository.FamilyRepository;
 import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PhotoRepository;
+import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.PublicationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,17 +44,20 @@ public class PublicationService {
     private final FamilyRepository familyRepository;
     private final FamilyMemberRepository familyMemberRepository;
     private final PhotoRepository photoRepository;
+    private final PublicationAccessRepository publicationAccessRepository;
     private final ObjectMapper objectMapper;
 
     public PublicationService(PublicationRepository publicationRepository, PersonRepository personRepository,
                               FamilyRepository familyRepository, FamilyMemberRepository familyMemberRepository,
-                              PhotoRepository photoRepository, ObjectMapper objectMapper) {
+                              PhotoRepository photoRepository, ObjectMapper objectMapper,
+                              PublicationAccessRepository publicationAccessRepository) {
         this.publicationRepository = publicationRepository;
         this.personRepository = personRepository;
         this.familyRepository = familyRepository;
         this.familyMemberRepository = familyMemberRepository;
         this.photoRepository = photoRepository;
         this.objectMapper = objectMapper;
+        this.publicationAccessRepository = publicationAccessRepository;
     }
 
     public List<Map<String, Object>> listPublications(Long userId) {
@@ -203,6 +208,13 @@ public class PublicationService {
         publication.setPublicationInfoJson(infoJson);
         publication.setFocusFamilyId((String) publicationData.get("focusFamilyId"));
         publication = publicationRepository.save(publication);
+
+        PublicationAccess ownerAccess = new PublicationAccess();
+        ownerAccess.setPublicationId(publication.getId());
+        ownerAccess.setUserId(userId);
+        ownerAccess.setRole("OWNER");
+        ownerAccess.setCreatedBy(userId);
+        publicationAccessRepository.save(ownerAccess);
 
         savePersonsAndFamilies(publication.getId(), publicationData, Map.of(), true);
         return publication.getId();
