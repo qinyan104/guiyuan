@@ -284,7 +284,7 @@ const scrollToTop = () => {
   display: flex;
   flex-direction: column;
   gap: 32px;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
@@ -364,7 +364,7 @@ const scrollToTop = () => {
   position: absolute;
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 5rem;
+  font-size: 7rem;
   font-weight: 900;
   color: var(--accent-amber);
   opacity: 0.04;
@@ -377,7 +377,7 @@ const scrollToTop = () => {
   border: 1px solid var(--glass-border-highlight, rgba(255,255,255,0.8));
   border-radius: 99px;
   font-family: 'Noto Serif SC', serif;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: var(--text-main);
   box-shadow: 0 12px 24px rgba(0,0,0,0.05);

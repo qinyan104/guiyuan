@@ -512,7 +512,7 @@ function formatHistoryDate(dateStr: string) {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -550,7 +550,7 @@ function formatHistoryDate(dateStr: string) {
 }
 .family-title {
   font-family: 'Noto Serif SC', serif;
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   font-weight: 900;
   margin: 0 0 8px;
   color: var(--text-main);
@@ -616,7 +616,7 @@ function formatHistoryDate(dateStr: string) {
 }
 .metric-value {
   font-family: 'Noto Serif SC', serif;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 900;
   color: var(--text-main);
   margin-bottom: 4px;
