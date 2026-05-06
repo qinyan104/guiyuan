@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { getUsername } from '../api/auth'
 import { changePassword, changeNickname } from '../api/profile'
 
 const currentUsername = ref(getUsername() ?? '')
+const userInitials = computed(() => currentUsername.value ? currentUsername.value.charAt(0).toUpperCase() : '总')
 
 const oldPassword = ref('')
 const newPassword = ref('')
@@ -36,12 +37,12 @@ async function handleChangePassword() {
   passwordLoading.value = true
   try {
     await changePassword(oldPassword.value, newPassword.value)
-    passwordMsg.value = '密码修改成功'
+    passwordMsg.value = '通行密钥重铸成功'
     oldPassword.value = ''
     newPassword.value = ''
     confirmPassword.value = ''
   } catch (err: any) {
-    passwordError.value = err.response?.data?.message || '修改失败，请检查当前密码是否正确'
+    passwordError.value = err.response?.data?.message || '重铸失败，请检查原密码是否正确'
   } finally {
     passwordLoading.value = false
   }
@@ -54,9 +55,9 @@ async function handleChangeNickname() {
   nicknameLoading.value = true
   try {
     await changeNickname(nickname.value.trim())
-    nicknameMsg.value = '昵称修改成功'
+    nicknameMsg.value = '公开身份标识更新成功'
   } catch {
-    nicknameMsg.value = '修改失败'
+    nicknameMsg.value = '更新身份失败，请稍后重试'
   } finally {
     nicknameLoading.value = false
   }
@@ -64,186 +65,434 @@ async function handleChangeNickname() {
 </script>
 
 <template>
-  <div>
-    <h1 class="page-title">个人设置</h1>
-    <p class="page-desc">管理你的账号信息</p>
+  <div class="settings-view">
+    <div class="bento-header">
+      <div class="header-content">
+        <h1 class="page-title">偏好设置 // SETTINGS</h1>
+        <p class="page-desc">管理您的系统身份标识与账户通行安全</p>
+      </div>
+    </div>
 
-    <section class="settings-section">
-      <h2 class="section-title">账号信息</h2>
-      <div class="info-card">
-        <div class="info-row">
-          <span class="info-label">用户名</span>
-          <span class="info-value">{{ currentUsername }}</span>
+    <div class="bento-grid">
+      <!-- Big Profile Identity Card -->
+      <div class="bento-card profile-card">
+        <div class="avatar-glow-ring">
+          <div class="large-avatar">{{ userInitials }}</div>
+        </div>
+        <div class="profile-info">
+          <span class="profile-status">已验证通行证</span>
+          <h2 class="profile-name">{{ currentUsername }}</h2>
+          <span class="profile-role">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            档案系统注册编委
+          </span>
         </div>
       </div>
-    </section>
 
-    <section class="settings-section">
-      <h2 class="section-title">修改昵称</h2>
-      <div class="form-card">
-        <div class="form-row">
-          <input
-            v-model="nickname"
-            type="text"
-            placeholder="输入新昵称"
-            class="form-input"
-            @keyup.enter="handleChangeNickname"
-          />
-          <button class="btn-primary" :disabled="nicknameLoading" @click="handleChangeNickname">
-            {{ nicknameLoading ? '保存中...' : '保存' }}
-          </button>
+      <!-- Detail Forms Grid -->
+      <div class="forms-container">
+        
+        <!-- Nickname Card -->
+        <div class="bento-card nickname-card">
+          <div class="card-header">
+            <h3 class="card-title">公开身份标识</h3>
+            <p class="card-subtitle">系统内对外展出的别名或真实姓名，若留空则自动显示登录账号。</p>
+          </div>
+          <div class="glass-form-row">
+            <input
+              v-model="nickname"
+              type="text"
+              placeholder="输入全新的身份标识..."
+              class="glass-input"
+              @keyup.enter="handleChangeNickname"
+            />
+            <button class="bento-btn primary" :disabled="nicknameLoading" @click="handleChangeNickname">
+              {{ nicknameLoading ? '验证中...' : '更新身份' }}
+            </button>
+          </div>
+          <transition name="fade-slide">
+            <p v-if="nicknameMsg" class="feedback-msg success">{{ nicknameMsg }}</p>
+          </transition>
         </div>
-        <p v-if="nicknameMsg" class="msg-success">{{ nicknameMsg }}</p>
-      </div>
-    </section>
 
-    <section class="settings-section">
-      <h2 class="section-title">修改密码</h2>
-      <div class="form-card">
-        <div class="form-field">
-          <label>当前密码</label>
-          <input v-model="oldPassword" type="password" placeholder="输入当前密码" class="form-input" />
+        <!-- Password Card -->
+        <div class="bento-card password-card">
+          <div class="card-header">
+            <h3 class="card-title">系统通行密钥</h3>
+            <p class="card-subtitle">为保障数字档案馆资产安全，请定期进行密钥轮换更新。</p>
+          </div>
+          <div class="glass-form-col">
+            <div class="field">
+              <label>当前通行密钥</label>
+              <input v-model="oldPassword" type="password" class="glass-input" placeholder="输入当前密码进行权限验证" />
+            </div>
+            <div class="field-group">
+              <div class="field">
+                <label>新设密钥</label>
+                <input v-model="newPassword" type="password" class="glass-input" placeholder="新密码要求不少于 4 个字符" />
+              </div>
+              <div class="field">
+                <label>确认密钥</label>
+                <input
+                  v-model="confirmPassword"
+                  type="password"
+                  class="glass-input"
+                  placeholder="请再次输入新密码"
+                  @keyup.enter="handleChangePassword"
+                />
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button class="bento-btn primary" :disabled="passwordLoading" @click="handleChangePassword">
+                {{ passwordLoading ? '重铸进程中...' : '重铸通行密钥' }}
+              </button>
+            </div>
+            <transition name="fade-slide">
+              <div v-if="passwordError" class="feedback-msg error">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {{ passwordError }}
+              </div>
+              <div v-else-if="passwordMsg" class="feedback-msg success">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                {{ passwordMsg }}
+              </div>
+            </transition>
+          </div>
         </div>
-        <div class="form-field">
-          <label>新密码</label>
-          <input v-model="newPassword" type="password" placeholder="输入新密码（至少4个字符）" class="form-input" />
-        </div>
-        <div class="form-field">
-          <label>确认新密码</label>
-          <input
-            v-model="confirmPassword"
-            type="password"
-            placeholder="再次输入新密码"
-            class="form-input"
-            @keyup.enter="handleChangePassword"
-          />
-        </div>
-        <p v-if="passwordError" class="msg-error">{{ passwordError }}</p>
-        <p v-if="passwordMsg" class="msg-success">{{ passwordMsg }}</p>
-        <button class="btn-primary" :disabled="passwordLoading" @click="handleChangePassword">
-          {{ passwordLoading ? '修改中...' : '修改密码' }}
-        </button>
+
       </div>
-    </section>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.page-title {
-  font-size: 1.5rem;
-  font-family: 'Noto Serif SC', serif;
-  font-weight: 700;
-  color: var(--text-main, #1a1a1a);
-  margin: 0 0 0.25rem;
+.settings-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.page-desc {
-  color: var(--text-soft, #888);
-  font-size: 0.85rem;
-  margin: 0 0 1.5rem;
-}
-
-.settings-section {
-  margin-bottom: 1.75rem;
-}
-
-.section-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-main, #1a1a1a);
-  margin: 0 0 0.6rem;
-  font-family: 'Noto Serif SC', serif;
-}
-
-.info-card,
-.form-card {
-  background: var(--bg-panel, #fff);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.08));
-  border-radius: 12px;
-  padding: 1rem;
-}
-
-.info-row {
+/* ── Header ── */
+.bento-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.info-label {
-  font-size: 0.82rem;
-  color: var(--text-soft, #888);
-  font-weight: 600;
+.page-title {
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-main);
+  margin: 0 0 6px;
 }
 
-.info-value {
+.page-desc {
   font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-main, #1a1a1a);
+  color: var(--text-soft);
+  margin: 0;
 }
 
-.form-row {
+/* ── Bento Cards Core ── */
+.bento-card {
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.6));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  border-radius: 20px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+  padding: 32px;
+}
+:global([data-theme="ink-wash"]) .bento-card,
+:global([data-theme="rosewood"]) .bento-card,
+:global([data-theme="star-sea"]) .bento-card {
+  background: rgba(20, 20, 20, 0.5);
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.2);
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── Profile Identity Card ── */
+.profile-card {
   display: flex;
-  gap: 0.6rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 32px;
+  position: relative;
+  overflow: hidden;
 }
 
-.form-field {
-  margin-bottom: 0.6rem;
+/* Background atmospheric glow */
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, var(--accent-amber) 0%, transparent 40%);
+  opacity: 0.05;
+  pointer-events: none;
 }
 
-.form-field label {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-sub, #555);
-  margin-bottom: 0.25rem;
+.avatar-glow-ring {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--glass-border-highlight), transparent);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.1);
+  position: relative;
+}
+.avatar-glow-ring::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, var(--accent-amber), transparent);
+  opacity: 0.3;
+  animation: rotate 6s linear infinite;
+  z-index: -1;
 }
 
-.form-input {
-  flex: 1;
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.large-avatar {
   width: 100%;
-  padding: 0.5rem 0.7rem;
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
-  border-radius: 8px;
-  background: var(--bg-shell, #f5f0e8);
-  color: var(--text-main, #1a1a1a);
-  font-size: 0.82rem;
+  height: 100%;
+  background: var(--bg-panel, #fff);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 800;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--text-main);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+:global([data-theme="ink-wash"]) .large-avatar,
+:global([data-theme="rosewood"]) .large-avatar,
+:global([data-theme="star-sea"]) .large-avatar {
+  background: rgba(30,30,30,1);
+  color: #fff;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-status {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--accent-amber);
+  text-transform: uppercase;
+  background: rgba(0,0,0,0.04);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+:global([data-theme="ink-wash"]) .profile-status,
+:global([data-theme="rosewood"]) .profile-status,
+:global([data-theme="star-sea"]) .profile-status {
+  background: rgba(255,255,255,0.06);
+}
+
+.profile-name {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.profile-role {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  font-family: monospace;
+}
+
+/* ── Detail Forms Grid ── */
+.forms-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card-header {
+  margin-bottom: 24px;
+}
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 6px;
+}
+.card-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.glass-form-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.glass-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.field label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  letter-spacing: 0.05em;
+}
+
+.glass-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
+  background: rgba(255,255,255,0.4);
+  color: var(--text-main);
+  font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
   box-sizing: border-box;
 }
-
-.form-input:focus {
-  border-color: var(--accent-amber, #a96e35);
+:global([data-theme="ink-wash"]) .glass-input,
+:global([data-theme="rosewood"]) .glass-input,
+:global([data-theme="star-sea"]) .glass-input {
+  background: rgba(0,0,0,0.3);
+  border-color: rgba(255,255,255,0.1);
+  color: #fff;
+}
+.glass-input:focus {
+  background: var(--bg-panel, #fff);
+  border-color: var(--text-main);
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.04);
 }
 
-.btn-primary {
-  padding: 0.5rem 1.1rem;
-  background: linear-gradient(135deg, var(--accent-ink, #6a4b2f), var(--accent-amber, #a96e35));
-  color: #fff;
-  border: none;
-  border-radius: 8px;
+.form-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 8px;
+}
+
+/* ── Buttons ── */
+.bento-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 24px;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 0.9rem;
   font-weight: 700;
-  font-size: 0.82rem;
   cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
   white-space: nowrap;
 }
-
-.btn-primary:disabled {
+.bento-btn.primary {
+  background: var(--text-main);
+  color: var(--bg-panel, #fff);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+.bento-btn.primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+.bento-btn.primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.msg-success {
-  color: #16a34a;
-  font-size: 0.78rem;
+/* ── Feedback Messages ── */
+.feedback-msg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
   font-weight: 600;
-  margin: 0.4rem 0 0;
+  margin: 16px 0 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+}
+.feedback-msg.success {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+}
+.feedback-msg.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
-.msg-error {
-  color: #ef4444;
-  font-size: 0.78rem;
-  font-weight: 600;
-  margin: 0.4rem 0 0;
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+@media (max-width: 960px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .glass-form-row {
+    flex-direction: column;
+  }
+  .bento-btn {
+    width: 100%;
+  }
+  .field-group {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
