@@ -28,10 +28,10 @@ const deleteUserId = ref<number | null>(null)
 
 const canManageRoles = computed(() => isSuperAdmin())
 
-const roleConfig: Record<string, { label: string; color: string; bg: string }> = {
-  SUPER_ADMIN: { label: '超级管理员', color: '#b45309', bg: 'rgba(180, 83, 9, 0.12)' },
-  ADMIN: { label: '管理员', color: '#6a4b2f', bg: 'rgba(106, 75, 47, 0.12)' },
-  USER: { label: '普通用户', color: '#666', bg: 'rgba(100, 100, 100, 0.08)' },
+const roleConfig: Record<string, { label: string }> = {
+  SUPER_ADMIN: { label: '超级管理员' },
+  ADMIN: { label: '管理员' },
+  USER: { label: '普通编委' },
 }
 
 const tabCounts = computed(() => ({
@@ -115,529 +115,719 @@ function formatDate(dateStr: string) {
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">用户管理</h1>
-        <p class="page-desc">管理家族成员账号与权限</p>
+  <div class="admin-users-view">
+    <div class="bento-header">
+      <div class="header-content">
+        <h1 class="page-title">编委名录 // DIRECTORY</h1>
+        <p class="page-desc">管理家族成员账号与系统权限设定</p>
       </div>
-      <button class="btn-create" @click="showCreateForm = true">
+      <button class="bento-btn primary" @click="showCreateForm = true">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        创建用户
+        添加编委
       </button>
     </div>
 
     <!-- Role Tabs -->
-    <div class="role-tabs">
+    <div class="glass-tabs">
       <button
         v-for="tab in (['all', 'SUPER_ADMIN', 'ADMIN', 'USER'] as const)"
         :key="tab"
-        class="role-tab"
-        :class="{ 'role-tab--active': activeTab === tab }"
+        class="glass-tab"
+        :class="{ 'is-active': activeTab === tab }"
         @click="activeTab = tab"
       >
-        {{ tab === 'all' ? '全部' : roleConfig[tab].label }}
-        <span class="role-tab__count">{{ tabCounts[tab] }}</span>
+        {{ tab === 'all' ? '全部账号' : roleConfig[tab].label }}
+        <span class="tab-count">{{ tabCounts[tab] }}</span>
       </button>
     </div>
 
-    <!-- Create User Form -->
-    <div v-if="showCreateForm" class="create-form">
-      <div class="create-form__row">
-        <input v-model="newUsername" type="text" placeholder="用户名" class="form-input" />
-        <input v-model="newPassword" type="password" placeholder="密码" class="form-input" />
-        <input v-model="newNickname" type="text" placeholder="昵称（可选）" class="form-input" />
-      </div>
-      <div class="create-form__bottom">
-        <div class="role-select">
-          <span class="role-select__label">角色：</span>
-          <label class="role-radio">
-            <input v-model="newRole" type="radio" value="USER" />
-            <span class="role-radio__mark" style="--rcolor: #666">普通用户</span>
-          </label>
-          <label class="role-radio">
-            <input v-model="newRole" type="radio" value="ADMIN" />
-            <span class="role-radio__mark" style="--rcolor: #6a4b2f">管理员</span>
-          </label>
+    <!-- Create Form -->
+    <transition name="glass-pop">
+      <div v-if="showCreateForm" class="bento-card create-form">
+        <div class="form-header">
+          <h3>新增编委账号</h3>
         </div>
-        <div class="create-form__actions">
-          <button class="btn-confirm" @click="handleCreate">确认创建</button>
-          <button class="btn-cancel" @click="showCreateForm = false">取消</button>
+        <div class="form-grid">
+          <div class="field">
+            <label>用户名</label>
+            <input v-model="newUsername" type="text" placeholder="输入登录账号" />
+          </div>
+          <div class="field">
+            <label>初始密码</label>
+            <input v-model="newPassword" type="password" placeholder="设置初始密码" />
+          </div>
+          <div class="field">
+            <label>真实姓名/昵称</label>
+            <input v-model="newNickname" type="text" placeholder="选填" />
+          </div>
+        </div>
+        <div class="form-footer">
+          <div class="role-selector">
+            <span class="label">分配角色：</span>
+            <label class="role-radio" :class="{ 'is-active': newRole === 'USER' }">
+              <input v-model="newRole" type="radio" value="USER" />
+              <span>普通编委</span>
+            </label>
+            <label class="role-radio admin" :class="{ 'is-active': newRole === 'ADMIN' }">
+              <input v-model="newRole" type="radio" value="ADMIN" />
+              <span>管理员</span>
+            </label>
+          </div>
+          <div class="actions">
+            <button class="bento-btn ghost" @click="showCreateForm = false">取消</button>
+            <button class="bento-btn primary" @click="handleCreate">确认创建</button>
+          </div>
         </div>
       </div>
+    </transition>
+
+    <!-- Data Table -->
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <span>加载名录中...</span>
     </div>
 
-    <div v-if="loading" class="loading-state">加载中...</div>
-
-    <div v-else class="user-table">
-      <div class="user-table__header">
-        <span class="col-id">ID</span>
-        <span class="col-user">用户名</span>
-        <span class="col-nick">昵称</span>
-        <span class="col-role">角色</span>
-        <span class="col-date">创建时间</span>
+    <div v-else class="bento-card table-card">
+      <div class="table-header">
+        <span class="col-id">UID</span>
+        <span class="col-user">账号 / 昵称</span>
+        <span class="col-role">权限组</span>
+        <span class="col-date">注册时间</span>
         <span class="col-ops">操作</span>
       </div>
-      <div v-for="user in filteredUsers" :key="user.id" class="user-table__row" :class="{ 'user-table__row--protected': isProtected(user) }">
-        <span class="col-id">{{ user.id }}</span>
-        <span class="col-user">
-          {{ user.username }}
-          <span v-if="isProtected(user)" class="protected-badge" title="超级管理员不可删除">&#x1F512;</span>
-        </span>
-        <span class="col-nick">{{ user.nickname || '-' }}</span>
-        <span class="col-role">
-          <select
-            v-if="canManageRoles && !isProtected(user)"
-            :value="user.role"
-            class="role-select-inline"
-            @change="handleRoleChange(user.id, ($event.target as HTMLSelectElement).value)"
-          >
-            <option value="USER">普通用户</option>
-            <option value="ADMIN">管理员</option>
-          </select>
-          <span
-            v-else
-            class="role-badge"
-            :style="{ background: roleConfig[user.role]?.bg || '#eee', color: roleConfig[user.role]?.color || '#333' }"
-          >
-            {{ roleConfig[user.role]?.label || user.role }}
+      <div class="table-body">
+        <div v-for="user in filteredUsers" :key="user.id" class="table-row" :class="{ 'is-protected': isProtected(user) }">
+          <span class="col-id">{{ String(user.id).padStart(4, '0') }}</span>
+          <div class="col-user">
+            <div class="user-avatar" :class="user.role.toLowerCase()">
+              {{ user.nickname ? user.nickname.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase() }}
+            </div>
+            <div class="user-info">
+              <span class="uname">
+                {{ user.username }}
+                <svg v-if="isProtected(user)" class="lock-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <span class="unick">{{ user.nickname || '未设置昵称' }}</span>
+            </div>
+          </div>
+          <span class="col-role">
+            <select
+              v-if="canManageRoles && !isProtected(user)"
+              :value="user.role"
+              class="glass-select"
+              @change="handleRoleChange(user.id, ($event.target as HTMLSelectElement).value)"
+            >
+              <option value="USER">普通编委</option>
+              <option value="ADMIN">管理员</option>
+            </select>
+            <span
+              v-else
+              class="role-badge"
+              :class="user.role.toLowerCase()"
+            >
+              {{ roleConfig[user.role]?.label || user.role }}
+            </span>
           </span>
-        </span>
-        <span class="col-date">{{ formatDate(user.createdAt) }}</span>
-        <span class="col-ops">
-          <button class="action-btn action-btn--reset" @click="resetUserId = user.id; resetNewPassword = ''">重置密码</button>
-          <button
-            v-if="!isProtected(user)"
-            class="action-btn action-btn--delete"
-            @click="deleteUserId = user.id"
-          >删除</button>
-        </span>
+          <span class="col-date">{{ formatDate(user.createdAt) }}</span>
+          <div class="col-ops">
+            <button class="icon-btn reset" @click="resetUserId = user.id; resetNewPassword = ''" title="重置密码">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+            </button>
+            <button
+              v-if="!isProtected(user)"
+              class="icon-btn danger"
+              @click="deleteUserId = user.id"
+              title="删除编委"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Reset Password Dialog -->
     <Teleport to="body">
-      <div v-if="resetUserId !== null" class="dialog-overlay" @click.self="resetUserId = null">
-        <div class="dialog">
-          <h2 class="dialog__title">重置密码</h2>
-          <div class="dialog__field">
-            <label>新密码</label>
-            <input v-model="resetNewPassword" type="password" placeholder="输入新密码" @keyup.enter="handleResetPassword" />
-          </div>
-          <div class="dialog__actions">
-            <button class="btn-cancel" @click="resetUserId = null">取消</button>
-            <button class="btn-confirm" @click="handleResetPassword">确认</button>
+      <transition name="glass-pop">
+        <div v-if="resetUserId !== null" class="glass-dialog-overlay" @click.self="resetUserId = null">
+          <div class="glass-dialog">
+            <h2 class="dialog-title">重置密码</h2>
+            <div class="dialog-field">
+              <label>为该编委设置新密码</label>
+              <input v-model="resetNewPassword" type="password" placeholder="输入新密码" @keyup.enter="handleResetPassword" />
+            </div>
+            <div class="dialog-actions">
+              <button class="bento-btn ghost" @click="resetUserId = null">取消</button>
+              <button class="bento-btn primary" @click="handleResetPassword">确认重置</button>
+            </div>
           </div>
         </div>
-      </div>
+      </transition>
     </Teleport>
 
     <!-- Delete Confirm Dialog -->
     <Teleport to="body">
-      <div v-if="deleteUserId !== null" class="dialog-overlay" @click.self="deleteUserId = null">
-        <div class="dialog">
-          <h2 class="dialog__title">确认删除</h2>
-          <p class="dialog__desc">此操作不可撤销，确认要删除该用户吗？</p>
-          <div class="dialog__actions">
-            <button class="btn-cancel" @click="deleteUserId = null">取消</button>
-            <button class="btn-danger" @click="handleDelete(deleteUserId!)">删除</button>
+      <transition name="glass-pop">
+        <div v-if="deleteUserId !== null" class="glass-dialog-overlay" @click.self="deleteUserId = null">
+          <div class="glass-dialog danger-mode">
+            <h2 class="dialog-title">确认删除编委</h2>
+            <p class="dialog-desc">此操作将永久移除该编委的系统访问权限，该操作不可撤销。</p>
+            <div class="dialog-actions">
+              <button class="bento-btn ghost" @click="deleteUserId = null">保留</button>
+              <button class="bento-btn danger" @click="handleDelete(deleteUserId!)">确认删除</button>
+            </div>
           </div>
         </div>
-      </div>
+      </transition>
     </Teleport>
   </div>
 </template>
 
 <style scoped>
-.page-header {
+.admin-users-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header ── */
+.bento-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.25rem;
 }
 
 .page-title {
-  font-size: 1.5rem;
-  font-family: 'Noto Serif SC', serif;
+  font-family: monospace;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: var(--text-main, #1a1a1a);
-  margin: 0;
+  letter-spacing: 0.1em;
+  color: var(--text-main);
+  margin: 0 0 6px;
 }
 
 .page-desc {
-  color: var(--text-soft, #888);
   font-size: 0.85rem;
-  margin: 0.25rem 0 0;
+  color: var(--text-soft);
+  margin: 0;
 }
 
-.btn-create {
-  display: flex;
+.bento-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.55rem 1rem;
-  background: linear-gradient(135deg, var(--accent-ink, #6a4b2f), var(--accent-amber, #a96e35));
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-/* ── Role Tabs ── */
-.role-tabs {
-  display: flex;
-  gap: 0.35rem;
-  margin-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.06));
-  padding-bottom: 0;
-}
-
-.role-tab {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.55rem 1rem;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-soft, #888);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.role-tab:hover {
-  color: var(--text-main, #1a1a1a);
-}
-
-.role-tab--active {
-  color: var(--accent-ink, #6a4b2f);
-  border-bottom-color: var(--accent-ink, #6a4b2f);
-}
-
-.role-tab__count {
-  display: inline-block;
-  padding: 0.1rem 0.4rem;
-  background: var(--bg-shell, #f0ebe3);
+  gap: 6px;
+  padding: 8px 16px;
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-soft, #888);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+.bento-btn.primary {
+  background: var(--text-main);
+  color: var(--bg-panel, #fff);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.bento-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.bento-btn.ghost {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--glass-border-highlight, rgba(0,0,0,0.1));
+}
+.bento-btn.ghost:hover {
+  background: rgba(0,0,0,0.05);
+}
+:global([data-theme="ink-wash"]) .bento-btn.ghost:hover,
+:global([data-theme="rosewood"]) .bento-btn.ghost:hover,
+:global([data-theme="star-sea"]) .bento-btn.ghost:hover {
+  background: rgba(255,255,255,0.1);
+}
+.bento-btn.danger {
+  background: #ef4444;
+  color: #fff;
+}
+.bento-btn.danger:hover {
+  background: #dc2626;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
 }
 
-.role-tab--active .role-tab__count {
-  background: rgba(106, 75, 47, 0.12);
-  color: var(--accent-ink, #6a4b2f);
+/* ── Tabs ── */
+.glass-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  background: var(--glass-panel-bg, rgba(255,255,255,0.4));
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border-highlight, rgba(255,255,255,0.5));
+  width: fit-content;
+}
+
+.glass-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.glass-tab:hover {
+  color: var(--text-main);
+}
+.glass-tab.is-active {
+  background: var(--bg-panel, #fff);
+  color: var(--text-main);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+:global([data-theme="ink-wash"]) .glass-tab.is-active,
+:global([data-theme="rosewood"]) .glass-tab.is-active,
+:global([data-theme="star-sea"]) .glass-tab.is-active {
+  background: rgba(255,255,255,0.1);
+}
+
+.tab-count {
+  padding: 2px 8px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-family: monospace;
+}
+.glass-tab.is-active .tab-count {
+  background: var(--text-main);
+  color: var(--bg-panel, #fff);
+}
+
+/* ── Glass Bento Cards ── */
+.bento-card {
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.6));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  border-radius: 20px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+  padding: 24px;
+}
+:global([data-theme="ink-wash"]) .bento-card,
+:global([data-theme="rosewood"]) .bento-card,
+:global([data-theme="star-sea"]) .bento-card {
+  background: rgba(20, 20, 20, 0.5);
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.2);
 }
 
 /* ── Create Form ── */
 .create-form {
-  background: var(--bg-panel, #fff);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.08));
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.25rem;
-}
-
-.create-form__row {
   display: flex;
-  gap: 0.6rem;
-  margin-bottom: 0.75rem;
+  flex-direction: column;
+  gap: 20px;
 }
-
-.form-input {
-  flex: 1;
-  padding: 0.45rem 0.65rem;
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
-  border-radius: 8px;
-  background: var(--bg-shell, #f5f0e8);
-  color: var(--text-main, #1a1a1a);
-  font-size: 0.82rem;
-  outline: none;
+.form-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--text-main);
 }
-
-.form-input:focus {
-  border-color: var(--accent-amber, #a96e35);
-}
-
-.create-form__bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.role-select {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.role-select__label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-sub, #555);
-}
-
-.role-radio {
-  cursor: pointer;
-}
-
-.role-radio input {
-  display: none;
-}
-
-.role-radio__mark {
-  display: inline-block;
-  padding: 0.3rem 0.7rem;
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
-  border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-soft, #888);
-  transition: all 0.15s;
-}
-
-.role-radio input:checked + .role-radio__mark {
-  border-color: var(--rcolor, #6a4b2f);
-  color: var(--rcolor, #6a4b2f);
-  background: rgba(106, 75, 47, 0.06);
-}
-
-.create-form__actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-confirm {
-  padding: 0.4rem 0.9rem;
-  background: var(--accent-ink, #6a4b2f);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.btn-cancel {
-  padding: 0.4rem 0.9rem;
-  background: transparent;
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
-  border-radius: 8px;
-  color: var(--text-main, #1a1a1a);
-  font-weight: 600;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.btn-danger {
-  padding: 0.4rem 0.9rem;
-  background: #ef4444;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-/* ── User Table ── */
-.user-table {
-  background: var(--bg-panel, #fff);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.08));
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.user-table__header {
+.form-grid {
   display: grid;
-  grid-template-columns: 50px 1.2fr 1fr 120px 110px 140px;
-  gap: 0.5rem;
-  padding: 0.65rem 1rem;
-  background: var(--bg-shell, #f5f0e8);
-  font-size: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field label {
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--text-soft, #888);
+  color: var(--text-soft);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+.field input {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
+  background: rgba(255,255,255,0.5);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+:global([data-theme="ink-wash"]) .field input,
+:global([data-theme="rosewood"]) .field input,
+:global([data-theme="star-sea"]) .field input {
+  background: rgba(0,0,0,0.3);
+  border-color: rgba(255,255,255,0.1);
+}
+.field input:focus {
+  background: var(--bg-panel, #fff);
+  border-color: var(--text-main);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+}
 
-.user-table__row {
-  display: grid;
-  grid-template-columns: 50px 1.2fr 1fr 120px 110px 140px;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
+.form-footer {
+  display: flex;
   align-items: center;
-  font-size: 0.82rem;
-  color: var(--text-main, #1a1a1a);
-  border-top: 1px solid var(--border-color, rgba(0,0,0,0.04));
-  transition: background 0.1s;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px dashed var(--glass-border-shadow, rgba(0,0,0,0.1));
+}
+.role-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.role-selector .label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+.role-radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.role-radio input {
+  display: none;
+}
+.role-radio.is-active {
+  background: var(--text-main);
+  color: var(--bg-panel, #fff);
+  border-color: var(--text-main);
+}
+.role-radio.admin.is-active {
+  background: var(--accent-amber);
+  border-color: var(--accent-amber);
 }
 
-.user-table__row--protected {
-  background: rgba(180, 83, 9, 0.03);
+.actions {
+  display: flex;
+  gap: 12px;
 }
 
-.col-id { font-weight: 600; }
+/* ── Table Layout ── */
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+.table-header {
+  display: grid;
+  grid-template-columns: 80px 1.5fr 1fr 150px 100px;
+  gap: 16px;
+  padding: 16px 24px;
+  background: rgba(0,0,0,0.02);
+  border-bottom: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.05));
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+:global([data-theme="ink-wash"]) .table-header,
+:global([data-theme="rosewood"]) .table-header,
+:global([data-theme="star-sea"]) .table-header {
+  background: rgba(255,255,255,0.02);
+  border-color: rgba(255,255,255,0.05);
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 80px 1.5fr 1fr 150px 100px;
+  gap: 16px;
+  padding: 16px 24px;
+  align-items: center;
+  border-bottom: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.03));
+  transition: background 0.2s ease;
+}
+.table-row:hover {
+  background: rgba(255,255,255,0.4);
+}
+:global([data-theme="ink-wash"]) .table-row:hover,
+:global([data-theme="rosewood"]) .table-row:hover,
+:global([data-theme="star-sea"]) .table-row:hover {
+  background: rgba(255,255,255,0.03);
+}
+.table-row.is-protected {
+  background: rgba(180, 83, 9, 0.02);
+}
+
+.col-id {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
 
 .col-user {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 12px;
+}
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--glass-border-highlight, rgba(255,255,255,0.8));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--text-main);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.user-avatar.super_admin {
+  background: var(--accent-amber);
+  color: #fff;
+}
+.user-avatar.admin {
+  background: var(--accent-ink);
+  color: #fff;
 }
 
-.protected-badge {
-  font-size: 0.72rem;
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+.uname {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.unick {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+.lock-icon {
+  color: var(--accent-amber);
+  opacity: 0.8;
+}
+
+.col-role {
+  display: flex;
+  align-items: center;
+}
+.role-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(0,0,0,0.05);
+  color: var(--text-main);
+}
+.role-badge.super_admin {
+  background: rgba(180, 83, 9, 0.1);
+  color: #b45309;
+}
+.role-badge.admin {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+:global([data-theme="ink-wash"]) .role-badge.super_admin,
+:global([data-theme="rosewood"]) .role-badge.super_admin,
+:global([data-theme="star-sea"]) .role-badge.super_admin {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fdba74;
+}
+
+.glass-select {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
+  background: rgba(255,255,255,0.4);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+  outline: none;
+}
+.glass-select:focus {
+  border-color: var(--text-main);
+}
+
+.col-date {
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: var(--text-soft);
 }
 
 .col-ops {
   display: flex;
-  gap: 0.4rem;
+  gap: 8px;
 }
-
-.action-btn {
-  padding: 0.25rem 0.55rem;
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   border: none;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.action-btn--reset {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-}
-
-.action-btn--reset:hover {
-  background: rgba(59, 130, 246, 0.2);
-}
-
-.action-btn--delete {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-.action-btn--delete:hover {
-  background: rgba(239, 68, 68, 0.2);
-}
-
-.role-badge {
-  display: inline-block;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-}
-
-.role-select-inline {
-  padding: 0.2rem 0.4rem;
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
-  border-radius: 6px;
-  background: var(--bg-shell, #f5f0e8);
-  color: var(--text-main, #1a1a1a);
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  outline: none;
-}
-
-.role-select-inline:focus {
-  border-color: var(--accent-amber, #a96e35);
-}
-
-.loading-state {
-  text-align: center;
-  padding: 2rem;
-  color: var(--text-soft, #888);
-}
-
-/* ── Dialogs ── */
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.dialog {
-  background: #ffffff;
-  border-radius: 2px;
-  padding: 48px;
-  width: 100%;
-  max-width: 440px;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.03), 0 10px 30px rgba(0, 0, 0, 0.02);
-  border: 1px solid #f0f0f2;
-}
-
-.dialog__title {
-  margin: 0 0 32px;
-  font-size: 1.15rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  color: #000;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.dialog__desc {
-  margin: 0 0 32px;
-  color: #888;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  text-align: center;
-}
-
-.dialog__field {
-  margin-bottom: 24px;
-}
-
-.dialog__field label {
-  display: block;
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: #bbb;
-  letter-spacing: 0.15em;
-  margin-bottom: 12px;
-  text-transform: uppercase;
-}
-
-.dialog__field input {
-  width: 100%;
-  padding: 14px 20px;
-  border: none;
-  border-radius: 2px;
-  background: #f8f8f9;
-  color: #000;
-  font-size: 0.9rem;
-  font-weight: 600;
-  outline: none;
-  box-sizing: border-box;
+  cursor: pointer;
   transition: all 0.2s;
 }
-
-.dialog__field input:focus {
-  background: #f0f0f2;
-  box-shadow: inset 0 0 0 1px #000;
+.icon-btn.reset {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+.icon-btn.reset:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+.icon-btn.danger {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+.icon-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.2);
 }
 
-.dialog__actions {
+/* ── Dialogs ── */
+.glass-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-top: 40px;
+}
+.glass-dialog {
+  width: 100%;
+  max-width: 400px;
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.1);
+}
+:global([data-theme="ink-wash"]) .glass-dialog,
+:global([data-theme="rosewood"]) .glass-dialog,
+:global([data-theme="star-sea"]) .glass-dialog {
+  background: rgba(20, 20, 20, 0.85);
+  border-color: rgba(255,255,255,0.1);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.dialog-title {
+  margin: 0 0 24px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+  text-align: center;
+}
+.dialog-desc {
+  margin: 0 0 24px;
+  font-size: 0.9rem;
+  color: var(--text-soft);
+  text-align: center;
+  line-height: 1.5;
+}
+.dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+.dialog-field label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+.dialog-field input {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
+  background: rgba(255,255,255,0.5);
+  font-size: 1rem;
+  outline: none;
+}
+:global([data-theme="ink-wash"]) .dialog-field input,
+:global([data-theme="rosewood"]) .dialog-field input,
+:global([data-theme="star-sea"]) .dialog-field input {
+  background: rgba(0,0,0,0.3);
+  color: #fff;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: stretch;
+}
+.dialog-actions > * {
+  flex: 1;
+  justify-content: center;
+}
+
+.glass-pop-enter-active,
+.glass-pop-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-pop-enter-from,
+.glass-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.96) translateY(10px);
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: var(--text-soft);
+  gap: 16px;
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
+  border-top-color: var(--text-main);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 960px) {
+  .table-header {
+    display: none;
+  }
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+  .col-id { display: none; }
+  .col-ops { justify-content: flex-end; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-footer { flex-direction: column; gap: 16px; align-items: stretch; }
+  .actions { flex-direction: column; }
 }
 </style>
-
