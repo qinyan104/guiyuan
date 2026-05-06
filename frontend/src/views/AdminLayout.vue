@@ -83,16 +83,25 @@ function goToSettings() {
           <div v-if="activeRouteName === item.routeName" class="nav-active-glow"></div>
         </button>
       </nav>
+    </aside>
 
-      <div class="dock-footer">
-        <div class="user-profile">
-          <div class="avatar-ring">
-            <span class="avatar-icon">&#x1F464;</span>
+    <!-- Main Spatial Content Area -->
+    <main class="spatial-content">
+      <!-- Top Action Bar -->
+      <header class="top-action-bar">
+        <div class="spacer"></div>
+        <div class="top-actions-group">
+          <!-- User Profile -->
+          <div class="user-profile-pill">
+            <div class="avatar-ring">
+              <span class="avatar-icon">&#x1F464;</span>
+            </div>
+            <span class="username">{{ currentUsername || '总编' }}</span>
           </div>
-          <span class="username">{{ currentUsername || '总编' }}</span>
-        </div>
-        
-        <div class="dock-actions">
+
+          <div class="action-divider"></div>
+
+          <!-- Action Buttons -->
           <ThemeSwitcher :current-theme="theme.currentTheme.value" @change-theme="theme.setTheme" class="action-btn" />
           <button class="action-btn" @click="goToSettings" title="系统设置">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -101,16 +110,16 @@ function goToSettings() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
         </div>
-      </div>
-    </aside>
+      </header>
 
-    <!-- Main Spatial Content Area -->
-    <main class="spatial-content">
-      <router-view v-slot="{ Component }">
-        <transition name="fade-slide" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <!-- Scrollable Router View -->
+      <div class="scrollable-container">
+        <router-view v-slot="{ Component }">
+          <transition name="fade-slide" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </div>
     </main>
   </div>
 </template>
@@ -314,25 +323,55 @@ function goToSettings() {
   z-index: 0;
 }
 
-.dock-footer {
-  margin-top: auto;
-  padding-top: 24px;
-  border-top: 1px solid var(--glass-border-shadow);
+/* ── Main Spatial Content ── */
+.spatial-content {
+  flex: 1;
+  position: relative;
+  z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  min-width: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 
+    0 24px 48px -12px rgba(0,0,0,0.1),
+    inset 0 1px 0 var(--glass-border-highlight),
+    inset 0 -1px 0 var(--glass-border-shadow);
 }
 
-.user-profile {
+/* ── Top Action Bar ── */
+.top-action-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 8px;
+  justify-content: space-between;
+  padding: 24px 40px 12px 40px; /* Top padding pushes everything nicely */
+  flex-shrink: 0;
+}
+
+.top-actions-group {
+  display: flex;
+  align-items: center;
+  background: var(--glass-pill-bg);
+  padding: 6px 6px 6px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border-highlight);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  gap: 8px;
+}
+
+.user-profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 8px;
 }
 
 .avatar-ring {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--glass-border-highlight), transparent);
   padding: 2px;
@@ -349,33 +388,30 @@ function goToSettings() {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   color: var(--text-main);
 }
 
 .username {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--text-main);
   letter-spacing: 0.05em;
 }
 
-.dock-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  background: var(--glass-pill-bg);
-  padding: 8px;
-  border-radius: 999px;
-  border: 1px solid var(--glass-border-highlight);
+.action-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--glass-border-shadow);
+  margin: 0 4px;
 }
 
 .action-btn {
   background: none;
   border: none;
   color: var(--text-soft, #888);
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -395,24 +431,26 @@ function goToSettings() {
   background: rgba(239, 68, 68, 0.1);
 }
 
-/* ── Main Spatial Content ── */
-.spatial-content {
+/* ── Scrollable Area ── */
+.scrollable-container {
   flex: 1;
-  position: relative;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  border-radius: 24px;
-  overflow: hidden;
-  /* Add subtle glass panel effect for the content area if views are plain */
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-  box-shadow: 
-    0 24px 48px -12px rgba(0,0,0,0.1),
-    inset 0 1px 0 var(--glass-border-highlight),
-    inset 0 -1px 0 var(--glass-border-shadow);
+  overflow-y: auto;
+  padding: 12px 40px 40px 40px; /* Nice breathing room on sides and bottom */
+}
+
+/* Custom Scrollbar for the container */
+.scrollable-container::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollable-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollable-container::-webkit-scrollbar-thumb {
+  background: var(--glass-border-shadow);
+  border-radius: 4px;
+}
+.scrollable-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-soft);
 }
 
 /* Router Transitions */
@@ -462,15 +500,17 @@ function goToSettings() {
     padding: 10px;
     border-radius: 12px;
   }
-  .dock-footer {
-    margin: 0;
-    padding: 0;
-    border: none;
-    flex-direction: row;
-    align-items: center;
+  .top-action-bar {
+    padding: 16px 20px 8px 20px;
   }
-  .user-profile {
-    display: none;
+  .scrollable-container {
+    padding: 8px 20px 20px 20px;
+  }
+  .username {
+    display: none; /* Hide username on small screens */
+  }
+  .user-profile-pill {
+    padding-right: 0;
   }
 }
 </style>
