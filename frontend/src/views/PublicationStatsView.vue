@@ -251,811 +251,492 @@ function formatHistoryDate(dateStr: string) {
 </script>
 
 <template>
-  <div class="stats-page">
-    <header class="stats-nav">
-      <button class="nav-back" @click="goBack">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        返回工作台
-      </button>
-      <h1 class="stats-nav__title">家族统计分析</h1>
-      <div class="nav-spacer"></div>
-    </header>
+  <div class="stats-view">
+    <div class="bento-header">
+      <div class="header-left">
+        <button class="action-btn back-btn" @click="goBack" title="返回工作台">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <div class="header-content">
+          <h1 class="page-title">家族统计分析 // STATISTICS</h1>
+          <p class="page-desc">全景数字化族谱数据洞察与修订追溯</p>
+        </div>
+      </div>
+    </div>
 
     <main class="stats-content">
-      <!-- Family Profile Hero -->
-      <section v-if="pubData" class="family-hero">
-        <div class="family-hero__header">
-          <h2 class="family-hero__title">{{ pubData.title }}</h2>
-          <p v-if="pubData.subtitle" class="family-hero__subtitle">{{ pubData.subtitle }}</p>
-        </div>
-        <div class="family-hero__meta" v-if="pubData.info?.ancestralOrigin || pubData.info?.hallName || pubData.info?.familyMotto">
-          <div class="seal-item" v-if="pubData.info.ancestralOrigin">
-            <span class="seal-label">祖籍</span>
-            <span class="seal-value">{{ pubData.info.ancestralOrigin }}</span>
-          </div>
-          <div class="seal-item" v-if="pubData.info.hallName">
-            <span class="seal-label">堂号</span>
-            <span class="seal-value">{{ pubData.info.hallName }}</span>
-          </div>
-          <div class="seal-item seal-item--motto" v-if="pubData.info.familyMotto">
-            <span class="seal-label">家训</span>
-            <span class="seal-value">{{ pubData.info.familyMotto }}</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Overview Cards -->
-      <div class="overview-grid">
-        <div class="ov-card">
-          <div class="ov-card__bg">族</div>
-          <div class="ov-card__content">
-            <span class="ov-card__number">{{ totalCount }}</span>
-            <span class="ov-card__label">总人数</span>
-          </div>
-        </div>
-        <div class="ov-card ov-card--male">
-          <div class="ov-card__bg">♂</div>
-          <div class="ov-card__content">
-            <span class="ov-card__number">{{ maleCount }}</span>
-            <span class="ov-card__label">男性</span>
-          </div>
-        </div>
-        <div class="ov-card ov-card--female">
-          <div class="ov-card__bg">♀</div>
-          <div class="ov-card__content">
-            <span class="ov-card__number">{{ femaleCount }}</span>
-            <span class="ov-card__label">女性</span>
-          </div>
-        </div>
-        <div class="ov-card ov-card--gen">
-          <div class="ov-card__bg">世代</div>
-          <div class="ov-card__content">
-            <span class="ov-card__number">{{ generationCount || '-' }}</span>
-            <span class="ov-card__label">世代数</span>
-          </div>
-        </div>
-        <div class="ov-card ov-card--alive">
-          <div class="ov-card__bg">世</div>
-          <div class="ov-card__content">
-            <span class="ov-card__number">{{ aliveCount }}</span>
-            <span class="ov-card__label">在世</span>
-          </div>
-        </div>
-        <div class="ov-card ov-card--deceased">
-          <div class="ov-card__bg">卒</div>
-          <div class="ov-card__content">
-            <span class="ov-card__number">{{ deceasedCount }}</span>
-            <span class="ov-card__label">已故</span>
+      <!-- Family Profile Hero Card -->
+      <div v-if="pubData" class="bento-card hero-card">
+        <div class="hero-bg-accent"></div>
+        <div class="hero-main">
+          <h2 class="family-title">{{ pubData.title }}</h2>
+          <p v-if="pubData.subtitle" class="family-subtitle">{{ pubData.subtitle }}</p>
+          <div class="family-seals" v-if="pubData.info?.ancestralOrigin || pubData.info?.hallName || pubData.info?.familyMotto">
+            <div class="seal" v-if="pubData.info.ancestralOrigin">
+              <span class="label">祖籍</span>
+              <span class="value">{{ pubData.info.ancestralOrigin }}</span>
+            </div>
+            <div class="seal" v-if="pubData.info.hallName">
+              <span class="label">堂号</span>
+              <span class="value">{{ pubData.info.hallName }}</span>
+            </div>
+            <div class="seal motto" v-if="pubData.info.familyMotto">
+              <span class="label">家训</span>
+              <span class="value">{{ pubData.info.familyMotto }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Charts Grid -->
-      <div class="charts-grid">
-        <!-- Gender Ratio -->
-        <section class="chart-card">
-          <h2 class="chart-title">人口性别比例</h2>
-          <div class="gender-bar">
-            <div class="gender-bar__male" :style="{ width: malePercent + '%' }">
-              <span v-if="malePercent > 15">{{ malePercent }}%</span>
+      <!-- Quick Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="bento-card metric-card">
+          <div class="metric-bg-icon">族</div>
+          <div class="metric-value">{{ totalCount }}</div>
+          <div class="metric-label">档案总人数</div>
+        </div>
+        <div class="bento-card metric-card male">
+          <div class="metric-bg-icon">♂</div>
+          <div class="metric-value">{{ maleCount }}</div>
+          <div class="metric-label">男性编委</div>
+        </div>
+        <div class="bento-card metric-card female">
+          <div class="metric-bg-icon">♀</div>
+          <div class="metric-value">{{ femaleCount }}</div>
+          <div class="metric-label">女性编委</div>
+        </div>
+        <div class="bento-card metric-card generation">
+          <div class="metric-bg-icon">代</div>
+          <div class="metric-value">{{ generationCount || '-' }}</div>
+          <div class="metric-label">延续世代数</div>
+        </div>
+        <div class="bento-card metric-card alive">
+          <div class="metric-bg-icon">世</div>
+          <div class="metric-value">{{ aliveCount }}</div>
+          <div class="metric-label">在世成员</div>
+        </div>
+        <div class="bento-card metric-card deceased">
+          <div class="metric-bg-icon">卒</div>
+          <div class="metric-value">{{ deceasedCount }}</div>
+          <div class="metric-label">已故先祖</div>
+        </div>
+      </div>
+
+      <!-- Detailed Analysis Grid -->
+      <div class="analysis-grid">
+        <!-- Gender Ratio Chart -->
+        <div class="bento-card chart-card">
+          <h3 class="card-title">人口性别比例</h3>
+          <div class="gender-viz">
+            <div class="ratio-bar">
+              <div class="bar male" :style="{ width: malePercent + '%' }">
+                <span v-if="malePercent > 15">{{ malePercent }}%</span>
+              </div>
+              <div class="bar female" :style="{ width: femalePercent + '%' }">
+                <span v-if="femalePercent > 15">{{ femalePercent }}%</span>
+              </div>
             </div>
-            <div class="gender-bar__female" :style="{ width: femalePercent + '%' }">
-              <span v-if="femalePercent > 15">{{ femalePercent }}%</span>
+            <div class="viz-legend">
+              <div class="legend-item"><span class="dot male"></span>男性 {{ maleCount }}</div>
+              <div class="legend-item"><span class="dot female"></span>女性 {{ femaleCount }}</div>
             </div>
           </div>
-          <div class="gender-legend">
-            <span class="legend-item"><span class="legend-dot legend-dot--male"></span>男性 {{ maleCount }}</span>
-            <span class="legend-item"><span class="legend-dot legend-dot--female"></span>女性 {{ femaleCount }}</span>
-          </div>
-        </section>
+        </div>
 
         <!-- Generation Distribution -->
-        <section class="chart-card">
-          <h2 class="chart-title">世代人口分布</h2>
-          <div v-if="generationDist.length === 0" class="chart-empty">暂无数据</div>
-          <div v-else class="bar-chart">
-            <div v-for="[gen, count] in generationDist" :key="gen" class="bar-row">
-              <span class="bar-label">{{ gen === 0 ? '未知' : '第' + gen + '代' }}</span>
-              <div class="bar-track">
-                <div class="bar-fill" :style="{ width: (count / maxGenCount * 100) + '%' }"></div>
+        <div class="bento-card chart-card">
+          <h3 class="card-title">世代人口分布</h3>
+          <div v-if="generationDist.length === 0" class="empty-hint">暂无数据</div>
+          <div v-else class="glass-bar-chart">
+            <div v-for="[gen, count] in generationDist" :key="gen" class="chart-row">
+              <span class="row-label">{{ gen === 0 ? '未知' : '第 ' + gen + ' 代' }}</span>
+              <div class="row-track">
+                <div class="row-fill" :style="{ width: (count / maxGenCount * 100) + '%' }"></div>
               </div>
-              <span class="bar-value">{{ count }}</span>
+              <span class="row-value">{{ count }}</span>
             </div>
           </div>
-        </section>
+        </div>
 
-        <!-- Lifespan Stats -->
-        <section class="chart-card">
-          <h2 class="chart-title">家族寿命概况</h2>
-          <div v-if="lifespans.length === 0" class="chart-empty">需要完善生卒年数据以生成报告</div>
+        <!-- Lifespan Insights -->
+        <div class="bento-card chart-card">
+          <h3 class="card-title">家族寿命概况</h3>
+          <div v-if="lifespans.length === 0" class="empty-hint">需完善生卒年数据</div>
           <template v-else>
-            <div class="lifespan-summary">
-              <div class="ls-item">
-                <span class="ls-value">{{ avgLifespan }}<small>岁</small></span>
-                <span class="ls-label">平均寿命</span>
+            <div class="stat-summary">
+              <div class="stat-item">
+                <div class="val">{{ avgLifespan }}<small>岁</small></div>
+                <div class="lbl">平均寿命</div>
               </div>
-              <div class="ls-item" v-if="maxLifespan">
-                <span class="ls-value">{{ maxLifespan.years }}<small>岁</small></span>
-                <span class="ls-label">最高寿 · {{ maxLifespan.name }}</span>
-              </div>
-              <div class="ls-item" v-if="minLifespan">
-                <span class="ls-value">{{ minLifespan.years }}<small>岁</small></span>
-                <span class="ls-label">最低寿 · {{ minLifespan.name }}</span>
+              <div class="stat-item prominent" v-if="maxLifespan">
+                <div class="val">{{ maxLifespan.years }}<small>岁</small></div>
+                <div class="lbl">最高寿 · {{ maxLifespan.name }}</div>
               </div>
             </div>
-            <div class="bar-chart" style="margin-top: 1rem;">
-              <div v-for="[label, count] in lifespanBuckets" :key="label" class="bar-row">
-                <span class="bar-label">{{ label }}岁</span>
-                <div class="bar-track">
-                  <div class="bar-fill bar-fill--lifespan" :style="{ width: (count / maxBucketCount * 100) + '%' }"></div>
+            <div class="glass-bar-chart compact">
+              <div v-for="[label, count] in lifespanBuckets" :key="label" class="chart-row">
+                <span class="row-label">{{ label }}岁</span>
+                <div class="row-track">
+                  <div class="row-fill lifespan" :style="{ width: (count / maxBucketCount * 100) + '%' }"></div>
                 </div>
-                <span class="bar-value">{{ count }}</span>
+                <span class="row-value">{{ count }}</span>
               </div>
             </div>
           </template>
-        </section>
+        </div>
 
-        <!-- Century Timeline -->
-        <section class="chart-card">
-          <h2 class="chart-title">历史跨度（出生/逝世）</h2>
-          <div v-if="centuryData.length === 0" class="chart-empty">暂无数据</div>
-          <div v-else class="timeline-chart">
-            <div v-for="c in centuryData" :key="c.century" class="timeline-row">
-              <span class="timeline-label">{{ c.label }}</span>
-              <div class="timeline-bars">
-                <div class="timeline-bar timeline-bar--birth" :style="{ width: (c.births / maxCenturyCount * 100) + '%' }">
-                  <span v-if="c.births > 0" class="timeline-bar__val">{{ c.births }}</span>
+        <!-- Century Distribution -->
+        <div class="bento-card chart-card">
+          <h3 class="card-title">历史跨度（出生/逝世）</h3>
+          <div v-if="centuryData.length === 0" class="empty-hint">暂无数据</div>
+          <div v-else class="glass-timeline-chart">
+            <div v-for="c in centuryData" :key="c.century" class="chart-row dual">
+              <span class="row-label">{{ c.label }}</span>
+              <div class="row-bars">
+                <div class="bar birth" :style="{ width: (c.births / maxCenturyCount * 100) + '%' }">
+                  <span v-if="c.births > 0">{{ c.births }}</span>
                 </div>
-                <div class="timeline-bar timeline-bar--death" :style="{ width: (c.deaths / maxCenturyCount * 100) + '%' }">
-                  <span v-if="c.deaths > 0" class="timeline-bar__val">{{ c.deaths }}</span>
+                <div class="bar death" :style="{ width: (c.deaths / maxCenturyCount * 100) + '%' }">
+                  <span v-if="c.deaths > 0">{{ c.deaths }}</span>
                 </div>
               </div>
             </div>
-            <div class="timeline-legend">
-              <span class="legend-item"><span class="legend-dot legend-dot--birth"></span>出生</span>
-              <span class="legend-item"><span class="legend-dot legend-dot--death"></span>逝世</span>
+            <div class="viz-legend">
+              <div class="legend-item"><span class="dot birth"></span>出生</div>
+              <div class="legend-item"><span class="dot death"></span>逝世</div>
             </div>
           </div>
-        </section>
+        </div>
 
-        <!-- Surname Distribution -->
-        <section class="chart-card chart-card--wide">
-          <h2 class="chart-title">家族姓氏分布 (TOP 10)</h2>
-          <div v-if="surnameDist.length === 0" class="chart-empty">暂无数据</div>
-          <div v-else class="bar-chart bar-chart--horizontal">
-            <div v-for="[surname, count] in surnameDist" :key="surname" class="bar-row">
-              <span class="bar-label bar-label--surname">{{ surname }}</span>
-              <div class="bar-track">
-                <div class="bar-fill bar-fill--surname" :style="{ width: (count / maxSurnameCount * 100) + '%' }"></div>
+        <!-- Surname Rankings -->
+        <div class="bento-card chart-card wide">
+          <h3 class="card-title">家族姓氏分布 (TOP 10)</h3>
+          <div v-if="surnameDist.length === 0" class="empty-hint">暂无数据</div>
+          <div v-else class="glass-bar-chart horizontal">
+            <div v-for="[surname, count] in surnameDist" :key="surname" class="chart-row">
+              <span class="row-label surname">{{ surname }}</span>
+              <div class="row-track">
+                <div class="row-fill surname" :style="{ width: (count / maxSurnameCount * 100) + '%' }"></div>
               </div>
-              <span class="bar-value">{{ count }}</span>
+              <span class="row-value">{{ count }}</span>
             </div>
           </div>
-        </section>
+        </div>
 
-        <!-- Modification History -->
-        <section class="chart-card chart-card--wide">
-          <h2 class="chart-title">修订志记录</h2>
-          <div v-if="loadingHistory" class="chart-empty">正在调取家族修订志...</div>
-          <div v-else-if="history.length === 0" class="chart-empty">尚无修订记录</div>
-          <div v-else class="history-timeline">
-            <div v-for="entry in history" :key="entry.id" class="history-event">
-              <div class="history-event__line">
-                <div class="history-event__dot"></div>
+        <!-- Revision History -->
+        <div class="bento-card chart-card wide">
+          <h3 class="card-title">族谱修订志</h3>
+          <div v-if="loadingHistory" class="empty-hint">调取档案中...</div>
+          <div v-else-if="history.length === 0" class="empty-hint">尚无修订记录</div>
+          <div v-else class="glass-history">
+            <div v-for="entry in history" :key="entry.id" class="history-node">
+              <div class="node-line">
+                <div class="node-dot"></div>
               </div>
-              <div class="history-event__content">
-                <div class="history-event__meta">
-                  <span class="history-event__time">{{ formatHistoryDate(entry.createdAt) }}</span>
-                  <div class="history-event__actor">
-                    <svg class="actor-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <div class="node-card">
+                <div class="node-meta">
+                  <span class="time">{{ formatHistoryDate(entry.createdAt) }}</span>
+                  <div class="actor">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                     </svg>
                     {{ entry.username }}
                   </div>
                 </div>
-                <div class="history-event__body">
-                  <span :class="historyActionClass(entry.action)">{{ historyActionLabel(entry.action) }}</span>
-                  <span class="history-event__detail">{{ entry.detail || '系统常规更新' }}</span>
+                <div class="node-body">
+                  <span class="tag" :class="historyActionClass(entry.action)">{{ historyActionLabel(entry.action) }}</span>
+                  <span class="detail">{{ entry.detail || '常规维护' }}</span>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </div>
       </div>
     </main>
   </div>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
-
-.stats-page {
-  min-height: 100vh;
-  background: var(--bg-shell, #efe3cf);
-  background-image: var(--shell-bg-image);
-  color: var(--text-main, #2c2420);
+.stats-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.stats-nav {
+/* ── Header ── */
+.bento-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
-  height: 60px;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--line-soft);
-  backdrop-filter: blur(20px);
-  position: sticky;
-  top: 0;
-  z-index: 50;
 }
-
-.nav-back {
+.header-left {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: none;
-  border: 1px solid var(--line-soft);
-  color: var(--accent-earth, #6a4b2f);
+  gap: 16px;
+}
+.page-title {
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-main);
+  margin: 0 0 6px;
+}
+.page-desc {
   font-size: 0.85rem;
-  font-weight: 600;
+  color: var(--text-soft);
+  margin: 0;
+}
+.back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--glass-panel-bg, rgba(255,255,255,0.4));
+  border: 1px solid var(--glass-border-highlight, rgba(255,255,255,0.6));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main);
   cursor: pointer;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
   transition: all 0.2s ease;
 }
-
-.nav-back:hover {
-  background: rgba(169, 110, 53, 0.05);
-  border-color: var(--accent-amber);
-  transform: translateX(-2px);
+.back-btn:hover {
+  background: var(--bg-panel, #fff);
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-
-.stats-nav__title {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--text-main);
-  margin: 0;
-  font-family: 'Noto Serif SC', serif;
-  letter-spacing: 0.1em;
-}
-
-.nav-spacer { width: 100px; }
 
 .stats-content {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 2.5rem 2rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 24px;
 }
 
-/* ── Family Hero ── */
-.family-hero {
-  background: var(--bg-panel);
-  border: 1px solid var(--line-soft);
-  border-radius: 24px;
-  padding: 3.5rem 2rem;
-  text-align: center;
+/* ── Bento Card Styles ── */
+.bento-card {
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.6));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  border-radius: 20px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+  padding: 24px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+:global([data-theme="ink-wash"]) .bento-card,
+:global([data-theme="rosewood"]) .bento-card,
+:global([data-theme="star-sea"]) .bento-card {
+  background: rgba(20, 20, 20, 0.5);
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.2);
 }
 
-.family-hero::before {
-  content: "";
+/* ── Hero Card ── */
+.hero-card {
+  padding: 48px 32px;
+  text-align: center;
+}
+.hero-bg-accent {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l15 30H15z' fill='%23a96e35' fill-opacity='0.02'/%3E%3C/svg%3E");
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(circle, var(--accent-amber) 0%, transparent 40%);
+  opacity: 0.05;
   pointer-events: none;
 }
-
-.family-hero__title {
-  font-size: 2.8rem;
+.family-title {
   font-family: 'Noto Serif SC', serif;
+  font-size: 2.5rem;
   font-weight: 900;
+  margin: 0 0 8px;
   color: var(--text-main);
-  margin: 0 0 0.5rem;
-  letter-spacing: -0.01em;
 }
-
-.family-hero__subtitle {
-  font-size: 1.25rem;
-  color: var(--accent-earth);
-  margin: 0 0 2.5rem;
-  font-weight: 500;
+.family-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-soft);
+  margin: 0 0 32px;
   font-family: 'Noto Serif SC', serif;
-  opacity: 0.7;
 }
-
-.family-hero__meta {
+.family-seals {
   display: flex;
   justify-content: center;
-  gap: 2.5rem;
+  gap: 32px;
   flex-wrap: wrap;
-  padding-top: 2.5rem;
-  border-top: 1px solid var(--line-soft);
+  padding-top: 32px;
+  border-top: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.05));
 }
-
-.seal-item {
+.seal {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
+  gap: 8px;
   min-width: 100px;
 }
-
-.seal-label {
-  font-size: 0.75rem;
+.seal .label {
+  font-size: 0.7rem;
+  font-weight: 800;
   color: var(--accent-amber);
-  font-weight: 700;
-  padding: 0.1rem 0.5rem;
-  border: 1px solid var(--accent-amber);
-  border-radius: 4px;
+  text-transform: uppercase;
   letter-spacing: 0.1em;
-  background: rgba(169, 110, 53, 0.05);
+  border: 1px solid var(--accent-amber);
+  padding: 2px 8px;
+  border-radius: 4px;
+  width: fit-content;
+  margin: 0 auto;
 }
-
-.seal-value {
-  font-size: 1.25rem;
+.seal .value {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-main);
-  font-family: 'Noto Serif SC', serif;
 }
+.seal.motto .value { color: #8b2d1c; font-style: italic; }
 
-.seal-item--motto .seal-value {
-  color: #8b2d1c;
-  font-style: italic;
-}
-
-/* ── Overview Cards ── */
-.overview-grid {
+/* ── Metrics Grid ── */
+.metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 1.25rem;
+  gap: 20px;
 }
-
-.ov-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--line-soft);
-  border-radius: 20px;
-  padding: 1.75rem 1.5rem;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+.metric-card {
+  padding: 24px 20px;
+  transition: transform 0.3s ease;
 }
-
-.ov-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
-  border-color: var(--accent-amber);
-}
-
-.ov-card__bg {
+.metric-card:hover { transform: translateY(-4px); }
+.metric-bg-icon {
   position: absolute;
-  right: -5px;
-  bottom: -15px;
-  font-size: 5.5rem;
+  right: -10px; bottom: -10px;
+  font-size: 4rem;
   font-weight: 900;
-  color: var(--accent-earth);
-  opacity: 0.04;
-  user-select: none;
-  pointer-events: none;
+  opacity: 0.03;
   font-family: 'Noto Serif SC', serif;
-  transition: opacity 0.3s ease;
 }
-
-.ov-card:hover .ov-card__bg {
-  opacity: 0.08;
-}
-
-.ov-card__number {
-  display: block;
-  font-size: 2.25rem;
+.metric-value {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 2rem;
   font-weight: 900;
   color: var(--text-main);
-  line-height: 1;
-  margin-bottom: 0.4rem;
-  font-family: 'Noto Serif SC', serif;
+  margin-bottom: 4px;
 }
-
-.ov-card__label {
-  font-size: 0.85rem;
+.metric-label {
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--text-soft);
-  font-weight: 600;
 }
+.metric-card.male .metric-value { color: #3c5363; }
+.metric-card.female .metric-value { color: #8b2d1c; }
+.metric-card.generation .metric-value { color: var(--accent-amber); }
+.metric-card.alive .metric-value { color: #2e7d32; }
 
-.ov-card--male .ov-card__number { color: var(--accent-ink); }
-.ov-card--female .ov-card__number { color: #8b2d1c; }
-.ov-card--gen .ov-card__number { color: var(--accent-amber); }
-.ov-card--alive .ov-card__number { color: var(--accent-olive); }
-.ov-card--deceased .ov-card__number { color: var(--text-soft); }
-
-/* ── Charts Grid ── */
-.charts-grid {
+/* ── Analysis Grid ── */
+.analysis-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 24px;
 }
-
-.chart-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--line-soft);
-  border-radius: 20px;
-  padding: 1.75rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-}
-
-.chart-card--wide {
-  grid-column: 1 / -1;
-}
-
-.chart-title {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--text-main);
-  margin: 0 0 1.75rem;
+.chart-card.wide { grid-column: 1 / -1; }
+.card-title {
   font-family: 'Noto Serif SC', serif;
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0 0 20px;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 8px;
 }
-
-.chart-title::before {
-  content: "";
-  width: 5px;
-  height: 1.2rem;
+.card-title::before {
+  content: '';
+  width: 4px; height: 16px;
   background: var(--accent-amber);
-  border-radius: 3px;
-  box-shadow: 0 0 8px rgba(169, 110, 53, 0.4);
+  border-radius: 2px;
 }
 
-.chart-empty {
-  font-size: 0.9rem;
-  color: var(--text-soft);
-  text-align: center;
-  padding: 3rem 0;
-  background: var(--bg-shell);
-  border: 1px dashed var(--line-soft);
-  border-radius: 16px;
-}
-
-/* ── Gender Bar ── */
-.gender-bar {
-  display: flex;
-  height: 44px;
+/* ── Custom Visualizations ── */
+.ratio-bar {
+  height: 40px;
   border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 1.25rem;
-  background: var(--bg-shell);
+  display: flex;
+  background: var(--glass-border-shadow, rgba(0,0,0,0.05));
   padding: 4px;
+  margin-bottom: 16px;
 }
-
-.gender-bar__male {
-  background: var(--metric-ink, linear-gradient(135deg, #3c5363, #5a7a90));
+.ratio-bar .bar {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
   color: #fff;
-  font-size: 0.9rem;
-  font-weight: 900;
-  border-radius: 8px 0 0 8px;
-  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 10px rgba(60, 83, 99, 0.2);
+  transition: width 1s ease;
 }
+.ratio-bar .bar.male { background: linear-gradient(135deg, #3c5363, #5a7a90); border-radius: 8px 0 0 8px; }
+.ratio-bar .bar.female { background: linear-gradient(135deg, #8b2d1c, #b04a3a); border-radius: 0 8px 8px 0; }
 
-.gender-bar__female {
-  background: linear-gradient(135deg, #8b2d1c, #b04a3a);
+.viz-legend {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 900;
-  border-radius: 0 8px 8px 0;
-  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 10px rgba(139, 45, 28, 0.2);
-}
-
-.gender-legend,
-.timeline-legend {
-  display: flex;
-  gap: 1.75rem;
-  font-size: 0.85rem;
-  color: var(--text-sub);
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  gap: 20px;
+  font-size: 0.8rem;
   font-weight: 600;
-}
-
-.legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 4px;
-}
-
-.legend-dot--male { background: var(--accent-ink); }
-.legend-dot--female { background: #8b2d1c; }
-.legend-dot--birth { background: var(--accent-olive); }
-.legend-dot--death { background: var(--text-soft); }
-
-/* ── Bar Chart ── */
-.bar-chart {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.bar-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.bar-label {
-  width: 65px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-soft);
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.bar-label--surname {
-  width: 40px;
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--text-main);
-  text-align: center;
-  font-family: 'Noto Serif SC', serif;
-}
-
-.bar-track {
-  flex: 1;
-  height: 14px;
-  background: var(--bg-shell);
-  border-radius: 7px;
-  overflow: hidden;
-}
-
-.bar-fill {
-  height: 100%;
-  background: var(--metric-amber, linear-gradient(90deg, #4a3421, #a96e35));
-  border-radius: 7px;
-  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  min-width: 4px;
-  box-shadow: 0 0 12px rgba(169, 110, 53, 0.25);
-}
-
-.bar-fill--lifespan {
-  background: var(--metric-olive, linear-gradient(90deg, #1e7a5c, #3ec29a));
-  box-shadow: 0 0 12px rgba(103, 114, 79, 0.25);
-}
-
-.bar-fill--surname {
-  background: var(--metric-earth, linear-gradient(90deg, #7c4dff, #b388ff));
-  box-shadow: 0 0 12px rgba(118, 79, 47, 0.25);
-}
-
-.bar-value {
-  width: 35px;
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: var(--text-main);
-  text-align: left;
-}
-
-/* ── Lifespan Summary ── */
-.lifespan-summary {
-  display: flex;
-  gap: 2.5rem;
-  margin-bottom: 1.25rem;
-  padding: 1.5rem;
-  background: rgba(169, 110, 53, 0.04);
-  border-radius: 16px;
-  border: 1px solid var(--line-soft);
-}
-
-.ls-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.ls-value {
-  font-size: 1.75rem;
-  font-weight: 900;
-  color: var(--text-main);
-  line-height: 1.1;
-  font-family: 'Noto Serif SC', serif;
-}
-
-.ls-value small {
-  font-size: 0.85rem;
-  margin-left: 2px;
   color: var(--text-soft);
 }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 2px; }
+.dot.male { background: #3c5363; }
+.dot.female { background: #8b2d1c; }
+.dot.birth { background: #3ec29a; }
+.dot.death { background: #9ca3af; }
 
-.ls-label {
-  font-size: 0.75rem;
-  color: var(--accent-amber);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-top: 0.25rem;
+.glass-bar-chart { display: flex; flex-direction: column; gap: 12px; }
+.chart-row { display: flex; align-items: center; gap: 12px; }
+.row-label { width: 60px; font-size: 0.75rem; font-weight: 700; color: var(--text-soft); text-align: right; }
+.row-label.surname { font-family: 'Noto Serif SC', serif; font-size: 1.1rem; font-weight: 800; color: var(--text-main); width: 40px; }
+.row-track { flex: 1; height: 10px; background: var(--glass-border-shadow, rgba(0,0,0,0.05)); border-radius: 5px; overflow: hidden; }
+.row-fill { height: 100%; background: linear-gradient(90deg, var(--accent-earth), var(--accent-amber)); border-radius: 5px; transition: width 1.2s ease; }
+.row-fill.lifespan { background: linear-gradient(90deg, #1e7a5c, #3ec29a); }
+.row-fill.surname { background: linear-gradient(90deg, #7c4dff, #b388ff); }
+.row-value { width: 30px; font-size: 0.85rem; font-weight: 700; color: var(--text-main); }
+
+.stat-summary { display: flex; gap: 32px; margin-bottom: 20px; padding: 16px; background: rgba(169, 110, 53, 0.05); border-radius: 12px; }
+.stat-item .val { font-family: 'Noto Serif SC', serif; font-size: 1.5rem; font-weight: 900; }
+.stat-item .val small { font-size: 0.7rem; margin-left: 2px; color: var(--text-soft); }
+.stat-item .lbl { font-size: 0.7rem; font-weight: 700; color: var(--accent-amber); text-transform: uppercase; margin-top: 2px; }
+
+.glass-timeline-chart .chart-row.dual { align-items: flex-start; }
+.row-bars { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.row-bars .bar { height: 10px; border-radius: 5px; transition: width 1.2s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 0.6rem; color: #fff; font-weight: 800; }
+.row-bars .bar.birth { background: linear-gradient(90deg, #1e7a5c, #3ec29a); }
+.row-bars .bar.death { background: linear-gradient(90deg, #5a5e66, #9ca3af); }
+
+/* ── History Nodes ── */
+.glass-history { display: flex; flex-direction: column; }
+.history-node { display: flex; gap: 20px; }
+.node-line { width: 2px; background: var(--glass-border-shadow, rgba(0,0,0,0.1)); position: relative; margin-left: 8px; }
+.history-node:last-child .node-line { background: linear-gradient(to bottom, var(--glass-border-shadow, rgba(0,0,0,0.1)) 20px, transparent); }
+.node-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--bg-panel, #fff); border: 3px solid var(--accent-amber); position: absolute; left: -5px; top: 20px; z-index: 2; box-shadow: 0 0 0 4px rgba(169,110,53,0.1); }
+.node-card { flex: 1; padding: 12px 0 24px; }
+.node-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.node-meta .time { font-size: 0.8rem; font-weight: 700; color: var(--accent-amber); font-family: monospace; }
+.node-meta .actor { font-size: 0.75rem; font-weight: 700; color: var(--text-main); background: var(--glass-border-shadow, rgba(0,0,0,0.05)); padding: 2px 8px; border-radius: 999px; display: flex; align-items: center; gap: 4px; }
+.node-body { display: flex; align-items: center; gap: 12px; background: var(--glass-panel-bg, rgba(255,255,255,0.4)); border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.05)); padding: 10px 16px; border-radius: 12px; }
+.node-body .tag { font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+.node-body .tag.history-tag--info { background: rgba(59,130,246,0.1); color: #3b82f6; }
+.node-body .tag.history-tag--success { background: rgba(34,197,94,0.1); color: #22c55e; }
+.node-body .tag.history-tag--purple { background: rgba(168,85,247,0.1); color: #a855f7; }
+.node-body .tag.history-tag--indigo { background: rgba(79,70,229,0.1); color: #4f46e5; }
+.node-body .detail { font-size: 0.8rem; font-weight: 500; color: var(--text-soft); }
+
+.empty-hint { font-size: 0.85rem; color: var(--text-soft); text-align: center; padding: 32px; background: rgba(0,0,0,0.02); border: 1px dashed var(--glass-border-shadow, rgba(0,0,0,0.1)); border-radius: 12px; }
+
+@media (max-width: 960px) {
+  .analysis-grid { grid-template-columns: 1fr; }
+  .family-title { font-size: 1.8rem; }
+  .metrics-grid { grid-template-columns: repeat(3, 1fr); }
 }
-
-/* ── Timeline Chart ── */
-.timeline-chart {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.timeline-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.timeline-label {
-  width: 55px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-soft);
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.timeline-bars {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.timeline-bar {
-  height: 12px;
-  border-radius: 6px;
-  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  min-width: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-right: 8px;
-}
-
-.timeline-bar--birth {
-  background: var(--metric-olive, linear-gradient(90deg, #1e7a5c, #3ec29a));
-}
-
-.timeline-bar--death {
-  background: linear-gradient(90deg, #5a5e66, #9ca3af);
-}
-
-.timeline-bar__val {
-  font-size: 0.7rem;
-  font-weight: 900;
-  color: #fff;
-}
-
-/* ── History Timeline ── */
-.history-timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.history-event {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.history-event__line {
-  width: 2px;
-  background: var(--line-soft);
-  position: relative;
-  margin-left: 8px;
-}
-
-.history-event:last-child .history-event__line {
-  background: linear-gradient(to bottom, var(--line-soft) 20px, transparent);
-}
-
-.history-event__dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--bg-paper);
-  border: 3px solid var(--accent-amber);
-  position: absolute;
-  left: -6px;
-  top: 1.25rem;
-  box-shadow: 0 0 0 4px rgba(169, 110, 53, 0.1);
-  z-index: 2;
-}
-
-.history-event__content {
-  flex: 1;
-  padding: 1rem 0 2rem;
-}
-
-.history-event__meta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.history-event__time {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--accent-amber);
-}
-
-.history-event__actor {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-main);
-  background: var(--bg-shell);
-  padding: 0.2rem 0.6rem;
-  border-radius: 12px;
-}
-
-.actor-icon {
-  width: 12px;
-  height: 12px;
-  color: var(--accent-earth);
-}
-
-.history-event__body {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--line-soft);
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-}
-
-.history-tag {
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 800;
-  border: 1px solid transparent;
-}
-
-.history-tag--danger { background: var(--danger-bg); color: var(--danger-title); border-color: var(--danger-border); }
-.history-tag--success { background: rgba(103, 114, 79, 0.1); color: var(--accent-olive); border-color: rgba(103, 114, 79, 0.2); }
-.history-tag--info { background: rgba(60, 83, 99, 0.1); color: var(--accent-ink); border-color: rgba(60, 83, 99, 0.2); }
-.history-tag--purple { background: rgba(124, 77, 255, 0.1); color: #7c4dff; border-color: rgba(124, 77, 255, 0.2); }
-.history-tag--indigo { background: rgba(55, 48, 163, 0.1); color: #3730a3; border-color: rgba(55, 48, 163, 0.2); }
-
-.history-event__detail {
-  font-size: 0.9rem;
-  color: var(--text-sub);
-  font-weight: 500;
-}
-
-@media (max-width: 900px) {
-  .charts-grid { grid-template-columns: 1fr; }
-}
-
 @media (max-width: 600px) {
-  .family-hero__title { font-size: 2rem; }
-  .family-hero__meta { gap: 1.5rem; }
-  .overview-grid { grid-template-columns: repeat(2, 1fr); }
-  .history-event__meta { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-  .history-event__body { flex-direction: column; align-items: flex-start; }
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .node-meta { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .node-body { flex-direction: column; align-items: flex-start; gap: 6px; }
 }
 </style>

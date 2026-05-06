@@ -16,10 +16,6 @@ function parseYear(s?: string): number | null {
   return m ? parseInt(m[0]) : null
 }
 
-/**
- * Returns a numeric representation for comparison: Year + (Month/100) + (Day/10000)
- * Supports: YYYY, YYYY-MM, YYYY-MM-DD, YYYY年M月D日, etc.
- */
 function parseExactDate(s?: string): number {
   if (!s) return 0
   const yearMatch = s.match(/(\d{3,4})/)
@@ -30,14 +26,12 @@ function parseExactDate(s?: string): number {
   let day = 0
 
   const afterYear = s.substring(yearMatch.index! + yearMatch[0].length)
-  // Match month: look for a separator followed by 1-2 digits
   const monthMatch = afterYear.match(/[年\-\/\. ]\s*(\d{1,2})/)
   if (monthMatch) {
     const m = parseInt(monthMatch[1])
     if (m >= 1 && m <= 12) {
       month = m
       const afterMonth = afterYear.substring(monthMatch.index! + monthMatch[0].length)
-      // Match day: look for a separator followed by 1-2 digits
       const dayMatch = afterMonth.match(/[月\-\/\. ]\s*(\d{1,2})/)
       if (dayMatch) {
         const d = parseInt(dayMatch[1])
@@ -89,7 +83,6 @@ const events = computed<TimelineEvent[]>(() => {
     }
   }
   
-  // Sort by exactDate, then priority: Birth > Events > Death
   return list.sort((a, b) => {
     if (a.exactDate !== b.exactDate) return a.exactDate - b.exactDate
     const priority = { birth: 1, event: 2, death: 3 }
@@ -116,8 +109,8 @@ function centuryLabel(c: number): string {
 }
 
 function personGenderClass(p: Person): string {
-  if (p.gender === 'male') return 'tl-person tl-person--male'
-  if (p.gender === 'female') return 'tl-person tl-person--female'
+  if (p.gender === 'male') return 'tl-person male'
+  if (p.gender === 'female') return 'tl-person female'
   return 'tl-person'
 }
 
@@ -143,76 +136,79 @@ const scrollToTop = () => {
 </script>
 
 <template>
-  <div class="timeline-page">
-    <header class="timeline-nav">
-      <button class="nav-back" @click="goBack">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        返回工作台
-      </button>
-      <h1 class="timeline-nav__title">家族世代全图 · 历史长卷</h1>
-      <div></div>
-    </header>
+  <div class="timeline-view">
+    <div class="bento-header">
+      <div class="header-left">
+        <button class="action-btn back-btn" @click="goBack" title="返回工作台">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <div class="header-content">
+          <h1 class="page-title">家族历史长卷 // TIMELINE</h1>
+          <p class="page-desc">穿越时空的血脉延续与岁月纪事</p>
+        </div>
+      </div>
+    </div>
 
-    <main class="timeline-content">
-      <div class="timeline-summary">
-        <div class="tl-summary-card">
-          <div class="tl-summary-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <span class="tl-summary-num">{{ totalEvents }}</span>
-          <span class="tl-summary-label">历史纪事</span>
+    <main class="timeline-main">
+      <!-- Summary Metrics Card -->
+      <div class="bento-grid summary-grid">
+        <div class="bento-card metric-card">
+          <div class="metric-bg-icon">卷</div>
+          <div class="metric-value">{{ totalEvents }}</div>
+          <div class="metric-label">历史纪事节点</div>
         </div>
-        <div class="tl-summary-card" v-if="earliestYear">
-          <div class="tl-summary-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <span class="tl-summary-num">{{ earliestYear }}</span>
-          <span class="tl-summary-label">源起年份</span>
+        <div class="bento-card metric-card start" v-if="earliestYear">
+          <div class="metric-bg-icon">始</div>
+          <div class="metric-value">{{ earliestYear }}</div>
+          <div class="metric-label">源起年份</div>
         </div>
-        <div class="tl-summary-card" v-if="latestYear">
-          <div class="tl-summary-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15.5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1.5"/><path d="M7 7l5 5 5-5"/><path d="M12 12V3"/></svg>
-          </div>
-          <span class="tl-summary-num">{{ latestYear }}</span>
-          <span class="tl-summary-label">传承至今</span>
+        <div class="bento-card metric-card end" v-if="latestYear">
+          <div class="metric-bg-icon">承</div>
+          <div class="metric-value">{{ latestYear }}</div>
+          <div class="metric-label">传承至今</div>
         </div>
       </div>
 
-      <div v-if="events.length === 0" class="empty-state">暂无生卒年数据，无法生成历史长卷</div>
+      <div v-if="events.length === 0" class="empty-hint">
+        暂无生卒年数据，无法生成历史长卷
+      </div>
 
-      <div v-else class="timeline-container">
-        <!-- The Spine -->
+      <div v-else class="scroll-timeline">
+        <!-- Spine -->
         <div class="timeline-spine"></div>
 
-        <div v-for="[century, centuryEvents] in centuries" :key="century" class="tl-century-group">
-          <!-- Century Marker -->
-          <div class="tl-century-marker">
-            <div class="tl-century-number">{{ century }}</div>
-            <h2 class="tl-century-title">{{ centuryLabel(century) }}</h2>
+        <div v-for="[century, centuryEvents] in centuries" :key="century" class="century-block">
+          <!-- Century Indicator -->
+          <div class="century-indicator">
+            <div class="bg-num">{{ century }}</div>
+            <div class="indicator-tag">{{ centuryLabel(century) }}</div>
           </div>
 
+          <!-- Event Cards -->
           <div 
             v-for="(event, idx) in centuryEvents" 
             :key="idx" 
-            class="tl-event-wrapper"
-            :class="idx % 2 === 0 ? 'tl-left' : 'tl-right'"
+            class="event-wrapper"
+            :class="idx % 2 === 0 ? 'left' : 'right'"
             @click="goToPerson(event.person.id)"
           >
-            <div class="tl-event-card">
-              <div class="tl-event-dot-container">
-                <div class="tl-event-dot" :class="'tl-dot--' + event.type"></div>
+            <div class="bento-card event-card">
+              <div class="event-anchor">
+                <div class="anchor-dot" :class="event.type"></div>
               </div>
-              <div class="tl-event-body">
-                <div class="tl-event-header">
-                  <span class="tl-event-year">{{ event.year }}年</span>
-                  <span class="tl-event-type-tag" :class="'tl-tag--' + event.type">
+              <div class="event-content">
+                <div class="event-top">
+                  <span class="year">{{ event.year }}年</span>
+                  <span class="type-badge" :class="event.type">
                     {{ event.type === 'birth' ? '出生' : '去世' }}
                   </span>
                 </div>
-                <div class="tl-event-person">
-                  <span :class="personGenderClass(event.person)">{{ event.person.name }}</span>
+                <div class="person-name" :class="personGenderClass(event.person)">
+                  {{ event.person.name }}
                 </div>
-                <div v-if="event.label !== event.year + '年'" class="tl-event-detail">
+                <div v-if="event.label !== event.year + '年'" class="event-extra">
                   {{ event.label }}
                 </div>
               </div>
@@ -222,389 +218,277 @@ const scrollToTop = () => {
       </div>
     </main>
 
+    <!-- Floating Back to Top -->
     <button 
       v-show="showBackToTop" 
-      class="back-to-top" 
+      class="float-action-btn scroll-top" 
       @click="scrollToTop"
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
     </button>
   </div>
 </template>
 
 <style scoped>
-.timeline-page {
-  min-height: 100vh;
-  background: var(--bg-shell, #f5f0e8);
-  font-family: 'Noto Serif SC', serif;
-  color: var(--text-main, #1a1a1a);
+.timeline-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.timeline-nav {
+/* ── Header ── */
+.bento-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
-  height: 64px;
-  background: var(--bg-panel, rgba(255,255,255,0.85));
-  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.06));
-  backdrop-filter: blur(12px);
-  position: sticky;
-  top: 0;
-  z-index: 100;
 }
-
-.nav-back {
+.header-left {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: none;
-  border: none;
-  color: var(--text-sub, #555);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  transition: all 0.2s;
+  gap: 16px;
 }
-
-.nav-back:hover {
-  color: var(--accent-amber, #a96e35);
-  background: var(--bg-hover, rgba(169, 110, 53, 0.05));
-}
-
-.timeline-nav__title {
-  font-size: 1.25rem;
-  font-weight: 900;
+.page-title {
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
   letter-spacing: 0.1em;
+  color: var(--text-main);
+  margin: 0 0 6px;
+}
+.page-desc {
+  font-size: 0.85rem;
+  color: var(--text-soft);
   margin: 0;
 }
-
-.timeline-content {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 3rem 2rem 6rem;
-}
-
-/* ── Summary ── */
-.timeline-summary {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 5rem;
-}
-
-.tl-summary-card {
-  background: var(--bg-panel, #fff);
-  border: 1px solid var(--line-soft, rgba(117, 90, 57, 0.1));
-  border-radius: 24px;
-  padding: 2rem 1.5rem;
-  text-align: center;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
-  box-shadow: 0 4px 20px rgba(62, 41, 22, 0.04);
-}
-
-.tl-summary-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 15px 35px rgba(62, 41, 22, 0.1);
-}
-
-.tl-summary-icon {
-  margin: 0 auto 1rem;
-  width: 48px;
-  height: 48px;
+.back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--glass-panel-bg, rgba(255,255,255,0.4));
+  border: 1px solid var(--glass-border-highlight, rgba(255,255,255,0.6));
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
-  background: var(--bg-shell, #f5f0e8);
-  color: var(--accent-amber, #a96e35);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.back-btn:hover {
+  background: var(--bg-panel, #fff);
+  transform: translateX(-4px);
 }
 
-.tl-summary-num {
-  display: block;
-  font-size: 2.25rem;
+.timeline-main {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ── Summary ── */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.metric-card {
+  padding: 24px;
+  text-align: center;
+}
+.metric-bg-icon {
+  position: absolute;
+  right: -10px; bottom: -10px;
+  font-size: 4rem;
   font-weight: 900;
-  line-height: 1;
+  opacity: 0.03;
+  font-family: 'Noto Serif SC', serif;
 }
-
-.tl-summary-label {
-  font-size: 0.8rem;
-  color: var(--text-soft, #888);
-  font-weight: 700;
+.metric-value {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+.metric-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-soft);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
-  margin-top: 0.5rem;
+  letter-spacing: 0.1em;
 }
 
 /* ── Timeline Track ── */
-.timeline-container {
+.scroll-timeline {
   position: relative;
-  display: flex;
-  flex-direction: column;
+  padding: 40px 0;
 }
 
 .timeline-spine {
   position: absolute;
   left: 50%;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
   width: 2px;
-  background: linear-gradient(to bottom, 
-    var(--line-soft, rgba(0,0,0,0.1)) 0%, 
-    var(--line-soft, rgba(0,0,0,0.1)) 100%);
   transform: translateX(-50%);
-  z-index: 1;
+  background: linear-gradient(to bottom, 
+    transparent, 
+    var(--glass-border-highlight, rgba(255,255,255,0.5)) 10%, 
+    var(--glass-border-highlight, rgba(255,255,255,0.5)) 90%, 
+    transparent);
 }
-
-/* Alternate solid/dashed effect for spine */
-.timeline-spine::before {
-  content: "";
+.timeline-spine::after {
+  content: '';
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  inset: 0;
   background-image: linear-gradient(to bottom, 
-    transparent 50%, 
-    var(--bg-shell, #f5f0e8) 50%);
-  background-size: 1px 20px;
-  opacity: 0.3;
+    var(--text-main) 50%, 
+    transparent 50%);
+  background-size: 1px 16px;
+  opacity: 0.1;
 }
 
-/* ── Century Markers ── */
-.tl-century-group {
-  position: relative;
-  padding-top: 4rem;
-  margin-bottom: 2rem;
+/* ── Century Indicators ── */
+.century-block {
+  margin-bottom: 64px;
 }
-
-.tl-century-marker {
+.century-indicator {
   position: relative;
   text-align: center;
-  margin-bottom: 4rem;
+  margin-bottom: 48px;
   z-index: 2;
 }
-
-.tl-century-number {
+.bg-num {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 10rem;
+  font-size: 8rem;
   font-weight: 900;
-  color: var(--accent-amber, #a96e35);
+  color: var(--accent-amber);
   opacity: 0.04;
-  user-select: none;
-  pointer-events: none;
-  line-height: 1;
+  font-family: 'Noto Serif SC', serif;
 }
-
-.tl-century-title {
-  position: relative;
+.indicator-tag {
   display: inline-block;
-  font-size: 1.75rem;
-  font-weight: 900;
-  color: var(--accent-earth, #6a4b2f);
-  background: var(--bg-shell, #f5f0e8);
-  padding: 0.5rem 2rem;
-  border: 1px solid var(--line-soft, rgba(117, 90, 57, 0.2));
+  padding: 8px 32px;
+  background: var(--bg-panel, #fff);
+  border: 1px solid var(--glass-border-highlight, rgba(255,255,255,0.8));
   border-radius: 99px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.05);
 }
 
-/* ── Event Wrapper & Layout ── */
-.tl-event-wrapper {
+/* ── Event Cards ── */
+.event-wrapper {
   position: relative;
   width: 50%;
-  margin-bottom: 1rem;
-  z-index: 2;
+  margin-bottom: 16px;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-  animation: tl-fade-in 0.8s ease-out both;
+}
+.event-wrapper.left { align-self: flex-start; padding-right: 40px; }
+.event-wrapper.right { align-self: flex-end; padding-left: 40px; margin-left: 50%; }
+
+.event-card {
+  padding: 16px 20px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.event-wrapper:hover .event-card {
+  transform: scale(1.02);
+  border-color: var(--accent-amber);
+  box-shadow: 0 24px 48px rgba(169, 110, 53, 0.1);
 }
 
-@keyframes tl-fade-in {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.tl-left {
-  align-self: flex-start;
-  padding-right: 32px;
-}
-
-.tl-right {
-  align-self: flex-end;
-  padding-left: 32px;
-}
-
-.tl-event-card {
-  background: var(--bg-panel, #fff);
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-  border: 1px solid var(--line-soft, rgba(0,0,0,0.04));
-  position: relative;
-  transition: all 0.3s;
-}
-
-.tl-event-wrapper:hover .tl-event-card {
-  transform: scale(1.01);
-  box-shadow: 0 6px 16px rgba(62, 41, 22, 0.06);
-  border-color: var(--accent-amber, #a96e35);
-}
-
-/* Dot Container & Connector */
-.tl-event-dot-container {
+.event-anchor {
   position: absolute;
   top: 50%;
-  width: 28px;
-  height: 28px;
+  width: 32px; height: 32px;
   transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 5;
+  z-index: 10;
 }
+.left .event-anchor { right: -16px; }
+.right .event-anchor { left: -16px; }
 
-.tl-left .tl-event-dot-container { right: -14px; }
-.tl-right .tl-event-dot-container { left: -14px; }
-
-.tl-event-dot {
-  width: 12px;
-  height: 12px;
+.anchor-dot {
+  width: 12px; height: 12px;
   border-radius: 50%;
-  border: 3px solid var(--bg-shell, #f5f0e8);
   background: #fff;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.05);
-  transition: all 0.3s;
+  border: 3px solid var(--glass-border-highlight, #fff);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
 }
+.anchor-dot.birth { background: #10b981; }
+.anchor-dot.death { background: #6b7280; }
+.event-wrapper:hover .anchor-dot { transform: scale(1.3); }
 
-.tl-dot--birth { background: #10b981; }
-.tl-dot--death { background: #6b7280; }
+.event-content { display: flex; flex-direction: column; gap: 4px; }
+.event-top { display: flex; align-items: center; justify-content: space-between; }
+.event-top .year { font-family: 'Noto Serif SC', serif; font-size: 1.1rem; font-weight: 900; color: var(--text-main); }
+.type-badge { font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; }
+.type-badge.birth { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.type-badge.death { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
 
-.tl-event-wrapper:hover .tl-event-dot {
-  transform: scale(1.2);
-}
+.person-name { font-family: 'Noto Serif SC', serif; font-size: 0.95rem; font-weight: 800; color: var(--text-main); }
+.person-name.male { color: var(--accent-earth); }
+.person-name.female { color: #8b2d1c; }
+.event-extra { font-size: 0.75rem; color: var(--text-soft); font-style: italic; }
 
-/* Pulse Animation */
-@keyframes tl-dot-pulse {
-  0% { transform: scale(1); opacity: 0.5; }
-  100% { transform: scale(2); opacity: 0; }
-}
-
-.tl-event-wrapper:hover .tl-event-dot::after {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  background: inherit;
-  z-index: -1;
-  animation: tl-dot-pulse 1.5s infinite;
-}
-
-/* ── Event Body Content ── */
-.tl-event-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.tl-event-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.tl-event-year {
-  font-size: 1rem;
-  font-weight: 900;
-  color: var(--accent-earth, #6a4b2f);
-}
-
-.tl-event-type-tag {
-  font-size: 0.6rem;
-  font-weight: 800;
-  padding: 0.1rem 0.4rem;
-  border-radius: 99px;
-  letter-spacing: 0.02em;
-}
-
-.tl-tag--birth { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-.tl-tag--death { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
-
-.tl-event-person {
-  font-size: 0.9rem;
-  font-weight: 900;
-  margin: 0;
-}
-
-.tl-person--male { color: var(--accent-earth, #6a4b2f); }
-.tl-person--female { color: #c47b59; }
-
-.tl-event-detail {
-  font-size: 0.75rem;
-  color: var(--text-soft, #888);
-  font-style: italic;
-  line-height: 1.3;
-}
-
-/* ── Back to Top ── */
-.back-to-top {
+/* ── Float Actions ── */
+.float-action-btn {
   position: fixed;
-  right: 2.5rem;
-  bottom: 2.5rem;
-  width: 56px;
-  height: 56px;
+  right: 32px; bottom: 32px;
+  width: 56px; height: 56px;
   border-radius: 18px;
-  background: var(--bg-panel, #fff);
-  border: 1px solid var(--accent-amber, #a96e35);
-  color: var(--accent-amber, #a96e35);
-  box-shadow: 0 10px 30px rgba(169, 110, 53, 0.15);
+  background: var(--text-main);
+  color: var(--bg-panel, #fff);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: all 0.3s ease;
   z-index: 1000;
 }
+.float-action-btn:hover { transform: translateY(-4px); }
 
-.back-to-top:hover {
-  transform: translateY(-8px) rotate(5deg);
-  background: var(--accent-amber, #a96e35);
-  color: #fff;
-  box-shadow: 0 15px 40px rgba(169, 110, 53, 0.3);
-}
-
-/* ── Responsiveness ── */
-@media (max-width: 800px) {
-  .timeline-summary { grid-template-columns: 1fr; }
-  
-  .timeline-spine { left: 20px; transform: none; }
-  
-  .tl-left, .tl-right {
-    width: 100%;
-    padding-left: 50px;
-    padding-right: 0;
-  }
-  
-  .tl-left .tl-event-dot-container,
-  .tl-right .tl-event-dot-container {
-    left: 0;
-    right: auto;
-  }
-  
-  .tl-century-number { font-size: 6rem; }
-}
-
-.empty-state {
+.empty-hint {
   text-align: center;
-  padding: 6rem 2rem;
-  color: var(--text-soft, #888);
-  background: var(--bg-panel, #fff);
+  padding: 64px;
+  background: var(--glass-panel-bg, rgba(255,255,255,0.4));
   border-radius: 24px;
-  border: 2px dashed var(--line-soft, rgba(117, 90, 57, 0.1));
+  border: 2px dashed var(--glass-border-shadow, rgba(0,0,0,0.1));
+  color: var(--text-soft);
+}
+
+/* ── Bento Card (Global Redefinition for this View) ── */
+.bento-card {
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.6));
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  border-radius: 20px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+:global([data-theme="ink-wash"]) .bento-card,
+:global([data-theme="rosewood"]) .bento-card,
+:global([data-theme="star-sea"]) .bento-card {
+  background: rgba(20, 20, 20, 0.5);
+  border-color: rgba(255,255,255,0.1);
+}
+
+@media (max-width: 800px) {
+  .timeline-spine { left: 32px; transform: none; }
+  .century-indicator { text-align: left; padding-left: 64px; }
+  .bg-num { left: 64px; transform: translateY(-50%); }
+  .event-wrapper { width: 100% !important; margin-left: 0 !important; padding-left: 64px !important; padding-right: 0 !important; }
+  .event-anchor { left: 16px !important; right: auto !important; }
+  .summary-grid { grid-template-columns: 1fr; }
 }
 </style>
