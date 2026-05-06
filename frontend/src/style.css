@@ -1708,6 +1708,7 @@ textarea {
   position: relative;
   background: transparent;
   border-radius: 8px;
+  filter: var(--filter-paper);
 }
 
 .publication-svg {

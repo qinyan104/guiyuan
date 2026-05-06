@@ -70,20 +70,20 @@ export function useFileOperations(deps: FileOperationsDeps) {
     return raw.replace(/[\\/:*?"<>|]/g, '-').trim() || '族谱出版预览'
   }
 
-  function createCurrentStandaloneSvg(): SVGSVGElement | null {
+  async function createCurrentStandaloneSvg(): Promise<SVGSVGElement | null> {
     const svgElement = canvasRef.value?.getSvgElement?.()
     if (!svgElement || layout.value.cards.length === 0 || layout.value.width <= 0 || layout.value.height <= 0) {
       return null
     }
-    return createStandalonePublicationSvg({
+    return await createStandalonePublicationSvg({
       svgElement,
       layout: layout.value,
       title: publication.title.trim() || '族谱出版预览',
     })
   }
 
-  function serializeCurrentSvg(): string | null {
-    const svg = createCurrentStandaloneSvg()
+  async function serializeCurrentSvg(): Promise<string | null> {
+    const svg = await createCurrentStandaloneSvg()
     if (!svg) return null
     return serializeStandaloneSvg(svg)
   }
@@ -200,8 +200,8 @@ export function useFileOperations(deps: FileOperationsDeps) {
     }
   }
 
-  function downloadSvg() {
-    const serialized = serializeCurrentSvg()
+  async function downloadSvg() {
+    const serialized = await serializeCurrentSvg()
     if (!serialized) {
       errorMessage.value = '当前画布还没有可导出的 SVG。'
       statusMessage.value = ''
@@ -211,8 +211,8 @@ export function useFileOperations(deps: FileOperationsDeps) {
     downloadTextFile(`${sanitizeFileName(publication.title)}.svg`, serialized, 'image/svg+xml;charset=utf-8')
   }
 
-  function printPublication() {
-    const svg = createCurrentStandaloneSvg()
+  async function printPublication() {
+    const svg = await createCurrentStandaloneSvg()
     if (!svg) {
       errorMessage.value = '当前画布还没有可导出的 SVG。'
       statusMessage.value = ''

@@ -42,8 +42,8 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 - **数据上下文**：`views/PublicationLayout.vue` **单源事实提供者**。通过 Provide/Inject 共享内存数据与撤销历史，支持多视图秒开。
 - **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置和连线
 - **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）
-- **草稿持久化**：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化，并在便携式导出时将 `/api/photos/...` 与旧版 `/uploads/...` 头像尽量内联为 Base64
-- **导出**：`features/export/publicationExport.ts` — SVG 导出和打印排版
+- 草稿持久化：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化，并在便携式导出时将 `/api/photos/...` 与旧版 `/uploads/...` 头像尽量内联为 Base64
+- **导出**：`features/export/publicationExport.ts` — SVG 导出和打印排版；`features/export/ExportDialog.vue` 现在提供**单页矢量 PDF**（由后端生成）与多页谱书实验室。
 
 ## 后端架构
 
@@ -53,7 +53,11 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 - Token 存储在内存 `ConcurrentHashMap`，TTL 24 小时，`@Scheduled` 每 10 分钟清理过期 token（`@EnableScheduling` 在主启动类）
 - 数据库：MySQL `genealogy`，ddl-auto=update，连接配置在 `application.properties`
 - **传输限制**：已提升至 **100MB** (Servlet, Tomcat Post/Swallow size) 以支持带 Base64 图片的族谱导入
+- **PDF 生成**：集成 **iText 7** (kernel, io, layout, svg)。
+    - `POST /api/publications/{id}/export/pdf`: 生成多页谱书 PDF（含标题、前言、成员志、切片图）。
+    - `POST /api/publications/{id}/export/pdf/single-page`: 接收 `svgMarkup` 与宽高，生成**全尺寸、单页、无边框矢量 PDF**。
 - **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载
+
 - **照片导入链路**：`PublicationService.savePersonsAndFamilies` 在新建/导入时支持 Base64、`/api/photos/{id}` 克隆、旧版 `/uploads/...` 文件迁移；更新时复用既有照片记录，避免重复插图
 - 文件上传限制：100MB；`FileController` 有扩展名白名单校验（图片/PDF），`PhotoController` 有 MIME 类型校验
 - CORS：`allowedOriginPatterns("http://localhost:5173")`，允许凭据

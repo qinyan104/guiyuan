@@ -558,69 +558,86 @@ function formatDate(dateStr: string) {
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .dialog {
-  background: var(--bg-panel, #fff);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.08));
-  border-radius: 16px;
-  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 2px;
+  padding: 48px;
   width: 100%;
-  max-width: 360px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.15);
+  max-width: 440px;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.03), 0 10px 30px rgba(0, 0, 0, 0.02);
+  border: 1px solid #f0f0f2;
 }
 
 .dialog__title {
-  margin: 0 0 0.75rem;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-main, #1a1a1a);
+  margin: 0 0 32px;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #000;
+  text-transform: uppercase;
+  text-align: center;
 }
 
 .dialog__desc {
-  margin: 0 0 0.75rem;
-  color: var(--text-soft, #888);
+  margin: 0 0 32px;
+  color: #888;
   font-size: 0.85rem;
+  line-height: 1.6;
+  text-align: center;
 }
 
 .dialog__field {
-  margin-bottom: 0.75rem;
+  margin-bottom: 24px;
 }
 
 .dialog__field label {
   display: block;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-sub, #555);
-  margin-bottom: 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #bbb;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
+  text-transform: uppercase;
 }
 
 .dialog__field input {
   width: 100%;
-  padding: 0.45rem 0.65rem;
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
-  border-radius: 8px;
-  background: var(--bg-shell, #f5f0e8);
-  color: var(--text-main, #1a1a1a);
-  font-size: 0.82rem;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 2px;
+  background: #f8f8f9;
+  color: #000;
+  font-size: 0.9rem;
+  font-weight: 600;
   outline: none;
   box-sizing: border-box;
+  transition: all 0.2s;
 }
 
 .dialog__field input:focus {
-  border-color: var(--accent-amber, #a96e35);
+  background: #f0f0f2;
+  box-shadow: inset 0 0 0 1px #000;
 }
 
 .dialog__actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 40px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>
+

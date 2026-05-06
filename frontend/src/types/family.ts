@@ -43,6 +43,7 @@ export interface PublicationData {
 
 export interface PublicationSettings {
   paper: PublicationPaper
+  layoutMode: 'modern' | 'su' | 'ou'
   cardWidth: number
   generationGap: number
   siblingGap: number

@@ -2,14 +2,17 @@
 import { computed, onMounted, ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPublicationHistory, type PublicationHistoryEntry } from '../api/publication'
-import type { Person, FamilyUnit } from '../types/family'
+import type { Person, FamilyUnit, PublicationData } from '../types/family'
 
 const props = defineProps<{ publicationId: number }>()
 const router = useRouter()
 
 // ─── Shared Context ─────────────────────────────────────────────
-const { pub, serverPublicationId } = inject('publication-context') as any
-const pubData = computed(() => pub.publication)
+const { pub, serverPublicationId } = inject('publication-context') as {
+  pub: { publication: PublicationData }
+  serverPublicationId: { value: number | null }
+}
+const pubData = computed<PublicationData>(() => pub.publication)
 
 const loadingHistory = ref(true)
 const history = ref<PublicationHistoryEntry[]>([])
@@ -28,8 +31,8 @@ async function loadHistory() {
 
 onMounted(loadHistory)
 
-const people = computed<Person[]>(() => pubData.value ? Object.values(pubData.value.people) : [])
-const families = computed<FamilyUnit[]>(() => pubData.value ? Object.values(pubData.value.families) : [])
+const people = computed<Person[]>(() => Object.values(pubData.value.people))
+const families = computed<FamilyUnit[]>(() => Object.values(pubData.value.families))
 
 // ── Data Cleaning & Accuracy ──
 const totalCount = computed(() => people.value.length)

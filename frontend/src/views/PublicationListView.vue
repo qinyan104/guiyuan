@@ -148,630 +148,692 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
 </script>
 
 <template>
-  <div class="zen-container">
-    <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
-      <filter id="ink-filter">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
-        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 25 -10" result="ink" />
-        <feComposite in="SourceGraphic" in2="ink" operator="atop"/>
-      </filter>
-    </svg>
-
-    <div class="list-header">
-      <div>
-        <h1 class="list-header__title">族谱管理</h1>
-        <p class="list-header__desc">管理你的家族谱系资料</p>
+  <div class="archive-container">
+    <!-- Editorial Header -->
+    <header class="archive-header">
+      <div class="archive-header__meta">
+        <span class="dot-label dot-label--signal">System / Genealogy</span>
+        <span class="archive-header__count">{{ publications.length }} VOLUMES</span>
       </div>
-      <div class="list-header__actions">
-        <button class="btn-create" @click="showCreateDialog = true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          新建族谱
+      <div class="archive-header__main">
+        <h1 class="archive-header__title">谱系陈列馆</h1>
+        <p class="archive-header__tagline">归档、研究与家族史的视觉编研</p>
+      </div>
+      <div class="archive-header__actions">
+        <button class="pill-btn pill-btn--black" @click="showCreateDialog = true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新建存档
         </button>
       </div>
+    </header>
+
+    <div v-if="loading" class="archive-status">
+      <div class="spinner-dot"></div>
+      <span>RETRIEVING ARCHIVES...</span>
     </div>
 
-    <div v-if="loading" class="list-empty">
-      <p>加载中...</p>
-    </div>
+    <div v-else class="archive-content">
+      <!-- Curated Collection (Templates) -->
+      <section class="collection-section">
+        <div class="section-eyebrow">
+          <span class="dot-label dot-label--ember">Curated Collections</span>
+          <h2 class="section-title">王朝世系模板</h2>
+        </div>
 
-    <div v-else>
-      <div class="template-section">
-        <h2 class="section-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          王朝世系模板
-        </h2>
-
-        <div class="template-grid">
+        <div class="collection-grid">
           <div
             v-for="sample in builtinSamples"
             :key="sample.id"
-            class="template-card"
+            class="collection-item"
             @click="handleCreateFromTemplate(sample)"
           >
-            <div class="template-card__icon">
-              {{ sample.id === 'tang' ? '⛩️' : '🏛️' }}
+            <div class="collection-item__indicator"></div>
+            <div class="collection-item__body">
+              <h3 class="collection-item__title">{{ sample.publication.title }}</h3>
+              <p class="collection-item__subtitle">{{ sample.publication.subtitle }}</p>
             </div>
-            <div class="template-card__info">
-              <h3>{{ sample.publication.title }}</h3>
-              <p>{{ sample.publication.subtitle }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="publications.length === 0" class="list-empty">
-        <div class="list-empty__icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-        </div>
-        <h3>暂无族谱</h3>
-        <p>点击「新建族谱」开始创建你的第一份族谱</p>
-      </div>
-
-      <div v-else class="publication-grid">
-        <div
-          v-for="pub in publications"
-          :key="pub.id"
-          class="pub-card"
-          @click="openPublication(pub.id)"
-        >
-          <div class="pub-card__body">
-            <h3 class="pub-card__title">{{ pub.title || '未命名族谱' }}</h3>
-            <p class="pub-card__subtitle">{{ pub.subtitle || '暂无副标题' }}</p>
-            <p v-if="pub.description" class="pub-card__description">{{ pub.description }}</p>
-          </div>
-          <div class="pub-card__footer">
-            <span class="pub-card__date">{{ formatDate(pub.updatedAt) }}</span>
-            <div class="pub-card__actions">
-              <button
-                class="pub-card__action-btn"
-                title="编辑信息"
-                @click.stop="openEditDialog(pub)"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-              </button>
-              <button
-                class="pub-card__action-btn pub-card__delete"
-                title="删除"
-                @click.stop="deleteConfirmId = pub.id"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <div v-if="deleteConfirmId === pub.id" class="pub-card__confirm" @click.stop>
-            <p>确认删除此族谱？</p>
-            <div class="pub-card__confirm-btns">
-              <button class="btn-confirm-yes" @click="handleDelete(pub.id)">删除</button>
-              <button class="btn-confirm-no" @click="deleteConfirmId = null">取消</button>
+            <div class="collection-item__arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      <!-- Archive Exhibits -->
+      <section class="exhibit-section">
+        <div class="section-eyebrow">
+          <span class="dot-label">Private Archives</span>
+          <h2 class="section-title">个人研究存档</h2>
+        </div>
+
+        <div v-if="publications.length === 0" class="exhibit-empty">
+          <p>陈列柜暂空。请通过右上方「新建存档」开始编研。</p>
+        </div>
+
+        <div v-else class="exhibit-grid">
+          <article
+            v-for="pub in publications"
+            :key="pub.id"
+            class="exhibit-card"
+            @click="openPublication(pub.id)"
+          >
+            <div class="exhibit-card__canvas">
+              <div class="exhibit-card__num">{{ pub.id.toString().padStart(3, '0') }}</div>
+              <div class="exhibit-card__initials">{{ pub.title?.substring(0, 1) || '典' }}</div>
+            </div>
+            <div class="exhibit-card__content">
+              <header class="exhibit-card__header">
+                <h3 class="exhibit-card__title">{{ pub.title || '未命名存档' }}</h3>
+                <span class="exhibit-card__date">{{ formatDate(pub.updatedAt) }}</span>
+              </header>
+              <p class="exhibit-card__subtitle">{{ pub.subtitle || 'NO SUBTITLE' }}</p>
+              
+              <footer class="exhibit-card__footer">
+                <div class="exhibit-card__tags">
+                  <span v-if="pub.info?.hallName" class="tag">{{ pub.info.hallName }}</span>
+                  <span v-if="pub.info?.ancestralOrigin" class="tag">{{ pub.info.ancestralOrigin }}</span>
+                </div>
+                <div class="exhibit-card__actions">
+                  <button class="action-btn" title="EDIT" @click.stop="openEditDialog(pub)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="action-btn action-btn--danger" title="DELETE" @click.stop="deleteConfirmId = pub.id">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
+              </footer>
+            </div>
+
+            <div v-if="deleteConfirmId === pub.id" class="exhibit-confirm" @click.stop>
+              <p>PERMANENTLY DELETE?</p>
+              <div class="exhibit-confirm__btns">
+                <button class="pill-btn pill-btn--black pill-btn--sm" @click="handleDelete(pub.id)">DELETE</button>
+                <button class="pill-btn pill-btn--white pill-btn--sm" @click="deleteConfirmId = null">CANCEL</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
     </div>
 
-    <!-- Create Dialog -->
+    <!-- Create Dialog (Minimalist) -->
     <Teleport to="body">
-      <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
-        <div class="dialog">
-          <h2 class="dialog__title">新建族谱</h2>
-          <div class="dialog__field">
-            <label>族谱标题</label>
-            <input v-model="newTitle" type="text" placeholder="例：张氏家谱" @keyup.enter="handleCreate" />
+      <div v-if="showCreateDialog" class="modal-overlay" @click.self="showCreateDialog = false">
+        <div class="modal-sheet">
+          <header class="modal-sheet__header">
+            <h2 class="modal-sheet__title">NEW ARCHIVE</h2>
+            <button class="modal-close" @click="showCreateDialog = false">&times;</button>
+          </header>
+          <div class="modal-sheet__body">
+            <div class="input-field">
+              <label>TITLE</label>
+              <input v-model="newTitle" type="text" placeholder="e.g. 陇西李氏世系图" @keyup.enter="handleCreate" />
+            </div>
+            <div class="input-field">
+              <label>SUBTITLE</label>
+              <input v-model="newSubtitle" type="text" placeholder="e.g. 2026 EDITION" @keyup.enter="handleCreate" />
+            </div>
           </div>
-          <div class="dialog__field">
-            <label>副标题（可选）</label>
-            <input v-model="newSubtitle" type="text" placeholder="例：第三修 · 二〇二六年" @keyup.enter="handleCreate" />
-          </div>
-          <div class="dialog__actions">
-            <button class="btn-dialog-cancel" @click="showCreateDialog = false">取消</button>
-            <button class="btn-dialog-confirm" @click="handleCreate">创建</button>
-          </div>
+          <footer class="modal-sheet__footer">
+            <button class="pill-btn pill-btn--white" @click="showCreateDialog = false">CANCEL</button>
+            <button class="pill-btn pill-btn--black" @click="handleCreate">CREATE VOLUME</button>
+          </footer>
         </div>
       </div>
     </Teleport>
 
-    <!-- Edit Dialog -->
+    <!-- Edit Dialog (Editorial Form) -->
     <Teleport to="body">
-      <div v-if="showEditDialog" class="dialog-overlay" @click.self="showEditDialog = false">
-        <div class="dialog dialog--large">
-          <h2 class="dialog__title">编辑族谱信息</h2>
-          <div class="dialog__field">
-            <label>族谱标题</label>
-            <input v-model="editForm.title" type="text" placeholder="例：张氏家谱" />
+      <div v-if="showEditDialog" class="modal-overlay" @click.self="showEditDialog = false">
+        <div class="modal-sheet modal-sheet--lg">
+          <header class="modal-sheet__header">
+            <h2 class="modal-sheet__title">EDIT METADATA</h2>
+            <button class="modal-close" @click="showEditDialog = false">&times;</button>
+          </header>
+          <div class="modal-sheet__body grid-2-col">
+            <div class="input-field">
+              <label>TITLE</label>
+              <input v-model="editForm.title" type="text" />
+            </div>
+            <div class="input-field">
+              <label>SUBTITLE</label>
+              <input v-model="editForm.subtitle" type="text" />
+            </div>
+            <div class="input-field">
+              <label>ANCESTRAL ORIGIN</label>
+              <input v-model="editForm.ancestralOrigin" type="text" />
+            </div>
+            <div class="input-field">
+              <label>HALL NAME (堂号)</label>
+              <input v-model="editForm.hallName" type="text" />
+            </div>
+            <div class="input-field full-width">
+              <label>FAMILY MOTTO (家训)</label>
+              <textarea v-model="editForm.familyMotto" rows="2"></textarea>
+            </div>
+            <div class="input-field full-width">
+              <label>DESCRIPTION</label>
+              <textarea v-model="editForm.description" rows="3"></textarea>
+            </div>
           </div>
-          <div class="dialog__field">
-            <label>副标题</label>
-            <input v-model="editForm.subtitle" type="text" placeholder="例：第三修 · 二〇二六年" />
-          </div>
-          <div class="dialog__field">
-            <label>家族起源地</label>
-            <input v-model="editForm.ancestralOrigin" type="text" placeholder="例：山西洪洞" />
-          </div>
-          <div class="dialog__field">
-            <label>堂号</label>
-            <input v-model="editForm.hallName" type="text" placeholder="例：三槐堂" />
-          </div>
-          <div class="dialog__field">
-            <label>家训</label>
-            <textarea v-model="editForm.familyMotto" rows="2" placeholder="例：耕读传家，勤俭立业"></textarea>
-          </div>
-          <div class="dialog__field">
-            <label>简介</label>
-            <textarea v-model="editForm.description" rows="3" placeholder="简要介绍族谱的修撰背景..."></textarea>
-          </div>
-          <div class="dialog__actions">
-            <button class="btn-dialog-cancel" @click="showEditDialog = false">取消</button>
-            <button class="btn-dialog-confirm" @click="handleEditSave">保存</button>
-          </div>
+          <footer class="modal-sheet__footer">
+            <button class="pill-btn pill-btn--white" @click="showEditDialog = false">DISCARD</button>
+            <button class="pill-btn pill-btn--black" @click="handleEditSave">SAVE CHANGES</button>
+          </footer>
         </div>
       </div>
     </Teleport>
 
-    <!-- Global Loading Overlay -->
     <Teleport to="body">
-      <div v-if="creatingTemplate" class="creating-overlay">
-        <div class="spinner"></div>
-        <p>正在从模板生成世系图...</p>
+      <div v-if="creatingTemplate" class="loading-scrim">
+        <div class="spinner-dot"></div>
+        <p>GENERATING VOLUME FROM TEMPLATE...</p>
       </div>
     </Teleport>
   </div>
 </template>
 
 <style scoped>
-.zen-container {
-  position: fixed;
-  inset: 0;
-  background-color: #f4f2eb;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  background-blend-mode: multiply;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  padding: 2.5rem;
-  box-sizing: border-box;
-  z-index: 1;
-}
-
-.list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.list-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.list-header__title {
-  font-size: 1.5rem;
-  font-family: 'Noto Serif SC', serif;
-  font-weight: 700;
-  color: var(--text-main, #1a1a1a);
-  margin: 0;
-}
-
-.list-header__desc {
-  color: var(--text-soft, #888);
-  margin: 0.25rem 0 0;
-  font-size: 0.85rem;
-}
-
-.btn-create {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.25rem;
-  background: linear-gradient(135deg, var(--accent-ink, #6a4b2f), var(--accent-amber, #a96e35));
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.btn-create:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-}
-
-.list-empty {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--text-soft, #888);
-}
-
-.list-empty__icon {
-  margin-bottom: 1rem;
-  opacity: 0.4;
-}
-
-.list-empty h3 {
-  margin: 0 0 0.5rem;
-  color: var(--text-main, #1a1a1a);
-}
-
-.list-empty p {
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.publication-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.pub-card {
+.archive-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 40px;
+  min-height: 100vh;
   position: relative;
-  background: var(--bg-panel, rgba(255,255,255,0.85));
-  border: 1px solid var(--border-color, rgba(0,0,0,0.08));
-  border-radius: 14px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-  overflow: hidden;
 }
 
-.pub-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-  border-color: var(--accent-amber, #a96e35);
-}
-
-.pub-card__body {
-  padding: 1.25rem 1.25rem 0.5rem;
-}
-
-.pub-card__title {
-  margin: 0 0 0.25rem;
-  font-size: 1rem;
-  font-family: 'Noto Serif SC', serif;
-  color: var(--text-main, #1a1a1a);
-}
-
-.pub-card__subtitle {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--text-soft, #888);
-}
-
-.pub-card__description {
-  margin: 0.4rem 0 0;
-  font-size: 0.75rem;
-  color: var(--text-soft, #999);
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.pub-card__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.6rem 1.25rem;
-  border-top: 1px solid var(--border-color, rgba(0,0,0,0.04));
-}
-
-.pub-card__date {
-  font-size: 0.72rem;
-  color: var(--text-soft, #888);
-}
-
-.pub-card__actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.pub-card__action-btn {
-  background: none;
-  border: none;
-  color: var(--text-soft, #aaa);
-  cursor: pointer;
-  padding: 0.3rem;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
-  display: flex;
-  align-items: center;
-}
-
-.pub-card__action-btn:hover {
-  color: var(--accent-amber, #a96e35);
-  background: rgba(169, 110, 53, 0.08);
-}
-
-.pub-card__action-btn.pub-card__delete:hover {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.08);
-}
-
-.pub-card__delete {
-  background: none;
-  border: none;
-  color: var(--text-soft, #aaa);
-  cursor: pointer;
-  padding: 0.2rem;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
-  display: flex;
-  align-items: center;
-}
-
-.pub-card__confirm {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.08);
-}
-
-.pub-card__confirm {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+/* Editorial Header */
+.archive-header {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  margin-bottom: 80px;
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 40px;
+}
+
+.archive-header__meta {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  border-radius: 14px;
-  color: #fff;
 }
 
-.pub-card__confirm p {
-  margin: 0;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.pub-card__confirm-btns {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-confirm-yes {
-  padding: 0.35rem 1rem;
-  background: #ef4444;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.btn-confirm-no {
-  padding: 0.35rem 1rem;
-  background: rgba(255,255,255,0.15);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.3);
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.dialog {
-  background: var(--bg-panel, #fff);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.08));
-  border-radius: 18px;
-  padding: 1.75rem;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.15);
-}
-
-.dialog--large {
-  max-width: 500px;
-}
-
-.dialog__title {
-  margin: 0 0 0.75rem;
-  font-size: 1.15rem;
-  font-family: 'Noto Serif SC', serif;
-  color: var(--text-main, #1a1a1a);
-}
-
-.dialog__desc {
-  margin: 0 0 0.5rem;
-  font-size: 0.85rem;
-  color: var(--text-soft, #888);
-}
-
-.dialog__field {
-  margin-bottom: 0.85rem;
-}
-
-.dialog__field label {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-sub, #555);
-  margin-bottom: 0.3rem;
-}
-
-.dialog__field input {
-  width: 100%;
-  padding: 0.55rem 0.8rem;
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
-  border-radius: 10px;
-  background: var(--bg-shell, #f5f0e8);
-  color: var(--text-main, #1a1a1a);
-  font-size: 0.85rem;
-  outline: none;
-  transition: border-color 0.2s;
-  box-sizing: border-box;
-}
-
-.dialog__field textarea {
-  width: 100%;
-  padding: 0.55rem 0.8rem;
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
-  border-radius: 10px;
-  background: var(--bg-shell, #f5f0e8);
-  color: var(--text-main, #1a1a1a);
-  font-size: 0.85rem;
-  outline: none;
-  transition: border-color 0.2s;
-  box-sizing: border-box;
-  resize: vertical;
-  font-family: inherit;
-}
-
-.dialog__field input:focus,
-.dialog__field textarea:focus {
-  border-color: var(--accent-amber, #a96e35);
-}
-
-.dialog__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.6rem;
-  margin-top: 1.25rem;
-}
-
-.btn-dialog-cancel {
-  padding: 0.45rem 1.1rem;
-  background: transparent;
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
-  border-radius: 10px;
-  color: var(--text-main, #1a1a1a);
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.btn-dialog-confirm {
-  padding: 0.45rem 1.1rem;
-  background: linear-gradient(135deg, var(--accent-ink, #6a4b2f), var(--accent-amber, #a96e35));
-  color: #fff;
-  border: none;
-  border-radius: 10px;
+.archive-header__count {
+  font-family: var(--font-inter, sans-serif);
+  font-size: 11px;
   font-weight: 700;
-  cursor: pointer;
-  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  color: var(--text-soft);
 }
 
-.template-section {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: rgba(169, 110, 53, 0.04);
-  border-radius: 20px;
-  border: 1px dashed rgba(169, 110, 53, 0.2);
+.archive-header__main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.archive-header__title {
+  font-family: "Waldenburg", Georgia, serif;
+  font-size: 48px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.archive-header__tagline {
+  font-family: var(--font-inter, sans-serif);
+  font-size: 16px;
+  color: var(--text-sub);
+  margin: 0;
+}
+
+.archive-header__actions {
+  margin-top: 12px;
+}
+
+/* Pill Buttons */
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  height: 40px;
+  border-radius: 9999px;
+  font-family: var(--font-inter, sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--line-soft);
+}
+
+.pill-btn--black {
+  background: var(--text-main, #000);
+  color: var(--bg-shell, #fff);
+  border-color: var(--text-main, #000);
+}
+
+.pill-btn--black:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.pill-btn--white {
+  background: #fff;
+  color: #000;
+}
+
+.pill-btn--white:hover {
+  background: var(--card-hover-fill);
+  transform: translateY(-1px);
+}
+
+.pill-btn--sm {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 11px;
+}
+
+/* Dot Labels */
+.dot-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.dot-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line-soft);
+}
+
+.dot-label--signal::before { background: #0447ff; }
+.dot-label--ember::before { background: #ff4704; }
+
+/* Section Styles */
+.collection-section {
+  margin-bottom: 80px;
+}
+
+.section-eyebrow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
 }
 
 .section-title {
-  font-size: 1.1rem;
-  font-family: 'Noto Serif SC', serif;
-  color: var(--accent-ink, #6a4b2f);
-  margin: 0 0 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  font-family: "Waldenburg", Georgia, serif;
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--text-main);
+  margin: 0;
 }
 
-.template-grid {
+/* Collection Grid */
+.collection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
 }
 
-.template-card {
+.collection-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1.25rem;
+  gap: 20px;
+  padding: 24px;
   background: #fff;
-  border: 1px solid rgba(169, 110, 53, 0.15);
-  border-radius: 14px;
+  border: 0.5px solid var(--line-soft);
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   position: relative;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 1.143px 0px, rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
+}
+
+.collection-item:hover {
+  transform: scale(1.01);
+  border-color: var(--text-main);
+}
+
+.collection-item__indicator {
+  width: 2px;
+  height: 40px;
+  background: var(--text-main);
+}
+
+.collection-item__title {
+  font-family: "Waldenburg", Georgia, serif;
+  font-size: 18px;
+  font-weight: 300;
+  margin: 0 0 4px;
+  color: var(--text-main);
+}
+
+.collection-item__subtitle {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.collection-item__arrow {
+  margin-left: auto;
+  opacity: 0.3;
+  transition: opacity 0.2s;
+}
+
+.collection-item:hover .collection-item__arrow {
+  opacity: 1;
+}
+
+/* Exhibit Cards */
+.exhibit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+}
+
+.exhibit-card {
+  display: flex;
+  gap: 0;
+  background: #fff;
+  border-radius: 16px;
+  border: 0.5px solid var(--line-soft);
   overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 1.143px 0px, rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
+  position: relative;
 }
 
-.template-card:hover {
+.exhibit-card:hover {
+  border-color: var(--text-main);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(169, 110, 53, 0.12);
-  border-color: var(--accent-amber, #a96e35);
 }
 
-.template-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: linear-gradient(to bottom, var(--accent-ink), var(--accent-amber));
+.exhibit-card__canvas {
+  width: 100px;
+  background: #000;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  flex-shrink: 0;
 }
 
-.template-card__icon {
-  font-size: 1.5rem;
-  width: 48px;
-  height: 48px;
+.exhibit-card__num {
+  font-family: var(--font-inter);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+}
+
+.exhibit-card__initials {
+  font-family: "Waldenburg", Georgia, serif;
+  font-size: 32px;
+  font-weight: 300;
+}
+
+.exhibit-card__content {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.exhibit-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.exhibit-card__title {
+  font-family: "Waldenburg", Georgia, serif;
+  font-size: 20px;
+  font-weight: 300;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.exhibit-card__date {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.exhibit-card__subtitle {
+  font-size: 13px;
+  color: var(--text-sub);
+  margin: 0 0 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.exhibit-card__footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.exhibit-card__tags {
+  display: flex;
+  gap: 8px;
+}
+
+.tag {
+  font-size: 9px;
+  padding: 2px 8px;
+  background: var(--card-hover-fill);
+  border-radius: 4px;
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.exhibit-card__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.action-btn {
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(169, 110, 53, 0.08);
-  border-radius: 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.template-card__info h3 {
-  margin: 0 0 0.2rem;
-  font-size: 0.95rem;
-  font-family: 'Noto Serif SC', serif;
-  color: var(--text-main, #1a1a1a);
+.action-btn:hover {
+  background: var(--card-hover-fill);
+  color: var(--text-main);
 }
 
-.template-card__info p {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--text-soft, #888);
+.action-btn--danger:hover {
+  background: #fff5f5;
+  color: #ff4704;
 }
 
-/* Global Loading Overlay */
-.creating-overlay {
-  position: fixed;
+/* Confirm Overlay */
+.exhibit-confirm {
+  position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.98);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 16px;
+  z-index: 5;
+}
+
+.exhibit-confirm p {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #ff4704;
+}
+
+.exhibit-confirm__btns {
+  display: flex;
+  gap: 8px;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(253, 252, 252, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 2000;
-  color: var(--accent-ink, #6a4b2f);
-  font-weight: 600;
 }
 
-.spinner {
-  width: 30px;
-  height: 30px;
-  border: 3px solid rgba(169, 110, 53, 0.2);
-  border-top-color: var(--accent-amber, #a96e35);
+.modal-sheet {
+  background: #fff;
+  border: 0.5px solid var(--line-soft);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  position: relative;
+}
+
+.modal-sheet--lg {
+  max-width: 680px;
+}
+
+.modal-sheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.modal-sheet__title {
+  font-family: var(--font-inter);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-main);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-soft);
+}
+
+.input-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.grid-2-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+}
+
+.full-width {
+  grid-column: 1 / 3;
+}
+
+.input-field label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--text-soft);
+}
+
+.input-field input,
+.input-field textarea {
+  padding: 12px 0;
+  border: none;
+  border-bottom: 1px solid var(--text-main);
+  background: transparent;
+  font-family: var(--font-inter);
+  font-size: 15px;
+  color: var(--text-main);
+  outline: none;
+}
+
+.input-field input::placeholder {
+  color: var(--text-soft);
+}
+
+.modal-sheet__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Status & Scrims */
+.archive-status,
+.loading-scrim {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 80px 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--text-soft);
+}
+
+.loading-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(253, 252, 252, 0.9);
+  z-index: 3000;
+}
+
+.spinner-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--text-main);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
+  animation: pulse 1s ease-in-out infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes pulse {
+  0% { transform: scale(0.8); opacity: 0.3; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.3; }
+}
+
+.exhibit-empty {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 14px;
+  border: 1px dashed var(--line-soft);
+  border-radius: 16px;
 }
 </style>

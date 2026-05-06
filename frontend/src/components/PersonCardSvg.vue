@@ -122,6 +122,13 @@ const statusFontSize = computed(() => 12 * props.settings.fontScale)
 const detailFontSize = computed(() => 13.5 * props.settings.fontScale)
 const imperialBadgeFontSize = computed(() => 11.5 * props.settings.fontScale)
 
+const octagonalPath = computed(() => {
+  const w = props.card.width
+  const h = props.card.height
+  const c = 18 // corner cut size
+  return `M ${c} 0 L ${w - c} 0 L ${w} ${c} L ${w} ${h - c} L ${w - c} ${h} L ${c} ${h} L 0 ${h - c} L 0 ${c} Z`
+})
+
 const photoWidth = computed(() => props.card.width * 0.46)
 const photoHeight = computed(() => photoWidth.value * 1.25)
 const photoY = 106
@@ -152,8 +159,29 @@ function handleSelect() {
       </clipPath>
     </defs>
 
-    <rect class="person-card__panel" :width="card.width" :height="card.height" rx="22" ry="22" />
-    <rect class="person-card__inner" x="8" y="8" :width="card.width - 16" :height="card.height - 16" rx="18" ry="18" />
+    <path
+      v-if="isSu"
+      class="person-card__panel"
+      :d="octagonalPath"
+    />
+    <rect
+      v-else
+      class="person-card__panel"
+      :width="card.width"
+      :height="card.height"
+      :rx="isOu ? 4 : 22"
+      :ry="isOu ? 4 : 22"
+    />
+
+    <rect class="person-card__inner" x="8" y="8" :width="card.width - 16" :height="card.height - 16" :rx="isOu ? 2 : (isSu ? 14 : 18)" :ry="isOu ? 2 : (isSu ? 14 : 18)" />
+
+    <!-- Ou Style Corner Decorations -->
+    <g v-if="isOu" class="ou-decorations" stroke="var(--accent-amber)" stroke-width="1.2" fill="none">
+      <path d="M 12 20 L 12 12 L 20 12" />
+      <path :d="`M ${card.width - 20} 12 L ${card.width - 12} 12 L ${card.width - 12} 20`" />
+      <path :d="`M 12 ${card.height - 20} L 12 ${card.height - 12} L 20 ${card.height - 12}`" />
+      <path :d="`M ${card.width - 20} ${card.height - 12} L ${card.width - 12} ${card.height - 12} L ${card.width - 12} ${card.height - 20}`" />
+    </g>
 
     <!-- Ou Style Folded Edge Effect -->
     <path

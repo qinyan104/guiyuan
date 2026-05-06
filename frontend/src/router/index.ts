@@ -72,6 +72,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/TimelineView.vue'),
         props: (route) => ({ publicationId: Number(route.params.id) }),
       },
+      {
+        path: 'print-preview',
+        name: 'print-preview',
+        component: () => import('../views/PrintPreviewView.vue'),
+      },
     ],
   },
 ]

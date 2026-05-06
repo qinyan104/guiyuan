@@ -145,7 +145,9 @@ function buildTreeNode(
   }
 }
 
-function measureNode(node: TreeNode, settings: PublicationSettings): { generations: number } {
+// ─── Modern Style Layout (Existing) ──────────────────────────────
+
+function measureNodeModern(node: TreeNode, settings: PublicationSettings): { generations: number } {
   const cardHeight = getCardHeight(settings.cardWidth)
   node.adultBlockWidth =
     node.adults.length * settings.cardWidth + Math.max(0, node.adults.length - 1) * settings.partnerGap
@@ -169,7 +171,7 @@ function measureNode(node: TreeNode, settings: PublicationSettings): { generatio
   let maxGenerations = 0
 
   node.children.forEach((child, index) => {
-    const { generations } = measureNode(child, settings)
+    const { generations } = measureNodeModern(child, settings)
     childWidth += child.width
     if (index > 0) {
       childWidth += settings.siblingGap
@@ -199,7 +201,7 @@ function measureNode(node: TreeNode, settings: PublicationSettings): { generatio
   return { generations: maxGenerations + 1 }
 }
 
-function placeNode(
+function placeNodeModern(
   node: TreeNode,
   anchorX: number,
   originY: number,
@@ -257,14 +259,14 @@ function placeNode(
 
   if (node.children.length === 1) {
     const onlyChild = node.children[0]
-    placeNode(onlyChild, adultCenterX, childrenY, settings, cards, lines)
+    placeNodeModern(onlyChild, adultCenterX, childrenY, settings, cards, lines)
     childAnchors.push(adultCenterX)
   } else {
     let childStartX = adultCenterX - node.childrenRowWidth / 2
 
     node.children.forEach((child) => {
       const childAnchorX = childStartX + child.leftExtent
-      placeNode(child, childAnchorX, childrenY, settings, cards, lines)
+      placeNodeModern(child, childAnchorX, childrenY, settings, cards, lines)
       childAnchors.push(childAnchorX)
       childStartX += child.width + settings.siblingGap
     })
@@ -303,9 +305,124 @@ function placeNode(
   return anchorX
 }
 
-function getChildrenRowWidth(node: TreeNode, settings: PublicationSettings): number {
-  return node.children.reduce((total, child, index) => total + child.width + (index > 0 ? settings.siblingGap : 0), 0)
+// ─── Su Style Layout (Vertical / Indented) ───────────────────────
+
+function measureNodeSu(node: TreeNode, settings: PublicationSettings): { generations: number } {
+  const cardHeight = getCardHeight(settings.cardWidth)
+  node.adultBlockWidth =
+    node.adults.length * settings.cardWidth + Math.max(0, node.adults.length - 1) * settings.partnerGap
+  node.adultAnchorOffset = 0 // Anchor top-left for Su style
+
+  if (node.children.length === 0) {
+    node.width = node.adultBlockWidth
+    node.height = cardHeight
+    return { generations: 1 }
+  }
+
+  let maxWidth = node.adultBlockWidth
+  let totalHeight = cardHeight + settings.siblingGap // Initial height with gap
+  let maxGenerations = 0
+
+  node.children.forEach((child) => {
+    const { generations } = measureNodeSu(child, settings)
+    const indent = settings.cardWidth * 0.75
+    maxWidth = Math.max(maxWidth, indent + child.width)
+    totalHeight += child.height + settings.siblingGap
+    maxGenerations = Math.max(maxGenerations, generations)
+  })
+
+  node.width = maxWidth
+  node.height = totalHeight
+  return { generations: maxGenerations + 1 }
 }
+
+function placeNodeSu(
+  node: TreeNode,
+  startX: number,
+  startY: number,
+  settings: PublicationSettings,
+  cards: PositionedCard[],
+  lines: LineSegment[],
+) {
+  const cardHeight = getCardHeight(settings.cardWidth)
+  const indent = settings.cardWidth * 0.75
+  const parentAnchorX = startX + settings.cardWidth / 2
+  const parentAnchorY = startY + cardHeight
+
+  // Place adults
+  node.adults.forEach((adultId, index) => {
+    cards.push({
+      personId: adultId,
+      x: startX + index * (settings.cardWidth + settings.partnerGap),
+      y: startY,
+      width: settings.cardWidth,
+      height: cardHeight,
+    })
+  })
+
+  // Horizontal partner line
+  if (node.adults.length > 1) {
+    const partnerY = startY + cardHeight / 2
+    lines.push({
+      x1: startX + settings.cardWidth,
+      y1: partnerY,
+      x2: startX + settings.cardWidth + settings.partnerGap,
+      y2: partnerY,
+    })
+  }
+
+  if (node.children.length === 0) return
+
+  let currentY = startY + cardHeight + settings.siblingGap
+
+  node.children.forEach((child, index) => {
+    const childX = startX + indent
+    const childY = currentY
+    
+    // Recursive place
+    placeNodeSu(child, childX, childY, settings, cards, lines)
+
+    // Connector: Parent Spine (Vertical)
+    lines.push({
+      x1: parentAnchorX,
+      y1: index === 0 ? parentAnchorY : (currentY - settings.siblingGap),
+      x2: parentAnchorX,
+      y2: childY + cardHeight / 2,
+    })
+
+    // Connector: To Child (Horizontal)
+    lines.push({
+      x1: parentAnchorX,
+      y1: childY + cardHeight / 2,
+      x2: childX,
+      y2: childY + cardHeight / 2,
+    })
+
+    currentY += child.height + settings.siblingGap
+  })
+}
+
+// ─── Ou Style Layout (Grid / Traditional Matrix) ─────────────────
+
+function measureNodeOu(node: TreeNode, settings: PublicationSettings): { generations: number } {
+  // Ou style traditionally aligns everyone in the same generation to same row
+  // We use modern measurement but might enforce more padding
+  return measureNodeModern(node, settings)
+}
+
+function placeNodeOu(
+  node: TreeNode,
+  anchorX: number,
+  originY: number,
+  settings: PublicationSettings,
+  cards: PositionedCard[],
+  lines: LineSegment[],
+) {
+  // Use modern placement as base, but ensure grid alignment
+  placeNodeModern(node, anchorX, originY, settings, cards, lines)
+}
+
+// ─── Main Entry ──────────────────────────────────────────────────
 
 export function layoutPublication(data: PublicationData, settings: PublicationSettings): PublicationLayout {
   const paper = PAPER_PRESETS[settings.paper]
@@ -314,16 +431,32 @@ export function layoutPublication(data: PublicationData, settings: PublicationSe
   const adultFamilyMap = buildAdultFamilyMap(data.families)
   const rootFamilyId = data.families[data.focusFamilyId] ? data.focusFamilyId : Object.keys(data.families)[0]
   const tree = buildTreeNode(rootFamilyId, data, adultFamilyMap)
-  const { generations } = measureNode(tree, settings)
 
-  const rawWidth = tree.width + settings.paddingX * 2
-  const rawHeight = TITLE_AREA_HEIGHT + tree.height + settings.paddingY * 2
-  const width = rawWidth
-  const height = rawHeight
-  const treeX = settings.paddingX + tree.leftExtent
-  const treeY = TITLE_AREA_HEIGHT + settings.paddingY
+  let width = 0
+  let height = 0
+  let generations = 0
 
-  placeNode(tree, treeX, treeY, settings, cards, lines)
+  if (settings.layoutMode === 'su') {
+    const res = measureNodeSu(tree, settings)
+    generations = res.generations
+    width = tree.width + settings.paddingX * 2
+    height = tree.height + settings.paddingY * 2
+    placeNodeSu(tree, settings.paddingX, settings.paddingY, settings, cards, lines)
+  } else {
+    // Ou and Modern share same measurement for now
+    const res = measureNodeModern(tree, settings)
+    generations = res.generations
+    width = tree.width + settings.paddingX * 2
+    height = tree.height + settings.paddingY * 2
+    const treeX = settings.paddingX + tree.leftExtent
+    const treeY = settings.paddingY
+    
+    if (settings.layoutMode === 'ou') {
+      placeNodeOu(tree, treeX, treeY, settings, cards, lines)
+    } else {
+      placeNodeModern(tree, treeX, treeY, settings, cards, lines)
+    }
+  }
 
   return {
     width,

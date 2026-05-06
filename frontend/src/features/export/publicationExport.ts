@@ -1,7 +1,31 @@
 import type { PublicationLayout, PublicationPaper } from '../../types/family'
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
+const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink'
 const XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
+const PDF_SERIF_FONT_STACK = "'SimSun', 'Songti SC', 'STSong', serif"
+const PDF_SANS_FONT_STACK = "'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', sans-serif"
+const SVG_THEME_VARIABLES = [
+  '--canvas-bg',
+  '--bg-paper',
+  '--bg-shell',
+  '--text-main',
+  '--text-soft',
+  '--tree-line-color',
+  '--card-panel-fill',
+  '--card-panel-stroke',
+  '--card-inner-stroke',
+  '--card-header-fill',
+  '--card-selected-stroke',
+  '--card-status-fill',
+  '--card-name-fill',
+  '--card-detail-fill',
+  '--card-male-header',
+  '--card-female-header',
+  '--accent-amber',
+  '--border-color',
+  '--line-soft',
+] as const
 
 const PAPER_SIZE_NAMES: Record<PublicationPaper, string> = {
   A4: 'A4 landscape',
@@ -206,11 +230,21 @@ const EXPORT_SVG_STYLE = `
 `
 
 
+export interface PdfExportHeader {
+  title: string
+  subtitle?: string
+  lines?: string[]
+}
+
 export interface CreateStandaloneSvgOptions {
   svgElement: SVGSVGElement
   layout: PublicationLayout
   title: string
   includeSelection?: boolean
+  pdfFriendly?: boolean
+  embedImages?: boolean
+  resourceBaseUrl?: string
+  exportHeader?: PdfExportHeader
 }
 
 export interface PrintLayoutPage {
@@ -265,44 +299,130 @@ function insertExportTitle(svg: SVGSVGElement, title: string) {
   svg.insertBefore(titleElement, svg.firstChild)
 }
 
-function getSvgThemeVariables(): string {
-  if (typeof window === 'undefined') return ''
+function getSvgThemeMap(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
   const root = document.documentElement
   const computed = getComputedStyle(root)
-  const vars = [
-    '--canvas-bg',
-    '--bg-paper',
-    '--bg-shell',
-    '--text-main',
-    '--tree-line-color',
-    '--card-panel-fill',
-    '--card-panel-stroke',
-    '--card-inner-stroke',
-    '--card-header-fill',
-    '--card-selected-stroke',
-    '--card-status-fill',
-    '--card-name-fill',
-    '--card-detail-fill',
-    '--card-male-header',
-    '--card-female-header',
-  ]
-  let css = ':root {\n'
-  for (const v of vars) {
+  const themeValues: Record<string, string> = {}
+  for (const v of SVG_THEME_VARIABLES) {
     const val = computed.getPropertyValue(v).trim()
+    if (val) {
+      themeValues[v] = val
+    }
+  }
+  return themeValues
+}
+
+function getSvgThemeVariables(): string {
+  const themeValues = getSvgThemeMap()
+  let css = ':root {\n'
+  for (const v of SVG_THEME_VARIABLES) {
+    const val = themeValues[v]
     if (val) css += `  ${v}: ${val};\n`
   }
   css += '}\n'
   return css
 }
 
-function insertExportStyles(svg: SVGSVGElement) {
+function resolveCssValue(value: string, themeValues: Record<string, string>): string {
+  let resolved = value
+
+  while (resolved.includes('var(')) {
+    const next = resolved.replace(/var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,\s*([^)]+))?\)/g, (_, variableName: string, fallback?: string) => {
+      const themeValue = themeValues[variableName]
+      if (themeValue) {
+        return themeValue
+      }
+
+      return fallback ? resolveCssValue(fallback.trim(), themeValues) : ''
+    })
+
+    if (next === resolved) {
+      break
+    }
+    resolved = next
+  }
+
+  return resolved
+}
+
+function buildExportStyle(pdfFriendly = false): string {
+  if (!pdfFriendly) {
+    return getSvgThemeVariables() + '\n' + EXPORT_SVG_STYLE
+  }
+
+  const themeValues = getSvgThemeMap()
+  return resolveCssValue(
+    EXPORT_SVG_STYLE
+      .replace(/^\s*@import\s+url\([^)]*\)\s*;\s*/m, '\n')
+      .replaceAll("'Noto Serif SC', 'Songti SC', serif", PDF_SERIF_FONT_STACK)
+      .replaceAll("'Manrope', sans-serif", PDF_SANS_FONT_STACK),
+    themeValues,
+  )
+}
+
+function insertExportStyles(svg: SVGSVGElement, pdfFriendly = false) {
   const defs = getOrCreateDefs(svg)
   defs.querySelector('[data-export-style="publication"]')?.remove()
 
   const style = document.createElementNS(SVG_NAMESPACE, 'style')
   style.setAttribute('data-export-style', 'publication')
-  style.textContent = getSvgThemeVariables() + '\n' + EXPORT_SVG_STYLE
+  style.textContent = buildExportStyle(pdfFriendly)
   defs.insertBefore(style, defs.firstChild)
+}
+
+function insertExportHeader(svg: SVGSVGElement, header?: PdfExportHeader) {
+  svg.querySelector('[data-export-header="publication"]')?.remove()
+
+  if (!header) {
+    return
+  }
+
+  const existingTitle = svg.querySelector(':scope > title')
+  if (existingTitle) {
+    existingTitle.remove()
+  }
+
+  const headerGroup = document.createElementNS(SVG_NAMESPACE, 'g')
+  headerGroup.setAttribute('data-export-header', 'publication')
+  headerGroup.setAttribute('transform', 'translate(72 56)')
+
+  const title = document.createElementNS(SVG_NAMESPACE, 'text')
+  title.setAttribute('x', '0')
+  title.setAttribute('y', '0')
+  title.setAttribute('fill', 'var(--text-main, #241a10)')
+  title.setAttribute('font-size', '28')
+  title.setAttribute('font-weight', '700')
+  title.setAttribute('font-family', "'Noto Serif SC', 'Songti SC', serif")
+  title.textContent = header.title
+  headerGroup.appendChild(title)
+
+  let currentY = 34
+  if (header.subtitle) {
+    const subtitle = document.createElementNS(SVG_NAMESPACE, 'text')
+    subtitle.setAttribute('x', '0')
+    subtitle.setAttribute('y', String(currentY))
+    subtitle.setAttribute('fill', 'var(--text-soft, #8a6845)')
+    subtitle.setAttribute('font-size', '15')
+    subtitle.setAttribute('font-family', "'Noto Serif SC', 'Songti SC', serif")
+    subtitle.textContent = header.subtitle
+    headerGroup.appendChild(subtitle)
+    currentY += 24
+  }
+
+  header.lines?.forEach((line) => {
+    const text = document.createElementNS(SVG_NAMESPACE, 'text')
+    text.setAttribute('x', '0')
+    text.setAttribute('y', String(currentY))
+    text.setAttribute('fill', 'var(--text-soft, #8a6845)')
+    text.setAttribute('font-size', '12')
+    text.setAttribute('font-family', "'Noto Serif SC', 'Songti SC', serif")
+    text.textContent = line
+    headerGroup.appendChild(text)
+    currentY += 20
+  })
+
+  svg.insertBefore(headerGroup, svg.firstChild)
 }
 
 function insertBackground(svg: SVGSVGElement, layout: PublicationLayout) {
@@ -368,6 +488,26 @@ function removeSelectionState(svg: SVGSVGElement) {
   })
 }
 
+function resolveCssVariablesInAttributes(svg: SVGSVGElement) {
+  const themeValues = getSvgThemeMap()
+  const elements = [svg, ...Array.from(svg.querySelectorAll<SVGElement>('*'))]
+
+  elements.forEach((element) => {
+    Array.from(element.attributes).forEach((attribute) => {
+      if (!attribute.value.includes('var(')) {
+        return
+      }
+
+      element.setAttribute(attribute.name, resolveCssValue(attribute.value, themeValues))
+    })
+  })
+}
+
+function stripPdfUnsupportedFilters(svg: SVGSVGElement) {
+  svg.querySelectorAll('filter').forEach((element) => element.remove())
+  svg.querySelectorAll<SVGElement>('[filter]').forEach((element) => element.removeAttribute('filter'))
+}
+
 function scopeInternalIds(svg: SVGSVGElement, suffix: string) {
   const idMap = new Map<string, string>()
   const elementsWithIds = Array.from(svg.querySelectorAll<SVGElement>('[id]'))
@@ -404,25 +544,102 @@ function scopeInternalIds(svg: SVGSVGElement, suffix: string) {
   })
 }
 
-export function createStandalonePublicationSvg(options: CreateStandaloneSvgOptions): SVGSVGElement {
+export function absolutizeExportResourceUrl(href: string, baseUrl?: string): string {
+  if (!href || href.startsWith('data:') || href.startsWith('blob:')) {
+    return href
+  }
+
+  if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(href)) {
+    return href
+  }
+
+  if (!baseUrl) {
+    return href
+  }
+
+  try {
+    return new URL(href, baseUrl).toString()
+  } catch {
+    return href
+  }
+}
+
+function setImageHref(image: SVGImageElement, value: string) {
+  image.setAttribute('href', value)
+  image.setAttributeNS(XLINK_NAMESPACE, 'xlink:href', value)
+}
+
+export async function createStandalonePublicationSvg(options: CreateStandaloneSvgOptions): Promise<SVGSVGElement> {
   const svg = options.svgElement.cloneNode(true) as SVGSVGElement
+  const headerHeight = options.exportHeader ? 120 : 0
+  const totalHeight = options.layout.height + headerHeight
 
   svg.setAttribute('xmlns', SVG_NAMESPACE)
+  svg.setAttribute('xmlns:xlink', XLINK_NAMESPACE)
   svg.setAttribute('version', '1.1')
   svg.setAttribute('role', 'img')
   svg.setAttribute('aria-label', options.title)
-  svg.setAttribute('viewBox', `0 0 ${formatNumber(options.layout.width)} ${formatNumber(options.layout.height)}`)
+  svg.setAttribute('viewBox', `0 0 ${formatNumber(options.layout.width)} ${formatNumber(totalHeight)}`)
   svg.setAttribute('width', formatNumber(options.layout.width))
-  svg.setAttribute('height', formatNumber(options.layout.height))
+  svg.setAttribute('height', formatNumber(totalHeight))
   svg.removeAttribute('style')
 
   if (!options.includeSelection) {
     removeSelectionState(svg)
   }
 
+  if (headerHeight > 0) {
+    const contentGroup = document.createElementNS(SVG_NAMESPACE, 'g')
+    contentGroup.setAttribute('data-export-content', 'publication')
+    contentGroup.setAttribute('transform', `translate(0, ${headerHeight})`)
+
+    while (svg.firstChild) {
+      contentGroup.appendChild(svg.firstChild)
+    }
+
+    svg.appendChild(contentGroup)
+    insertExportHeader(svg, options.exportHeader)
+  }
+
   insertExportTitle(svg, options.title)
-  insertExportStyles(svg)
-  insertBackground(svg, options.layout)
+  insertExportStyles(svg, options.pdfFriendly)
+  insertBackground(svg, { ...options.layout, height: totalHeight })
+
+  // Embed images as base64 to ensure they are visible in standalone files
+  const images = Array.from(svg.querySelectorAll('image'))
+  const shouldEmbedImages = options.embedImages ?? true
+  await Promise.all(images.map(async (img) => {
+    const href = img.getAttribute('href') || img.getAttribute('xlink:href')
+    if (!href || href.startsWith('data:')) {
+      if (href) {
+        setImageHref(img, href)
+      }
+      return
+    }
+
+    if (!shouldEmbedImages) {
+      setImageHref(img, absolutizeExportResourceUrl(href, options.resourceBaseUrl))
+      return
+    }
+
+    try {
+      const response = await fetch(href)
+      const blob = await response.blob()
+      const reader = new FileReader()
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.readAsDataURL(blob)
+      })
+      setImageHref(img, base64)
+    } catch (err) {
+      console.error('Failed to embed image in SVG export', href, err)
+    }
+  }))
+
+  if (options.pdfFriendly) {
+    stripPdfUnsupportedFilters(svg)
+    resolveCssVariablesInAttributes(svg)
+  }
 
   return svg
 }

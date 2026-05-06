@@ -8,7 +8,7 @@
 - 多主题切换（古卷、水墨、青瓷、檀木等 7 套）
 - **便携式 JSON 导入/导出**：导出时自动将 `/api/photos/...` 与旧版 `/uploads/...` 人物头像转换为 Base64 嵌入，支持跨环境完整迁移
 - JSON 草稿导入/导出，支持 File System Access API 原生文件操作
-- SVG 导出和 A3/A4 打印排版
+- SVG 导出、单页全尺寸矢量 PDF 导出及 A3/A4 多页打印排版
 - 族谱信息管理（简介、起源地、堂号、家训）
 - 数据分析与可视化（世代分布、寿命统计、家族大事时间线）
 - 用户登录、管理员后台（用户管理、审计日志）
@@ -45,6 +45,8 @@ cd backend
 
 后端运行在 `http://localhost:8080`，首次启动自动建表。
 
+**注意：** 为了支持 PDF 导出中的中文字体，服务器环境需安装中文字体（如微软雅黑、宋体或思源黑体）。系统会自动尝试从 Windows/macOS/Linux 标准路径加载常用字体。
+
 ### 3. 启动前端
 
 ```bash
@@ -55,7 +57,12 @@ npm run dev
 
 前端运行在 `http://localhost:5173`，打开浏览器访问即可。API 请求将自动代理至 `localhost:8080`。如需更改后端地址，可修改 `frontend/.env.development` 中的 `VITE_API_BASE_URL`。
 
-### 4. 导入导出照片说明
+### 4. 导出说明
+
+- **单页矢量 PDF**：替换了原有的像素 PNG 导出。它会根据族谱实际宽高动态生成一个 PDF 页面，保证无限放大不失真，适合专业打印或跨端浏览。
+- **谱书实验室**：支持多页 A4 导出，包含前言和成员志，适合打印装订成册。
+
+### 5. 导入导出照片说明
 
 - 便携式 JSON 导出会优先把可访问的人物头像内联为 Base64，包括数据库照片接口 `/api/photos/{id}` 和旧版上传目录 `/uploads/...`。
 - 导入 JSON 时，后端支持三类头像来源：Base64、当前库内的 `/api/photos/{id}` 引用、旧版 `/uploads/...` 文件路径。
@@ -66,6 +73,6 @@ npm run dev
 | 层 | 技术 |
 |---|---|
 | 前端 | Vue 3, Vite 6, TypeScript, vue-router, axios |
-| 后端 | Spring Boot 3.3, Spring Data JPA, Spring Security |
+| 后端 | Spring Boot 3.3, Spring Data JPA, Spring Security, iText 7 |
 | 数据库 | MySQL 8 |
 | 构建 | Maven (后端), Vite (前端) |

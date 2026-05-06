@@ -129,6 +129,21 @@ function goBackToList() {
   router.push({ name: 'publications' })
 }
 
+// ─── Theme & Layout Sync ──────────────────────────────────────
+watch(
+  () => theme.currentTheme.value,
+  (newTheme) => {
+    if (newTheme === 'su-style') {
+      updateSettings({ layoutMode: 'su' })
+    } else if (newTheme === 'ou-style') {
+      updateSettings({ layoutMode: 'ou' })
+    } else {
+      updateSettings({ layoutMode: 'modern' })
+    }
+  },
+  { immediate: true },
+)
+
 // ─── Watchers ───────────────────────────────────────────────────
 watch(
   () => context.pub.selectedPerson.value,

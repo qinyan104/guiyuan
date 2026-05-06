@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue'
 
-export type ThemeId = 'parchment' | 'su-style' | 'ou-style' | 'ink-wash' | 'celadon' | 'rosewood' | 'frosted-glass' | 'star-sea' | 'aurora'
+export type ThemeId = 'parchment' | 'su-style' | 'ou-style' | 'ink-wash' | 'celadon' | 'rosewood' | 'frosted-glass' | 'star-sea' | 'aurora' | 'eggshell'
 
 export interface ThemeOption {
   id: ThemeId
@@ -73,6 +73,13 @@ export const THEME_OPTIONS: ThemeOption[] = [
     nameEn: 'Aqua',
     description: 'macOS 果冻质感，高亮通透与多彩流光',
     preview: ['#ff7eb3', '#8b5cf6', '#3b82f6', '#14b8a6'],
+  },
+  {
+    id: 'eggshell',
+    name: '蛋壳',
+    nameEn: 'Eggshell',
+    description: '极简学术风，接近纯白但带有温润纸感，高对比度黑白排版',
+    preview: ['#fdfcfc', '#000000', '#777169', '#e5e5e5'],
   },
 ]
 

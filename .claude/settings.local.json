@@ -6,7 +6,12 @@
       "Bash(./mvnw compile *)",
       "Bash(./mvnw clean *)",
       "Bash(./mvnw package *)",
-      "Bash(java -Dfile.encoding=UTF-8 -jar target/genealogy-server-0.0.1-SNAPSHOT.jar)"
+      "Bash(java -Dfile.encoding=UTF-8 -jar target/genealogy-server-0.0.1-SNAPSHOT.jar)",
+      "Bash(./mvnw test *)",
+      "Bash(npm test *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s http://localhost:8080/api/publications)"
     ]
   }
 }

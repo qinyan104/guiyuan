@@ -410,7 +410,7 @@ defineExpose({
     @wheel="handleWheel"
   >
     <div class="canvas-camera" :style="cameraStyle">
-      <div class="publication-stage" :style="stageStyle">
+      <div id="publication-canvas-root" class="publication-stage" :style="stageStyle">
         <svg
           ref="svgRef"
           class="publication-svg"
@@ -432,7 +432,7 @@ defineExpose({
           <!-- Ou Grid Background -->
           <rect v-if="isOu" width="100%" height="100%" fill="url(#ou-grid)" />
 
-          <g class="tree-lines">
+          <g class="tree-lines" :style="isSu ? { filter: 'blur(0.3px)' } : {}">
             <line
               v-for="(line, index) in layout.lines"
               :key="`line-${index}`"
@@ -440,6 +440,7 @@ defineExpose({
               :y1="line.y1"
               :x2="line.x2"
               :y2="line.y2"
+              :stroke-linejoin="isSu ? 'round' : 'miter'"
             />
             <!-- Su-style Pearl Connectors -->
             <circle
@@ -452,7 +453,7 @@ defineExpose({
             />
           </g>
 
-          <g :filter="isDragging ? null : 'url(#cardShadow)'">
+          <g :filter="isDragging ? undefined : 'url(#cardShadow)'">
             <PersonCardSvg
               v-for="card in layout.cards"
               :key="card.personId"

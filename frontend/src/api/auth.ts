@@ -49,6 +49,18 @@ export function getToken(): string | null {
   return localStorage.getItem('authToken')
 }
 
+export function buildAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  const token = getToken()
+  if (!token) {
+    return headers
+  }
+
+  return {
+    ...headers,
+    Authorization: `Bearer ${token}`,
+  }
+}
+
 export function getUsername(): string | null {
   return localStorage.getItem('authUsername')
 }
@@ -102,9 +114,8 @@ export async function adminChangeRole(id: number, role: string): Promise<void> {
 }
 
 export async function adminBackupDatabase(): Promise<void> {
-  const token = getToken()
   const resp = await fetch('/api/admin/backup', {
-    headers: { 'Authorization': `Bearer ${token}` },
+    headers: buildAuthHeaders(),
   })
   if (!resp.ok) {
     const text = await resp.text()

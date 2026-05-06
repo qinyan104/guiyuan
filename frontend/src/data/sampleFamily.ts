@@ -155,6 +155,7 @@ export const samplePublication: PublicationData = markHistoricalPublication({
 
 export const defaultSettings: PublicationSettings = {
   paper: 'A3',
+  layoutMode: 'modern',
   cardWidth: 158,
   generationGap: 170,
   siblingGap: 88,

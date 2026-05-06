@@ -967,3 +967,141 @@
   font-size: 14px;
   font-weight: 800;
 }
+
+/* ─── Theme: Eggshell (ElevenLabs Minimalist) ─── */
+[data-theme="eggshell"] {
+  --bg-shell: #fdfcfc;
+  --bg-panel: #ffffff;
+  --bg-panel-strong: #ffffff;
+  --bg-paper: #ffffff;
+  --line-soft: #e5e5e5;
+  --text-main: #000000;
+  --text-sub: #777169;
+  --text-soft: #a59f97;
+  --accent-amber: #000000;
+  --accent-earth: #777169;
+  --accent-olive: #0447ff;
+  --accent-ink: #000000;
+  --shell-bg-image: none;
+  --workspace-glow: transparent;
+  --workspace-border: transparent;
+  --workspace-bg: #fdfcfc;
+  --card-panel-fill: #ffffff;
+  --card-panel-stroke: #000000;
+  --card-name-fill: #000000;
+  --card-status-fill: #777169;
+  --card-detail-fill: #777169;
+  --card-inner-stroke: #e5e5e5;
+  --card-header-fill: #000000; /* High contrast black header */
+  --card-male-header: transparent;
+  --card-female-header: transparent;
+  --card-selected-stroke: #000000;
+  --card-hover-fill: #f5f3f1;
+  --card-hover-stroke: #000000;
+  --tree-line-color: #000000; /* Absolute black thin lines */
+  --canvas-grid-color: rgba(0,0,0,0.02);
+  --canvas-bg: #fdfcfc;
+  --minimap-bg: #ffffff;
+  --minimap-node: #e5e5e5;
+  --minimap-node-selected: #000000;
+  --scrim-bg: rgba(0,0,0,0.08);
+  --editor-panel-bg: #ffffff;
+  --btn-primary-bg: #000000;
+  --btn-primary-color: #fdfcfc;
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-border: #e5e5e5;
+  --danger-title: #ff4704;
+  --danger-text: #ff4704;
+  --danger-bg: #ffffff;
+  --danger-border: #ff4704;
+  --danger-btn-color: #ff4704;
+  --task-urgent: #ff4704;
+  --task-warm: #777169;
+  --task-calm: #0447ff;
+  --metric-amber: #000000;
+  --metric-ink: #777169;
+  --metric-olive: #a59f97;
+  --metric-earth: #e5e5e5;
+  --feedback-bg: #ffffff;
+  --feedback-border: #e5e5e5;
+  --feedback-color: #000000;
+  --feedback-error-bg: #ffffff;
+  --feedback-error-border: #ff4704;
+  --feedback-error-color: #ff4704;
+  --accent-btn-bg: #000000;
+  --accent-btn-color: #fdfcfc;
+  color-scheme: light;
+}
+
+/* --- Eggshell: Soul Enhancements --- */
+
+/* Paper Grain Texture Layer */
+[data-theme="eggshell"] .canvas-viewport::after,
+[data-theme="eggshell"] .editor-workspace::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  z-index: 10;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Editorial Typography */
+[data-theme="eggshell"] .person-card__name,
+[data-theme="eggshell"] h1,
+[data-theme="eggshell"] h2,
+[data-theme="eggshell"] .stats-title,
+[data-theme="eggshell"] .detail-header__name {
+  font-family: "Waldenburg", Georgia, "Times New Roman", serif !important;
+  letter-spacing: 0.02em !important;
+  font-weight: 300 !important;
+}
+
+[data-theme="eggshell"] .editor-workspace,
+[data-theme="eggshell"] .editor-sheet-panel,
+[data-theme="eggshell"] .floating-panel,
+[data-theme="eggshell"] .relationship-panel,
+[data-theme="eggshell"] .theme-switcher__dropdown,
+[data-theme="eggshell"] .topbar__status-card,
+[data-theme="eggshell"] .topbar__action-strip {
+  border: 0.5px solid #e5e5e5;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 1.143px 0px, rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
+}
+
+/* Card Overrides: High Contrast */
+[data-theme="eggshell"] .person-card__header {
+  background: #000000 !important;
+  height: 4px !important; /* Thick stamp-like top bar */
+}
+
+[data-theme="eggshell"] .person-card--selected {
+  outline: 2px solid #000000 !important;
+  outline-offset: 2px;
+}
+
+[data-theme="eggshell"] .tree-lines path {
+  stroke-width: 0.75px !important;
+}
+
+[data-theme="eggshell"] .field input,
+[data-theme="eggshell"] .field textarea,
+[data-theme="eggshell"] .field select {
+  border-radius: 0;
+  box-shadow: rgba(0, 0, 0, 0.075) 0px 0px 0px 0.5px inset;
+  border: 1px solid #e5e5e5;
+  background: #ffffff;
+}
+
+[data-theme="eggshell"] .field input:focus {
+  border-color: #000000;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 0px 0.5px inset, 0 0 0 2px rgba(0,0,0,0.05);
+}
+
+[data-theme="eggshell"] .btn--primary {
+  border-radius: 9999px;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
