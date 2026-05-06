@@ -63,6 +63,9 @@ Stats: 50 obs (4,441t read) | 1,118,605t work | 100% savings
 1114 11:55p 🔴 修复adminConsoleMeta中getAdminPageMeta的属性检查漏洞
 ### May 5, 2026
 1115 12:34a 🔴 修复 getUserRoleLabel 的类型安全性和运行时检查
+1116 11:20a 🟣 实现自包含 HTML 快照分享功能（shareHtmlExport.ts），支持 AES-256-GCM 可选密码保护
+1117 11:40a 🔄 重新设计 ExportDialog.vue 样式，统一为 bento glassmorphism 风格，新增"分享网页"tab 与密码强度指示器
+1118 12:00p ✅ 知识库同步：更新 CLAUDE.md、README.md 反映分享网页导出功能
 
 Access 1119k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

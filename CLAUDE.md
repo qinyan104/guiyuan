@@ -43,15 +43,16 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 - **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置和连线
 - **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）
 - 草稿持久化：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化，并在便携式导出时将 `/api/photos/...` 与旧版 `/uploads/...` 头像尽量内联为 Base64
-- **导出**：`features/export/publicationExport.ts` — SVG 导出和打印排版；`features/export/ExportDialog.vue` 现在提供**单页矢量 PDF**（由后端生成）与多页谱书实验室。
+- **导出**：`features/export/publicationExport.ts` — SVG 导出和打印排版；`features/export/shareHtmlExport.ts` — 自包含 HTML 快照分享（AES-256-GCM 可选密码保护）；`features/export/ExportDialog.vue` 现在提供**单页矢量 PDF**（由后端生成）、多页谱书实验室与**分享网页**导出。
 
 ## 后端架构
 
 - 7 个 Controller，全部 `/api/*` 前缀，依赖注入统一使用构造器注入
 - Spring Security 放行所有请求，认证由 `AuthInterceptor`（Bearer token）处理；`/api/photos/**` 明确排除拦截，保证浏览器原生 `<img>` / SVG `<image>` 可直接加载头像
+- **资源级授权**：`PublicationAuthorizationService` 基于 `publication_access` 表实现对象级权限控制。每个 publication 端点在执行前调用 `require(subject, pubId, permission)`，无 access 记录返回 404（IDOR 防护），权限不足返回 403。`auth` 包提供 `AccessSubject`（`UserSubject`/`ShareSubject`）、`AccessPermission`（9 个动作枚举）。创建族谱时自动写入 OWNER 记录，`AccessControlMigrationRunner` 启动时回填历史数据。
 - 自定义异常体系：`NotFoundException`(404)、`ForbiddenException`(403)、`BadRequestException`(400)，`GlobalExceptionHandler` 统一映射；未捕获 RuntimeException 返回 500
 - Token 存储在内存 `ConcurrentHashMap`，TTL 24 小时，`@Scheduled` 每 10 分钟清理过期 token（`@EnableScheduling` 在主启动类）
-- 数据库：MySQL `genealogy`，ddl-auto=update，连接配置在 `application.properties`
+- 数据库：MySQL `genealogy`，ddl-auto=update，连接配置在 `application.properties`。表含 `publications`、`persons`、`families`、`family_members`、`photos`、`users`、`audit_logs`、`publication_access`
 - **传输限制**：已提升至 **100MB** (Servlet, Tomcat Post/Swallow size) 以支持带 Base64 图片的族谱导入
 - **PDF 生成**：集成 **iText 7** (kernel, io, layout, svg)。
     - `POST /api/publications/{id}/export/pdf`: 生成多页谱书 PDF（含标题、前言、成员志、切片图）。
@@ -59,6 +60,7 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 - **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载
 
 - **照片导入链路**：`PublicationService.savePersonsAndFamilies` 在新建/导入时支持 Base64、`/api/photos/{id}` 克隆、旧版 `/uploads/...` 文件迁移；更新时复用既有照片记录，避免重复插图
+- **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`（`ShareSubject`，第 2 步实现）
 - 文件上传限制：100MB；`FileController` 有扩展名白名单校验（图片/PDF），`PhotoController` 有 MIME 类型校验
 - CORS：`allowedOriginPatterns("http://localhost:5173")`，允许凭据
 - 审计日志列表使用 JPA `Pageable` 分页（默认每页 50，上限 200）
