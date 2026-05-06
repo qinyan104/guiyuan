@@ -49,7 +49,7 @@ onBeforeUnmount(() => {
     <Transition name="glass-pop">
       <div v-if="open" class="theme-dropdown">
         <div class="dropdown-header">
-          <span class="dropdown-title">视觉主题 / Theme</span>
+          <span class="dropdown-title">选择主题 / THEME</span>
         </div>
         <div class="theme-list">
           <button
@@ -60,11 +60,11 @@ onBeforeUnmount(() => {
             type="button"
             @click="selectTheme(theme.id)"
           >
-            <div class="theme-preview">
+            <div class="theme-option__preview">
               <span
                 v-for="(color, index) in theme.preview"
                 :key="index"
-                class="theme-swatch"
+                class="theme-option__swatch"
                 :style="{ background: color }"
               />
             </div>
@@ -110,7 +110,7 @@ onBeforeUnmount(() => {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 320px;
+  width: 260px; /* Reduced width to prevent it from feeling too large */
   border-radius: 20px;
   background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
   backdrop-filter: blur(24px) saturate(180%);
@@ -131,36 +131,38 @@ onBeforeUnmount(() => {
 }
 
 .dropdown-header {
-  padding: 12px 12px 8px;
-  margin-bottom: 4px;
+  padding: 10px 12px 6px;
+  margin-bottom: 2px;
 }
 .dropdown-title {
   font-family: monospace;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   color: var(--text-soft);
+  text-transform: uppercase;
 }
 
 .theme-list {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 4px;
 }
 
 .theme-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 2px 10px;
+  padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
-  position: relative;
 }
+
 .theme-item:hover {
   background: rgba(0,0,0,0.04);
 }
@@ -173,48 +175,51 @@ onBeforeUnmount(() => {
 .theme-item.is-active {
   background: var(--text-main);
   color: var(--bg-panel, #fff);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
 
-.theme-preview {
+.theme-option__preview {
+  grid-row: 1 / 3;
+  grid-column: 1;
   display: flex;
-  width: 48px;
-  height: 48px;
+  gap: 3px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.theme-option__swatch {
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.1);
-  flex-shrink: 0;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  border: 1px solid rgba(128,128,128,0.2);
 }
-.theme-item.is-active .theme-preview {
+.theme-item.is-active .theme-option__swatch {
   border-color: rgba(255,255,255,0.3);
-}
-.theme-swatch {
-  flex: 1;
-  height: 100%;
 }
 
 .theme-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: 4px;
+  display: contents;
 }
+
 .theme-title-group {
+  grid-row: 1;
+  grid-column: 2;
   display: flex;
+  gap: 6px;
   align-items: baseline;
-  gap: 8px;
 }
+
 .theme-name {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-main);
 }
 .theme-item.is-active .theme-name {
   color: var(--bg-panel, #fff);
 }
+
 .theme-name-en {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--text-soft);
   font-style: normal;
   font-family: monospace;
@@ -224,19 +229,23 @@ onBeforeUnmount(() => {
 }
 
 .theme-desc {
-  font-size: 0.8rem;
+  grid-row: 2;
+  grid-column: 2;
   color: var(--text-soft);
-  line-height: 1.4;
+  font-size: 0.7rem;
+  line-height: 1.3;
 }
 .theme-item.is-active .theme-desc {
   color: rgba(255,255,255,0.8);
 }
 
 .check-icon {
-  font-size: 1.2rem;
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 0.9rem;
   color: var(--bg-panel, #fff);
   font-weight: 800;
-  margin-left: 8px;
 }
 
 /* Animations */
