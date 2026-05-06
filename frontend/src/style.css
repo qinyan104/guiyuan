@@ -1911,6 +1911,12 @@ textarea {
   stroke: rgba(171, 109, 48, 0.28);
 }
 
+.is-mount-point .person-card__panel {
+  stroke: #2d59a2;
+  stroke-width: 3px;
+  stroke-dasharray: 4;
+}
+
 .float-panel-enter-active,
 .float-panel-leave-active {
   transition:

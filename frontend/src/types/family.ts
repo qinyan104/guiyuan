@@ -15,6 +15,12 @@ export interface Person {
   note?: string
   avatarUrl?: string
   highlightRole?: 'emperor' | 'heir'
+  isMountPoint?: boolean
+  mountPointTarget?: {
+    publicationId: string
+    publicationTitle: string
+    personId: string
+  }
 }
 
 export interface FamilyUnit {
