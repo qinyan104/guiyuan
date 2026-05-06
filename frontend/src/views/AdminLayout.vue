@@ -584,7 +584,7 @@ onBeforeUnmount(() => {
 .scrollable-container {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 40px 40px 40px;
+  padding: 40px;
 }
 
 .scrollable-container::-webkit-scrollbar {

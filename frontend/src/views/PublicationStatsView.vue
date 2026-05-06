@@ -512,6 +512,8 @@ function formatHistoryDate(dateStr: string) {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 /* ── Bento Card Styles ── */
@@ -536,7 +538,7 @@ function formatHistoryDate(dateStr: string) {
 
 /* ── Hero Card ── */
 .hero-card {
-  padding: 48px 32px;
+  padding: 32px 24px;
   text-align: center;
 }
 .hero-bg-accent {
@@ -548,7 +550,7 @@ function formatHistoryDate(dateStr: string) {
 }
 .family-title {
   font-family: 'Noto Serif SC', serif;
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 900;
   margin: 0 0 8px;
   color: var(--text-main);
@@ -614,7 +616,7 @@ function formatHistoryDate(dateStr: string) {
 }
 .metric-value {
   font-family: 'Noto Serif SC', serif;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 900;
   color: var(--text-main);
   margin-bottom: 4px;
@@ -654,12 +656,12 @@ function formatHistoryDate(dateStr: string) {
 
 /* ── Custom Visualizations ── */
 .ratio-bar {
-  height: 40px;
-  border-radius: 12px;
+  height: 28px;
+  border-radius: 8px;
   overflow: hidden;
   display: flex;
   background: var(--glass-border-shadow, rgba(0,0,0,0.05));
-  padding: 4px;
+  padding: 3px;
   margin-bottom: 16px;
 }
 .ratio-bar .bar {

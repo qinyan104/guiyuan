@@ -284,6 +284,8 @@ const scrollToTop = () => {
   display: flex;
   flex-direction: column;
   gap: 32px;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 /* ── Summary ── */
@@ -362,7 +364,7 @@ const scrollToTop = () => {
   position: absolute;
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 8rem;
+  font-size: 5rem;
   font-weight: 900;
   color: var(--accent-amber);
   opacity: 0.04;
@@ -370,12 +372,12 @@ const scrollToTop = () => {
 }
 .indicator-tag {
   display: inline-block;
-  padding: 8px 32px;
+  padding: 6px 24px;
   background: var(--bg-panel, #fff);
   border: 1px solid var(--glass-border-highlight, rgba(255,255,255,0.8));
   border-radius: 99px;
   font-family: 'Noto Serif SC', serif;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-main);
   box-shadow: 0 12px 24px rgba(0,0,0,0.05);
@@ -392,7 +394,7 @@ const scrollToTop = () => {
 .event-wrapper.right { align-self: flex-end; padding-left: 40px; margin-left: 50%; }
 
 .event-card {
-  padding: 16px 20px;
+  padding: 12px 16px;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .event-wrapper:hover .event-card {
@@ -428,7 +430,7 @@ const scrollToTop = () => {
 
 .event-content { display: flex; flex-direction: column; gap: 4px; }
 .event-top { display: flex; align-items: center; justify-content: space-between; }
-.event-top .year { font-family: 'Noto Serif SC', serif; font-size: 1.1rem; font-weight: 900; color: var(--text-main); }
+.event-top .year { font-family: 'Noto Serif SC', serif; font-size: 1rem; font-weight: 900; color: var(--text-main); }
 .type-badge { font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; }
 .type-badge.birth { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .type-badge.death { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
