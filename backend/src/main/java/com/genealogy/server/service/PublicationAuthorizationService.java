@@ -85,6 +85,12 @@ public class PublicationAuthorizationService {
         if (!publicationId.equals(share.getSharePublicationId())) {
             return false;
         }
-        return permission == AccessPermission.READ_REDACTED || permission == AccessPermission.EXPORT_REDACTED;
+        if (permission == AccessPermission.READ_REDACTED) {
+            return true;
+        }
+        if (permission == AccessPermission.EXPORT_REDACTED) {
+            return share.isAllowExport();
+        }
+        return false;
     }
 }

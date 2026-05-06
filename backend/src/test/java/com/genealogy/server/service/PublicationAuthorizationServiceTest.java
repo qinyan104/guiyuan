@@ -169,25 +169,37 @@ class PublicationAuthorizationServiceTest {
 
     @Test
     void shareCanReadRedacted() {
-        ShareSubject share = new ShareSubject(99L, PUB_ID);
+        ShareSubject share = new ShareSubject(99L, PUB_ID, false, "{}");
         assertThat(service.can(share, PUB_ID, AccessPermission.READ_REDACTED)).isTrue();
     }
 
     @Test
     void shareCannotReadFull() {
-        ShareSubject share = new ShareSubject(99L, PUB_ID);
+        ShareSubject share = new ShareSubject(99L, PUB_ID, false, "{}");
         assertThat(service.can(share, PUB_ID, AccessPermission.READ_FULL)).isFalse();
     }
 
     @Test
     void shareCannotEdit() {
-        ShareSubject share = new ShareSubject(99L, PUB_ID);
+        ShareSubject share = new ShareSubject(99L, PUB_ID, false, "{}");
         assertThat(service.can(share, PUB_ID, AccessPermission.EDIT)).isFalse();
     }
 
     @Test
     void shareCannotAccessDifferentPublication() {
-        ShareSubject share = new ShareSubject(99L, PUB_ID);
+        ShareSubject share = new ShareSubject(99L, PUB_ID, false, "{}");
         assertThat(service.can(share, 999L, AccessPermission.READ_REDACTED)).isFalse();
+    }
+
+    @Test
+    void shareCanExportWhenAllowed() {
+        ShareSubject share = new ShareSubject(99L, PUB_ID, true, "{}");
+        assertThat(service.can(share, PUB_ID, AccessPermission.EXPORT_REDACTED)).isTrue();
+    }
+
+    @Test
+    void shareCannotExportWhenNotAllowed() {
+        ShareSubject share = new ShareSubject(99L, PUB_ID, false, "{}");
+        assertThat(service.can(share, PUB_ID, AccessPermission.EXPORT_REDACTED)).isFalse();
     }
 }
