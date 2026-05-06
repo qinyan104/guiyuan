@@ -110,14 +110,14 @@ onBeforeUnmount(() => {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 260px; /* Reduced width to prevent it from feeling too large */
-  border-radius: 20px;
+  width: 220px; /* Extremely compact */
+  border-radius: 16px; /* Slightly smaller radius for smaller box */
   background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--glass-border-shadow, rgba(0,0,0,0.05));
-  padding: 8px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--glass-border-shadow, rgba(0,0,0,0.05));
+  padding: 6px;
   z-index: 9999;
   transform-origin: top right;
 }
@@ -127,16 +127,16 @@ onBeforeUnmount(() => {
 :global([data-theme="star-sea"]) .theme-dropdown {
   background: rgba(20, 20, 20, 0.85);
   border-color: rgba(255,255,255,0.1);
-  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.4);
 }
 
 .dropdown-header {
-  padding: 10px 12px 6px;
+  padding: 6px 8px 4px;
   margin-bottom: 2px;
 }
 .dropdown-title {
   font-family: monospace;
-  font-size: 0.65rem;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--text-soft);
@@ -145,7 +145,7 @@ onBeforeUnmount(() => {
 
 .theme-list {
   display: grid;
-  gap: 4px;
+  gap: 2px; /* Tighter gap */
 }
 
 .theme-item {
@@ -153,9 +153,9 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
-  gap: 2px 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
+  gap: 2px 8px; /* Tighter grid gaps */
+  padding: 8px; /* Less padding */
+  border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
@@ -175,21 +175,21 @@ onBeforeUnmount(() => {
 .theme-item.is-active {
   background: var(--text-main);
   color: var(--bg-panel, #fff);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 .theme-option__preview {
   grid-row: 1 / 3;
   grid-column: 1;
   display: flex;
-  gap: 3px;
+  gap: 2px; /* Tighter swatches */
   align-items: center;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 .theme-option__swatch {
-  width: 14px;
-  height: 14px;
+  width: 12px; /* Smaller swatches */
+  height: 12px;
   border-radius: 50%;
   border: 1px solid rgba(128,128,128,0.2);
 }
@@ -210,7 +210,7 @@ onBeforeUnmount(() => {
 }
 
 .theme-name {
-  font-size: 0.9rem;
+  font-size: 12px; /* Smaller title */
   font-weight: 700;
   color: var(--text-main);
 }
@@ -219,7 +219,7 @@ onBeforeUnmount(() => {
 }
 
 .theme-name-en {
-  font-size: 0.65rem;
+  font-size: 10px; /* Smaller english name */
   color: var(--text-soft);
   font-style: normal;
   font-family: monospace;
@@ -232,8 +232,8 @@ onBeforeUnmount(() => {
   grid-row: 2;
   grid-column: 2;
   color: var(--text-soft);
-  font-size: 0.7rem;
-  line-height: 1.3;
+  font-size: 10px; /* Smaller description */
+  line-height: 1.2;
 }
 .theme-item.is-active .theme-desc {
   color: rgba(255,255,255,0.8);
@@ -241,9 +241,9 @@ onBeforeUnmount(() => {
 
 .check-icon {
   position: absolute;
-  top: 10px;
-  right: 12px;
-  font-size: 0.9rem;
+  top: 8px;
+  right: 10px;
+  font-size: 11px;
   color: var(--bg-panel, #fff);
   font-weight: 800;
 }
