@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTheme } from '../composables/useTheme'
 import { logout, getUsername, isAdmin } from '../api/auth'
@@ -9,6 +9,7 @@ const router = useRouter()
 const route = useRoute()
 const theme = useTheme()
 const currentUsername = computed(() => getUsername() ?? '')
+const userInitials = computed(() => currentUsername.value ? currentUsername.value.charAt(0).toUpperCase() : '总')
 
 interface NavItem {
   key: string
@@ -40,6 +41,28 @@ function handleLogout() {
 function goToSettings() {
   router.push({ name: 'settings' })
 }
+
+// User Dropdown State
+const userDropdownOpen = ref(false)
+const userDropdownRoot = ref<HTMLElement | null>(null)
+
+function toggleUserDropdown() {
+  userDropdownOpen.value = !userDropdownOpen.value
+}
+
+function onUserClickOutside(e: MouseEvent) {
+  if (userDropdownOpen.value && userDropdownRoot.value && !userDropdownRoot.value.contains(e.target as Node)) {
+    userDropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', onUserClickOutside, { capture: true })
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onUserClickOutside, { capture: true })
+})
 </script>
 
 <template>
@@ -91,24 +114,44 @@ function goToSettings() {
       <header class="top-action-bar">
         <div class="spacer"></div>
         <div class="top-actions-group">
-          <!-- User Profile -->
-          <div class="user-profile-pill">
-            <div class="avatar-ring">
-              <span class="avatar-icon">&#x1F464;</span>
-            </div>
-            <span class="username">{{ currentUsername || '总编' }}</span>
-          </div>
-
+          
+          <!-- Theme Switcher Component -->
+          <ThemeSwitcher :current-theme="theme.currentTheme.value" @change-theme="theme.setTheme" />
+          
           <div class="action-divider"></div>
 
-          <!-- Action Buttons -->
-          <ThemeSwitcher :current-theme="theme.currentTheme.value" @change-theme="theme.setTheme" class="action-btn" />
-          <button class="action-btn" @click="goToSettings" title="系统设置">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          </button>
-          <button class="action-btn logout" @click="handleLogout" title="安全退出">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          </button>
+          <!-- User Profile Dropdown -->
+          <div class="user-dropdown-container" ref="userDropdownRoot">
+            <button class="user-profile-pill" @click="toggleUserDropdown" :class="{'is-open': userDropdownOpen}">
+              <div class="avatar-ring">
+                <span class="avatar-text">{{ userInitials }}</span>
+              </div>
+              <span class="username">{{ currentUsername || '总编' }}</span>
+              <svg class="dropdown-chevron" :class="{'rotated': userDropdownOpen}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+
+            <!-- Dropdown Popover -->
+            <transition name="glass-pop">
+              <div v-if="userDropdownOpen" class="user-popover">
+                <div class="popover-header">
+                  <span class="popover-title">当前账号</span>
+                  <div class="popover-account">{{ currentUsername || '总编' }}</div>
+                </div>
+                <div class="popover-menu">
+                  <button class="menu-item" @click="goToSettings">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    偏好设置
+                  </button>
+                  <div class="menu-divider"></div>
+                  <button class="menu-item danger" @click="handleLogout">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    安全退出
+                  </button>
+                </div>
+              </div>
+            </transition>
+          </div>
+
         </div>
       </header>
 
@@ -347,56 +390,21 @@ function goToSettings() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 40px 12px 40px; /* Top padding pushes everything nicely */
+  padding: 24px 40px 12px 40px;
   flex-shrink: 0;
 }
-
+.spacer {
+  flex: 1;
+}
 .top-actions-group {
   display: flex;
   align-items: center;
   background: var(--glass-pill-bg);
-  padding: 6px 6px 6px 16px;
+  padding: 6px;
   border-radius: 999px;
   border: 1px solid var(--glass-border-highlight);
   box-shadow: 0 4px 12px rgba(0,0,0,0.03);
   gap: 8px;
-}
-
-.user-profile-pill {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-right: 8px;
-}
-
-.avatar-ring {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--glass-border-highlight), transparent);
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatar-icon {
-  width: 100%;
-  height: 100%;
-  background: var(--bg-panel, #fff);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  color: var(--text-main);
-}
-
-.username {
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: var(--text-main);
-  letter-spacing: 0.05em;
 }
 
 .action-divider {
@@ -406,39 +414,178 @@ function goToSettings() {
   margin: 0 4px;
 }
 
-.action-btn {
-  background: none;
+/* ── User Dropdown ── */
+.user-dropdown-container {
+  position: relative;
+}
+
+.user-profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 14px 4px 4px;
   border: none;
-  color: var(--text-soft, #888);
-  width: 32px;
-  height: 32px;
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.user-profile-pill:hover,
+.user-profile-pill.is-open {
+  background: rgba(0,0,0,0.04);
+}
+:global([data-theme="ink-wash"]) .user-profile-pill:hover,
+:global([data-theme="rosewood"]) .user-profile-pill:hover,
+:global([data-theme="star-sea"]) .user-profile-pill:hover,
+:global([data-theme="ink-wash"]) .user-profile-pill.is-open,
+:global([data-theme="rosewood"]) .user-profile-pill.is-open,
+:global([data-theme="star-sea"]) .user-profile-pill.is-open {
+  background: rgba(255,255,255,0.08);
+}
+
+.avatar-ring {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--glass-border-highlight), var(--glass-border-shadow));
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-text {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-panel, #fff);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--text-main);
+}
+:global([data-theme="ink-wash"]) .avatar-text,
+:global([data-theme="rosewood"]) .avatar-text,
+:global([data-theme="star-sea"]) .avatar-text {
+  background: rgba(40,40,40,1);
+  color: #fff;
+}
+
+.username {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  letter-spacing: 0.05em;
+}
+
+.dropdown-chevron {
+  color: var(--text-soft);
+  transition: transform 0.2s ease;
+}
+.dropdown-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.user-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 220px;
+  border-radius: 20px;
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--glass-border-shadow, rgba(0,0,0,0.05));
+  padding: 8px;
+  z-index: 9999;
+  transform-origin: top right;
+}
+
+:global([data-theme="ink-wash"]) .user-popover,
+:global([data-theme="rosewood"]) .user-popover,
+:global([data-theme="star-sea"]) .user-popover {
+  background: rgba(20, 20, 20, 0.85);
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+}
+
+.popover-header {
+  padding: 12px 12px 8px;
+  margin-bottom: 4px;
+}
+.popover-title {
+  font-family: monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--text-soft);
+  text-transform: uppercase;
+}
+.popover-account {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 4px;
+}
+
+.popover-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
-}
-
-.action-btn:hover {
-  background: var(--glass-bg);
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--text-main);
-  transform: scale(1.05);
+}
+.menu-item:hover {
+  background: rgba(0,0,0,0.04);
+}
+.menu-item.danger {
+  color: #ef4444;
+}
+.menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
 }
 
-.action-btn.logout:hover {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
+:global([data-theme="ink-wash"]) .menu-item:hover,
+:global([data-theme="rosewood"]) .menu-item:hover,
+:global([data-theme="star-sea"]) .menu-item:hover {
+  background: rgba(255,255,255,0.06);
+}
+:global([data-theme="ink-wash"]) .menu-item.danger:hover,
+:global([data-theme="rosewood"]) .menu-item.danger:hover,
+:global([data-theme="star-sea"]) .menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.menu-divider {
+  height: 1px;
+  background: var(--glass-border-shadow);
+  margin: 4px;
 }
 
 /* ── Scrollable Area ── */
 .scrollable-container {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 40px 40px 40px; /* Nice breathing room on sides and bottom */
+  padding: 12px 40px 40px 40px;
 }
 
-/* Custom Scrollbar for the container */
 .scrollable-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -453,7 +600,17 @@ function goToSettings() {
   background: var(--text-soft);
 }
 
-/* Router Transitions */
+/* Transitions */
+.glass-pop-enter-active,
+.glass-pop-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-pop-enter-from,
+.glass-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-8px);
+}
+
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -494,7 +651,7 @@ function goToSettings() {
     flex: 1;
   }
   .nav-label {
-    display: none; /* Icon only on mobile */
+    display: none;
   }
   .nav-item {
     padding: 10px;
@@ -507,10 +664,10 @@ function goToSettings() {
     padding: 8px 20px 20px 20px;
   }
   .username {
-    display: none; /* Hide username on small screens */
+    display: none;
   }
   .user-profile-pill {
-    padding-right: 0;
+    padding-right: 8px;
   }
 }
 </style>
