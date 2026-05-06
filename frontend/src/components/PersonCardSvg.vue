@@ -152,7 +152,7 @@ function handleSelect() {
 </script>
 
 <template>
-  <g class="person-card" :class="cardClasses" :transform="`translate(${card.x}, ${card.y})`" @click="handleSelect">
+  <g class="person-card" :class="cardClasses" :data-person-id="person.id" :transform="`translate(${card.x}, ${card.y})`" @click="handleSelect">
     <defs v-if="isSu">
       <clipPath :id="`avatar-clip-su-${person.id}`">
         <circle :cx="card.width / 2" :cy="photoY + photoHeight / 2" :r="photoWidth / 2" />

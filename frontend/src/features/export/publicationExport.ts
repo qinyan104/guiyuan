@@ -271,7 +271,7 @@ function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
 }
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -299,7 +299,7 @@ function insertExportTitle(svg: SVGSVGElement, title: string) {
   svg.insertBefore(titleElement, svg.firstChild)
 }
 
-function getSvgThemeMap(): Record<string, string> {
+export function getSvgThemeMap(): Record<string, string> {
   if (typeof window === 'undefined') return {}
   const root = document.documentElement
   const computed = getComputedStyle(root)

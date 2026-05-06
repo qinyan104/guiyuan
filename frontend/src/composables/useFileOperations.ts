@@ -8,6 +8,7 @@ import {
   createStandalonePublicationSvg,
   serializeSvg as serializeStandaloneSvg,
 } from '../features/export/publicationExport'
+import { generateShareHtml } from '../features/export/shareHtmlExport'
 import {
   createDraftPackage,
   createPortablePublication,
@@ -308,6 +309,39 @@ export function useFileOperations(deps: FileOperationsDeps) {
     canvasRef.value?.resetView?.()
   }
 
+  async function exportShareHtml(password?: string) {
+    const svgElement = canvasRef.value?.getSvgElement?.()
+    if (!svgElement || layout.value.cards.length === 0) {
+      errorMessage.value = '当前画布还没有可导出的内容。'
+      statusMessage.value = ''
+      return
+    }
+
+    statusMessage.value = '正在生成分享网页...'
+    errorMessage.value = ''
+
+    try {
+      const html = await generateShareHtml({
+        publication,
+        settings,
+        layout: layout.value,
+        svgElement,
+        password: password || undefined,
+        onProgress: (stage, percent) => {
+          statusMessage.value = `正在生成分享网页... ${percent}%`
+        },
+      })
+
+      const fileName = `${sanitizeFileName(publication.title)}-分享.html`
+      downloadTextFile(fileName, html, 'text/html;charset=utf-8')
+      statusMessage.value = '分享网页已生成并下载。'
+      errorMessage.value = ''
+    } catch (err) {
+      errorMessage.value = getErrorMessage(err, '生成分享网页失败。')
+      statusMessage.value = ''
+    }
+  }
+
   return {
     draftFileHandle,
     draftFileName,
@@ -321,6 +355,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     downloadSvg,
     printPublication,
     exportJson,
+    exportShareHtml,
     importDraftFromFileEvent,
     handleJsonImport,
   }

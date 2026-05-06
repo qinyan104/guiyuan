@@ -117,10 +117,10 @@ async function handlePreviewPdf(options: any) {
     isExporting.value = true
     // 1. 捕获用于预览显示的低分辨率图 (1x)
     const base64 = await captureCanvasAsBase64('publication-canvas-root', { scale: 1, backgroundColor: '#ffffff' })
-    
+
     // 2. 捕获用于 PDF 嵌入的高保真矢量 SVG 源码
     const svgMarkup = await captureCanvasAsSvgMarkup(
-      'publication-canvas-root', 
+      'publication-canvas-root',
       context.pub.layout.value,
       context.pub.publication.title,
       {
@@ -128,7 +128,7 @@ async function handlePreviewPdf(options: any) {
         embedImages: false,
       }
     )
-    
+
     setExportData(base64, options, svgMarkup)
     showExportDialog.value = false
     router.push(`/publication/${route.params.id}/print-preview`)
@@ -139,6 +139,11 @@ async function handlePreviewPdf(options: any) {
   } finally {
     isExporting.value = false
   }
+}
+
+function handleExportShareHtml(options: { password: string }) {
+  showExportDialog.value = false
+  emit('export-share-html', options.password)
 }
 
 const props = withDefaults(
@@ -169,6 +174,7 @@ const emit = defineEmits<{
   (event: 'download-svg'): void
   (event: 'print-publication'): void
   (event: 'export-json'): void
+  (event: 'export-share-html', password: string): void
   (event: 'change-theme', themeId: ThemeId): void
   (event: 'logout'): void
   (event: 'go-back'): void
@@ -270,12 +276,13 @@ function goToSettings() {
 
     <!-- 导出对话框 -->
     <Teleport to="body">
-      <ExportDialog 
-        v-model="showExportDialog" 
+      <ExportDialog
+        v-model="showExportDialog"
         :is-processing="isExporting"
-        @export-pdf-single="handleExportPdfSingle" 
+        @export-pdf-single="handleExportPdfSingle"
         @export-svg="emit('download-svg'); showExportDialog = false"
-        @preview-pdf="handlePreviewPdf" 
+        @preview-pdf="handlePreviewPdf"
+        @export-share-html="handleExportShareHtml"
       />
     </Teleport>
   </header>
