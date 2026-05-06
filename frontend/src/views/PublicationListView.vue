@@ -11,6 +11,7 @@ import {
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { builtinSamples } from '../data/builtinDynastySamples'
 import type { PublicationInfo } from '../types/family'
+import ShareLinkManager from '../components/ShareLinkManager.vue'
 
 const router = useRouter()
 
@@ -34,6 +35,8 @@ const editForm = ref({
 })
 
 const deleteConfirmId = ref<number | null>(null)
+const showShareDialog = ref(false)
+const shareDialogPubId = ref<number | null>(null)
 
 async function loadPublications() {
   loading.value = true
@@ -102,6 +105,11 @@ async function handleCreate() {
   } catch {
     // error handled silently
   }
+}
+
+function openShareDialog(pubId: number) {
+  shareDialogPubId.value = pubId
+  showShareDialog.value = true
 }
 
 async function handleDelete(id: number) {
@@ -225,6 +233,9 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
                   <button class="icon-btn" title="编辑属性" @click="openEditDialog(pub)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
+                  <button class="icon-btn" title="分享链接" @click="openShareDialog(pub.id)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  </button>
                   <button class="icon-btn danger" title="焚毁档案" @click="deleteConfirmId = pub.id">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
@@ -313,6 +324,21 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
               <button class="glass-pill-btn" @click="showEditDialog = false">放弃修改</button>
               <button class="glass-pill-btn primary" @click="handleEditSave">封装保存</button>
             </footer>
+          </div>
+        </div>
+      </transition>
+
+      <!-- Share Link Manager Sheet -->
+      <transition name="sheet-slide">
+        <div v-if="showShareDialog && shareDialogPubId" class="glass-modal-overlay" @click.self="showShareDialog = false">
+          <div class="glass-sheet">
+            <header class="sheet-header">
+              <h2 class="sheet-title">分享链接管理</h2>
+              <button class="sheet-close" @click="showShareDialog = false">&times;</button>
+            </header>
+            <div class="sheet-body">
+              <ShareLinkManager :publicationId="shareDialogPubId" />
+            </div>
           </div>
         </div>
       </transition>
