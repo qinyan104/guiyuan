@@ -11,9 +11,11 @@ import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
+import com.genealogy.server.service.ShareLinkService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -26,15 +28,18 @@ public class PublicationController {
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
     private final PublicationAuthorizationService authorizationService;
+    private final ShareLinkService shareLinkService;
 
     public PublicationController(PublicationService publicationService, UserRepository userRepository,
                                  AuditLogRepository auditLogRepository, ObjectMapper objectMapper,
-                                 PublicationAuthorizationService authorizationService) {
+                                 PublicationAuthorizationService authorizationService,
+                                 ShareLinkService shareLinkService) {
         this.publicationService = publicationService;
         this.userRepository = userRepository;
         this.auditLogRepository = auditLogRepository;
         this.objectMapper = objectMapper;
         this.authorizationService = authorizationService;
+        this.shareLinkService = shareLinkService;
     }
 
     private Long resolveUserId(HttpServletRequest request) {
@@ -147,6 +152,48 @@ public class PublicationController {
                 })
                 .collect(java.util.stream.Collectors.toList());
         return ApiResponse.success(logs);
+    }
+
+    @SuppressWarnings("unchecked")
+    @PostMapping("/{id}/shares")
+    public ApiResponse<Map<String, Object>> createShareLink(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.MANAGE_SHARES);
+
+        boolean allowExport = Boolean.TRUE.equals(body.get("allowExport"));
+        int expiresInDays = body.containsKey("expiresInDays") ? ((Number) body.get("expiresInDays")).intValue() : 30;
+        Map<String, Object> redactionProfile = (Map<String, Object>) body.get("redactionProfile");
+
+        Map<String, Object> result = shareLinkService.createShareLink(
+                id, subject.getUserId(), allowExport, redactionProfile, Duration.ofDays(expiresInDays));
+        logAction(username, "CREATE_SHARE_LINK", "创建分享链接", id);
+        return ApiResponse.success("分享链接已创建", result);
+    }
+
+    @GetMapping("/{id}/shares")
+    public ApiResponse<List<Map<String, Object>>> listShareLinks(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.MANAGE_SHARES);
+        return ApiResponse.success(shareLinkService.listShareLinks(id));
+    }
+
+    @DeleteMapping("/{id}/shares/{shareId}")
+    public ApiResponse<Void> revokeShareLink(
+            @PathVariable Long id,
+            @PathVariable Long shareId,
+            HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.MANAGE_SHARES);
+        shareLinkService.revokeShareLink(shareId, id);
+        logAction(username, "REVOKE_SHARE_LINK", "撤销分享链接 #" + shareId, id);
+        return ApiResponse.success("分享链接已撤销", null);
     }
 
     private void logAction(String username, String action, String detail, Long targetId) {
