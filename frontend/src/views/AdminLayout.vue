@@ -177,7 +177,8 @@ onBeforeUnmount(() => {
   --glow-opacity: 0.2;
   
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  box-sizing: border-box;
   width: 100vw;
   background: 
     linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 28%),
