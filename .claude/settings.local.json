@@ -11,7 +11,9 @@
       "Bash(npm test *)",
       "Bash(npm run *)",
       "Bash(curl -s http://localhost:5173)",
-      "Bash(curl -s http://localhost:8080/api/publications)"
+      "Bash(curl -s http://localhost:8080/api/publications)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
