@@ -49,7 +49,7 @@ onBeforeUnmount(() => {
     <Transition name="glass-pop">
       <div v-if="open" class="theme-dropdown">
         <div class="dropdown-header">
-          <span class="dropdown-title">视觉主题 // THEME</span>
+          <span class="dropdown-title">视觉主题 / Theme</span>
         </div>
         <div class="theme-list">
           <button
@@ -57,16 +57,25 @@ onBeforeUnmount(() => {
             :key="theme.id"
             class="theme-item"
             :class="{ 'is-active': currentTheme === theme.id }"
+            type="button"
             @click="selectTheme(theme.id)"
           >
             <div class="theme-preview">
-              <span v-for="(color, index) in theme.preview" :key="index" :style="{ background: color }"></span>
+              <span
+                v-for="(color, index) in theme.preview"
+                :key="index"
+                class="theme-swatch"
+                :style="{ background: color }"
+              />
             </div>
             <div class="theme-info">
-              <span class="theme-name">{{ theme.name }}</span>
-              <span class="theme-name-en">{{ theme.nameEn }}</span>
+              <div class="theme-title-group">
+                <strong class="theme-name">{{ theme.name }}</strong>
+                <em class="theme-name-en">{{ theme.nameEn }}</em>
+              </div>
+              <span class="theme-desc">{{ theme.description }}</span>
             </div>
-            <svg v-if="currentTheme === theme.id" class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span v-if="currentTheme === theme.id" class="check-icon">✓</span>
           </button>
         </div>
       </div>
@@ -101,7 +110,7 @@ onBeforeUnmount(() => {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 280px;
+  width: 320px;
   border-radius: 20px;
   background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
   backdrop-filter: blur(24px) saturate(180%);
@@ -109,7 +118,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--glass-border-shadow, rgba(0,0,0,0.05));
   padding: 8px;
-  z-index: 9999; /* Ensure it stays on top */
+  z-index: 9999;
   transform-origin: top right;
 }
 
@@ -127,28 +136,30 @@ onBeforeUnmount(() => {
 }
 .dropdown-title {
   font-family: monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   color: var(--text-soft);
 }
 
 .theme-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 
 .theme-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: 16px;
+  padding: 16px;
   border-radius: 12px;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
+  position: relative;
 }
 .theme-item:hover {
   background: rgba(0,0,0,0.04);
@@ -162,21 +173,23 @@ onBeforeUnmount(() => {
 .theme-item.is-active {
   background: var(--text-main);
   color: var(--bg-panel, #fff);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
 }
 
 .theme-preview {
   display: flex;
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
   border: 1px solid rgba(0,0,0,0.1);
   flex-shrink: 0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 .theme-item.is-active .theme-preview {
-  border-color: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.3);
 }
-.theme-preview span {
+.theme-swatch {
   flex: 1;
   height: 100%;
 }
@@ -185,9 +198,15 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   flex: 1;
+  gap: 4px;
+}
+.theme-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 .theme-name {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-main);
 }
@@ -195,13 +214,29 @@ onBeforeUnmount(() => {
   color: var(--bg-panel, #fff);
 }
 .theme-name-en {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-soft);
-  margin-top: 2px;
+  font-style: normal;
+  font-family: monospace;
+}
+.theme-item.is-active .theme-name-en {
+  color: rgba(255,255,255,0.7);
+}
+
+.theme-desc {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+.theme-item.is-active .theme-desc {
+  color: rgba(255,255,255,0.8);
 }
 
 .check-icon {
+  font-size: 1.2rem;
   color: var(--bg-panel, #fff);
+  font-weight: 800;
+  margin-left: 8px;
 }
 
 /* Animations */
