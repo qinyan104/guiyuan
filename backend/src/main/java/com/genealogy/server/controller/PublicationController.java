@@ -1,12 +1,15 @@
 package com.genealogy.server.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.dto.PublicationSnapshot;
 import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.UserRepository;
+import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
@@ -22,13 +25,16 @@ public class PublicationController {
     private final UserRepository userRepository;
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
+    private final PublicationAuthorizationService authorizationService;
 
     public PublicationController(PublicationService publicationService, UserRepository userRepository,
-                                 AuditLogRepository auditLogRepository, ObjectMapper objectMapper) {
+                                 AuditLogRepository auditLogRepository, ObjectMapper objectMapper,
+                                 PublicationAuthorizationService authorizationService) {
         this.publicationService = publicationService;
         this.userRepository = userRepository;
         this.auditLogRepository = auditLogRepository;
         this.objectMapper = objectMapper;
+        this.authorizationService = authorizationService;
     }
 
     private Long resolveUserId(HttpServletRequest request) {
@@ -36,6 +42,13 @@ public class PublicationController {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
         return user.getId();
+    }
+
+    private UserSubject resolveSubject(HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        return new UserSubject(user.getId(), user.getRole(), username);
     }
 
     @GetMapping
@@ -46,7 +59,8 @@ public class PublicationController {
 
     @GetMapping("/{id}")
     public ApiResponse<Map<String, Object>> get(@PathVariable Long id, HttpServletRequest request) {
-        resolveUserId(request); // 确保已登录
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.READ_FULL);
         try {
             return ApiResponse.success(publicationService.loadPublication(id));
         } catch (Exception e) {
@@ -70,7 +84,8 @@ public class PublicationController {
     @PutMapping("/{id}")
     public ApiResponse<Void> update(@PathVariable Long id, @RequestBody PublicationSnapshot body, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
-        resolveUserId(request);
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.EDIT);
         String settingsJson = serializeSettings(body.getSettings());
         String infoJson = serializeSettings(body.getInfo());
         publicationService.updatePublication(id, body.getTitle(), body.getSubtitle(),
@@ -82,7 +97,8 @@ public class PublicationController {
     @PutMapping("/{id}/metadata")
     public ApiResponse<Void> updateMetadata(@PathVariable Long id, @RequestBody com.genealogy.server.dto.UpdateMetadataRequest body, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
-        resolveUserId(request);
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.EDIT);
         String infoJson = serializeSettings(body.getInfo());
         publicationService.updatePublicationMetadata(id, body.getTitle(), body.getSubtitle(), infoJson);
         logAction(username, "UPDATE_PUB_META", "更新族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」的信息", id);
@@ -96,7 +112,8 @@ public class PublicationController {
             @RequestBody Map<String, Object> body,
             HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
-        resolveUserId(request);
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, pubId, AccessPermission.EDIT);
         publicationService.updatePerson(pubId, personId, body);
         logAction(username, "UPDATE_PERSON", "更新人物「" + body.getOrDefault("name", personId) + "」的详细信息", pubId);
         return ApiResponse.success("个人信息已更新", null);
@@ -105,7 +122,8 @@ public class PublicationController {
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
-        resolveUserId(request);
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.DELETE);
         publicationService.deletePublication(id);
         logAction(username, "DELETE_PUB", "删除族谱 #" + id, id);
         return ApiResponse.success("族谱已删除", null);
@@ -113,7 +131,8 @@ public class PublicationController {
 
     @GetMapping("/{id}/history")
     public ApiResponse<List<Map<String, Object>>> history(@PathVariable Long id, HttpServletRequest request) {
-        resolveUserId(request);
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.HISTORY_READ);
         List<Map<String, Object>> logs = auditLogRepository.findByTargetTypeAndTargetIdOrderByCreatedAtDesc("publication", id)
                 .stream()
                 .limit(50)
