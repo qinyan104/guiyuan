@@ -16,6 +16,7 @@ import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PhotoRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.PublicationRepository;
+import com.genealogy.server.repository.PublicationShareLinkRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -45,12 +46,14 @@ public class PublicationService {
     private final FamilyMemberRepository familyMemberRepository;
     private final PhotoRepository photoRepository;
     private final PublicationAccessRepository publicationAccessRepository;
+    private final PublicationShareLinkRepository shareLinkRepository;
     private final ObjectMapper objectMapper;
 
     public PublicationService(PublicationRepository publicationRepository, PersonRepository personRepository,
                               FamilyRepository familyRepository, FamilyMemberRepository familyMemberRepository,
                               PhotoRepository photoRepository, ObjectMapper objectMapper,
-                              PublicationAccessRepository publicationAccessRepository) {
+                              PublicationAccessRepository publicationAccessRepository,
+                              PublicationShareLinkRepository shareLinkRepository) {
         this.publicationRepository = publicationRepository;
         this.personRepository = personRepository;
         this.familyRepository = familyRepository;
@@ -58,6 +61,7 @@ public class PublicationService {
         this.photoRepository = photoRepository;
         this.objectMapper = objectMapper;
         this.publicationAccessRepository = publicationAccessRepository;
+        this.shareLinkRepository = shareLinkRepository;
     }
 
     public List<Map<String, Object>> listPublications(Long userId) {
@@ -257,6 +261,7 @@ public class PublicationService {
 
     @Transactional
     public void deletePublication(Long publicationId) {
+        shareLinkRepository.deleteByPublicationId(publicationId);
         List<Family> families = familyRepository.findByPublicationId(publicationId);
         for (Family family : families) {
             familyMemberRepository.deleteByFamilyDbId(family.getId());

@@ -11,6 +11,7 @@ import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PhotoRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.PublicationRepository;
+import com.genealogy.server.repository.PublicationShareLinkRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,6 +56,9 @@ class PublicationServiceTest {
     @Mock
     private PublicationAccessRepository publicationAccessRepository;
 
+    @Mock
+    private PublicationShareLinkRepository shareLinkRepository;
+
     private PublicationService publicationService;
 
     @BeforeEach
@@ -66,7 +70,8 @@ class PublicationServiceTest {
                 familyMemberRepository,
                 photoRepository,
                 new ObjectMapper(),
-                publicationAccessRepository
+                publicationAccessRepository,
+                shareLinkRepository
         );
     }
 
