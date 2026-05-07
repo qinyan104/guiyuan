@@ -48,11 +48,11 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 ## 后端架构
 
 - 7 个 Controller，全部 `/api/*` 前缀，依赖注入统一使用构造器注入
-- Spring Security 放行所有请求，认证由 `AuthInterceptor`（Bearer token）处理；`/api/photos/**` 明确排除拦截，保证浏览器原生 `<img>` / SVG `<image>` 可直接加载头像
+- Spring Security 完整 filter chain：`JwtAuthenticationFilter`（JWT 验签 + SecurityContext）、`LoginRateLimitFilter`（IP 限流 10次/5分钟）。`/api/auth/login`、`/api/auth/register`、`/api/auth/refresh`、`/api/photos/**`、`/api/shares/**` 明确放行；其余 `/api/**` 需认证。CSRF 启用（`CookieCsrfTokenRepository`，login/register 豁免）。安全头：X-Frame-Options DENY、X-Content-Type-Options、Referrer-Policy、Permissions-Policy
 - **资源级授权**：`PublicationAuthorizationService` 基于 `publication_access` 表实现对象级权限控制。每个 publication 端点在执行前调用 `require(subject, pubId, permission)`，无 access 记录返回 404（IDOR 防护），权限不足返回 403。`auth` 包提供 `AccessSubject`（`UserSubject`/`ShareSubject`）、`AccessPermission`（9 个动作枚举）。创建族谱时自动写入 OWNER 记录，`AccessControlMigrationRunner` 启动时回填历史数据。
 - 自定义异常体系：`NotFoundException`(404)、`ForbiddenException`(403)、`BadRequestException`(400)，`GlobalExceptionHandler` 统一映射；未捕获 RuntimeException 返回 500
-- Token 存储在内存 `ConcurrentHashMap`，TTL 24 小时，`@Scheduled` 每 10 分钟清理过期 token（`@EnableScheduling` 在主启动类）
-- 数据库：MySQL `genealogy`，ddl-auto=update，连接配置在 `application.properties`。表含 `publications`、`persons`、`families`、`family_members`、`photos`、`users`、`audit_logs`、`publication_access`
+- **JWT + Refresh Token 双 Token 体系**：Access Token (JWT, HS256, 15分钟) 通过 `Authorization: Bearer` 请求头传输；Refresh Token (SecureRandom 32字节, 30天) 存 `refresh_tokens` 表（仅存 SHA-256 哈希），通过 HttpOnly Cookie 传输。Refresh Token 单次使用（用后轮换）。`JwtService` 负责签发/验证，`RefreshTokenService` 负责生命周期管理
+- 数据库：MySQL `genealogy`，ddl-auto=update，连接配置在 `application.properties`。表含 `publications`、`persons`、`families`、`family_members`、`photos`、`users`、`audit_logs`、`publication_access`、`refresh_tokens`
 - **传输限制**：已提升至 **100MB** (Servlet, Tomcat Post/Swallow size) 以支持带 Base64 图片的族谱导入
 - **PDF 生成**：集成 **iText 7** (kernel, io, layout, svg)。
     - `POST /api/publications/{id}/export/pdf`: 生成多页谱书 PDF（含标题、前言、成员志、切片图）。
@@ -60,9 +60,9 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 - **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载
 
 - **照片导入链路**：`PublicationService.savePersonsAndFamilies` 在新建/导入时支持 Base64、`/api/photos/{id}` 克隆、旧版 `/uploads/...` 文件迁移；更新时复用既有照片记录，避免重复插图
-- **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`（`ShareSubject`，第 2 步实现）
+- **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`。管理员端点使用 `@PreAuthorize("hasRole('ADMIN')")` / `hasRole('SUPER_ADMIN')` 声明式权限
 - 文件上传限制：100MB；`FileController` 有扩展名白名单校验（图片/PDF），`PhotoController` 有 MIME 类型校验
-- CORS：`allowedOriginPatterns("http://localhost:5173")`，允许凭据
+- CORS：`allowedOriginPatterns("http://localhost:5173")`，允许凭据，暴露 `Set-Cookie` 响应头
 - 审计日志列表使用 JPA `Pageable` 分页（默认每页 50，上限 200）
 
 ## 关键约定
@@ -77,5 +77,5 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 
 ## 已知限制
 
-- Token 存内存，重启后全部失效；仅适合单实例部署
+- JWT 密钥（`app.jwt.secret`）开发环境使用配置文件默认值，生产环境必须通过 `JWT_SECRET` 环境变量覆盖
 - 草稿关系校验不强制"一人只属于一个家庭"，业务代码默认该前提成立
