@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import {
   createShareLink,
   listShareLinks,
@@ -24,6 +24,7 @@ const expiresInDays = ref(30)
 // Newly created token (shown once)
 const newToken = ref<string | null>(null)
 const newTokenCopied = ref(false)
+const newShareUrl = computed(() => newToken.value ? `${window.location.origin}/share/${newToken.value}` : '')
 
 async function load() {
   loading.value = true
@@ -115,7 +116,7 @@ onMounted(load)
     <div v-if="newToken" class="new-token-card">
       <div class="token-warning">此令牌仅显示一次，请立即复制保存。</div>
       <div class="token-url">
-        <code>{{ `${window.location.origin}/share/${newToken}` }}</code>
+        <code>{{ newShareUrl }}</code>
       </div>
       <div class="token-actions">
         <button class="btn btn--sm btn--primary" @click="copyShareUrl">

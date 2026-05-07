@@ -15,3 +15,4 @@ backend/tmp-run.out
 backend/tmp-run.err
 backend/uploads/
 backend/src/main/resources/application.properties
+.alma-snapshots

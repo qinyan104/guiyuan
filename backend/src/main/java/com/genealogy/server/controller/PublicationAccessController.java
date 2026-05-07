@@ -33,8 +33,10 @@ public class PublicationAccessController {
     }
 
     private UserSubject getSubject(HttpServletRequest request) {
-        User user = (User) request.getAttribute("user");
-        if (user == null) throw new ForbiddenException("未登录");
+        String username = (String) request.getAttribute("currentUsername");
+        if (username == null) throw new ForbiddenException("未登录");
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ForbiddenException("未登录"));
         return new UserSubject(user.getId(), user.getRole(), user.getUsername());
     }
 
