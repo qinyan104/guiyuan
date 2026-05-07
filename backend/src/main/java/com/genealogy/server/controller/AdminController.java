@@ -3,15 +3,15 @@ package com.genealogy.server.controller;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.dto.CreateUserRequest;
 import com.genealogy.server.dto.ResetPasswordRequest;
-import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -31,38 +31,20 @@ public class AdminController {
     @Value("${spring.datasource.url}")
     private String datasourceUrl;
 
-    public AdminController(UserService userService, AuditLogRepository auditLogRepository) {
-        this.userService = userService;
-        this.auditLogRepository = auditLogRepository;
-    }
-
     @Value("${spring.datasource.username}")
     private String datasourceUsername;
 
     @Value("${spring.datasource.password}")
     private String datasourcePassword;
 
-    private String getCurrentUsername(HttpServletRequest request) {
-        return (String) request.getAttribute("currentUsername");
-    }
-
-    private void requireAdmin(HttpServletRequest request) {
-        String username = getCurrentUsername(request);
-        if (!userService.isAdmin(username)) {
-            throw new ForbiddenException("需要管理员权限");
-        }
-    }
-
-    private void requireSuperAdmin(HttpServletRequest request) {
-        String username = getCurrentUsername(request);
-        if (!userService.isSuperAdmin(username)) {
-            throw new ForbiddenException("需要超级管理员权限");
-        }
+    public AdminController(UserService userService, AuditLogRepository auditLogRepository) {
+        this.userService = userService;
+        this.auditLogRepository = auditLogRepository;
     }
 
     @GetMapping("/users")
-    public ApiResponse<List<Map<String, Object>>> listUsers(HttpServletRequest request) {
-        requireAdmin(request);
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<List<Map<String, Object>>> listUsers() {
         List<Map<String, Object>> users = userService.listAllUsers().stream()
                 .map(u -> {
                     Map<String, Object> m = new java.util.LinkedHashMap<>();
@@ -78,8 +60,8 @@ public class AdminController {
     }
 
     @PostMapping("/users")
-    public ApiResponse<User> createUser(@Valid @RequestBody CreateUserRequest body, HttpServletRequest request) {
-        requireAdmin(request);
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<User> createUser(@Valid @RequestBody CreateUserRequest body) {
         String role = body.getRole() != null ? body.getRole() : "USER";
         User user = userService.createUser(body.getUsername(), body.getPassword(), body.getNickname(), role);
         user.setPassword(null);
@@ -87,22 +69,22 @@ public class AdminController {
     }
 
     @DeleteMapping("/users/{id}")
-    public ApiResponse<Void> deleteUser(@PathVariable Long id, HttpServletRequest request) {
-        requireAdmin(request);
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ApiResponse.success("用户已删除", null);
     }
 
     @PutMapping("/users/{id}/password")
-    public ApiResponse<Void> resetPassword(@PathVariable Long id, @Valid @RequestBody ResetPasswordRequest body, HttpServletRequest request) {
-        requireAdmin(request);
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<Void> resetPassword(@PathVariable Long id, @Valid @RequestBody ResetPasswordRequest body) {
         userService.resetPassword(id, body.getNewPassword());
         return ApiResponse.success("密码已重置", null);
     }
 
     @PutMapping("/users/{id}/role")
-    public ApiResponse<Void> changeRole(@PathVariable Long id, @RequestBody Map<String, String> body, HttpServletRequest request) {
-        requireSuperAdmin(request);
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<Void> changeRole(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String newRole = body.get("role");
         if (newRole == null || newRole.isBlank()) {
             return ApiResponse.error(400, "角色不能为空");
@@ -112,9 +94,9 @@ public class AdminController {
     }
 
     @GetMapping("/backup")
-    public void backupDatabase(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        requireSuperAdmin(request);
-        String username = getCurrentUsername(request);
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public void backupDatabase(Authentication authentication, HttpServletResponse response) throws IOException {
+        String username = authentication.getName();
 
         String dbName = extractDbName(datasourceUrl);
         String host = extractHost(datasourceUrl);
@@ -151,7 +133,6 @@ public class AdminController {
         }
         response.getOutputStream().flush();
 
-        // Log the backup action
         AuditLog log = new AuditLog();
         log.setUsername(username);
         log.setAction("BACKUP");
@@ -160,14 +141,12 @@ public class AdminController {
     }
 
     private String extractDbName(String url) {
-        // jdbc:mysql://host:port/dbname?params
         int slash = url.lastIndexOf('/');
         int q = url.indexOf('?', slash);
         return q > 0 ? url.substring(slash + 1, q) : url.substring(slash + 1);
     }
 
     private String extractHost(String url) {
-        // jdbc:mysql://host:port/dbname
         String afterScheme = url.substring(url.indexOf("://") + 3);
         int c = afterScheme.indexOf(':');
         int s = afterScheme.indexOf('/');
