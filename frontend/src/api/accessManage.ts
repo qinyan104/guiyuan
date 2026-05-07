@@ -21,8 +21,8 @@ export interface AccessRecord {
   createdAt: string
 }
 
-export async function searchUsers(query: string): Promise<UserSearchResult[]> {
-  const resp = await http.get<ApiResponse<UserSearchResult[]>>(`/users/search?q=${encodeURIComponent(query)}`)
+export async function searchUsers(query: string, signal?: AbortSignal): Promise<UserSearchResult[]> {
+  const resp = await http.get<ApiResponse<UserSearchResult[]>>(`/users/search?q=${encodeURIComponent(query)}`, { signal })
   return resp.data.data
 }
 

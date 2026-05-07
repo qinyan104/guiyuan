@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import {
   searchUsers,
   listAccessRecords,
@@ -18,6 +18,7 @@ const records = ref<AccessRecord[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+const searchContainer = ref<HTMLElement | null>(null)
 const searchQuery = ref('')
 const searchResults = ref<UserSearchResult[]>([])
 const selectedUserId = ref<number | null>(null)
@@ -25,37 +26,47 @@ const newRole = ref<'EDITOR' | 'VIEWER'>('EDITOR')
 const searching = ref(false)
 const adding = ref(false)
 
-async function load() {
-  loading.value = true
+let searchAbortController: AbortController | null = null
+
+async function load(silent = false) {
+  if (!silent) loading.value = true
   error.value = null
   try {
     records.value = await listAccessRecords(props.publicationId)
   } catch (err: any) {
     error.value = err.message || '加载协作者失败'
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
-let searchTimeout: any = null
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 function handleSearchInput() {
   if (searchTimeout) clearTimeout(searchTimeout)
+  if (searchAbortController) {
+    searchAbortController.abort()
+    searchAbortController = null
+  }
+
   if (!searchQuery.value.trim()) {
     searchResults.value = []
     selectedUserId.value = null
     return
   }
+
   searchTimeout = setTimeout(async () => {
     searching.value = true
+    searchAbortController = new AbortController()
     try {
-      const results = await searchUsers(searchQuery.value)
+      const results = await searchUsers(searchQuery.value, searchAbortController.signal)
       // Filter out existing users
       const existingUserIds = new Set(records.value.map(r => r.userId))
       searchResults.value = results.filter(u => !existingUserIds.has(u.id))
       if (searchResults.value.length > 0 && !searchResults.value.find(u => u.id === selectedUserId.value)) {
         selectedUserId.value = searchResults.value[0].id
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'CanceledError' || err.name === 'AbortError') return
       console.error('Search failed', err)
     } finally {
       searching.value = false
@@ -69,6 +80,12 @@ function selectUser(user: UserSearchResult) {
   searchResults.value = []
 }
 
+const handleClickOutside = (event: MouseEvent) => {
+  if (searchContainer.value && !searchContainer.value.contains(event.target as Node)) {
+    searchResults.value = []
+  }
+}
+
 async function handleAdd() {
   if (!selectedUserId.value) return
   adding.value = true
@@ -78,7 +95,7 @@ async function handleAdd() {
     searchQuery.value = ''
     selectedUserId.value = null
     searchResults.value = []
-    await load()
+    await load(true)
   } catch (err: any) {
     error.value = err.message || '添加失败'
   } finally {
@@ -90,10 +107,10 @@ async function handleRoleChange(userId: number, role: 'EDITOR' | 'VIEWER') {
   error.value = null
   try {
     await updateAccessRole(props.publicationId, userId, role)
-    await load()
+    await load(true)
   } catch (err: any) {
     error.value = err.message || '修改失败'
-    await load() // reset
+    await load(true) // reset
   }
 }
 
@@ -102,13 +119,22 @@ async function handleRemove(userId: number) {
   error.value = null
   try {
     await removeAccessRecord(props.publicationId, userId)
-    await load()
+    await load(true)
   } catch (err: any) {
     error.value = err.message || '移除失败'
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  window.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleClickOutside)
+  if (searchTimeout) clearTimeout(searchTimeout)
+  if (searchAbortController) searchAbortController.abort()
+})
 </script>
 
 <template>
@@ -119,7 +145,7 @@ onMounted(load)
     </div>
 
     <div class="invite-section">
-      <div class="search-container">
+      <div class="search-container" ref="searchContainer">
         <div class="search-box" :class="{ 'is-searching': searching }">
           <input 
             type="text" 
