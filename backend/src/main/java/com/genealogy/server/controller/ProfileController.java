@@ -2,7 +2,7 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -18,16 +18,19 @@ public class ProfileController {
     }
 
     @PutMapping("/password")
-    public ApiResponse<Void> changePassword(@RequestBody Map<String, String> body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
+    public ApiResponse<Void> changePassword(@RequestBody Map<String, String> body, Authentication authentication) {
+        String username = authentication.getName();
         String oldPassword = body.get("oldPassword");
         String newPassword = body.get("newPassword");
 
         if (oldPassword == null || oldPassword.isBlank()) {
             return ApiResponse.error(400, "请输入当前密码");
         }
-        if (newPassword == null || newPassword.length() < 4) {
-            return ApiResponse.error(400, "新密码至少4个字符");
+        if (newPassword == null || newPassword.length() < 8) {
+            return ApiResponse.error(400, "新密码至少8个字符");
+        }
+        if (!newPassword.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$")) {
+            return ApiResponse.error(400, "新密码须包含大小写字母和数字");
         }
 
         userService.changePassword(username, oldPassword, newPassword);
@@ -35,8 +38,8 @@ public class ProfileController {
     }
 
     @PutMapping("/nickname")
-    public ApiResponse<Void> changeNickname(@RequestBody Map<String, String> body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
+    public ApiResponse<Void> changeNickname(@RequestBody Map<String, String> body, Authentication authentication) {
+        String username = authentication.getName();
         String nickname = body.get("nickname");
 
         if (nickname == null || nickname.isBlank()) {
