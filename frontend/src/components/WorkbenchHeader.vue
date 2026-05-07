@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { buildAuthHeaders } from '../api/auth'
 import type { ThemeId } from '../composables/useTheme'
 import ThemeSwitcher from './ThemeSwitcher.vue'
+import CollaboratorManager from './CollaboratorManager.vue'
 import ExportDialog from '../features/export/ExportDialog.vue'
 import { buildSinglePagePdfRequest, captureCanvasAsBase64, captureCanvasAsSvgMarkup } from '../features/export/useCanvasExport'
 import { useExportState } from '../features/export/useExportState'
@@ -20,12 +21,15 @@ interface SampleGroup {
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const showExportDialog = ref(false)
+const showCollabDialog = ref(false)
 const isExporting = ref(false)
 
 const router = useRouter()
 const route = useRoute()
 const context = inject<any>('publication-context')
 const { setExportData } = useExportState()
+
+const isOwner = computed(() => context?.currentAccessRole?.value === 'OWNER')
 
 function triggerFileInput() {
   fileInputRef.value?.click()
@@ -245,6 +249,15 @@ function goToSettings() {
           </div>
         </div>
 
+        <button
+          v-if="isOwner"
+          class="btn btn--secondary"
+          type="button"
+          @click="showCollabDialog = true"
+        >
+          协作者
+        </button>
+
         <span class="topbar__action-divider" aria-hidden="true" />
         <ThemeSwitcher :current-theme="currentTheme" @change-theme="emit('change-theme', $event)" />
         <span class="topbar__action-divider" aria-hidden="true" />
@@ -284,6 +297,30 @@ function goToSettings() {
         @preview-pdf="handlePreviewPdf"
         @export-share-html="handleExportShareHtml"
       />
+    </Teleport>
+
+    <!-- 协作者管理对话框 -->
+    <Teleport defer to="body">
+      <transition name="fade">
+        <div v-if="showCollabDialog" class="glass-modal-overlay" @click.self="showCollabDialog = false">
+          <div class="glass-sheet collab-sheet">
+            <header class="sheet-header">
+              <div class="header-content">
+                <div class="header-icon">👥</div>
+                <div class="header-text">
+                  <h2 class="sheet-title">协作者管理</h2>
+                  <p class="sheet-subtitle">管理谁可以查看或编辑您的族谱</p>
+                </div>
+              </div>
+              <button class="close-btn" @click="showCollabDialog = false">&times;</button>
+            </header>
+
+            <div class="sheet-body">
+              <CollaboratorManager :publication-id="Number(route.params.id)" />
+            </div>
+          </div>
+        </div>
+      </transition>
     </Teleport>
   </header>
 </template>
@@ -657,5 +694,113 @@ function goToSettings() {
 @keyframes rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* ── Glass Modals ── */
+.glass-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 24px;
+}
+:global([data-theme="ink-wash"]) .glass-modal-overlay,
+:global([data-theme="rosewood"]) .glass-modal-overlay,
+:global([data-theme="star-sea"]) .glass-modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.glass-sheet {
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.8));
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.6));
+  border-radius: 28px;
+  width: 100%;
+  max-width: 480px;
+  padding: 32px;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+.glass-sheet.collab-sheet {
+  max-width: 560px;
+}
+:global([data-theme="ink-wash"]) .glass-sheet,
+:global([data-theme="rosewood"]) .glass-sheet,
+:global([data-theme="star-sea"]) .glass-sheet {
+  background: rgba(20, 20, 20, 0.85);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.header-content {
+  display: flex;
+  gap: 16px;
+}
+
+.header-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--accent-amber);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+}
+
+.sheet-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.sheet-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  margin: 4px 0 0;
+}
+
+.close-btn {
+  background: rgba(0,0,0,0.05);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: rgba(0,0,0,0.1);
+  color: var(--text-main);
+}
+
+/* Fade Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
