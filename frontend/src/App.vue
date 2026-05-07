@@ -1,7 +1,23 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useTheme } from './composables/useTheme'
+import http from './api/http'
+import { setAccessToken, setUsername, setRole, clearSession } from './api/tokenStore'
 
 const theme = useTheme()
+
+onMounted(async () => {
+  try {
+    const resp = await http.post<{ data: { token: string; username: string; role?: string } }>('/auth/refresh')
+    const { token, username, role } = resp.data.data
+    setAccessToken(token)
+    setUsername(username)
+    if (role) setRole(role)
+  } catch {
+    // No valid refresh token — user is not logged in. That's fine.
+    clearSession()
+  }
+})
 </script>
 
 <template>
