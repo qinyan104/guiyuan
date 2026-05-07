@@ -1,4 +1,14 @@
 import http from './http'
+import {
+  getAccessToken,
+  setAccessToken,
+  clearAccessToken,
+  getUsername as _getUsername,
+  setUsername as _setUsername,
+  getRole as _getRole,
+  setRole as _setRole,
+  clearSession,
+} from './tokenStore'
 
 export interface LoginRequest {
   username: string
@@ -20,9 +30,10 @@ export interface ApiResponse<T> {
 export async function login(req: LoginRequest): Promise<{ token: string; username: string; role?: string }> {
   const resp = await http.post<ApiResponse<{ token: string; username: string; role?: string }>>('/auth/login', req)
   if (resp.data.code !== 200) throw new Error(resp.data.message)
-  localStorage.setItem('authToken', resp.data.data.token)
-  localStorage.setItem('authUsername', resp.data.data.username)
-  if (resp.data.data.role) localStorage.setItem('authRole', resp.data.data.role)
+  const { token, username, role } = resp.data.data
+  setAccessToken(token)
+  _setUsername(username)
+  if (role) _setRole(role)
   return resp.data.data
 }
 
@@ -32,50 +43,40 @@ export async function register(req: RegisterRequest): Promise<void> {
 }
 
 export async function logout() {
-  const token = getToken()
-  if (token) {
-    try {
-      await http.post('/auth/logout')
-    } catch {
-      // ignore server errors on logout
-    }
+  try {
+    await http.post('/auth/logout')
+  } catch {
+    // ignore server errors on logout
   }
-  localStorage.removeItem('authToken')
-  localStorage.removeItem('authUsername')
-  localStorage.removeItem('authRole')
+  clearSession()
+  clearAccessToken()
 }
 
 export function getToken(): string | null {
-  return localStorage.getItem('authToken')
+  return getAccessToken()
 }
 
 export function buildAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
-  const token = getToken()
-  if (!token) {
-    return headers
-  }
-
-  return {
-    ...headers,
-    Authorization: `Bearer ${token}`,
-  }
+  const token = getAccessToken()
+  if (!token) return headers
+  return { ...headers, Authorization: `Bearer ${token}` }
 }
 
 export function getUsername(): string | null {
-  return localStorage.getItem('authUsername')
+  return _getUsername()
 }
 
 export function getRole(): string | null {
-  return localStorage.getItem('authRole')
+  return _getRole()
 }
 
 export function isAdmin(): boolean {
-  const role = getRole()
+  const role = _getRole()
   return role === 'ADMIN' || role === 'SUPER_ADMIN'
 }
 
 export function isSuperAdmin(): boolean {
-  return getRole() === 'SUPER_ADMIN'
+  return _getRole() === 'SUPER_ADMIN'
 }
 
 // ─── Admin API ────────────────────────────────────────────────
@@ -116,6 +117,7 @@ export async function adminChangeRole(id: number, role: string): Promise<void> {
 export async function adminBackupDatabase(): Promise<void> {
   const resp = await fetch('/api/admin/backup', {
     headers: buildAuthHeaders(),
+    credentials: 'include',
   })
   if (!resp.ok) {
     const text = await resp.text()
