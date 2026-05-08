@@ -58,6 +58,21 @@ function formatDate(dateStr: string) {
 
 const latestPub = computed(() => recentPubs.value.length > 0 ? recentPubs.value[0] : null)
 const otherRecentPubs = computed(() => recentPubs.value.slice(1))
+
+const showCreateDialog = ref(false)
+const newTitle = ref('')
+const newSubtitle = ref('')
+
+async function handleCreateFromDashboard() {
+  const { createPublication, defaultSettings, blankPublication } = await import('../api/publication')
+  const title = newTitle.value.trim() || '未命名族谱'
+  try {
+    const id = await createPublication({ ...blankPublication, title, subtitle: newSubtitle.value.trim() }, defaultSettings, title)
+    router.push({ name: 'workbench', params: { id } })
+  } catch (err: any) {
+    alert('创建失败: ' + (err.message || '未知错误'))
+  }
+}
 </script>
 
 <template>
@@ -72,7 +87,7 @@ const otherRecentPubs = computed(() => recentPubs.value.slice(1))
       <p>正在读取典藏记录...</p>
     </div>
 
-    <div v-else class="bento-grid">
+    <div v-else-if="pubCount > 0" class="bento-grid">
       
       <!-- Box A: Latest Publication (Hero) -->
       <div v-if="latestPub" class="bento-card card-hero" @click="openPublication(latestPub.id)">
@@ -87,15 +102,6 @@ const otherRecentPubs = computed(() => recentPubs.value.slice(1))
               继续编撰 
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
-          </div>
-        </div>
-      </div>
-      <div v-else class="bento-card card-hero empty-hero">
-        <div class="card-glass-panel">
-          <span class="card-eyebrow">起步</span>
-          <h2 class="hero-pub-title">尚未创建族谱</h2>
-          <div class="hero-footer">
-            <button class="ghost-pill" @click="router.push({ name: 'publications' })">立即创建</button>
           </div>
         </div>
       </div>
@@ -160,7 +166,48 @@ const otherRecentPubs = computed(() => recentPubs.value.slice(1))
       </div>
 
     </div>
+
+    <!-- Welcome empty state -->
+    <div v-else class="welcome-stage">
+      <div class="welcome-card">
+        <div class="welcome-glow"></div>
+        <div class="welcome-content">
+          <div class="welcome-seal">序</div>
+          <h2 class="welcome-title">欢迎来到数字档案馆</h2>
+          <p class="welcome-desc">创建您的第一个族谱，开启家族编修之旅。</p>
+          <div class="welcome-actions">
+            <button class="welcome-btn primary" @click="showCreateDialog = true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              创建第一个族谱
+            </button>
+            <button class="welcome-btn secondary" @click="router.push({ name: 'publications' })">
+              浏览示例模板
+            </button>
+            <button class="welcome-btn ghost" onclick="document.getElementById('import-input')?.click()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              导入族谱数据
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- Create dialog -->
+  <Teleport to="body">
+    <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
+      <div class="dialog-panel">
+        <h3>创建新族谱</h3>
+        <p style="color: var(--text-soft); margin: 8px 0 20px;">输入族谱名称后即可开始编撰。</p>
+        <input v-model="newTitle" placeholder="族谱名称..." class="glass-input" @keyup.enter="handleCreateFromDashboard" />
+        <input v-model="newSubtitle" placeholder="副标题（可选）..." class="glass-input" style="margin-top: 12px;" />
+        <div class="dialog-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+          <button class="bento-btn" @click="showCreateDialog = false">取消</button>
+          <button class="bento-btn primary" @click="handleCreateFromDashboard">创建</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -610,5 +657,114 @@ const otherRecentPubs = computed(() => recentPubs.value.slice(1))
   .bento-grid { display: flex; flex-direction: column; }
   .card-hero, .card-history { min-height: 280px; }
   .card-stat, .card-action, .card-users, .card-backup { min-height: 140px; }
+}
+/* ── Welcome Empty State ── */
+.welcome-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.welcome-card {
+  position: relative;
+  max-width: 520px;
+  width: 100%;
+  background: var(--glass-panel-bg, rgba(255,255,255,0.6));
+  backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 32px;
+  border: 1px solid var(--glass-border-highlight);
+  box-shadow: 0 32px 64px rgba(0,0,0,0.08);
+  overflow: hidden;
+  text-align: center;
+}
+.welcome-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, var(--accent-amber) 0%, transparent 40%);
+  opacity: 0.06;
+  pointer-events: none;
+}
+.welcome-content {
+  position: relative;
+  padding: 64px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.welcome-seal {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent-ink), var(--accent-amber));
+  border-radius: 20px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 2rem;
+  color: #fff;
+  margin-bottom: 24px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.12);
+}
+.welcome-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 12px;
+}
+.welcome-desc {
+  color: var(--text-soft);
+  font-size: 1rem;
+  margin: 0 0 32px;
+  line-height: 1.6;
+}
+.welcome-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+.welcome-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+.welcome-btn.primary {
+  background: linear-gradient(135deg, var(--accent-ink), var(--accent-amber));
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.welcome-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+}
+.welcome-btn.secondary {
+  background: var(--text-main);
+  color: var(--bg-panel);
+}
+.welcome-btn.secondary:hover {
+  transform: translateY(-2px);
+}
+.welcome-btn.ghost {
+  background: transparent;
+  color: var(--text-soft);
+  border: 1px solid var(--glass-border-shadow);
+}
+.welcome-btn.ghost:hover {
+  background: rgba(0,0,0,0.03);
+  color: var(--text-main);
 }
 </style>
