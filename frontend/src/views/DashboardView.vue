@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { listPublications, type PublicationSummary } from '../api/publication'
+import { listPublications, createPublication, type PublicationSummary } from '../api/publication'
+import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { adminListUsers, isAdmin, isSuperAdmin, adminBackupDatabase } from '../api/auth'
 
 const router = useRouter()
@@ -64,7 +65,6 @@ const newTitle = ref('')
 const newSubtitle = ref('')
 
 async function handleCreateFromDashboard() {
-  const { createPublication, defaultSettings, blankPublication } = await import('../api/publication')
   const title = newTitle.value.trim() || '未命名族谱'
   try {
     const id = await createPublication({ ...blankPublication, title, subtitle: newSubtitle.value.trim() }, defaultSettings, title)
