@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchApi, type PublicationHit, type PersonHit, type SearchResult } from '../api/search'
 
@@ -34,6 +34,8 @@ function debouncedSearch() {
       results.value = await searchApi(trimmed)
       hasSearched.value = true
       isOpen.value = true
+    } catch {
+      // searchApi handles errors internally and returns empty results
     } finally {
       isLoading.value = false
     }
@@ -85,11 +87,7 @@ function navigateToPerson(hit: PersonHit) {
   })
 }
 
-const hasResults = ref(false)
-
-watch(results, (val) => {
-  hasResults.value = val.publications.length > 0 || val.persons.length > 0
-}, { immediate: true })
+const hasResults = computed(() => results.value.publications.length > 0 || results.value.persons.length > 0)
 
 onMounted(() => {
   document.addEventListener('click', onDocumentClick, { capture: true })

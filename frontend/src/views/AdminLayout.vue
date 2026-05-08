@@ -395,9 +395,6 @@ onBeforeUnmount(() => {
   padding: 24px 40px 12px 40px;
   flex-shrink: 0;
 }
-.spacer {
-  flex: 1;
-}
 .top-actions-group {
   display: flex;
   align-items: center;
