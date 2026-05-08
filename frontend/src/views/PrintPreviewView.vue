@@ -107,6 +107,7 @@
 import { ref, onMounted, inject, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { buildAuthHeaders } from '../api/auth'
+import type { Person } from '../types/family'
 import { useExportState } from '../features/export/useExportState'
 
 const router = useRouter()
@@ -140,14 +141,12 @@ onMounted(() => {
   // Basic auto-generation of bios text if none exists
   if (pub?.publication?.people) {
     let biosString = ''
-    const people = Object.values(pub.publication.people) as any[]
-    people.sort((a, b) => (a.generation || 0) - (b.generation || 0))
-    
+    const people = Object.values(pub.publication.people) as Person[]
+
     people.forEach(p => {
       biosString += `【${p.name}】`
-      if (p.generation) biosString += ` 第 ${p.generation} 世`
-      if (p.birthDate || p.deathDate) biosString += ` (${p.birthDate || '?'} - ${p.deathDate || '今'})`
-      biosString += `\n${p.notes || '暂无传记资料。'}\n\n`
+      if (p.birth || p.death) biosString += ` (${p.birth || '?'} - ${p.death || '今'})`
+      biosString += `\n${p.note || '暂无传记资料。'}\n\n`
     })
     editedBios.value = biosString
   }

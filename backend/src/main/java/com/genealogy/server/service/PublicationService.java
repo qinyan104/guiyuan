@@ -27,10 +27,12 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,13 +67,40 @@ public class PublicationService {
     }
 
     public List<Map<String, Object>> listPublications(Long userId) {
-        return publicationRepository.findByUserIdOrderByUpdatedAtDesc(userId).stream().map(publication -> {
+        List<PublicationAccess> accessRecords = publicationAccessRepository.findByUserId(userId);
+        Set<Long> accessibleIds = accessRecords.stream()
+                .map(PublicationAccess::getPublicationId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        List<Publication> owned = publicationRepository.findByUserIdOrderByUpdatedAtDesc(userId);
+        for (Publication pub : owned) {
+            accessibleIds.add(pub.getId());
+        }
+
+        if (accessibleIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, String> roleMap = new HashMap<>();
+        for (PublicationAccess access : accessRecords) {
+            roleMap.put(access.getPublicationId(), access.getRole());
+        }
+        for (Publication pub : owned) {
+            roleMap.putIfAbsent(pub.getId(), "OWNER");
+        }
+
+        List<Publication> publications = publicationRepository.findAllById(accessibleIds);
+        publications.sort(Comparator.comparing(Publication::getUpdatedAt,
+                Comparator.nullsLast(Comparator.reverseOrder())));
+
+        return publications.stream().map(publication -> {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("id", publication.getId());
             result.put("title", publication.getTitle());
             result.put("subtitle", publication.getSubtitle());
             result.put("createdAt", publication.getCreatedAt());
             result.put("updatedAt", publication.getUpdatedAt());
+            result.put("accessRole", roleMap.getOrDefault(publication.getId(), "OWNER"));
 
             if (publication.getPublicationInfoJson() != null) {
                 try {
@@ -262,6 +291,7 @@ public class PublicationService {
     @Transactional
     public void deletePublication(Long publicationId) {
         shareLinkRepository.deleteByPublicationId(publicationId);
+        publicationAccessRepository.deleteByPublicationId(publicationId);
         List<Family> families = familyRepository.findByPublicationId(publicationId);
         for (Family family : families) {
             familyMemberRepository.deleteByFamilyDbId(family.getId());
@@ -311,33 +341,10 @@ public class PublicationService {
             String avatarUrl = (String) data.get("avatarUrl");
             if (avatarUrl == null || avatarUrl.isEmpty()) {
                 person.setPhotoId(null);
-            } else if (avatarUrl.startsWith("data:image/")) {
-                try {
-                    int commaIndex = avatarUrl.indexOf(",");
-                    if (commaIndex != -1) {
-                        String header = avatarUrl.substring(0, commaIndex);
-                        String mimeType = header.substring(header.indexOf(":") + 1, header.indexOf(";"));
-                        String base64Data = avatarUrl.substring(commaIndex + 1).replaceAll("\\s", "");
-                        byte[] dataBytes = Base64.getMimeDecoder().decode(base64Data);
-
-                        log.info("updatePerson 正在更新 Base64 头像 (personId: {}, mimeType: {}, size: {} bytes)", personId, mimeType, dataBytes.length);
-
-                        Photo photo = new Photo();
-                        photo.setMimeType(mimeType);
-                        photo.setData(dataBytes);
-                        photo.setPersonDbId(person.getId());
-                        photo = photoRepository.save(photo);
-                        person.setPhotoId(photo.getId());
-                    }
-                } catch (Exception e) {
-                    log.error("updatePerson 解析 Base64 头像失败: {}", e.getMessage(), e);
-                }
-            } else if (avatarUrl.startsWith("/api/photos/")) {
-                try {
-                    Long photoId = Long.parseLong(avatarUrl.substring("/api/photos/".length()));
+            } else {
+                Long photoId = handlePersonAvatar(person.getId(), avatarUrl, false);
+                if (photoId != null) {
                     person.setPhotoId(photoId);
-                } catch (Exception e) {
-                    log.warn("updatePerson 解析照片引用失败 (personId: {}, avatarUrl: {}): {}", personId, avatarUrl, e.getMessage());
                 }
             }
         }
@@ -399,60 +406,10 @@ public class PublicationService {
 
                 if (personData.containsKey("avatarUrl")) {
                     String avatarUrl = (String) personData.get("avatarUrl");
-                    if (avatarUrl != null) {
-                        if (avatarUrl.startsWith("data:image/")) {
-                            try {
-                                int commaIndex = avatarUrl.indexOf(",");
-                                if (commaIndex != -1) {
-                                    String header = avatarUrl.substring(0, commaIndex);
-                                    String mimeType = header.substring(header.indexOf(":") + 1, header.indexOf(";"));
-                                    String base64Data = avatarUrl.substring(commaIndex + 1).replaceAll("\\s", "");
-                                    byte[] dataBytes = Base64.getMimeDecoder().decode(base64Data);
-
-                                    log.info("正在导入 Base64 头像 (personId: {}, mimeType: {}, size: {} bytes)", personId, mimeType, dataBytes.length);
-
-                                    Photo photo = new Photo();
-                                    photo.setMimeType(mimeType);
-                                    photo.setData(dataBytes);
-                                    photo.setPersonDbId(entity.getId());
-                                    photo = photoRepository.save(photo);
-
-                                    entity.setPhotoId(photo.getId());
-                                    personRepository.save(entity);
-                                }
-                            } catch (Exception e) {
-                                log.error("解析 Base64 头像失败 (personId: {}): {}", personId, e.getMessage(), e);
-                                throw new RuntimeException("导入图片失败 (" + personId + "): " + e.getMessage());
-                            }
-                        } else if (avatarUrl.startsWith("/api/photos/")) {
-                            try {
-                                Long photoId = Long.parseLong(avatarUrl.substring("/api/photos/".length()));
-                                if (cloneReferencedPhotos) {
-                                    Photo clonedPhoto = clonePhotoForPerson(photoId, entity.getId());
-                                    if (clonedPhoto != null) {
-                                        entity.setPhotoId(clonedPhoto.getId());
-                                        personRepository.save(entity);
-                                    }
-                                } else {
-                                    entity.setPhotoId(photoId);
-                                    personRepository.save(entity);
-
-                                    final Long personDbId = entity.getId();
-                                    photoRepository.findById(photoId).ifPresent(photo -> {
-                                        photo.setPersonDbId(personDbId);
-                                        photoRepository.save(photo);
-                                    });
-                                }
-                            } catch (Exception e) {
-                                log.warn("导入照片引用失败 (personId: {}, avatarUrl: {}): {}", personId, avatarUrl, e.getMessage());
-                            }
-                        } else if (isLegacyUploadAvatarUrl(avatarUrl)) {
-                            Photo importedPhoto = importLegacyUploadPhotoForPerson(avatarUrl, entity.getId());
-                            if (importedPhoto != null) {
-                                entity.setPhotoId(importedPhoto.getId());
-                                personRepository.save(entity);
-                            }
-                        }
+                    Long photoId = handlePersonAvatar(entity.getId(), avatarUrl, cloneReferencedPhotos);
+                    if (photoId != null) {
+                        entity.setPhotoId(photoId);
+                        personRepository.save(entity);
                     }
                 }
 
@@ -607,5 +564,67 @@ public class PublicationService {
             return "image/webp";
         }
         return "image/jpeg";
+    }
+
+    /**
+     * Handle avatar URL for a person: supports Base64 data URLs, /api/photos/ references,
+     * and legacy /uploads/ paths. Returns the photo DB ID, or null if no avatar or on failure.
+     */
+    private Long handlePersonAvatar(Long personDbId, String avatarUrl, boolean cloneReferencedPhotos) {
+        if (avatarUrl == null) {
+            return null;
+        }
+        if (avatarUrl.startsWith("data:image/")) {
+            return handleBase64Avatar(personDbId, avatarUrl);
+        } else if (avatarUrl.startsWith("/api/photos/")) {
+            return handleApiPhotoUrl(personDbId, avatarUrl, cloneReferencedPhotos);
+        } else if (isLegacyUploadAvatarUrl(avatarUrl)) {
+            Photo importedPhoto = importLegacyUploadPhotoForPerson(avatarUrl, personDbId);
+            return importedPhoto != null ? importedPhoto.getId() : null;
+        }
+        return null;
+    }
+
+    private Long handleBase64Avatar(Long personDbId, String base64Url) {
+        try {
+            int commaIndex = base64Url.indexOf(",");
+            if (commaIndex == -1) return null;
+
+            String header = base64Url.substring(0, commaIndex);
+            String mimeType = header.substring(header.indexOf(":") + 1, header.indexOf(";"));
+            String base64Data = base64Url.substring(commaIndex + 1).replaceAll("\\s", "");
+            byte[] dataBytes = Base64.getMimeDecoder().decode(base64Data);
+
+            log.info("正在导入 Base64 头像 (personDbId: {}, mimeType: {}, size: {} bytes)", personDbId, mimeType, dataBytes.length);
+
+            Photo photo = new Photo();
+            photo.setMimeType(mimeType);
+            photo.setData(dataBytes);
+            photo.setPersonDbId(personDbId);
+            photo = photoRepository.save(photo);
+            return photo.getId();
+        } catch (Exception e) {
+            log.error("解析 Base64 头像失败 (personDbId: {}): {}", personDbId, e.getMessage(), e);
+            return null; // skip this avatar, continue processing others
+        }
+    }
+
+    private Long handleApiPhotoUrl(Long personDbId, String photoUrl, boolean cloneReferencedPhotos) {
+        try {
+            Long photoId = Long.parseLong(photoUrl.substring("/api/photos/".length()));
+            if (cloneReferencedPhotos) {
+                Photo clonedPhoto = clonePhotoForPerson(photoId, personDbId);
+                return clonedPhoto != null ? clonedPhoto.getId() : null;
+            } else {
+                photoRepository.findById(photoId).ifPresent(photo -> {
+                    photo.setPersonDbId(personDbId);
+                    photoRepository.save(photo);
+                });
+                return photoId;
+            }
+        } catch (Exception e) {
+            log.warn("导入照片引用失败 (personDbId: {}, photoUrl: {}): {}", personDbId, photoUrl, e.getMessage());
+            return null;
+        }
     }
 }

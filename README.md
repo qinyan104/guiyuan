@@ -30,11 +30,13 @@
 CREATE DATABASE genealogy CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-默认连接 `localhost:3306/genealogy`，用户名 `root`，密码 `123456`。可通过环境变量覆盖：
+默认连接 `localhost:3306/genealogy`，用户名 `root`（均可通过环境变量覆盖）。**必须配置 `DB_PASSWORD` 环境变量**，无默认密码：
 
 ```bash
-export DB_USERNAME=your_user
+export DB_USERNAME=root
 export DB_PASSWORD=your_password
+# 生产环境还需配置：
+export JWT_SECRET=your-256-bit-secret-key
 ```
 
 ### 2. 启动后端

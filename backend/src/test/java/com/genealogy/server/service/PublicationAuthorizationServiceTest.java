@@ -7,6 +7,7 @@ import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.repository.PublicationAccessRepository;
+import com.genealogy.server.repository.PublicationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +26,9 @@ class PublicationAuthorizationServiceTest {
     @Mock
     private PublicationAccessRepository accessRepository;
 
+    @Mock
+    private PublicationRepository publicationRepository;
+
     private PublicationAuthorizationService service;
 
     private static final Long PUB_ID = 1L;
@@ -35,7 +39,7 @@ class PublicationAuthorizationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PublicationAuthorizationService(accessRepository);
+        service = new PublicationAuthorizationService(accessRepository, publicationRepository);
     }
 
     private PublicationAccess makeAccess(Long pubId, Long userId, String role) {
@@ -146,13 +150,13 @@ class PublicationAuthorizationServiceTest {
     }
 
     @Test
-    void requireThrowsNotFoundForOutsider() {
+    void requireThrowsForbiddenForOutsider() {
         when(accessRepository.findByPublicationIdAndUserId(PUB_ID, OUTSIDER_USER_ID))
                 .thenReturn(Optional.empty());
         UserSubject outsider = new UserSubject(OUTSIDER_USER_ID, "USER", "outsider");
         assertThatThrownBy(() -> service.require(outsider, PUB_ID, AccessPermission.READ_FULL))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessage("族谱不存在");
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("没有权限访问该族谱");
     }
 
     @Test

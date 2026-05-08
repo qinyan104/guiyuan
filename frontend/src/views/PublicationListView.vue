@@ -12,6 +12,7 @@ import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { builtinSamples } from '../data/builtinDynastySamples'
 import type { PublicationInfo } from '../types/family'
 import ShareLinkManager from '../components/ShareLinkManager.vue'
+import CollaboratorManager from '../components/CollaboratorManager.vue'
 
 const router = useRouter()
 
@@ -37,6 +38,8 @@ const editForm = ref({
 const deleteConfirmId = ref<number | null>(null)
 const showShareDialog = ref(false)
 const shareDialogPubId = ref<number | null>(null)
+const showCollabDialog = ref(false)
+const collabDialogPubId = ref<number | null>(null)
 
 async function loadPublications() {
   loading.value = true
@@ -110,6 +113,11 @@ async function handleCreate() {
 function openShareDialog(pubId: number) {
   shareDialogPubId.value = pubId
   showShareDialog.value = true
+}
+
+function openCollabDialog(pubId: number) {
+  collabDialogPubId.value = pubId
+  showCollabDialog.value = true
 }
 
 async function handleDelete(id: number) {
@@ -233,6 +241,9 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
                   <button class="icon-btn" title="编辑属性" @click="openEditDialog(pub)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
+                  <button class="icon-btn" title="协作者管理" @click="openCollabDialog(pub.id)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </button>
                   <button class="icon-btn" title="分享链接" @click="openShareDialog(pub.id)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                   </button>
@@ -324,6 +335,21 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
               <button class="glass-pill-btn" @click="showEditDialog = false">放弃修改</button>
               <button class="glass-pill-btn primary" @click="handleEditSave">封装保存</button>
             </footer>
+          </div>
+        </div>
+      </transition>
+
+      <!-- Collaborator Manager Sheet -->
+      <transition name="sheet-slide">
+        <div v-if="showCollabDialog && collabDialogPubId" class="glass-modal-overlay" @click.self="showCollabDialog = false">
+          <div class="glass-sheet large">
+            <header class="sheet-header">
+              <h2 class="sheet-title">协作者管理</h2>
+              <button class="sheet-close" @click="showCollabDialog = false">&times;</button>
+            </header>
+            <div class="sheet-body">
+              <CollaboratorManager :publication-id="collabDialogPubId" />
+            </div>
           </div>
         </div>
       </transition>

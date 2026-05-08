@@ -36,7 +36,7 @@ function triggerFileInput() {
 }
 
 async function handleExportPdfSingle() {
-  console.log('[Export v2] handleExportPdfSingle triggered');
+  // handleExportPdfSingle
   try {
     isExporting.value = true
 
@@ -54,8 +54,6 @@ async function handleExportPdfSingle() {
       subtitle: pub.subtitle || undefined,
       lines: infoLines.length > 0 ? infoLines : undefined,
     }
-    console.log('[Export v2] Header:', JSON.stringify(exportHeader, null, 2));
-
     const svgMarkup = await captureCanvasAsSvgMarkup(
       'publication-canvas-root',
       layout,
@@ -66,11 +64,6 @@ async function handleExportPdfSingle() {
         exportHeader,
       },
     )
-    console.log('[Export v2] SVG length:', svgMarkup.length);
-    const headerSnippet = svgMarkup.match(/data-export-header[\s\S]{0,500}/)?.[0] ?? 'NOT FOUND';
-    console.log('[Export v2] Header in SVG:', headerSnippet);
-    console.log('[Export v2] Contains title text:', svgMarkup.includes(exportHeader.title));
-
     const request = buildSinglePagePdfRequest({
       svgMarkup,
       layout,
@@ -78,8 +71,6 @@ async function handleExportPdfSingle() {
       prefaceText: pub.info?.description ?? '',
       exportHeader,
     })
-    console.log('[Export v2] PDF page:', request.pdfWidth, 'x', request.pdfHeight, 'pt');
-
     // 2. Send to backend
     const response = await fetch(`/api/publications/${route.params.id}/export/pdf/single-page`, {
       method: 'POST',
@@ -93,7 +84,6 @@ async function handleExportPdfSingle() {
       throw new Error(`服务器生成失败 (${response.status}): ${errorText}`);
     }
 
-    console.log('[Export] Backend response OK, downloading blob...');
     // 3. Download
     const blob = await response.blob()
     const url = window.URL.createObjectURL(blob)
@@ -106,7 +96,6 @@ async function handleExportPdfSingle() {
     window.URL.revokeObjectURL(url)
 
     showExportDialog.value = false
-    console.log('[Export] PDF download initiated successfully');
   } catch (error: unknown) {
     console.error('[Export] Fatal error in handleExportPdfSingle:', error);
     const message = error instanceof Error ? error.message : '网络或未知错误'
@@ -116,7 +105,6 @@ async function handleExportPdfSingle() {
   }
 }
 async function handlePreviewPdf(options: any) {
-  console.log('[Export] handlePreviewPdf triggered');
   try {
     isExporting.value = true
     // 1. 捕获用于预览显示的低分辨率图 (1x)

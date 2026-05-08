@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 public class PublicationViewProjector {
 
     private static final Pattern PHOTO_URL_PATTERN = Pattern.compile("/api/photos/(\\d+)");
-    private static final Map<String, Object> DEFAULT_PROFILE = Map.of(
+    static final Map<String, Object> DEFAULT_REDACTION_PROFILE = Map.of(
             "hideLivingSensitive", true,
             "hideContactInfo", true,
             "photoProxy", true,
@@ -89,12 +89,12 @@ public class PublicationViewProjector {
     @SuppressWarnings("unchecked")
     private Map<String, Object> parseProfile(String json) {
         if (json == null || json.isBlank()) {
-            return DEFAULT_PROFILE;
+            return DEFAULT_REDACTION_PROFILE;
         }
         try {
             return objectMapper.readValue(json, new TypeReference<>() {});
         } catch (JsonProcessingException e) {
-            return DEFAULT_PROFILE;
+            return DEFAULT_REDACTION_PROFILE;
         }
     }
 }

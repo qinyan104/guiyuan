@@ -286,29 +286,6 @@ export function useFileOperations(deps: FileOperationsDeps) {
     })
   }
 
-  async function handleJsonImport(event: Event) {
-    const input = event.target as HTMLInputElement
-    const file = input.files?.[0]
-    input.value = ''
-    if (!file) return
-    if (!window.confirm('导入 JSON 会覆盖当前草稿，是否继续？')) return
-
-    const parsed = parseDraftJson(await file.text())
-    if (!parsed.ok) {
-      errorMessage.value = formatValidationIssues(parsed.issues)
-      statusMessage.value = ''
-      return
-    }
-
-    replaceReactiveObject(publication, parsed.value.publication)
-    replaceReactiveObject(settings, parsed.value.settings)
-    selectedPersonId.value = Object.keys(publication.people)[0] ?? ''
-    errorMessage.value = ''
-    statusMessage.value = '已导入 JSON 草稿。'
-    initializeHistoryBaseline()
-    canvasRef.value?.resetView?.()
-  }
-
   async function exportShareHtml(password?: string) {
     const svgElement = canvasRef.value?.getSvgElement?.()
     if (!svgElement || layout.value.cards.length === 0) {
@@ -357,6 +334,5 @@ export function useFileOperations(deps: FileOperationsDeps) {
     exportJson,
     exportShareHtml,
     importDraftFromFileEvent,
-    handleJsonImport,
   }
 }

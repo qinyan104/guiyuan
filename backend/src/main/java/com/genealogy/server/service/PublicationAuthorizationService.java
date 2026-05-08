@@ -5,9 +5,10 @@ import com.genealogy.server.auth.AccessSubject;
 import com.genealogy.server.auth.ShareSubject;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.exception.ForbiddenException;
-import com.genealogy.server.exception.NotFoundException;
+import com.genealogy.server.model.Publication;
 import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.repository.PublicationAccessRepository;
+import com.genealogy.server.repository.PublicationRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -44,10 +45,15 @@ public class PublicationAuthorizationService {
         )
     );
 
-    private final PublicationAccessRepository accessRepository;
+    private static final Set<AccessPermission> OWNER_PERMISSIONS = ROLE_PERMISSIONS.get("OWNER");
 
-    public PublicationAuthorizationService(PublicationAccessRepository accessRepository) {
+    private final PublicationAccessRepository accessRepository;
+    private final PublicationRepository publicationRepository;
+
+    public PublicationAuthorizationService(PublicationAccessRepository accessRepository,
+                                           PublicationRepository publicationRepository) {
         this.accessRepository = accessRepository;
+        this.publicationRepository = publicationRepository;
     }
 
     public boolean can(AccessSubject subject, Long publicationId, AccessPermission permission) {
@@ -65,7 +71,7 @@ public class PublicationAuthorizationService {
             if (subject instanceof UserSubject user) {
                 Optional<PublicationAccess> access = accessRepository.findByPublicationIdAndUserId(publicationId, user.getUserId());
                 if (access.isEmpty()) {
-                    throw new NotFoundException("族谱不存在");
+                    throw new ForbiddenException("没有权限访问该族谱");
                 }
             }
             throw new ForbiddenException("权限不足，无法执行此操作");
@@ -73,12 +79,21 @@ public class PublicationAuthorizationService {
     }
 
     private boolean canUser(UserSubject user, Long publicationId, AccessPermission permission) {
+        // 1. Check publication_access table first
         Optional<PublicationAccess> access = accessRepository.findByPublicationIdAndUserId(publicationId, user.getUserId());
-        if (access.isEmpty()) {
-            return false;
+        if (access.isPresent()) {
+            Set<AccessPermission> allowed = ROLE_PERMISSIONS.get(access.get().getRole());
+            return allowed != null && allowed.contains(permission);
         }
-        Set<AccessPermission> allowed = ROLE_PERMISSIONS.get(access.get().getRole());
-        return allowed != null && allowed.contains(permission);
+
+        // 2. Fallback: check if user is the publication owner (for migration safety)
+        var publicationOwner = publicationRepository.findById(publicationId)
+                .map(Publication::getUserId);
+        if (publicationOwner.isPresent() && publicationOwner.get().equals(user.getUserId())) {
+            return OWNER_PERMISSIONS.contains(permission);
+        }
+
+        return false;
     }
 
     private boolean canShare(ShareSubject share, Long publicationId, AccessPermission permission) {

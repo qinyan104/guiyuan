@@ -7,10 +7,10 @@ import com.genealogy.server.exception.GoneException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.PublicationShareLink;
 import com.genealogy.server.repository.PublicationShareLinkRepository;
+import com.genealogy.server.util.HashUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -26,13 +26,6 @@ public class ShareLinkService {
     private static final int TOKEN_BYTES = 32;
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private static final Map<String, Object> DEFAULT_REDACTION_PROFILE = Map.of(
-            "hideLivingSensitive", true,
-            "hideContactInfo", true,
-            "photoProxy", true,
-            "maxExportDepth", 2
-    );
-
     private final PublicationShareLinkRepository shareLinkRepository;
     private final ObjectMapper objectMapper;
 
@@ -44,6 +37,7 @@ public class ShareLinkService {
     /**
      * Create a share link. Returns the plaintext token (only time it is available).
      */
+    @Transactional
     public Map<String, Object> createShareLink(Long publicationId, Long createdBy,
                                                 boolean allowExport,
                                                 Map<String, Object> redactionProfile,
@@ -54,9 +48,9 @@ public class ShareLinkService {
         }
 
         String plaintextToken = generateToken();
-        String tokenHash = sha256Hex(plaintextToken);
+        String tokenHash = HashUtils.sha256Hex(plaintextToken);
 
-        Map<String, Object> profile = redactionProfile != null ? redactionProfile : DEFAULT_REDACTION_PROFILE;
+        Map<String, Object> profile = redactionProfile != null ? redactionProfile : PublicationViewProjector.DEFAULT_REDACTION_PROFILE;
         String profileJson;
         try {
             profileJson = objectMapper.writeValueAsString(profile);
@@ -85,7 +79,7 @@ public class ShareLinkService {
      * Validate a plaintext token. Returns the share link entity or throws 404/410.
      */
     public PublicationShareLink validateToken(String plaintextToken) {
-        String tokenHash = sha256Hex(plaintextToken);
+        String tokenHash = HashUtils.sha256Hex(plaintextToken);
         PublicationShareLink link = shareLinkRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new NotFoundException("分享链接不存在"));
 
@@ -124,6 +118,7 @@ public class ShareLinkService {
     /**
      * Revoke a share link.
      */
+    @Transactional
     public void revokeShareLink(Long shareLinkId, Long publicationId) {
         PublicationShareLink link = shareLinkRepository.findById(shareLinkId)
                 .orElseThrow(() -> new NotFoundException("分享链接不存在"));
@@ -141,19 +136,4 @@ public class ShareLinkService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
-    private String sha256Hex(String input) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(input.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) sb.append('0');
-                sb.append(hex);
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("SHA-256 计算失败", e);
-        }
-    }
 }

@@ -2,37 +2,47 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.UserSubject;
+import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
+import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.model.User;
+import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/publications/{id}/access")
 public class PublicationAccessController {
 
+    private static final Set<String> ALLOWED_ROLES = Set.of("EDITOR", "VIEWER");
+
     private final PublicationAuthorizationService authorizationService;
     private final PublicationAccessRepository accessRepository;
     private final UserRepository userRepository;
+    private final AuditLogRepository auditLogRepository;
 
     public PublicationAccessController(PublicationAuthorizationService authorizationService,
                                        PublicationAccessRepository accessRepository,
-                                       UserRepository userRepository) {
+                                       UserRepository userRepository,
+                                       AuditLogRepository auditLogRepository) {
         this.authorizationService = authorizationService;
         this.accessRepository = accessRepository;
         this.userRepository = userRepository;
+        this.auditLogRepository = auditLogRepository;
     }
 
-    private UserSubject getSubject(HttpServletRequest request) {
+    private UserSubject resolveSubject(HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         if (username == null) throw new ForbiddenException("未登录");
         User user = userRepository.findByUsername(username)
@@ -41,81 +51,122 @@ public class PublicationAccessController {
     }
 
     @GetMapping
-    public List<Map<String, Object>> listAccess(@PathVariable Long id, HttpServletRequest request) {
-        authorizationService.require(getSubject(request), id, AccessPermission.MANAGE_ACCESS);
-        return accessRepository.findByPublicationId(id).stream().map(access -> {
-            User user = userRepository.findById(access.getUserId()).orElse(null);
-            return Map.of(
-                    "id", (Object) access.getId(),
-                    "userId", access.getUserId(),
-                    "role", access.getRole(),
-                    "createdAt", access.getCreatedAt() != null ? access.getCreatedAt().toString() : "",
-                    "username", user != null ? user.getUsername() : "未知",
-                    "nickname", user != null && user.getNickname() != null ? user.getNickname() : (user != null ? user.getUsername() : "未知")
-            );
-        }).collect(Collectors.toList());
+    public ApiResponse<List<Map<String, Object>>> listAccess(@PathVariable Long id, HttpServletRequest request) {
+        authorizationService.require(resolveSubject(request), id, AccessPermission.MANAGE_ACCESS);
+
+        List<Map<String, Object>> result = accessRepository.findByPublicationId(id).stream().map(access -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", access.getId());
+            m.put("userId", access.getUserId());
+            m.put("role", access.getRole());
+            m.put("createdAt", access.getCreatedAt());
+            userRepository.findById(access.getUserId()).ifPresent(u -> {
+                m.put("username", u.getUsername());
+                m.put("nickname", u.getNickname() != null ? u.getNickname() : u.getUsername());
+            });
+            return m;
+        }).toList();
+
+        return ApiResponse.success(result);
     }
 
     @PostMapping
-    public Map<String, Object> addAccess(@PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
-        authorizationService.require(getSubject(request), id, AccessPermission.MANAGE_ACCESS);
-        
-        Long targetUserId = Long.valueOf(body.get("userId").toString());
-        String role = body.get("role").toString();
-        
-        if ("OWNER".equals(role)) {
-            throw new ForbiddenException("不能添加OWNER角色");
+    public ApiResponse<Map<String, Object>> addAccess(@PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
+
+        Long targetUserId = ((Number) body.get("userId")).longValue();
+        String role = (String) body.get("role");
+
+        if (!ALLOWED_ROLES.contains(role)) {
+            throw new BadRequestException("角色必须是 EDITOR 或 VIEWER");
         }
-        
+
+        if (targetUserId.equals(subject.getUserId())) {
+            throw new BadRequestException("不能将自己添加为协作者");
+        }
+
         if (accessRepository.findByPublicationIdAndUserId(id, targetUserId).isPresent()) {
-            throw new ForbiddenException("该用户已在协作者列表中");
+            throw new BadRequestException("该用户已是协作者");
         }
+
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new BadRequestException("用户不存在"));
 
         PublicationAccess access = new PublicationAccess();
         access.setPublicationId(id);
         access.setUserId(targetUserId);
         access.setRole(role);
-        access.setCreatedBy(getSubject(request).getUserId());
+        access.setCreatedBy(subject.getUserId());
         access = accessRepository.save(access);
 
-        return Map.of("success", true, "id", access.getId());
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", access.getId());
+
+        logAction(username, "ADD_COLLABORATOR",
+                "添加协作者「" + targetUser.getUsername() + "」角色为 " + role, id);
+        return ApiResponse.success("协作者已添加", result);
     }
 
     @PutMapping("/{userId}")
-    public Map<String, Object> updateAccess(@PathVariable Long id, @PathVariable Long userId, @RequestBody Map<String, String> body, HttpServletRequest request) {
-        authorizationService.require(getSubject(request), id, AccessPermission.MANAGE_ACCESS);
-        
+    public ApiResponse<Void> updateAccess(@PathVariable Long id, @PathVariable Long userId,
+                                          @RequestBody Map<String, String> body, HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
+
         String newRole = body.get("role");
-        if ("OWNER".equals(newRole)) {
-            throw new ForbiddenException("不能更改为OWNER角色");
+        if (!ALLOWED_ROLES.contains(newRole)) {
+            throw new BadRequestException("角色必须是 EDITOR 或 VIEWER");
         }
 
         PublicationAccess access = accessRepository.findByPublicationIdAndUserId(id, userId)
                 .orElseThrow(() -> new NotFoundException("找不到该用户的权限记录"));
 
-        if ("OWNER".equals(access.getRole())) {
-            throw new ForbiddenException("不能修改OWNER的权限");
+        if (!ALLOWED_ROLES.contains(access.getRole())) {
+            throw new BadRequestException("不能修改 OWNER 角色");
         }
 
         access.setRole(newRole);
         accessRepository.save(access);
 
-        return Map.of("success", true);
+        logAction(username, "UPDATE_COLLABORATOR_ROLE",
+                "修改协作者角色为 " + newRole, id);
+        return ApiResponse.success("角色已更新", null);
     }
 
     @DeleteMapping("/{userId}")
-    public Map<String, Object> removeAccess(@PathVariable Long id, @PathVariable Long userId, HttpServletRequest request) {
-        authorizationService.require(getSubject(request), id, AccessPermission.MANAGE_ACCESS);
-        
+    public ApiResponse<Void> removeAccess(@PathVariable Long id, @PathVariable Long userId, HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
+
         PublicationAccess access = accessRepository.findByPublicationIdAndUserId(id, userId)
                 .orElseThrow(() -> new NotFoundException("找不到该用户的权限记录"));
 
-        if ("OWNER".equals(access.getRole())) {
-            throw new ForbiddenException("不能移除OWNER");
+        if (!ALLOWED_ROLES.contains(access.getRole())) {
+            throw new BadRequestException("不能移除 OWNER");
         }
+
+        String targetUsername = userRepository.findById(access.getUserId())
+                .map(User::getUsername)
+                .orElse("未知用户");
 
         accessRepository.delete(access);
 
-        return Map.of("success", true);
+        logAction(username, "REMOVE_COLLABORATOR",
+                "移除协作者「" + targetUsername + "」", id);
+        return ApiResponse.success("协作者已移除", null);
+    }
+
+    private void logAction(String username, String action, String detail, Long targetId) {
+        AuditLog log = new AuditLog();
+        log.setUsername(username);
+        log.setAction(action);
+        log.setDetail(detail);
+        log.setTargetType("publication");
+        log.setTargetId(targetId);
+        auditLogRepository.save(log);
     }
 }

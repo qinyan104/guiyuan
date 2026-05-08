@@ -1,10 +1,5 @@
 import http from './http'
-
-export interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
+import type { ApiResponse } from '../types/api'
 
 export async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
   const resp = await http.put<ApiResponse<null>>('/user/password', { oldPassword, newPassword })

@@ -1,10 +1,5 @@
 import http from './http'
-
-export interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
+import type { ApiResponse } from '../types/api'
 
 export interface AuditLogEntry {
   id: number

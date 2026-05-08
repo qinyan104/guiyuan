@@ -1,10 +1,6 @@
 import http from './http'
+import type { ApiResponse } from '../types/api'
 import type { PublicationData, PublicationSettings, PublicationInfo, Person } from '../types/family'
-
-export interface ApiResponse<T> {
-  code: number
-  data: T
-}
 
 export interface PublicationSummary {
   id: number
@@ -12,6 +8,7 @@ export interface PublicationSummary {
   subtitle: string
   description?: string
   info?: PublicationInfo
+  accessRole: string
   createdAt: string
   updatedAt: string
 }
@@ -24,11 +21,13 @@ export interface PublicationLoadResult {
 
 export async function listPublications(): Promise<PublicationSummary[]> {
   const resp = await http.get<ApiResponse<PublicationSummary[]>>('/publications')
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '获取族谱列表失败')
   return resp.data.data
 }
 
 export async function getPublication(id: number): Promise<PublicationLoadResult> {
   const resp = await http.get<ApiResponse<PublicationLoadResult>>(`/publications/${id}`)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '获取族谱失败')
   return resp.data.data
 }
 
@@ -44,6 +43,7 @@ export async function createPublication(
     settings,
     info: publication.info,
   })
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '创建族谱失败')
   return resp.data.data.id
 }
 

@@ -2,13 +2,12 @@ package com.genealogy.server.service;
 
 import com.genealogy.server.model.RefreshToken;
 import com.genealogy.server.repository.RefreshTokenRepository;
+import com.genealogy.server.util.HashUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
@@ -40,7 +39,7 @@ public class RefreshTokenService {
         String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 
         RefreshToken entity = new RefreshToken();
-        entity.setTokenHash(sha256(rawToken));
+        entity.setTokenHash(HashUtils.sha256Hex(rawToken));
         entity.setUserId(userId);
         entity.setExpiresAt(Instant.now().plusMillis(refreshTokenTtl));
         repository.save(entity);
@@ -52,7 +51,7 @@ public class RefreshTokenService {
      * Validate a raw refresh token. Returns the userId if valid, empty otherwise.
      */
     public Optional<Long> validateRefreshToken(String rawToken) {
-        String hash = sha256(rawToken);
+        String hash = HashUtils.sha256Hex(rawToken);
         return repository.findByTokenHashAndRevokedFalse(hash)
                 .filter(rt -> rt.getExpiresAt().isAfter(Instant.now()))
                 .map(RefreshToken::getUserId);
@@ -63,7 +62,7 @@ public class RefreshTokenService {
      */
     @Transactional
     public void revokeRefreshToken(String rawToken) {
-        String hash = sha256(rawToken);
+        String hash = HashUtils.sha256Hex(rawToken);
         repository.findByTokenHashAndRevokedFalse(hash)
                 .ifPresent(rt -> {
                     rt.setRevoked(true);
@@ -83,21 +82,5 @@ public class RefreshTokenService {
     @Transactional
     public void cleanupExpiredTokens() {
         repository.deleteByExpiresAtBefore(Instant.now());
-    }
-
-    private String sha256(String input) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(input.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) sb.append('0');
-                sb.append(hex);
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("SHA-256 failed", e);
-        }
     }
 }

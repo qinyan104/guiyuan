@@ -7,8 +7,10 @@ import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.UserRepository;
+import com.genealogy.server.util.HashUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     public User register(RegisterRequest request) {
         long userCount = userRepository.count();
         if (userCount > 0) {
@@ -50,7 +53,7 @@ public class UserService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             // Legacy SHA-256 fallback + auto-migration
-            if (sha256Hex(request.getPassword()).equals(user.getPassword())) {
+            if (HashUtils.sha256Hex(request.getPassword()).equals(user.getPassword())) {
                 user.setPassword(passwordEncoder.encode(request.getPassword()));
                 userRepository.save(user);
             } else {
@@ -80,6 +83,7 @@ public class UserService {
                 .orElse(false);
     }
 
+    @Transactional
     public User createUser(String username, String password, String nickname, String role) {
         if (userRepository.existsByUsername(username)) {
             throw new BadRequestException("用户名已存在");
@@ -96,6 +100,7 @@ public class UserService {
         return createUser(username, password, nickname, "USER");
     }
 
+    @Transactional
     public void changeUserRole(Long userId, String newRole) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("用户不存在"));
@@ -125,6 +130,7 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void changePassword(String username, String oldPassword, String newPassword) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("用户不存在"));
@@ -167,22 +173,6 @@ public class UserService {
         }
         if (changed) {
             userRepository.saveAll(all);
-        }
-    }
-
-    private String sha256Hex(String input) {
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) sb.append('0');
-                sb.append(hex);
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("SHA-256 failed", e);
         }
     }
 }

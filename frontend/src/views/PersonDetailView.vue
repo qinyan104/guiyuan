@@ -56,13 +56,14 @@ async function handleSave() {
   if (!person.value) return
   isSaving.value = true
   try {
-    // Update reactive state in shared context
+    // Push editForm changes into reactive state (triggers watcher-based auto-save)
     Object.assign(pub.publication.people[props.personId], editForm.value)
-    
-    // Trigger immediate save and mark history
+
+    // Save immediately to server (the watcher debounce also picks this up,
+    // but deduplication in saveToServer prevents double-save issues)
     await saveToServer()
     history.markHistory('修改人物详情')
-    
+
     isEditing.value = false
   } catch (err: any) {
     alert('保存失败: ' + (err.message || '未知错误'))

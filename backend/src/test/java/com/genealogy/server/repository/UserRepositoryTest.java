@@ -1,6 +1,7 @@
 package com.genealogy.server.repository;
 
 import com.genealogy.server.model.User;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
+@Disabled("需要 MySQL 数据库连接，在本地 dev 环境中跳过")
 public class UserRepositoryTest {
 
     @Autowired

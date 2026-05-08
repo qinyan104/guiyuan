@@ -1,4 +1,5 @@
 import http from './http'
+import type { ApiResponse } from '../types/api'
 import {
   getAccessToken,
   setAccessToken,
@@ -19,12 +20,6 @@ export interface RegisterRequest {
   username: string
   password: string
   nickname?: string
-}
-
-export interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
 }
 
 export async function login(req: LoginRequest): Promise<{ token: string; username: string; role?: string }> {
@@ -91,6 +86,7 @@ export interface AdminUser {
 
 export async function adminListUsers(): Promise<AdminUser[]> {
   const resp = await http.get<ApiResponse<AdminUser[]>>('/admin/users')
+  if (resp.data.code !== 200) throw new Error(resp.data.message)
   return resp.data.data
 }
 

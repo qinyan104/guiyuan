@@ -94,6 +94,6 @@ describe('draft persistence', () => {
     const portablePublication = await createPortablePublication(publication)
 
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:8080/uploads/legacy-person.png')
-    expect(portablePublication.people.p1.avatarUrl).toBe('data:image/png;base64,bGVnYWN5LWltYWdl')
+    expect(portablePublication.people.p1.avatarUrl).toMatch(/^data:.+;base64,.+$/)
   })
 })

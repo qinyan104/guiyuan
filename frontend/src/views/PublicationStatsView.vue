@@ -3,6 +3,7 @@ import { computed, onMounted, ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPublicationHistory, type PublicationHistoryEntry } from '../api/publication'
 import type { Person, FamilyUnit, PublicationData } from '../types/family'
+import { parseYear } from '../lib/dateUtils'
 
 const props = defineProps<{ publicationId: number }>()
 const router = useRouter()
@@ -115,7 +116,7 @@ const malePercent = computed(() => totalCount.value ? Math.round(maleCount.value
 const femalePercent = computed(() => totalCount.value ? 100 - malePercent.value : 0)
 
 // ── Surname Statistics (Compound Surname Support) ──
-const compoundSurnames = ['欧阳', '太史', '端木', '上官', '司马', '东方', '独孤', '南宫', '夏侯', '诸葛', '尉迟', '皇甫', '公孙', '慕容', '令狐', '闾丘', '宰父', '谷梁', '轩辕', '申屠', '乐正', '亚里', '司徒', '司空', '段干', '钟离', '闾丘', '可朱', '呼延', '归海', '乐正', '羊舌', '微生', '梁丘', '左丘', '东门', '西门']
+const compoundSurnames = ['欧阳', '太史', '端木', '上官', '司马', '东方', '独孤', '南宫', '夏侯', '诸葛', '尉迟', '皇甫', '公孙', '慕容', '令狐', '闾丘', '宰父', '谷梁', '轩辕', '申屠', '乐正', '亚里', '司徒', '司空', '段干', '钟离', '可朱', '呼延', '归海', '羊舌', '微生', '梁丘', '左丘', '东门', '西门']
 
 const surnameDist = computed(() => {
   const map = new Map<string, number>()
@@ -143,12 +144,6 @@ const surnameDist = computed(() => {
 const maxSurnameCount = computed(() => Math.max(1, ...surnameDist.value.map(d => d[1])))
 
 // ── Lifespan Accuracy ──
-function parseYear(s?: string): number | null {
-  if (!s) return null
-  const m = s.match(/\d{3,4}/)
-  return m ? parseInt(m[0]) : null
-}
-
 const lifespans = computed(() => {
   return people.value
     .filter(p => p.birth && p.death)

@@ -30,10 +30,10 @@ public class ExportController {
     }
 
     @PostMapping("/pdf")
-    public ResponseEntity<byte[]> exportPdf(@PathVariable String id, @RequestBody PdfExportRequest request, HttpServletRequest servletRequest) {
+    public ResponseEntity<byte[]> exportPdf(@PathVariable Long id, @RequestBody PdfExportRequest request, HttpServletRequest servletRequest) {
         UserSubject subject = resolveSubject(servletRequest);
-        authorizationService.require(subject, Long.parseLong(id), AccessPermission.EXPORT_FULL);
-        byte[] pdfBytes = pdfExportService.generateGenealogyBook(id, request, resolveBaseUri(servletRequest));
+        authorizationService.require(subject, id, AccessPermission.EXPORT_FULL);
+        byte[] pdfBytes = pdfExportService.generateGenealogyBook(String.valueOf(id), request, resolveBaseUri(servletRequest));
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
@@ -46,9 +46,9 @@ public class ExportController {
     }
 
     @PostMapping("/pdf/single-page")
-    public ResponseEntity<byte[]> exportSinglePagePdf(@PathVariable String id, @RequestBody PdfExportRequest request, HttpServletRequest servletRequest) {
+    public ResponseEntity<byte[]> exportSinglePagePdf(@PathVariable Long id, @RequestBody PdfExportRequest request, HttpServletRequest servletRequest) {
         UserSubject subject = resolveSubject(servletRequest);
-        authorizationService.require(subject, Long.parseLong(id), AccessPermission.EXPORT_FULL);
+        authorizationService.require(subject, id, AccessPermission.EXPORT_FULL);
         byte[] pdfBytes = pdfExportService.generateSinglePageSvgPdf(request, resolveBaseUri(servletRequest));
         
         HttpHeaders headers = new HttpHeaders();

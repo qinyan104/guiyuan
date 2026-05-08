@@ -15,10 +15,6 @@ frontend/         Vue 3 + Vite 6 + TypeScript
 # 前端开发
 cd frontend && npm run dev          # 启动 Vite 开发服务器 → http://localhost:5173
 
-# 前端测试
-cd frontend && npx vitest run       # 运行全部测试
-cd frontend && npx vitest           # 监听模式
-
 # 前端类型检查
 cd frontend && npx vue-tsc --noEmit
 
@@ -29,10 +25,28 @@ cd frontend && npm run build
 cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 ```
 
+## 测试
+
+```bash
+# 后端全量测试
+cd backend && ./mvnw test
+
+# 后端指定测试类
+cd backend && ./mvnw test -Dtest="JwtServiceTest,ShareLinkServiceTest"
+
+# 前端全量测试
+cd frontend && npx vitest run
+
+# 前端监听模式
+cd frontend && npx vitest
+```
+
+**测试现状：** 后端 88 个测试（含 2 个 `@Disabled` 需 MySQL），前端 61 个测试（含 Vue 组件测试。环境：jsdom + @vue/test-utils）。需 MySQL 的 `@SpringBootTest` 测试在无数据库环境自动跳过。
+
 ## 前端架构
 
-- **路由**：`src/router/index.ts` — 7 条路由，含登录守卫和管理员权限守卫
-- **API 层**：`src/api/` — axios 封装，使用 `VITE_API_BASE_URL` 环境变量及 Vite Proxy (`/api` -> `8080`)
+- **路由**：`src/router/index.ts` — 12 条命名路由，含登录守卫和管理员权限守卫
+- **API 层**：`src/api/` — axios 封装，共享 `ApiResponse<T>` 类型（`types/api.ts`），使用 Vite Proxy (`/api` -> `8080`）
 - **状态管理**：无全局 store，状态分布在 composables 中（usePublicationState、usePanelState 等）
 - **核心管理**：`views/PublicationListView.vue` 负责族谱列表 CRUD、元数据管理及**王朝示例模板**（唐/明）的置顶展示与克隆。
 - **详情编辑**：`views/PersonDetailView.vue` **纪传体个人志**。移除冗余关系，采用 860px 居中单列布局，提供宣纸纹理、八角头像及**原图不裁剪**渲染。
@@ -47,9 +61,9 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 
 ## 后端架构
 
-- 7 个 Controller，全部 `/api/*` 前缀，依赖注入统一使用构造器注入
-- Spring Security 完整 filter chain：`JwtAuthenticationFilter`（JWT 验签 + SecurityContext）、`LoginRateLimitFilter`（IP 限流 10次/5分钟）。`/api/auth/login`、`/api/auth/register`、`/api/auth/refresh`、`/api/photos/**`、`/api/shares/**` 明确放行；其余 `/api/**` 需认证。CSRF 启用（`CookieCsrfTokenRepository`，login/register 豁免）。安全头：X-Frame-Options DENY、X-Content-Type-Options、Referrer-Policy、Permissions-Policy
-- **资源级授权**：`PublicationAuthorizationService` 基于 `publication_access` 表实现对象级权限控制。每个 publication 端点在执行前调用 `require(subject, pubId, permission)`，无 access 记录返回 404（IDOR 防护），权限不足返回 403。`auth` 包提供 `AccessSubject`（`UserSubject`/`ShareSubject`）、`AccessPermission`（9 个动作枚举）。创建族谱时自动写入 OWNER 记录，`AccessControlMigrationRunner` 启动时回填历史数据。
+- 11 个 Controller（含 `SharePublicationController`、`PublicationAccessController`、`UserController`），全部 `/api/*` 前缀，依赖注入统一使用构造器注入
+- Spring Security 完整 filter chain：`JwtAuthenticationFilter`（JWT 验签 + SecurityContext）、`LoginRateLimitFilter`（IP 限流 10次/5分钟）。`/api/auth/login`、`/api/auth/register`、`/api/auth/refresh`、`GET /api/photos/**`、`/api/shares/**` 明确放行；其余 `/api/**` 需认证。CSRF 启用（`CookieCsrfTokenRepository`，login/register 豁免）。安全头：X-Frame-Options DENY、X-Content-Type-Options、Referrer-Policy、Permissions-Policy
+- **资源级授权**：`PublicationAuthorizationService` 基于 `publication_access` 表实现对象级权限控制。每个 publication 端点在执行前调用 `require(subject, pubId, permission)`，无权限均返回 403（IDOR 防护）。`auth` 包提供 `AccessSubject`（`UserSubject`/`ShareSubject`）、`AccessPermission`（9 个动作枚举）。创建族谱时自动写入 OWNER 记录，`AccessControlMigrationRunner` 启动时回填历史数据。
 - 自定义异常体系：`NotFoundException`(404)、`ForbiddenException`(403)、`BadRequestException`(400)，`GlobalExceptionHandler` 统一映射；未捕获 RuntimeException 返回 500
 - **JWT + Refresh Token 双 Token 体系**：Access Token (JWT, HS256, 15分钟) 通过 `Authorization: Bearer` 请求头传输；Refresh Token (SecureRandom 32字节, 30天) 存 `refresh_tokens` 表（仅存 SHA-256 哈希），通过 HttpOnly Cookie 传输。Refresh Token 单次使用（用后轮换）。`JwtService` 负责签发/验证，`RefreshTokenService` 负责生命周期管理
 - 数据库：MySQL `genealogy`，ddl-auto=update，连接配置在 `application.properties`。表含 `publications`、`persons`、`families`、`family_members`、`photos`、`users`、`audit_logs`、`publication_access`、`refresh_tokens`
@@ -62,7 +76,7 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 - **照片导入链路**：`PublicationService.savePersonsAndFamilies` 在新建/导入时支持 Base64、`/api/photos/{id}` 克隆、旧版 `/uploads/...` 文件迁移；更新时复用既有照片记录，避免重复插图
 - **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`。管理员端点使用 `@PreAuthorize("hasRole('ADMIN')")` / `hasRole('SUPER_ADMIN')` 声明式权限
 - 文件上传限制：100MB；`FileController` 有扩展名白名单校验（图片/PDF），`PhotoController` 有 MIME 类型校验
-- CORS：`allowedOriginPatterns("http://localhost:5173")`，允许凭据，暴露 `Set-Cookie` 响应头
+- CORS：由 `app.cors.allowed-origins` 配置（默认 `http://localhost:5173`），允许凭据，暴露 `Set-Cookie` 响应头
 - 审计日志列表使用 JPA `Pageable` 分页（默认每页 50，上限 200）
 
 ## 关键约定
@@ -77,5 +91,5 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 
 ## 已知限制
 
-- JWT 密钥（`app.jwt.secret`）开发环境使用配置文件默认值，生产环境必须通过 `JWT_SECRET` 环境变量覆盖
+- JWT 密钥（`app.jwt.secret`）无默认值，必须通过 `JWT_SECRET` 环境变量配置（开发环境也需要）
 - 草稿关系校验不强制"一人只属于一个家庭"，业务代码默认该前提成立

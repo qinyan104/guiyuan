@@ -6,20 +6,18 @@ import com.genealogy.server.dto.ResetPasswordRequest;
 import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.AuditLogRepository;
+import com.genealogy.server.service.BackupService;
 import com.genealogy.server.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -27,19 +25,13 @@ public class AdminController {
 
     private final UserService userService;
     private final AuditLogRepository auditLogRepository;
+    private final BackupService backupService;
 
-    @Value("${spring.datasource.url}")
-    private String datasourceUrl;
-
-    @Value("${spring.datasource.username}")
-    private String datasourceUsername;
-
-    @Value("${spring.datasource.password}")
-    private String datasourcePassword;
-
-    public AdminController(UserService userService, AuditLogRepository auditLogRepository) {
+    public AdminController(UserService userService, AuditLogRepository auditLogRepository,
+                           BackupService backupService) {
         this.userService = userService;
         this.auditLogRepository = auditLogRepository;
+        this.backupService = backupService;
     }
 
     @GetMapping("/users")
@@ -55,41 +47,65 @@ public class AdminController {
                     m.put("createdAt", u.getCreatedAt());
                     return m;
                 })
-                .collect(Collectors.toList());
+                .toList();
         return ApiResponse.success(users);
     }
 
     @PostMapping("/users")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<User> createUser(@Valid @RequestBody CreateUserRequest body) {
+    public ApiResponse<User> createUser(@Valid @RequestBody CreateUserRequest body, HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
         String role = body.getRole() != null ? body.getRole() : "USER";
         User user = userService.createUser(body.getUsername(), body.getPassword(), body.getNickname(), role);
         user.setPassword(null);
+
+        saveAuditLog(username, "ADMIN_CREATE_USER",
+                "创建用户「" + user.getUsername() + "」角色=" + role,
+                "user", user.getId());
+
         return ApiResponse.success("用户创建成功", user);
     }
 
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<Void> deleteUser(@PathVariable Long id) {
+    public ApiResponse<Void> deleteUser(@PathVariable Long id, HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+
+        User user = userService.findById(id).orElse(null);
+        saveAuditLog(username, "ADMIN_DELETE_USER",
+                "删除用户 #" + id + (user != null ? "「" + user.getUsername() + "」" : ""),
+                "user", id);
+
         userService.deleteUser(id);
         return ApiResponse.success("用户已删除", null);
     }
 
     @PutMapping("/users/{id}/password")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<Void> resetPassword(@PathVariable Long id, @Valid @RequestBody ResetPasswordRequest body) {
+    public ApiResponse<Void> resetPassword(@PathVariable Long id, @Valid @RequestBody ResetPasswordRequest body, HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+
         userService.resetPassword(id, body.getNewPassword());
+        saveAuditLog(username, "ADMIN_RESET_PASSWORD",
+                "重置用户 #" + id + " 的密码",
+                "user", id);
+
         return ApiResponse.success("密码已重置", null);
     }
 
     @PutMapping("/users/{id}/role")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ApiResponse<Void> changeRole(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ApiResponse<Void> changeRole(@PathVariable Long id, @RequestBody Map<String, String> body, HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
         String newRole = body.get("role");
         if (newRole == null || newRole.isBlank()) {
             return ApiResponse.error(400, "角色不能为空");
         }
         userService.changeUserRole(id, newRole);
+        saveAuditLog(username, "ADMIN_CHANGE_ROLE",
+                "修改用户 #" + id + " 角色为 " + newRole,
+                "user", id);
+
         return ApiResponse.success("角色已更新", null);
     }
 
@@ -98,68 +114,33 @@ public class AdminController {
     public void backupDatabase(Authentication authentication, HttpServletResponse response) throws IOException {
         String username = authentication.getName();
 
-        String dbName = extractDbName(datasourceUrl);
-        String host = extractHost(datasourceUrl);
-        int port = extractPort(datasourceUrl);
+        try {
+            BackupService.BackupResult result = backupService.runBackup();
 
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        String filename = "genealogy_backup_" + timestamp + ".sql";
+            response.setContentType("application/octet-stream");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + result.filename() + "\"");
 
-        response.setContentType("application/octet-stream");
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+            try (var in = result.inputStream()) {
+                in.transferTo(response.getOutputStream());
+            }
+            response.getOutputStream().flush();
 
-        ProcessBuilder pb = new ProcessBuilder(
-            "mysqldump",
-            "-h" + host,
-            "-P" + port,
-            "-u" + datasourceUsername,
-            "--default-character-set=utf8mb4",
-            "--single-transaction",
-            "--routines",
-            "--triggers",
-            dbName
-        );
-        pb.environment().put("MYSQL_PWD", datasourcePassword);
-        pb.redirectErrorStream(false);
-
-        Process process = pb.start();
-        int exitCode;
-        try (var in = process.getInputStream()) {
-            in.transferTo(response.getOutputStream());
-            exitCode = process.waitFor();
+            saveAuditLog(username, "BACKUP",
+                    "数据库备份 " + (result.exitCode() == 0 ? "成功" : "失败(exit=" + result.exitCode() + ")"),
+                    null, null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("备份进程被中断", e);
         }
-        response.getOutputStream().flush();
+    }
 
+    private void saveAuditLog(String username, String action, String detail, String targetType, Long targetId) {
         AuditLog log = new AuditLog();
         log.setUsername(username);
-        log.setAction("BACKUP");
-        log.setDetail("数据库备份 " + (exitCode == 0 ? "成功" : "失败(exit=" + exitCode + ")"));
+        log.setAction(action);
+        log.setDetail(detail);
+        log.setTargetType(targetType);
+        log.setTargetId(targetId);
         auditLogRepository.save(log);
-    }
-
-    private String extractDbName(String url) {
-        int slash = url.lastIndexOf('/');
-        int q = url.indexOf('?', slash);
-        return q > 0 ? url.substring(slash + 1, q) : url.substring(slash + 1);
-    }
-
-    private String extractHost(String url) {
-        String afterScheme = url.substring(url.indexOf("://") + 3);
-        int c = afterScheme.indexOf(':');
-        int s = afterScheme.indexOf('/');
-        return c > 0 && c < s ? afterScheme.substring(0, c) : afterScheme.substring(0, s);
-    }
-
-    private int extractPort(String url) {
-        String afterScheme = url.substring(url.indexOf("://") + 3);
-        int c = afterScheme.indexOf(':');
-        int s = afterScheme.indexOf('/');
-        if (c > 0 && c < s) {
-            return Integer.parseInt(afterScheme.substring(c + 1, s));
-        }
-        return 3306;
     }
 }
