@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, inject } from 'vue'
-import { getUsername } from '../api/auth'
+import { getUsername, isSuperAdmin } from '../api/auth'
 import { changePassword, changeNickname, uploadAvatar } from '../api/profile'
+import { downloadBackup } from '../api/admin'
 
 const showOnboarding = inject<() => void>('show-onboarding', () => {})
 
@@ -46,6 +47,21 @@ const passwordLoading = ref(false)
 const nickname = ref('')
 const nicknameMsg = ref('')
 const nicknameLoading = ref(false)
+
+const backupLoading = ref(false)
+const backupError = ref('')
+
+async function handleBackup() {
+  backupError.value = ''
+  backupLoading.value = true
+  try {
+    await downloadBackup()
+  } catch (err: any) {
+    backupError.value = err.message || '备份失败'
+  } finally {
+    backupLoading.value = false
+  }
+}
 
 async function handleChangePassword() {
   passwordMsg.value = ''
@@ -200,6 +216,22 @@ async function handleChangeNickname() {
             <p class="card-subtitle">重新查看入门引导步骤，了解系统基本用法。</p>
           </div>
           <button class="bento-btn primary" @click="showOnboarding">查看引导</button>
+        </div>
+
+        <!-- Data Backup Card (SUPER_ADMIN only) -->
+        <div v-if="isSuperAdmin()" class="bento-card backup-card">
+          <div class="card-header">
+            <h3 class="card-title">数据备份</h3>
+            <p class="card-subtitle">导出数据库完整备份，包含所有族谱、人物和用户数据。</p>
+          </div>
+          <div class="glass-form-row">
+            <button class="bento-btn primary" :disabled="backupLoading" @click="handleBackup">
+              {{ backupLoading ? '备份生成中...' : '创建备份并下载' }}
+            </button>
+          </div>
+          <transition name="fade-slide">
+            <p v-if="backupError" class="feedback-msg error">{{ backupError }}</p>
+          </transition>
         </div>
 
       </div>
