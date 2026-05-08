@@ -1,9 +1,37 @@
 <script setup lang="ts">
 import { ref, computed, inject } from 'vue'
 import { getUsername } from '../api/auth'
-import { changePassword, changeNickname } from '../api/profile'
+import { changePassword, changeNickname, uploadAvatar } from '../api/profile'
 
 const showOnboarding = inject<() => void>('show-onboarding', () => {})
+
+const avatarUrl = ref('')
+const avatarUploading = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+async function handleAvatarUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files?.length) return
+  const file = input.files[0]
+  if (!file.type.startsWith('image/')) {
+    alert('仅支持图片文件')
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    alert('图片大小不能超过 5MB')
+    return
+  }
+  avatarUploading.value = true
+  try {
+    const url = await uploadAvatar(file)
+    avatarUrl.value = url
+  } catch (err: any) {
+    alert('头像上传失败: ' + (err.message || '未知错误'))
+  } finally {
+    avatarUploading.value = false
+    input.value = '' // reset
+  }
+}
 
 const currentUsername = ref(getUsername() ?? '')
 const userInitials = computed(() => currentUsername.value ? currentUsername.value.charAt(0).toUpperCase() : '总')
@@ -78,9 +106,11 @@ async function handleChangeNickname() {
     <div class="bento-grid">
       <!-- Big Profile Identity Card -->
       <div class="bento-card profile-card">
-        <div class="avatar-glow-ring">
-          <div class="large-avatar">{{ userInitials }}</div>
+        <div class="avatar-glow-ring" @click="fileInputRef?.click()" style="cursor: pointer;">
+          <img v-if="avatarUrl" :src="avatarUrl" class="large-avatar-img" />
+          <div v-else class="large-avatar">{{ userInitials }}</div>
         </div>
+        <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleAvatarUpload" />
         <div class="profile-info">
           <span class="profile-status">已验证通行证</span>
           <h2 class="profile-name">{{ currentUsername }}</h2>
@@ -490,6 +520,13 @@ async function handleChangeNickname() {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-5px);
+}
+
+.large-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 @media (max-width: 960px) {
