@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { getUsername } from '../api/auth'
 import { changePassword, changeNickname } from '../api/profile'
+
+const showOnboarding = inject<() => void>('show-onboarding', () => {})
 
 const currentUsername = ref(getUsername() ?? '')
 const userInitials = computed(() => currentUsername.value ? currentUsername.value.charAt(0).toUpperCase() : '总')
@@ -159,6 +161,15 @@ async function handleChangeNickname() {
               </div>
             </transition>
           </div>
+        </div>
+
+        <!-- Onboarding Card -->
+        <div class="bento-card guide-card">
+          <div class="card-header">
+            <h3 class="card-title">新手引导</h3>
+            <p class="card-subtitle">重新查看入门引导步骤，了解系统基本用法。</p>
+          </div>
+          <button class="bento-btn primary" @click="showOnboarding">查看引导</button>
         </div>
 
       </div>

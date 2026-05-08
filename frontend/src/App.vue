@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted, provide } from 'vue'
 import { useTheme } from './composables/useTheme'
+import OnboardingGuide from './components/OnboardingGuide.vue'
 import http from './api/http'
 import { setAccessToken, setUsername, setRole, clearSession } from './api/tokenStore'
 
 const theme = useTheme()
+
+const onboardingRef = ref<InstanceType<typeof OnboardingGuide> | null>(null)
+provide('show-onboarding', () => onboardingRef.value?.show())
 
 onMounted(async () => {
   try {
@@ -22,6 +26,8 @@ onMounted(async () => {
 
 <template>
   <router-view />
+
+  <OnboardingGuide ref="onboardingRef" />
 
   <!-- Material Textures -->
   <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
