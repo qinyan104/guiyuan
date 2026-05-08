@@ -41,7 +41,7 @@ cd frontend && npx vitest run
 cd frontend && npx vitest
 ```
 
-**测试现状：** 后端 88 个测试（含 2 个 `@Disabled` 需 MySQL），前端 61 个测试（含 Vue 组件测试。环境：jsdom + @vue/test-utils）。需 MySQL 的 `@SpringBootTest` 测试在无数据库环境自动跳过。
+**测试现状：** 后端 93 个测试（含 2 个 `@Disabled` 需 MySQL），前端 62 个测试（含 Vue 组件测试。环境：jsdom + @vue/test-utils）。需 MySQL 的 `@SpringBootTest` 测试在无数据库环境自动跳过。
 
 ## 前端架构
 
@@ -51,7 +51,9 @@ cd frontend && npx vitest
 - **核心管理**：`views/PublicationListView.vue` 负责族谱列表 CRUD、元数据管理及**王朝示例模板**（唐/明）的置顶展示与克隆。
 - **详情编辑**：`views/PersonDetailView.vue` **纪传体个人志**。移除冗余关系，采用 860px 居中单列布局，提供宣纸纹理、八角头像及**原图不裁剪**渲染。
 - **数据分析**：`views/PublicationStatsView.vue` (琥珀看板) 与 `TimelineView.vue` (双轨时间线) 提供深度家族洞察，支持月级精确排序。
+- **空状态引导**：Dashboard、族谱列表、时间线、统计视图在无数据时展示引导卡片/提示文字和操作入口，降低首次使用门槛。
 - **核心编辑器**：`views/WorkbenchView.vue` 专注排版。支持跨页面视角记忆，取消点击自动跳屏。
+- **全局搜索**：`components/GlobalSearch.vue` 集成在 `AdminLayout` 顶栏，300ms debounce，搜索人物/族谱标题，结果分组展示，点击跳转对应视图。后端 `search/` 包（`SearchController` + `SearchService` + `SearchResult` DTO）提供 `GET /api/search?q=` 端点。**设计要点原则**：前缀匹配优先于子串匹配。
 - **画布渲染**：`components/PublicationCanvas.vue` — **GPU 加速核心**。采用 `translate3d` 硬件加速，并在拖拽时动态停用阴影滤镜（Filter Culling）。图片强制采用 `meet` 比例展示。
 - **数据上下文**：`views/PublicationLayout.vue` **单源事实提供者**。通过 Provide/Inject 共享内存数据与撤销历史，支持多视图秒开。
 - **联邦协作**：支持“分支挂载点”系统。`PersonCardSvg.vue` 识别 `isMountPoint` 渲染门户节点（蓝色虚线/图标）；`BranchMountManager.vue`（集成在 `PersonEditorDrawer.vue`）负责管理挂载与触发合并；`PublicationTreeLoader` 实现最高 3 层的递归分支加载与视图缝合。
@@ -62,7 +64,7 @@ cd frontend && npx vitest
 
 ## 后端架构
 
-- 11 个 Controller（含 `SharePublicationController`、`PublicationAccessController`、`UserController`），全部 `/api/*` 前缀，依赖注入统一使用构造器注入
+- 12 个 Controller（含 `SearchController`、`SharePublicationController`、`PublicationAccessController`、`UserController`），全部 `/api/*` 前缀，依赖注入统一使用构造器注入
 - Spring Security 完整 filter chain：`JwtAuthenticationFilter`（JWT 验签 + SecurityContext）、`LoginRateLimitFilter`（IP 限流 10次/5分钟）。`/api/auth/login`、`/api/auth/register`、`/api/auth/refresh`、`GET /api/photos/**`、`/api/shares/**` 明确放行；其余 `/api/**` 需认证。CSRF 启用（`CookieCsrfTokenRepository`，login/register 豁免）。安全头：X-Frame-Options DENY、X-Content-Type-Options、Referrer-Policy、Permissions-Policy
 - **资源级授权**：`PublicationAuthorizationService` 基于 `publication_access` 表实现对象级权限控制。每个 publication 端点在执行前调用 `require(subject, pubId, permission)`，无权限均返回 403（IDOR 防护）。`auth` 包提供 `AccessSubject`（`UserSubject`/`ShareSubject`）、`AccessPermission`（9 个动作枚举）。创建族谱时自动写入 OWNER 记录，`AccessControlMigrationRunner` 启动时回填历史数据。
 - 自定义异常体系：`NotFoundException`(404)、`ForbiddenException`(403)、`BadRequestException`(400)，`GlobalExceptionHandler` 统一映射；未捕获 RuntimeException 返回 500
