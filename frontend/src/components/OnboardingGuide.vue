@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 
-const router = useRouter()
 const visible = ref(false)
 const currentStep = ref(0)
 
@@ -39,9 +37,9 @@ function getIcon(type: string) {
 }
 
 onMounted(() => {
-  if (!localStorage.getItem(ONBOARDING_KEY)) {
-    visible.value = true
-  }
+  let shown = false
+  try { shown = !!localStorage.getItem(ONBOARDING_KEY) } catch {}
+  if (!shown) visible.value = true
 })
 
 function next() {
@@ -56,10 +54,7 @@ function prev() {
   }
 }
 
-function goTo(routeName: string | null) {
-  if (routeName) {
-    router.push({ name: routeName, params: routeName === 'workbench' ? { id: '__latest__' } : undefined })
-  }
+function goTo(_routeName: string | null) {
   dismiss()
 }
 
