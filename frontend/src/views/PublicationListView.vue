@@ -185,88 +185,95 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
       <p>正在开启藏经阁...</p>
     </div>
 
-    <div v-else class="gallery-content">
-      
-      <!-- Template Section (Built-in) -->
-      <section class="gallery-section">
-        <div class="section-eyebrow">
-          <span class="dot-ember"></span> 经典王朝世系模板
+    <div v-else>
+      <div v-if="publications.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         </div>
-        <div class="template-grid">
-          <div v-for="sample in builtinSamples" :key="sample.id" class="glass-card template-card" @click="handleCreateFromTemplate(sample)">
-            <div class="template-bg"></div>
-            <div class="template-content">
-              <h3 class="template-title">{{ sample.publication.title }}</h3>
-              <p class="template-subtitle">{{ sample.publication.subtitle }}</p>
-            </div>
-            <div class="template-action">
-              以该模版建立 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <h3 class="empty-title">还没有族谱</h3>
+        <p class="empty-desc">快来创建第一个族谱，或从示例模板开始。</p>
+        <div class="empty-actions">
+          <button class="bento-btn primary" @click="showCreateDialog = true">创建族谱</button>
+        </div>
+      </div>
+      <div v-else class="publication-grid">
+        <!-- Template Section (Built-in) -->
+        <section class="gallery-section">
+          <div class="section-eyebrow">
+            <span class="dot-ember"></span> 经典王朝世系模板
+          </div>
+          <div class="template-grid">
+            <div v-for="sample in builtinSamples" :key="sample.id" class="glass-card template-card" @click="handleCreateFromTemplate(sample)">
+              <div class="template-bg"></div>
+              <div class="template-content">
+                <h3 class="template-title">{{ sample.publication.title }}</h3>
+                <p class="template-subtitle">{{ sample.publication.subtitle }}</p>
+              </div>
+              <div class="template-action">
+                以该模版建立 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Archive Section -->
-      <section class="gallery-section">
-        <div class="section-eyebrow">
-          <span class="dot-ink"></span> 私人研究档案
-        </div>
+        <!-- Archive Section -->
+        <section class="gallery-section">
+          <div class="section-eyebrow">
+            <span class="dot-ink"></span> 私人研究档案
+          </div>
 
-        <div v-if="publications.length === 0" class="empty-gallery glass-card">
-          陈列柜空空如也，请点击右上角「新建宗谱」开始。
-        </div>
+          <div class="archive-grid">
+            <article v-for="pub in publications" :key="pub.id" class="glass-card archive-card" @click="openPublication(pub.id)">
+              <!-- Visual Left Pane -->
+              <div class="archive-visual">
+                <div class="visual-meta">NO. {{ pub.id.toString().padStart(3, '0') }}</div>
+                <div class="visual-seal">{{ pub.title?.substring(0, 1) || '典' }}</div>
+              </div>
 
-        <div v-else class="archive-grid">
-          <article v-for="pub in publications" :key="pub.id" class="glass-card archive-card" @click="openPublication(pub.id)">
-            <!-- Visual Left Pane -->
-            <div class="archive-visual">
-              <div class="visual-meta">NO. {{ pub.id.toString().padStart(3, '0') }}</div>
-              <div class="visual-seal">{{ pub.title?.substring(0, 1) || '典' }}</div>
-            </div>
-            
-            <!-- Content Right Pane -->
-            <div class="archive-details">
-              <div class="archive-main">
-                <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
-                <p class="archive-subtitle">{{ pub.subtitle || '暂无副标题' }}</p>
-                <div class="archive-tags">
-                  <span v-if="pub.info?.hallName" class="meta-tag">{{ pub.info.hallName }}</span>
-                  <span v-if="pub.info?.ancestralOrigin" class="meta-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> {{ pub.info.ancestralOrigin }}</span>
+              <!-- Content Right Pane -->
+              <div class="archive-details">
+                <div class="archive-main">
+                  <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
+                  <p class="archive-subtitle">{{ pub.subtitle || '暂无副标题' }}</p>
+                  <div class="archive-tags">
+                    <span v-if="pub.info?.hallName" class="meta-tag">{{ pub.info.hallName }}</span>
+                    <span v-if="pub.info?.ancestralOrigin" class="meta-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> {{ pub.info.ancestralOrigin }}</span>
+                  </div>
+                </div>
+
+                <div class="archive-footer">
+                  <span class="archive-date">{{ formatDate(pub.updatedAt) }} 更新</span>
+                  <div class="archive-actions" @click.stop>
+                    <button class="icon-btn" title="编辑属性" @click="openEditDialog(pub)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="icon-btn" title="协作者管理" @click="openCollabDialog(pub.id)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </button>
+                    <button class="icon-btn" title="分享链接" @click="openShareDialog(pub.id)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    </button>
+                    <button class="icon-btn danger" title="焚毁档案" @click="deleteConfirmId = pub.id">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                  </div>
                 </div>
               </div>
-              
-              <div class="archive-footer">
-                <span class="archive-date">{{ formatDate(pub.updatedAt) }} 更新</span>
-                <div class="archive-actions" @click.stop>
-                  <button class="icon-btn" title="编辑属性" @click="openEditDialog(pub)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                  <button class="icon-btn" title="协作者管理" @click="openCollabDialog(pub.id)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  </button>
-                  <button class="icon-btn" title="分享链接" @click="openShareDialog(pub.id)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                  </button>
-                  <button class="icon-btn danger" title="焚毁档案" @click="deleteConfirmId = pub.id">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
 
-            <!-- Delete Confirm Overlay -->
-            <transition name="fade">
-              <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
-                <p>焚毁此宗谱将彻底抹除数据，是否确认？</p>
-                <div class="delete-btns">
-                  <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认焚毁</button>
-                  <button class="glass-pill-btn" @click="deleteConfirmId = null">暂且保留</button>
+              <!-- Delete Confirm Overlay -->
+              <transition name="fade">
+                <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
+                  <p>焚毁此宗谱将彻底抹除数据，是否确认？</p>
+                  <div class="delete-btns">
+                    <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认焚毁</button>
+                    <button class="glass-pill-btn" @click="deleteConfirmId = null">暂且保留</button>
+                  </div>
                 </div>
-              </div>
-            </transition>
-          </article>
-        </div>
-      </section>
+              </transition>
+            </article>
+          </div>
+        </section>
+      </div>
     </div>
 
     <!-- Modals: Glass Sheets -->
@@ -737,6 +744,54 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
   font-size: 0.9rem;
   border: 1px dashed var(--border-color, rgba(0,0,0,0.2));
   border-radius: 20px;
+}
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+}
+.empty-icon {
+  margin-bottom: 20px;
+}
+.empty-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 8px;
+}
+.empty-desc {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  margin: 0 0 24px;
+}
+
+/* ── Bento Button ── */
+.bento-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+.bento-btn.primary {
+  background: var(--text-main);
+  color: var(--bg-panel, #fff);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.bento-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
 
 /* ── Glass Modals ── */

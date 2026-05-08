@@ -143,11 +143,16 @@ const scrollToTop = () => {
         </div>
       </div>
 
-      <div v-if="events.length === 0" class="empty-hint">
-        暂无生卒年数据，无法生成历史长卷
+      <div v-if="events.length === 0" class="timeline-empty">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3 class="empty-title">时间线尚未生成</h3>
+        <p class="empty-desc">添加人物并填写生卒年份后，时间线将自动生成。</p>
+        <button class="bento-btn primary" @click="router.push({ name: 'workbench', params: { id: publicationId } })">前往画布添加人物</button>
       </div>
-
-      <div v-else class="scroll-timeline">
+      <div v-else>
+        <div class="scroll-timeline">
         <!-- Spine -->
         <div class="timeline-spine"></div>
 
@@ -188,6 +193,7 @@ const scrollToTop = () => {
           </div>
         </div>
       </div>
+    </div>
     </main>
 
     <!-- Floating Back to Top -->
@@ -438,6 +444,52 @@ const scrollToTop = () => {
   border-radius: 24px;
   border: 2px dashed var(--glass-border-shadow, rgba(0,0,0,0.1));
   color: var(--text-soft);
+}
+
+/* ── Timeline Empty State ── */
+.timeline-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+  min-height: 400px;
+}
+.timeline-empty .empty-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 8px;
+}
+.timeline-empty .empty-desc {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  margin: 0 0 24px;
+}
+
+/* ── Bento Button ── */
+.bento-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+.bento-btn.primary {
+  background: var(--text-main);
+  color: var(--bg-panel, #fff);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.bento-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
 
 /* ── Bento Card (Global Redefinition for this View) ── */

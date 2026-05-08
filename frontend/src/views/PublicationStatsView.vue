@@ -262,6 +262,15 @@ function formatHistoryDate(dateStr: string) {
     </div>
 
     <main class="stats-content">
+      <div v-if="totalCount === 0" class="stats-empty">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        </div>
+        <h3 class="empty-title">数据面板尚待充实</h3>
+        <p class="empty-desc">在画布中添加更多人物后，统计数据将自动呈现。</p>
+        <button class="bento-btn primary" @click="router.push({ name: 'workbench', params: { id: publicationId } })">前往画布</button>
+      </div>
+      <div v-else class="stats-content-inner">
       <!-- Family Profile Hero Card -->
       <div v-if="pubData" class="bento-card hero-card">
         <div class="hero-bg-accent"></div>
@@ -448,6 +457,7 @@ function formatHistoryDate(dateStr: string) {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </main>
   </div>
@@ -735,5 +745,51 @@ function formatHistoryDate(dateStr: string) {
   .metrics-grid { grid-template-columns: repeat(2, 1fr); }
   .node-meta { flex-direction: column; align-items: flex-start; gap: 4px; }
   .node-body { flex-direction: column; align-items: flex-start; gap: 6px; }
+}
+
+/* ── Stats Empty State ── */
+.stats-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+  min-height: 400px;
+}
+.stats-empty .empty-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 8px;
+}
+.stats-empty .empty-desc {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  margin: 0 0 24px;
+}
+
+/* ── Bento Button ── */
+.bento-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+.bento-btn.primary {
+  background: var(--text-main);
+  color: var(--bg-panel, #fff);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.bento-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
 </style>
