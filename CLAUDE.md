@@ -54,6 +54,7 @@ cd frontend && npx vitest
 - **核心编辑器**：`views/WorkbenchView.vue` 专注排版。支持跨页面视角记忆，取消点击自动跳屏。
 - **画布渲染**：`components/PublicationCanvas.vue` — **GPU 加速核心**。采用 `translate3d` 硬件加速，并在拖拽时动态停用阴影滤镜（Filter Culling）。图片强制采用 `meet` 比例展示。
 - **数据上下文**：`views/PublicationLayout.vue` **单源事实提供者**。通过 Provide/Inject 共享内存数据与撤销历史，支持多视图秒开。
+- **联邦协作**：支持“分支挂载点”系统。`PersonCardSvg.vue` 识别 `isMountPoint` 渲染门户节点（蓝色虚线/图标）；`BranchMountManager.vue` 负责管理挂载与触发合并；`PublicationTreeLoader` 实现最高 3 层的递归分支加载与视图缝合。
 - **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置和连线
 - **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）
 - 草稿持久化：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化，并在便携式导出时将 `/api/photos/...` 与旧版 `/uploads/...` 头像尽量内联为 Base64
@@ -71,10 +72,10 @@ cd frontend && npx vitest
 - **PDF 生成**：集成 **iText 7** (kernel, io, layout, svg)。
     - `POST /api/publications/{id}/export/pdf`: 生成多页谱书 PDF（含标题、前言、成员志、切片图）。
     - `POST /api/publications/{id}/export/pdf/single-page`: 接收 `svgMarkup` 与宽高，生成**全尺寸、单页、无边框矢量 PDF**。
-- **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载
-
+- **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载。集成 `PublicationTreeLoader` 递归加载分支挂载数据。
+- **合并引擎**：`PublicationService.mergeBranch` 实现物理数据迁入。使用 UUID 前缀 (`merged_...`) 进行 ID 重映射防冲突，递归克隆人物、家庭及照片记录，支持分布式族谱的一键聚合。
 - **照片导入链路**：`PublicationService.savePersonsAndFamilies` 在新建/导入时支持 Base64、`/api/photos/{id}` 克隆、旧版 `/uploads/...` 文件迁移；更新时复用既有照片记录，避免重复插图
-- **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`。管理员端点使用 `@PreAuthorize("hasRole('ADMIN')")` / `hasRole('SUPER_ADMIN')` 声明式权限
+- **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`。管理员端点使用 `@PreAuthorize("hasRole('ADMIN')")` / `hasRole('SUPER_ADMIN')` 声明式权限。分支合并要求对主族谱具 `OWNER` 权限，对分支具 `VIEWER` 权限。
 - 文件上传限制：100MB；`FileController` 有扩展名白名单校验（图片/PDF），`PhotoController` 有 MIME 类型校验
 - CORS：由 `app.cors.allowed-origins` 配置（默认 `http://localhost:5173`），允许凭据，暴露 `Set-Cookie` 响应头
 - 审计日志列表使用 JPA `Pageable` 分页（默认每页 50，上限 200）
