@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useTheme } from '../composables/useTheme'
 import { logout, getUsername, isAdmin } from '../api/auth'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'
+import GlobalSearch from '../components/GlobalSearch.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -112,7 +113,7 @@ onBeforeUnmount(() => {
     <main class="spatial-content">
       <!-- Top Action Bar -->
       <header class="top-action-bar">
-        <div class="spacer"></div>
+        <GlobalSearch />
         <div class="top-actions-group">
           
           <!-- Theme Switcher Component -->
