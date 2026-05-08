@@ -38,3 +38,7 @@ export async function updateAccessRole(publicationId: number, userId: number, ro
 export async function removeAccessRecord(publicationId: number, userId: number): Promise<void> {
   await http.delete(`/publications/${publicationId}/access/${userId}`)
 }
+
+export async function mergeBranch(publicationId: number, personId: string): Promise<void> {
+  await http.post(`/publications/${publicationId}/access/${personId}/merge`)
+}

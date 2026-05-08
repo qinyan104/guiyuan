@@ -13,6 +13,7 @@ import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.PublicationAuthorizationService;
+import com.genealogy.server.service.PublicationService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,15 +32,18 @@ public class PublicationAccessController {
     private final PublicationAccessRepository accessRepository;
     private final UserRepository userRepository;
     private final AuditLogRepository auditLogRepository;
+    private final PublicationService publicationService;
 
     public PublicationAccessController(PublicationAuthorizationService authorizationService,
                                        PublicationAccessRepository accessRepository,
                                        UserRepository userRepository,
-                                       AuditLogRepository auditLogRepository) {
+                                       AuditLogRepository auditLogRepository,
+                                       PublicationService publicationService) {
         this.authorizationService = authorizationService;
         this.accessRepository = accessRepository;
         this.userRepository = userRepository;
         this.auditLogRepository = auditLogRepository;
+        this.publicationService = publicationService;
     }
 
     private UserSubject resolveSubject(HttpServletRequest request) {
@@ -168,5 +172,13 @@ public class PublicationAccessController {
         log.setTargetType("publication");
         log.setTargetId(targetId);
         auditLogRepository.save(log);
+    }
+
+    @PostMapping("/{personId}/merge")
+    public ApiResponse<Void> mergeBranch(@PathVariable Long id, @PathVariable String personId, HttpServletRequest request) {
+        UserSubject subject = resolveSubject(request);
+        authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
+        publicationService.mergeBranch(id, personId, subject);
+        return ApiResponse.success("分支已合并", null);
     }
 }

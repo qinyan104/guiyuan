@@ -17,9 +17,9 @@ export interface Person {
   highlightRole?: 'emperor' | 'heir'
   isMountPoint?: boolean
   mountPointTarget?: {
-    publicationId: string
-    publicationTitle: string
-    personId: string
+    publicationId: number
+    publicationTitle?: string
+    rootPersonId?: number
   }
 }
 

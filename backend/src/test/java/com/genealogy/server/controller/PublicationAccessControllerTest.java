@@ -1,5 +1,7 @@
 package com.genealogy.server.controller;
 
+import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.model.User;
@@ -8,8 +10,10 @@ import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.security.JwtService;
 import com.genealogy.server.service.PublicationAuthorizationService;
+import com.genealogy.server.service.PublicationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
@@ -23,11 +27,15 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Collections;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -57,6 +65,9 @@ class PublicationAccessControllerTest {
 
     @MockBean
     private JwtService jwtService;
+
+    @MockBean
+    private PublicationService publicationService;
 
     private User currentUser;
 
@@ -88,5 +99,29 @@ class PublicationAccessControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].role").value("OWNER"))
                 .andExpect(jsonPath("$.data[0].username").value("testuser"));
+
+        ArgumentCaptor<UserSubject> subjectCaptor = ArgumentCaptor.forClass(UserSubject.class);
+        verify(authorizationService).require(subjectCaptor.capture(), eq(100L), eq(AccessPermission.MANAGE_ACCESS));
+        assertThat(subjectCaptor.getValue().getUserId()).isEqualTo(1L);
+        assertThat(subjectCaptor.getValue().getUsername()).isEqualTo("testuser");
+    }
+
+    @Test
+    void mergeBranchShouldDelegateToPublicationService() throws Exception {
+        mockMvc.perform(post("/api/publications/100/access/person-9/merge")
+                        .requestAttr("currentUsername", "testuser")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("分支已合并"));
+
+        ArgumentCaptor<UserSubject> authSubjectCaptor = ArgumentCaptor.forClass(UserSubject.class);
+        ArgumentCaptor<UserSubject> mergeSubjectCaptor = ArgumentCaptor.forClass(UserSubject.class);
+        verify(authorizationService).require(authSubjectCaptor.capture(), eq(100L), eq(AccessPermission.MANAGE_ACCESS));
+        verify(publicationService).mergeBranch(eq(100L), eq("person-9"), mergeSubjectCaptor.capture());
+
+        assertThat(authSubjectCaptor.getValue().getUserId()).isEqualTo(1L);
+        assertThat(authSubjectCaptor.getValue().getUsername()).isEqualTo("testuser");
+        assertThat(mergeSubjectCaptor.getValue().getUserId()).isEqualTo(1L);
+        assertThat(mergeSubjectCaptor.getValue().getUsername()).isEqualTo("testuser");
     }
 }

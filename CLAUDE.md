@@ -54,8 +54,8 @@ cd frontend && npx vitest
 - **核心编辑器**：`views/WorkbenchView.vue` 专注排版。支持跨页面视角记忆，取消点击自动跳屏。
 - **画布渲染**：`components/PublicationCanvas.vue` — **GPU 加速核心**。采用 `translate3d` 硬件加速，并在拖拽时动态停用阴影滤镜（Filter Culling）。图片强制采用 `meet` 比例展示。
 - **数据上下文**：`views/PublicationLayout.vue` **单源事实提供者**。通过 Provide/Inject 共享内存数据与撤销历史，支持多视图秒开。
-- **联邦协作**：支持“分支挂载点”系统。`PersonCardSvg.vue` 识别 `isMountPoint` 渲染门户节点（蓝色虚线/图标）；`BranchMountManager.vue` 负责管理挂载与触发合并；`PublicationTreeLoader` 实现最高 3 层的递归分支加载与视图缝合。
-- **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置和连线
+- **联邦协作**：支持“分支挂载点”系统。`PersonCardSvg.vue` 识别 `isMountPoint` 渲染门户节点（蓝色虚线/图标）；`BranchMountManager.vue`（集成在 `PersonEditorDrawer.vue`）负责管理挂载与触发合并；`PublicationTreeLoader` 实现最高 3 层的递归分支加载与视图缝合。
+- **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置 and 连线
 - **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）
 - 草稿持久化：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化，并在便携式导出时将 `/api/photos/...` 与旧版 `/uploads/...` 头像尽量内联为 Base64
 - **导出**：`features/export/publicationExport.ts` — SVG 导出和打印排版；`features/export/shareHtmlExport.ts` — 自包含 HTML 快照分享（AES-256-GCM 可选密码保护）；`features/export/ExportDialog.vue` 现在提供**单页矢量 PDF**（由后端生成）、多页谱书实验室与**分享网页**导出。
@@ -73,7 +73,7 @@ cd frontend && npx vitest
     - `POST /api/publications/{id}/export/pdf`: 生成多页谱书 PDF（含标题、前言、成员志、切片图）。
     - `POST /api/publications/{id}/export/pdf/single-page`: 接收 `svgMarkup` 与宽高，生成**全尺寸、单页、无边框矢量 PDF**。
 - **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载。集成 `PublicationTreeLoader` 递归加载分支挂载数据。
-- **合并引擎**：`PublicationService.mergeBranch` 实现物理数据迁入。使用 UUID 前缀 (`merged_...`) 进行 ID 重映射防冲突，递归克隆人物、家庭及照片记录，支持分布式族谱的一键聚合。
+- **合并引擎**：`PublicationService.mergeBranch` 实现物理数据迁入。使用 UUID 前缀 (`merged_{targetPubId}_*`) 进行 ID 重映射防冲突，递归克隆人物、家庭及照片记录，支持分布式族谱的一键聚合。合并后会自动清空挂载点元数据。
 - **照片导入链路**：`PublicationService.savePersonsAndFamilies` 在新建/导入时支持 Base64、`/api/photos/{id}` 克隆、旧版 `/uploads/...` 文件迁移；更新时复用既有照片记录，避免重复插图
 - **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`。管理员端点使用 `@PreAuthorize("hasRole('ADMIN')")` / `hasRole('SUPER_ADMIN')` 声明式权限。分支合并要求对主族谱具 `OWNER` 权限，对分支具 `VIEWER` 权限。
 - 文件上传限制：100MB；`FileController` 有扩展名白名单校验（图片/PDF），`PhotoController` 有 MIME 类型校验
@@ -94,3 +94,5 @@ cd frontend && npx vitest
 
 - JWT 密钥（`app.jwt.secret`）无默认值，必须通过 `JWT_SECRET` 环境变量配置（开发环境也需要）
 - 草稿关系校验不强制"一人只属于一个家庭"，业务代码默认该前提成立
+- `BranchMountManager` 当前只列出“我自己创建”的族谱作为挂载目标，尚未包含别人授权给我的族谱
+- `targetRootPersonId` 已随挂载元数据保存和回读，但当前物理合并仍是“复制整个目标族谱快照”，尚未裁剪为某个根人物子树

@@ -3,6 +3,9 @@ package com.genealogy.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.UserSubject;
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.Family;
 import com.genealogy.server.model.FamilyMember;
@@ -24,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -33,9 +39,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Service
 public class PublicationService {
@@ -50,12 +53,14 @@ public class PublicationService {
     private final PublicationAccessRepository publicationAccessRepository;
     private final PublicationShareLinkRepository shareLinkRepository;
     private final ObjectMapper objectMapper;
+    private final PublicationAuthorizationService authorizationService;
 
     public PublicationService(PublicationRepository publicationRepository, PersonRepository personRepository,
                               FamilyRepository familyRepository, FamilyMemberRepository familyMemberRepository,
                               PhotoRepository photoRepository, ObjectMapper objectMapper,
                               PublicationAccessRepository publicationAccessRepository,
-                              PublicationShareLinkRepository shareLinkRepository) {
+                              PublicationShareLinkRepository shareLinkRepository,
+                              PublicationAuthorizationService authorizationService) {
         this.publicationRepository = publicationRepository;
         this.personRepository = personRepository;
         this.familyRepository = familyRepository;
@@ -64,6 +69,7 @@ public class PublicationService {
         this.objectMapper = objectMapper;
         this.publicationAccessRepository = publicationAccessRepository;
         this.shareLinkRepository = shareLinkRepository;
+        this.authorizationService = authorizationService;
     }
 
     public List<Map<String, Object>> listPublications(Long userId) {
@@ -114,7 +120,7 @@ public class PublicationService {
                         result.put("description", text.length() > 80 ? text.substring(0, 80) + "..." : text);
                     }
                 } catch (JsonProcessingException e) {
-                    log.warn("族谱 {} 的 info JSON 解析失败: {}", publication.getId(), e.getMessage());
+                    log.warn("Publication {} info JSON parse failed: {}", publication.getId(), e.getMessage());
                 }
             }
 
@@ -124,7 +130,7 @@ public class PublicationService {
 
     public Map<String, Object> loadPublication(Long publicationId) {
         Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new NotFoundException("族谱不存在"));
+                .orElseThrow(() -> new NotFoundException("Publication not found"));
 
         List<Person> personEntities = personRepository.findByPublicationId(publicationId);
         Map<String, Long> personDbIdMap = new HashMap<>();
@@ -162,6 +168,13 @@ public class PublicationService {
             }
             if (person.getPhotoId() != null) {
                 personJson.put("avatarUrl", "/api/photos/" + person.getPhotoId());
+            }
+            if (Boolean.TRUE.equals(person.getIsMountPoint())) {
+                personJson.put("isMountPoint", true);
+                Map<String, Object> mountPointTarget = buildMountPointTarget(person);
+                if (!mountPointTarget.isEmpty()) {
+                    personJson.put("mountPointTarget", mountPointTarget);
+                }
             }
             people.put(person.getPersonId(), personJson);
         }
@@ -209,7 +222,7 @@ public class PublicationService {
             try {
                 publicationJson.put("info", objectMapper.readValue(publication.getPublicationInfoJson(), new TypeReference<>() {}));
             } catch (JsonProcessingException e) {
-                log.warn("族谱 {} 的 info JSON 解析失败: {}", publication.getId(), e.getMessage());
+                log.warn("Publication {} info JSON parse failed: {}", publication.getId(), e.getMessage());
             }
         }
 
@@ -235,7 +248,7 @@ public class PublicationService {
                                   String infoJson) {
         Publication publication = new Publication();
         publication.setUserId(userId);
-        publication.setTitle(title != null ? title : "未命名族谱");
+        publication.setTitle(title != null ? title : "Untitled publication");
         publication.setSubtitle(subtitle != null ? subtitle : "");
         publication.setSettingsJson(settingsJson);
         publication.setPublicationInfoJson(infoJson);
@@ -258,7 +271,7 @@ public class PublicationService {
                                   Map<String, Object> publicationData, String settingsJson,
                                   String infoJson) {
         Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new NotFoundException("族谱不存在"));
+                .orElseThrow(() -> new NotFoundException("Publication not found"));
 
         if (title != null) {
             publication.setTitle(title);
@@ -304,7 +317,7 @@ public class PublicationService {
     @Transactional
     public void updatePerson(Long publicationId, String personId, Map<String, Object> data) {
         Person person = personRepository.findByPublicationIdAndPersonId(publicationId, personId)
-                .orElseThrow(() -> new NotFoundException("人物不存在"));
+                .orElseThrow(() -> new NotFoundException("Person not found"));
 
         if (data.containsKey("name")) {
             person.setName((String) data.get("name"));
@@ -336,6 +349,7 @@ public class PublicationService {
         if (data.containsKey("highlightRole")) {
             person.setHighlightRole((String) data.get("highlightRole"));
         }
+        applyMountPointMetadata(person, data);
 
         if (data.containsKey("avatarUrl")) {
             String avatarUrl = (String) data.get("avatarUrl");
@@ -363,9 +377,91 @@ public class PublicationService {
     }
 
     @Transactional
+    public void mergeBranch(Long masterPubId, String mountPointPersonId, UserSubject subject) {
+        Person mountPoint = personRepository.findByPublicationIdAndPersonId(masterPubId, mountPointPersonId)
+                .orElseThrow(() -> new NotFoundException("Person not found"));
+
+        if (!Boolean.TRUE.equals(mountPoint.getIsMountPoint()) || mountPoint.getTargetPublicationId() == null) {
+            throw new BadRequestException("Invalid branch mount point");
+        }
+
+        Long targetPubId = mountPoint.getTargetPublicationId();
+        authorizationService.require(subject, targetPubId, AccessPermission.READ_FULL);
+
+        String idPrefix = "merged_" + targetPubId + "_";
+        List<Person> targetPeople = personRepository.findByPublicationId(targetPubId);
+        Map<String, Long> mergedPersonDbIds = new HashMap<>();
+
+        for (Person sourcePerson : targetPeople) {
+            Person mergedPerson = new Person();
+            mergedPerson.setPublicationId(masterPubId);
+            mergedPerson.setPersonId(idPrefix + sourcePerson.getPersonId());
+            mergedPerson.setName(sourcePerson.getName());
+            mergedPerson.setGender(sourcePerson.getGender());
+            mergedPerson.setBirth(sourcePerson.getBirth());
+            mergedPerson.setDeath(sourcePerson.getDeath());
+            mergedPerson.setDeceased(sourcePerson.getDeceased());
+            mergedPerson.setAge(sourcePerson.getAge());
+            mergedPerson.setTitleName(sourcePerson.getTitleName());
+            mergedPerson.setClan(sourcePerson.getClan());
+            mergedPerson.setNote(sourcePerson.getNote());
+            mergedPerson.setHighlightRole(sourcePerson.getHighlightRole());
+            mergedPerson.setIsMountPoint(Boolean.TRUE.equals(sourcePerson.getIsMountPoint()));
+            mergedPerson.setTargetPublicationId(sourcePerson.getTargetPublicationId());
+            mergedPerson.setTargetRootPersonId(sourcePerson.getTargetRootPersonId());
+
+            mergedPerson = personRepository.save(mergedPerson);
+
+            if (sourcePerson.getPhotoId() != null) {
+                Photo clonedPhoto = clonePhotoForPerson(sourcePerson.getPhotoId(), mergedPerson.getId());
+                if (clonedPhoto != null) {
+                    mergedPerson.setPhotoId(clonedPhoto.getId());
+                    mergedPerson = personRepository.save(mergedPerson);
+                }
+            }
+
+            mergedPersonDbIds.put(sourcePerson.getPersonId(), mergedPerson.getId());
+        }
+
+        List<Family> targetFamilies = familyRepository.findByPublicationId(targetPubId);
+        for (Family sourceFamily : targetFamilies) {
+            Family mergedFamily = new Family();
+            mergedFamily.setPublicationId(masterPubId);
+            mergedFamily.setFamilyId(idPrefix + sourceFamily.getFamilyId());
+            mergedFamily.setBranchMode(sourceFamily.getBranchMode());
+            mergedFamily = familyRepository.save(mergedFamily);
+
+            List<FamilyMember> members = familyMemberRepository.findByFamilyDbIdOrderBySortOrder(sourceFamily.getId());
+            for (FamilyMember sourceMember : members) {
+                Person sourceMemberPerson = personRepository.findById(sourceMember.getPersonDbId()).orElse(null);
+                if (sourceMemberPerson == null) {
+                    continue;
+                }
+
+                Long mergedPersonDbId = mergedPersonDbIds.get(sourceMemberPerson.getPersonId());
+                if (mergedPersonDbId == null) {
+                    continue;
+                }
+
+                FamilyMember mergedMember = new FamilyMember();
+                mergedMember.setFamilyDbId(mergedFamily.getId());
+                mergedMember.setPersonDbId(mergedPersonDbId);
+                mergedMember.setRole(sourceMember.getRole());
+                mergedMember.setSortOrder(sourceMember.getSortOrder());
+                familyMemberRepository.save(mergedMember);
+            }
+        }
+
+        mountPoint.setIsMountPoint(false);
+        mountPoint.setTargetPublicationId(null);
+        mountPoint.setTargetRootPersonId(null);
+        personRepository.save(mountPoint);
+    }
+
+    @Transactional
     public void updatePublicationMetadata(Long publicationId, String title, String subtitle, String infoJson) {
         Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new NotFoundException("族谱不存在"));
+                .orElseThrow(() -> new NotFoundException("Publication not found"));
 
         if (title != null) {
             publication.setTitle(title);
@@ -390,7 +486,7 @@ public class PublicationService {
                 Person entity = new Person();
                 entity.setPublicationId(publicationId);
                 entity.setPersonId(personId);
-                entity.setName((String) personData.getOrDefault("name", "未知"));
+                entity.setName((String) personData.getOrDefault("name", "Unknown"));
                 entity.setGender((String) personData.getOrDefault("gender", "unknown"));
                 entity.setBirth((String) personData.get("birth"));
                 entity.setDeath((String) personData.get("death"));
@@ -400,16 +496,19 @@ public class PublicationService {
                 entity.setClan((String) personData.get("clan"));
                 entity.setNote((String) personData.get("note"));
                 entity.setHighlightRole((String) personData.get("highlightRole"));
+                applyMountPointMetadata(entity, personData);
 
                 entity = personRepository.save(entity);
                 personIdToDbId.put(personId, entity.getId());
 
                 if (personData.containsKey("avatarUrl")) {
                     String avatarUrl = (String) personData.get("avatarUrl");
-                    Long photoId = handlePersonAvatar(entity.getId(), avatarUrl, cloneReferencedPhotos);
-                    if (photoId != null) {
-                        entity.setPhotoId(photoId);
-                        personRepository.save(entity);
+                    if (avatarUrl != null) {
+                        Long photoId = handlePersonAvatar(entity.getId(), avatarUrl, cloneReferencedPhotos);
+                        if (photoId != null) {
+                            entity.setPhotoId(photoId);
+                            personRepository.save(entity);
+                        }
                     }
                 }
 
@@ -486,7 +585,7 @@ public class PublicationService {
                     return photoRepository.save(clonedPhoto);
                 })
                 .orElseGet(() -> {
-                    log.warn("导入时未找到照片 {}，无法复制到人物 {}", sourcePhotoId, personDbId);
+                    log.warn("Source photo {} was not found for person {}", sourcePhotoId, personDbId);
                     return null;
                 });
     }
@@ -504,11 +603,11 @@ public class PublicationService {
         Path uploadRoot = Paths.get("uploads").toAbsolutePath().normalize();
         Path uploadFile = uploadRoot.resolve(fileName).normalize();
         if (!uploadFile.startsWith(uploadRoot)) {
-            log.warn("导入时检测到非法上传文件路径: {}", avatarUrl);
+            log.warn("Invalid uploads path detected during import: {}", avatarUrl);
             return null;
         }
         if (!Files.exists(uploadFile)) {
-            log.warn("导入时未找到 uploads 照片文件: {}", uploadFile);
+            log.warn("Uploads photo file was not found during import: {}", uploadFile);
             return null;
         }
 
@@ -519,7 +618,7 @@ public class PublicationService {
             photo.setData(Files.readAllBytes(uploadFile));
             return photoRepository.save(photo);
         } catch (IOException e) {
-            log.warn("导入 uploads 照片失败 (avatarUrl: {}): {}", avatarUrl, e.getMessage());
+            log.warn("Failed to import uploads photo (avatarUrl: {}): {}", avatarUrl, e.getMessage());
             return null;
         }
     }
@@ -626,5 +725,73 @@ public class PublicationService {
             log.warn("导入照片引用失败 (personDbId: {}, photoUrl: {}): {}", personDbId, photoUrl, e.getMessage());
             return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void applyMountPointMetadata(Person entity, Map<String, Object> personData) {
+        boolean isMountPoint = Boolean.TRUE.equals(personData.get("isMountPoint"));
+        entity.setIsMountPoint(isMountPoint);
+
+        Long targetPublicationId = null;
+        Long targetRootPersonId = null;
+        Object rawTarget = personData.get("mountPointTarget");
+        if (rawTarget instanceof Map<?, ?> rawTargetMap) {
+            Map<String, Object> targetMap = (Map<String, Object>) rawTargetMap;
+            targetPublicationId = toLong(targetMap.get("publicationId"));
+            targetRootPersonId = toLong(targetMap.get("rootPersonId"));
+            if (targetRootPersonId == null) {
+                targetRootPersonId = toLong(targetMap.get("targetRootPersonId"));
+            }
+            if (targetRootPersonId == null) {
+                targetRootPersonId = toLong(targetMap.get("personId"));
+            }
+        }
+
+        if (targetPublicationId == null) {
+            targetPublicationId = toLong(personData.get("targetPublicationId"));
+        }
+        if (targetRootPersonId == null) {
+            targetRootPersonId = toLong(personData.get("targetRootPersonId"));
+        }
+
+        if (isMountPoint) {
+            entity.setTargetPublicationId(targetPublicationId);
+            entity.setTargetRootPersonId(targetRootPersonId);
+        } else {
+            entity.setTargetPublicationId(null);
+            entity.setTargetRootPersonId(null);
+        }
+    }
+
+    private Map<String, Object> buildMountPointTarget(Person person) {
+        Map<String, Object> mountPointTarget = new LinkedHashMap<>();
+        if (person.getTargetPublicationId() == null) {
+            return mountPointTarget;
+        }
+
+        mountPointTarget.put("publicationId", person.getTargetPublicationId());
+        publicationRepository.findById(person.getTargetPublicationId())
+                .ifPresent(targetPublication -> mountPointTarget.put("publicationTitle", targetPublication.getTitle()));
+        if (person.getTargetRootPersonId() != null) {
+            mountPointTarget.put("rootPersonId", person.getTargetRootPersonId());
+        }
+        return mountPointTarget;
+    }
+
+    private Long toLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return Long.parseLong(text);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 }
