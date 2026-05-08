@@ -1,7 +1,7 @@
 <claude-mem-context>
 # Memory Context
 
-# [族谱管理系统] recent context, 2026-05-05 12:46am GMT+8
+# [族谱管理系统] recent context, 2026-05-07 11:17pm GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
@@ -66,6 +66,10 @@ Stats: 50 obs (4,441t read) | 1,118,605t work | 100% savings
 1116 11:20a 🟣 实现自包含 HTML 快照分享功能（shareHtmlExport.ts），支持 AES-256-GCM 可选密码保护
 1117 11:40a 🔄 重新设计 ExportDialog.vue 样式，统一为 bento glassmorphism 风格，新增"分享网页"tab 与密码强度指示器
 1118 12:00p ✅ 知识库同步：更新 CLAUDE.md、README.md 反映分享网页导出功能
+
+### May 7, 2026
+1119 11:06p 🟣 实现协作集成：分支挂载元数据读写、物理合并接口与 BranchMountManager UI
+1120 11:17p ✅ 知识库同步：更新 README.md、CLAUDE.md 与协作设计稿，反映当前挂载与物理合并实现
 
 Access 1119k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

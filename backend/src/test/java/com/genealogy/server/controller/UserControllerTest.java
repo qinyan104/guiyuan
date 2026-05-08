@@ -2,51 +2,48 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.UserRepository;
-import com.genealogy.server.service.UserService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-public class UserControllerTest {
+@ExtendWith(MockitoExtension.class)
+class UserControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private UserRepository userRepository;
 
-    @MockBean
-    private UserService userService;
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        UserController controller = new UserController(userRepository);
+        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+    }
 
     @Test
-    @WithMockUser
-    public void testSearchUsers() throws Exception {
+    void testSearchUsers() throws Exception {
         User user = new User();
         user.setId(1L);
         user.setUsername("testuser");
         user.setNickname("Alice");
 
-        when(userService.validateToken("test-token")).thenReturn("user");
         when(userRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase("test", "test"))
                 .thenReturn(List.of(user));
 
         mockMvc.perform(get("/api/users/search?q=test")
-                .header("Authorization", "Bearer test-token")
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -55,13 +52,9 @@ public class UserControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void testSearchUsersEmptyQuery() throws Exception {
-        when(userService.validateToken("test-token")).thenReturn("user");
-
+    void testSearchUsersEmptyQuery() throws Exception {
         mockMvc.perform(get("/api/users/search?q=")
-                .header("Authorization", "Bearer test-token")
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$").isEmpty());

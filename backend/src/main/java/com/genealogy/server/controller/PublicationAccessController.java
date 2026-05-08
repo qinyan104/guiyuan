@@ -9,6 +9,7 @@ import com.genealogy.server.model.User;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.PublicationAuthorizationService;
+import com.genealogy.server.service.PublicationService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,13 +24,16 @@ public class PublicationAccessController {
     private final PublicationAuthorizationService authorizationService;
     private final PublicationAccessRepository accessRepository;
     private final UserRepository userRepository;
+    private final PublicationService publicationService;
 
     public PublicationAccessController(PublicationAuthorizationService authorizationService,
                                        PublicationAccessRepository accessRepository,
-                                       UserRepository userRepository) {
+                                       UserRepository userRepository,
+                                       PublicationService publicationService) {
         this.authorizationService = authorizationService;
         this.accessRepository = accessRepository;
         this.userRepository = userRepository;
+        this.publicationService = publicationService;
     }
 
     private UserSubject getSubject(HttpServletRequest request) {
@@ -116,6 +120,14 @@ public class PublicationAccessController {
 
         accessRepository.delete(access);
 
+        return Map.of("success", true);
+    }
+
+    @PostMapping("/{personId}/merge")
+    public Map<String, Object> mergeBranch(@PathVariable Long id, @PathVariable String personId, HttpServletRequest request) {
+        UserSubject subject = getSubject(request);
+        authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
+        publicationService.mergeBranch(id, personId, subject);
         return Map.of("success", true);
     }
 }

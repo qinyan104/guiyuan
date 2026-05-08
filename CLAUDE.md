@@ -40,6 +40,7 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 - **核心编辑器**：`views/WorkbenchView.vue` 专注排版。支持跨页面视角记忆，取消点击自动跳屏。
 - **画布渲染**：`components/PublicationCanvas.vue` — **GPU 加速核心**。采用 `translate3d` 硬件加速，并在拖拽时动态停用阴影滤镜（Filter Culling）。图片强制采用 `meet` 比例展示。
 - **数据上下文**：`views/PublicationLayout.vue` **单源事实提供者**。通过 Provide/Inject 共享内存数据与撤销历史，支持多视图秒开。
+- **协作挂载 UI**：`components/BranchMountManager.vue` 挂入 `PersonEditorDrawer.vue`，通过 `publication-context` 切换 `isMountPoint`、选择目标族谱并触发物理合并；`components/PersonCardSvg.vue` 对挂载点显示图标标记。
 - **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置和连线
 - **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）
 - 草稿持久化：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化，并在便携式导出时将 `/api/photos/...` 与旧版 `/uploads/...` 头像尽量内联为 Base64
@@ -58,7 +59,7 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
     - `POST /api/publications/{id}/export/pdf`: 生成多页谱书 PDF（含标题、前言、成员志、切片图）。
     - `POST /api/publications/{id}/export/pdf/single-page`: 接收 `svgMarkup` 与宽高，生成**全尺寸、单页、无边框矢量 PDF**。
 - **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载
-
+- **分支挂载与物理合并**：`PublicationService` 通过 `persons.is_mount_point`、`target_publication_id`、`target_root_person_id` 持久化挂载元数据；`loadPublication` 会返回 `mountPointTarget`；`savePersonsAndFamilies` 与 `updatePerson` 都会保存这些字段。`POST /api/publications/{id}/access/{personId}/merge` 调用 `mergeBranch(...)`，按 `merged_{targetPubId}_*` 前缀深拷贝目标族谱的人物、家庭与照片到主谱，然后清空该挂载点。
 - **照片导入链路**：`PublicationService.savePersonsAndFamilies` 在新建/导入时支持 Base64、`/api/photos/{id}` 克隆、旧版 `/uploads/...` 文件迁移；更新时复用既有照片记录，避免重复插图
 - **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`。管理员端点使用 `@PreAuthorize("hasRole('ADMIN')")` / `hasRole('SUPER_ADMIN')` 声明式权限
 - 文件上传限制：100MB；`FileController` 有扩展名白名单校验（图片/PDF），`PhotoController` 有 MIME 类型校验
@@ -79,3 +80,5 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 
 - JWT 密钥（`app.jwt.secret`）开发环境使用配置文件默认值，生产环境必须通过 `JWT_SECRET` 环境变量覆盖
 - 草稿关系校验不强制"一人只属于一个家庭"，业务代码默认该前提成立
+- `BranchMountManager` 当前只列出“我自己创建”的族谱作为挂载目标，因为 `listPublications()` 仍按 `publications.user_id` 返回，不包含别人授权给我的 publication
+- `targetRootPersonId` 已随挂载元数据保存和回读，但当前物理合并仍是“复制整个目标 publication 快照”，尚未裁剪为某个根人物子树

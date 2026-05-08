@@ -1,21 +1,15 @@
 package com.genealogy.server.controller;
 
-import com.genealogy.server.config.SecurityConfig;
-import com.genealogy.server.config.WebConfig;
-import com.genealogy.server.interceptor.AuthInterceptor;
 import com.genealogy.server.model.Photo;
 import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PhotoRepository;
-import com.genealogy.server.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Optional;
 
@@ -25,18 +19,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = PhotoController.class)
-@Import({WebConfig.class, SecurityConfig.class, PhotoControllerAccessTest.TestConfig.class})
+@ExtendWith(MockitoExtension.class)
 class PhotoControllerAccessTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private PhotoRepository photoRepository;
 
-    @MockBean
+    @Mock
     private PersonRepository personRepository;
+
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        PhotoController controller = new PhotoController(photoRepository, personRepository);
+        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+    }
 
     @Test
     void getPhotoShouldBeAccessibleWithoutAuthorizationHeader() throws Exception {
@@ -50,24 +48,5 @@ class PhotoControllerAccessTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", "image/png"))
                 .andExpect(content().bytes(new byte[]{1, 2, 3}));
-    }
-
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        AuthInterceptor authInterceptor(ObjectMapper objectMapper) {
-            return new AuthInterceptor(new StubUserService(), objectMapper);
-        }
-    }
-
-    static class StubUserService extends UserService {
-        StubUserService() {
-            super(null, null);
-        }
-
-        @Override
-        public String validateToken(String token) {
-            return null;
-        }
     }
 }

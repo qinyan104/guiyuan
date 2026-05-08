@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BranchMountManager from './BranchMountManager.vue'
 import type { FamilyBranchMode, Gender, Person } from '../types/family'
 import { uploadPhoto, getPhotoUrl } from '../api/photo'
 
@@ -245,6 +246,8 @@ async function uploadAvatar(event: Event) {
             </div>
           </div>
         </section>
+
+        <BranchMountManager :person="person" :publication-id="publicationId" />
 
         <div class="editor-form">
           <label class="field">
