@@ -15,7 +15,7 @@
 ### 3.1 分布式协作逻辑 (Federated Architecture)
 - **挂载点 (Mount Point)**: 允许将族谱中的某个节点标记为“门户”，链接到另一个独立的族谱。
 - **缝合加载 (Stitched Loading)**: `PublicationTreeLoader` 负责在读取时递归（最大深度 3）合并分支数据，并自动处理 ID 命名空间以防冲突。
-- **物理合并 (Physical Merge)**: `mergeBranch` 引擎支持将整个分支及其照片、家庭关系物理克隆到主谱中。
+- **物理合并 (Physical Merge)**: `mergeBranch` 引擎支持将整个分支及其照片、家庭关系物理克隆到主谱中。在 UI 上，该操作被隔离在独立的“高级合并区域”，并配有明确的不可逆警告。
 
 ### 3.2 导出与出版链路
 - **单页矢量 PDF**: 采用后端 iText 引擎，直接将前端传递的 SVG 转换为原比例 PDF，支持超大尺寸（>14400pt）。
