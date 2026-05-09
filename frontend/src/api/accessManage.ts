@@ -13,6 +13,7 @@ export interface AccessRecord {
   username: string
   nickname: string
   role: 'OWNER' | 'EDITOR' | 'VIEWER'
+  redactionProfile?: string
   createdAt: string
 }
 
@@ -26,13 +27,13 @@ export async function listAccessRecords(publicationId: number): Promise<AccessRe
   return resp.data.data
 }
 
-export async function addAccessRecord(publicationId: number, userId: number, role: string): Promise<{ id: number }> {
-  const resp = await http.post<ApiResponse<{ id: number }>>(`/publications/${publicationId}/access`, { userId, role })
+export async function addAccessRecord(publicationId: number, userId: number, role: string, redactionProfile?: string): Promise<{ id: number }> {
+  const resp = await http.post<ApiResponse<{ id: number }>>(`/publications/${publicationId}/access`, { userId, role, redactionProfile })
   return resp.data.data
 }
 
-export async function updateAccessRole(publicationId: number, userId: number, role: string): Promise<void> {
-  await http.put(`/publications/${publicationId}/access/${userId}`, { role })
+export async function updateAccessRole(publicationId: number, userId: number, role: string, redactionProfile?: string): Promise<void> {
+  await http.put(`/publications/${publicationId}/access/${userId}`, { role, redactionProfile })
 }
 
 export async function removeAccessRecord(publicationId: number, userId: number): Promise<void> {

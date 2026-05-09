@@ -86,12 +86,27 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
+const DEFAULT_PROFILE = {
+  dates: 'LIVING',
+  note: 'LIVING',
+  photo: 'LIVING'
+}
+
+function parseProfile(profileStr?: string) {
+  try {
+    return profileStr ? JSON.parse(profileStr) : { ...DEFAULT_PROFILE }
+  } catch (e) {
+    return { ...DEFAULT_PROFILE }
+  }
+}
+
 async function handleAdd() {
   if (!selectedUserId.value) return
   adding.value = true
   error.value = null
   try {
-    await addAccessRecord(props.publicationId, selectedUserId.value, newRole.value)
+    const profile = newRole.value === 'VIEWER' ? JSON.stringify(DEFAULT_PROFILE) : undefined
+    await addAccessRecord(props.publicationId, selectedUserId.value, newRole.value, profile)
     searchQuery.value = ''
     selectedUserId.value = null
     searchResults.value = []
@@ -106,11 +121,25 @@ async function handleAdd() {
 async function handleRoleChange(userId: number, role: 'EDITOR' | 'VIEWER') {
   error.value = null
   try {
-    await updateAccessRole(props.publicationId, userId, role)
+    const profile = role === 'VIEWER' ? JSON.stringify(DEFAULT_PROFILE) : undefined
+    await updateAccessRole(props.publicationId, userId, role, profile)
     await load(true)
   } catch (err: any) {
     error.value = err.message || '修改失败'
     await load(true) // reset
+  }
+}
+
+async function handleProfileChange(record: AccessRecord, field: string, value: string) {
+  error.value = null
+  try {
+    const profile = parseProfile(record.redactionProfile)
+    profile[field] = value
+    await updateAccessRole(props.publicationId, record.userId, record.role, JSON.stringify(profile))
+    await load(true)
+  } catch (err: any) {
+    error.value = err.message || '修改隐私设置失败'
+    await load(true)
   }
 }
 
@@ -191,33 +220,80 @@ onUnmounted(() => {
         <span>正在加载协作者...</span>
       </div>
       <div v-else class="user-list">
-        <div v-for="record in records" :key="record.id" class="user-row" :class="{ 'is-owner': record.role === 'OWNER' }">
-          <div class="user-info">
-            <div class="avatar" :class="record.role.toLowerCase()">
-              {{ record.nickname.charAt(0).toUpperCase() }}
+        <div v-for="record in records" :key="record.id" class="user-item">
+          <div class="user-row" :class="{ 'is-owner': record.role === 'OWNER' }">
+            <div class="user-info">
+              <div class="avatar" :class="record.role.toLowerCase()">
+                {{ record.nickname.charAt(0).toUpperCase() }}
+              </div>
+              <div class="user-details">
+                <div class="name">{{ record.nickname }}</div>
+                <div class="username">@{{ record.username }}</div>
+              </div>
             </div>
-            <div class="user-details">
-              <div class="name">{{ record.nickname }}</div>
-              <div class="username">@{{ record.username }}</div>
+            <div class="user-actions">
+              <template v-if="record.role === 'OWNER'">
+                <span class="role-badge owner">所有者</span>
+              </template>
+              <template v-else>
+                <select 
+                  class="form-select inline" 
+                  :value="record.role" 
+                  @change="e => handleRoleChange(record.userId, (e.target as HTMLSelectElement).value as any)"
+                >
+                  <option value="EDITOR">编辑者</option>
+                  <option value="VIEWER">浏览者</option>
+                </select>
+                <button class="btn btn--ghost icon-btn remove-btn" @click="handleRemove(record.userId)" title="移除协作者">
+                  &times;
+                </button>
+              </template>
             </div>
           </div>
-          <div class="user-actions">
-            <template v-if="record.role === 'OWNER'">
-              <span class="role-badge owner">所有者</span>
-            </template>
-            <template v-else>
-              <select 
-                class="form-select inline" 
-                :value="record.role" 
-                @change="e => handleRoleChange(record.userId, (e.target as HTMLSelectElement).value as any)"
-              >
-                <option value="EDITOR">编辑者</option>
-                <option value="VIEWER">浏览者</option>
-              </select>
-              <button class="btn btn--ghost icon-btn remove-btn" @click="handleRemove(record.userId)" title="移除协作者">
-                &times;
-              </button>
-            </template>
+          
+          <div v-if="record.role === 'VIEWER'" class="privacy-config">
+            <div class="config-header">
+              <span class="icon">🔒</span>
+              <span class="label">隐私脱敏设置</span>
+            </div>
+            <div class="config-grid">
+              <div class="config-item">
+                <label>生卒日期</label>
+                <select 
+                  class="form-select micro" 
+                  :value="parseProfile(record.redactionProfile).dates"
+                  @change="e => handleProfileChange(record, 'dates', (e.target as HTMLSelectElement).value)"
+                >
+                  <option value="NONE">公开</option>
+                  <option value="LIVING">隐藏在世</option>
+                  <option value="ALL">全部隐藏</option>
+                </select>
+              </div>
+              <div class="config-item">
+                <label>个人简介</label>
+                <select 
+                  class="form-select micro" 
+                  :value="parseProfile(record.redactionProfile).note"
+                  @change="e => handleProfileChange(record, 'note', (e.target as HTMLSelectElement).value)"
+                >
+                  <option value="NONE">公开</option>
+                  <option value="LIVING">隐藏在世</option>
+                  <option value="ALL">全部隐藏</option>
+                </select>
+              </div>
+              <div class="config-item">
+                <label>照片</label>
+                <select 
+                  class="form-select micro" 
+                  :value="parseProfile(record.redactionProfile).photo"
+                  @change="e => handleProfileChange(record, 'photo', (e.target as HTMLSelectElement).value)"
+                >
+                  <option value="NONE">公开</option>
+                  <option value="LIVING">隐藏在世</option>
+                  <option value="ALL">全部隐藏</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -402,7 +478,22 @@ onUnmounted(() => {
 .user-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+}
+
+.user-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.user-item:hover {
+  border-color: var(--accent-amber);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .user-row {
@@ -410,15 +501,50 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  background: var(--bg-panel-strong);
-  border: 1px solid var(--line-soft);
-  border-radius: 16px;
-  transition: all 0.2s ease;
 }
 
-.user-row:hover {
-  transform: translateX(4px);
-  border-color: var(--accent-amber);
+.privacy-config {
+  background: rgba(169, 110, 53, 0.03);
+  padding: 10px 14px 14px;
+  border-top: 1px dashed var(--line-soft);
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-amber);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.config-item label {
+  font-size: 11px;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.form-select.micro {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  border-radius: 8px;
+  background: var(--bg-paper);
 }
 
 .user-info {
