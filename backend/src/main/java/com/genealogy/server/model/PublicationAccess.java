@@ -22,6 +22,9 @@ public class PublicationAccess {
     @Column(nullable = false, length = 20)
     private String role;
 
+    @Column(name = "redaction_profile", length = 50)
+    private String redactionProfile;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
