@@ -27,12 +27,29 @@ const loading = ref(false)
 const mergePending = ref(false)
 const feedbackMessage = ref('')
 const selectedTargetId = ref('')
+const isDropdownOpen = ref(false)
 
 const availablePublications = computed(() =>
   publications.value.filter(
     (item) => item.id !== props.publicationId && item.accessRole !== 'VIEWER',
   ),
 )
+
+const groupedPublications = computed(() => {
+  const groups: Record<string, PublicationSummary[]> = {
+    OWNER: [],
+    EDITOR: [],
+  }
+  availablePublications.value.forEach((pub) => {
+    if (groups[pub.accessRole]) {
+      groups[pub.accessRole].push(pub)
+    } else {
+      if (!groups['OTHER']) groups['OTHER'] = []
+      groups['OTHER'].push(pub)
+    }
+  })
+  return groups
+})
 
 const selectedTarget = computed(() =>
   availablePublications.value.find((item) => String(item.id) === selectedTargetId.value) ?? null,
@@ -42,6 +59,18 @@ function formatAccessRole(role: string): string {
   if (role === 'OWNER') return '我的'
   if (role === 'EDITOR') return '共享·编辑'
   return role
+}
+
+function selectPublication(pub: PublicationSummary) {
+  selectedTargetId.value = String(pub.id)
+  applyTargetPublication(pub)
+  isDropdownOpen.value = false
+}
+
+function clearSelection() {
+  selectedTargetId.value = ''
+  applyTargetPublication(null)
+  isDropdownOpen.value = false
 }
 
 watch(
@@ -176,15 +205,58 @@ onMounted(loadAccessiblePublications)
     </p>
 
     <div class="branch-mount-panel__grid">
-      <label class="branch-mount-field">
+      <div class="branch-mount-field">
         <span>目标族谱</span>
-        <select :disabled="loading || !availablePublications.length" :value="selectedTargetId" @change="handleTargetChange">
-          <option value="">选择一个目标族谱</option>
-          <option v-for="item in availablePublications" :key="item.id" :value="item.id">
-            {{ item.title }} ({{ formatAccessRole(item.accessRole) }})
-          </option>
-        </select>
-      </label>
+        <div class="custom-select" :class="{ 'is-open': isDropdownOpen }">
+          <button
+            class="custom-select__trigger"
+            type="button"
+            :disabled="loading || !availablePublications.length"
+            @click="isDropdownOpen = !isDropdownOpen"
+          >
+            <span>{{ selectedTarget?.title || '选择一个目标族谱' }}</span>
+            <svg
+              class="chevron"
+              fill="none"
+              height="12"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="12"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          <div v-if="isDropdownOpen" class="custom-select__options">
+            <div v-if="groupedPublications.OWNER.length" class="custom-select__group">
+              <label>我的族谱</label>
+              <button
+                v-for="pub in groupedPublications.OWNER"
+                :key="pub.id"
+                class="custom-select__option"
+                @click="selectPublication(pub)"
+              >
+                {{ pub.title }}
+              </button>
+            </div>
+            <div v-if="groupedPublications.EDITOR.length" class="custom-select__group">
+              <label>共享·编辑</label>
+              <button
+                v-for="pub in groupedPublications.EDITOR"
+                :key="pub.id"
+                class="custom-select__option"
+                @click="selectPublication(pub)"
+              >
+                {{ pub.title }}
+              </button>
+            </div>
+            <button class="custom-select__option custom-select__option--clear" @click="clearSelection">
+              清除选择
+            </button>
+          </div>
+        </div>
+      </div>
 
       <article class="branch-mount-meta">
         <span>当前状态</span>
@@ -279,12 +351,77 @@ onMounted(loadAccessiblePublications)
   color: var(--text-soft);
 }
 
-.branch-mount-field select {
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   border: 1px solid rgba(91, 70, 42, 0.14);
   border-radius: 12px;
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.92);
   color: var(--text-main);
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.custom-select__trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.custom-select__options {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid rgba(91, 70, 42, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.custom-select__group label {
+  display: block;
+  padding: 8px 12px 4px;
+  font-size: 0.7rem;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.custom-select__option {
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 200ms;
+  color: var(--text-main);
+}
+
+.custom-select__option:hover {
+  background: rgba(169, 110, 53, 0.05);
+}
+
+.custom-select__option--clear {
+  color: var(--text-soft);
+  border-top: 1px solid rgba(91, 70, 42, 0.08);
+  margin-top: 4px;
+  border-radius: 0 0 8px 8px;
 }
 
 .branch-mount-meta strong {
