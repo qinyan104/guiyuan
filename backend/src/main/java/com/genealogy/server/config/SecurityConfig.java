@@ -54,12 +54,7 @@ public class SecurityConfig {
             )
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .ignoringRequestMatchers(
-                    "/api/auth/login",
-                    "/api/auth/register",
-                    "/api/auth/refresh",
-                    "/api/auth/logout"
-                )
+                .ignoringRequestMatchers("/api/**")
             )
             .headers(headers -> headers
                 .contentTypeOptions(contentType -> {})

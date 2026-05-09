@@ -123,8 +123,8 @@ async function handleDelete(id: number) {
     await deletePublication(id)
     publications.value = publications.value.filter((p) => p.id !== id)
     deleteConfirmId.value = null
-  } catch {
-    // error handled silently
+  } catch (err: any) {
+    alert('删除失败: ' + (err?.response?.data?.message || err.message || '未知错误'))
   }
 }
 
