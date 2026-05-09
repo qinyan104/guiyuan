@@ -51,7 +51,7 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-后端运行在 `http://localhost:8080`，首次启动自动建表。
+后端运行在 `http://localhost:8080`，首次启动由 Flyway 自动执行数据库迁移（`baseline-on-migrate=true`，已有 schema 自动基线化）。
 
 **注意：** 为了支持 PDF 导出中的中文字体，服务器环境需安装中文字体（如微软雅黑、宋体或思源黑体）。系统会自动尝试从 Windows/macOS/Linux 标准路径加载常用字体。
 
@@ -67,13 +67,24 @@ npm run dev
 
 **前端结构约束：** 作为 `router-view` 直接承载的页面组件如果内部使用了 `Teleport`（例如弹窗、浮层），必须保持**单一根节点**。不要再用额外的路由过渡层去包裹这类页面，否则可能出现“登录后接口已成功、左侧导航正常、但中间内容区空白”的假性认证问题。
 
-### 4. 导出说明
+### 4. 运行 E2E 测试
+
+需后端 + MySQL 运行中：
+
+```bash
+cd frontend
+npm run test:e2e
+```
+
+测试用户 `e2e_test` / `test1234` 自动创建。11 个测试覆盖登录/登出、谱书 CRUD、全局搜索、分享链接。
+
+### 5. 导出说明
 
 - **单页矢量 PDF**：替换了原有的像素 PNG 导出。它会根据族谱实际宽高动态生成一个 PDF 页面，保证无限放大不失真，适合专业打印或跨端浏览。
 - **谱书实验室**：支持多页 A4 导出，包含前言和成员志，适合打印装订成册。
 - **分享网页**：生成一个独立的自包含 HTML 文件，内嵌 SVG 族谱树、人物照片（Base64）和交互脚本（缩放/平移/点击详情）。可选 AES-256-GCM 密码保护（PBKDF2 10 万次迭代派生密钥）。无需服务器，直接用浏览器打开即可查看。
 
-### 5. 导入导出照片说明
+### 6. 导入导出照片说明
 
 - 便携式 JSON 导出会优先把可访问的人物头像内联为 Base64，包括数据库照片接口 `/api/photos/{id}` 和旧版上传目录 `/uploads/...`。
 - 导入 JSON 时，后端支持三类头像来源：Base64、当前库内的 `/api/photos/{id}` 引用、旧版 `/uploads/...` 文件路径。
@@ -87,3 +98,4 @@ npm run dev
 | 后端 | Spring Boot 3.3, Spring Data JPA, Spring Security, iText 7 |
 | 数据库 | MySQL 8 |
 | 构建 | Maven (后端), Vite (前端) |
+| E2E 测试 | Playwright 1.59 + Chromium |

@@ -34,14 +34,21 @@ cd backend && ./mvnw test
 # 后端指定测试类
 cd backend && ./mvnw test -Dtest="JwtServiceTest,ShareLinkServiceTest"
 
-# 前端全量测试
+# 前端单元测试
 cd frontend && npx vitest run
+cd frontend && npx vitest          # 监听模式
 
-# 前端监听模式
-cd frontend && npx vitest
+# 前端 E2E 测试（需后端+MySQL 运行中）
+cd frontend && npm run test:e2e
+cd frontend && npm run test:e2e:ui  # UI 交互模式
 ```
 
-**测试现状：** 后端 96 个测试（含 2 个 `@Disabled` 需 MySQL），前端 74 个测试（含 Vue 组件测试。环境：jsdom + @vue/test-utils）。需 MySQL 的 `@SpringBootTest` 测试在无数据库环境自动跳过。
+**测试现状：**
+- 后端 96 个测试（含 2 个 `@Disabled` 需 MySQL），`@WebMvcTest` 在无 MySQL 环境也可运行
+- 前端 74 个单元测试（vitest + jsdom + @vue/test-utils）
+- 前端 **11 个 E2E 测试**（Playwright + Chromium）：登录/登出、谱书 CRUD、全局搜索、分享链接创建与访问
+- E2E 测试默认使用测试用户 `e2e_test` / `test1234`（自动注册/创建），可通过 `E2E_USERNAME` / `E2E_PASSWORD` 环境变量覆盖
+- 需 MySQL 的 `@SpringBootTest` 测试在无数据库环境自动跳过
 
 ## 前端架构
 
@@ -71,7 +78,7 @@ cd frontend && npx vitest
 - **资源级授权**：`PublicationAuthorizationService` 基于 `publication_access` 表实现对象级权限控制。每个 publication 端点在执行前调用 `require(subject, pubId, permission)`，无权限均返回 403（IDOR 防护）。`auth` 包提供 `AccessSubject`（`UserSubject`/`ShareSubject`）、`AccessPermission`（9 个动作枚举）。创建族谱时自动写入 OWNER 记录，`AccessControlMigrationRunner` 启动时回填历史数据。
 - 自定义异常体系：`NotFoundException`(404)、`ForbiddenException`(403)、`BadRequestException`(400)，`GlobalExceptionHandler` 统一映射；未捕获 RuntimeException 返回 500
 - **JWT + Refresh Token 双 Token 体系**：Access Token (JWT, HS256, 15分钟) 通过 `Authorization: Bearer` 请求头传输；Refresh Token (SecureRandom 32字节, 30天) 存 `refresh_tokens` 表（仅存 SHA-256 哈希），通过 HttpOnly Cookie 传输。Refresh Token 单次使用（用后轮换）。`JwtService` 负责签发/验证，`RefreshTokenService` 负责生命周期管理
-- 数据库：MySQL `genealogy`，ddl-auto=update，连接配置在 `application.properties`。表含 `publications`、`persons`、`families`、`family_members`、`photos`、`users`、`audit_logs`、`publication_access`、`refresh_tokens`
+- 数据库：MySQL `genealogy`，连接配置在 `application.properties`。由 **Flyway** 管理迁移（`ddl-auto=validate`，`baseline-on-migrate=true`）。表含 `publications`、`persons`、`families`、`family_members`、`photos`、`users`、`audit_logs`、`publication_access`、`publication_share_links`、`refresh_tokens`。迁移脚本在 `backend/src/main/resources/db/migration/`
 - **传输限制**：已提升至 **100MB** (Servlet, Tomcat Post/Swallow size) 以支持带 Base64 图片的族谱导入
 - **PDF 生成**：集成 **iText 7** (kernel, io, layout, svg)。
     - `POST /api/publications/{id}/export/pdf`: 生成多页谱书 PDF（含标题、前言、成员志、切片图）。

@@ -10,6 +10,7 @@ cd backend
 - **端口**: 8080
 - **关键配置**: `src/main/resources/application.properties` (MySQL 连接, JWT Secret)
 - **数据库**: MySQL 8.0, 库名 `genealogy`
+- **数据库迁移**: Flyway (`ddl-auto=validate`, `baseline-on-migrate=true`)，迁移脚本在 `db/migration/`
 
 ### 前端 (Vue 3)
 ```bash
@@ -19,6 +20,7 @@ npm run dev
 ```
 - **端口**: 5173
 - **构建优化**: 已启用增量编译，正式构建运行 `npm run build`
+- **E2E 测试** (需后端+MySQL): `npm run test:e2e`（11 个测试，Playwright + Chromium）
 
 ## 2. 核心 API 概览
 

@@ -72,7 +72,7 @@ public class PublicationAuthorizationService {
     public void require(AccessSubject subject, Long publicationId, AccessPermission permission) {
         if (!can(subject, publicationId, permission)) {
             if (subject instanceof UserSubject user) {
-                Optional<PublicationAccess> access = resolveCachedAccess(publicationId, user.getUserId());
+                Optional<PublicationAccess> access = getAccess(user.getUserId(), publicationId);
                 if (access.isEmpty()) {
                     throw new ForbiddenException("没有权限访问该族谱");
                 }
@@ -83,16 +83,15 @@ public class PublicationAuthorizationService {
 
     private boolean canUser(UserSubject user, Long publicationId, AccessPermission permission) {
         // 1. Check publication_access table first (with request-level caching)
-        Optional<PublicationAccess> access = resolveCachedAccess(publicationId, user.getUserId());
+        Optional<PublicationAccess> access = getAccess(user.getUserId(), publicationId);
         if (access.isPresent()) {
             Set<AccessPermission> allowed = ROLE_PERMISSIONS.get(access.get().getRole());
             return allowed != null && allowed.contains(permission);
         }
 
         // 2. Fallback: check if user is the publication owner (for migration safety)
-        var publicationOwner = publicationRepository.findById(publicationId)
-                .map(Publication::getUserId);
-        if (publicationOwner.isPresent() && publicationOwner.get().equals(user.getUserId())) {
+        Optional<Long> ownerId = getCachedPublicationOwner(publicationId);
+        if (ownerId.isPresent() && ownerId.get().equals(user.getUserId())) {
             return OWNER_PERMISSIONS.contains(permission);
         }
 
@@ -100,7 +99,7 @@ public class PublicationAuthorizationService {
     }
 
     @SuppressWarnings("unchecked")
-    private Optional<PublicationAccess> resolveCachedAccess(Long pubId, Long userId) {
+    public Optional<PublicationAccess> getAccess(Long userId, Long pubId) {
         HttpServletRequest request = getCurrentRequest();
         if (request == null) {
             return accessRepository.findByPublicationIdAndUserId(pubId, userId);
@@ -113,6 +112,21 @@ public class PublicationAuthorizationService {
         Optional<PublicationAccess> access = accessRepository.findByPublicationIdAndUserId(pubId, userId);
         request.setAttribute(key, access);
         return access;
+    }
+
+    private Optional<Long> getCachedPublicationOwner(Long pubId) {
+        HttpServletRequest request = getCurrentRequest();
+        if (request == null) {
+            return publicationRepository.findById(pubId).map(Publication::getUserId);
+        }
+
+        String key = "cachedPubOwner_" + pubId;
+        Long cached = (Long) request.getAttribute(key);
+        if (cached != null) return Optional.of(cached);
+
+        Optional<Long> ownerId = publicationRepository.findById(pubId).map(Publication::getUserId);
+        ownerId.ifPresent(id -> request.setAttribute(key, id));
+        return ownerId;
     }
 
     private HttpServletRequest getCurrentRequest() {
