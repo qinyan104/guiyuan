@@ -9,7 +9,10 @@ import com.genealogy.server.model.Publication;
 import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.PublicationRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Map;
 import java.util.Optional;
@@ -69,7 +72,7 @@ public class PublicationAuthorizationService {
     public void require(AccessSubject subject, Long publicationId, AccessPermission permission) {
         if (!can(subject, publicationId, permission)) {
             if (subject instanceof UserSubject user) {
-                Optional<PublicationAccess> access = accessRepository.findByPublicationIdAndUserId(publicationId, user.getUserId());
+                Optional<PublicationAccess> access = resolveCachedAccess(publicationId, user.getUserId());
                 if (access.isEmpty()) {
                     throw new ForbiddenException("没有权限访问该族谱");
                 }
@@ -79,8 +82,8 @@ public class PublicationAuthorizationService {
     }
 
     private boolean canUser(UserSubject user, Long publicationId, AccessPermission permission) {
-        // 1. Check publication_access table first
-        Optional<PublicationAccess> access = accessRepository.findByPublicationIdAndUserId(publicationId, user.getUserId());
+        // 1. Check publication_access table first (with request-level caching)
+        Optional<PublicationAccess> access = resolveCachedAccess(publicationId, user.getUserId());
         if (access.isPresent()) {
             Set<AccessPermission> allowed = ROLE_PERMISSIONS.get(access.get().getRole());
             return allowed != null && allowed.contains(permission);
@@ -94,6 +97,31 @@ public class PublicationAuthorizationService {
         }
 
         return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Optional<PublicationAccess> resolveCachedAccess(Long pubId, Long userId) {
+        HttpServletRequest request = getCurrentRequest();
+        if (request == null) {
+            return accessRepository.findByPublicationIdAndUserId(pubId, userId);
+        }
+
+        String key = "cachedAccess_" + pubId + "_" + userId;
+        Optional<PublicationAccess> cached = (Optional<PublicationAccess>) request.getAttribute(key);
+        if (cached != null) return cached;
+
+        Optional<PublicationAccess> access = accessRepository.findByPublicationIdAndUserId(pubId, userId);
+        request.setAttribute(key, access);
+        return access;
+    }
+
+    private HttpServletRequest getCurrentRequest() {
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            return attrs != null ? attrs.getRequest() : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private boolean canShare(ShareSubject share, Long publicationId, AccessPermission permission) {

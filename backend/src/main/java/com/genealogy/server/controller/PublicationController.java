@@ -69,6 +69,17 @@ public class PublicationController {
         return new UserSubject(user.getId(), user.getRole(), user.getUsername());
     }
 
+    private Optional<com.genealogy.server.model.PublicationAccess> resolveAccess(Long pubId, UserSubject subject, HttpServletRequest request) {
+        String key = "cachedAccess_" + pubId + "_" + subject.getUserId();
+        @SuppressWarnings("unchecked")
+        Optional<com.genealogy.server.model.PublicationAccess> cached = (Optional<com.genealogy.server.model.PublicationAccess>) request.getAttribute(key);
+        if (cached != null) return cached;
+
+        Optional<com.genealogy.server.model.PublicationAccess> access = accessRepository.findByPublicationIdAndUserId(pubId, subject.getUserId());
+        request.setAttribute(key, access);
+        return access;
+    }
+
     @GetMapping
     public ApiResponse<List<Map<String, Object>>> list(HttpServletRequest request) {
         Long userId = resolveUserId(request);
@@ -83,8 +94,7 @@ public class PublicationController {
             Map<String, Object> data = publicationService.loadPublication(id);
             
             // Apply redaction if the user is a VIEWER
-            Optional<com.genealogy.server.model.PublicationAccess> access = 
-                    accessRepository.findByPublicationIdAndUserId(id, subject.getUserId());
+            Optional<com.genealogy.server.model.PublicationAccess> access = resolveAccess(id, subject, request);
             
             if (access.isPresent() && "VIEWER".equals(access.get().getRole())) {
                 data = viewProjector.projectRedacted(data, access.get().getRedactionProfile(), null);
