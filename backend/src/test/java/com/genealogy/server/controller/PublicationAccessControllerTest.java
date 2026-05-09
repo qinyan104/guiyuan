@@ -11,6 +11,7 @@ import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.security.JwtService;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
+import com.genealogy.server.service.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -65,6 +66,9 @@ class PublicationAccessControllerTest {
 
     @MockBean
     private JwtService jwtService;
+
+    @MockBean
+    private RefreshTokenService refreshTokenService;
 
     @MockBean
     private PublicationService publicationService;

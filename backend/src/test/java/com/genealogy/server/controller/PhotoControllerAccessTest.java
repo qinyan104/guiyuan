@@ -5,6 +5,8 @@ import com.genealogy.server.model.Photo;
 import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PhotoRepository;
 import com.genealogy.server.security.JwtService;
+import com.genealogy.server.service.RefreshTokenService;
+import com.genealogy.server.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
@@ -37,6 +39,12 @@ class PhotoControllerAccessTest {
 
     @MockBean
     private JwtService jwtService;
+
+    @MockBean
+    private RefreshTokenService refreshTokenService;
+
+    @MockBean
+    private UserRepository userRepository;
 
     @Test
     void getPhotoShouldBeAccessibleWithoutAuthorizationHeader() throws Exception {

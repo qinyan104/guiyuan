@@ -4,6 +4,7 @@ import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.security.JwtService;
+import com.genealogy.server.service.RefreshTokenService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
@@ -35,6 +36,9 @@ public class UserControllerTest {
 
     @MockBean
     private JwtService jwtService;
+
+    @MockBean
+    private RefreshTokenService refreshTokenService;
 
     @Test
     public void testSearchUsers() throws Exception {
