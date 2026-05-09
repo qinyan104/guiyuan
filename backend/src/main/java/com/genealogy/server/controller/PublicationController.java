@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/publications")
@@ -29,17 +30,23 @@ public class PublicationController {
     private final ObjectMapper objectMapper;
     private final PublicationAuthorizationService authorizationService;
     private final ShareLinkService shareLinkService;
+    private final com.genealogy.server.repository.PublicationAccessRepository accessRepository;
+    private final com.genealogy.server.service.PublicationViewProjector viewProjector;
 
     public PublicationController(PublicationService publicationService, UserRepository userRepository,
                                  AuditLogRepository auditLogRepository, ObjectMapper objectMapper,
                                  PublicationAuthorizationService authorizationService,
-                                 ShareLinkService shareLinkService) {
+                                 ShareLinkService shareLinkService,
+                                 com.genealogy.server.repository.PublicationAccessRepository accessRepository,
+                                 com.genealogy.server.service.PublicationViewProjector viewProjector) {
         this.publicationService = publicationService;
         this.userRepository = userRepository;
         this.auditLogRepository = auditLogRepository;
         this.objectMapper = objectMapper;
         this.authorizationService = authorizationService;
         this.shareLinkService = shareLinkService;
+        this.accessRepository = accessRepository;
+        this.viewProjector = viewProjector;
     }
 
     private User resolveCachedUser(HttpServletRequest request) {
@@ -73,7 +80,17 @@ public class PublicationController {
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.READ_FULL);
         try {
-            return ApiResponse.success(publicationService.loadPublication(id));
+            Map<String, Object> data = publicationService.loadPublication(id);
+            
+            // Apply redaction if the user is a VIEWER
+            Optional<com.genealogy.server.model.PublicationAccess> access = 
+                    accessRepository.findByPublicationIdAndUserId(id, subject.getUserId());
+            
+            if (access.isPresent() && "VIEWER".equals(access.get().getRole())) {
+                data = viewProjector.projectRedacted(data, access.get().getRedactionProfile(), null);
+            }
+
+            return ApiResponse.success(data);
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(PublicationController.class).error("获取族谱 {} 失败: {}", id, e.getMessage(), e);
             throw e;
