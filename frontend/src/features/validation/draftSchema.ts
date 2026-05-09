@@ -186,11 +186,53 @@ export function validatePublicationData(input: unknown): ValidationIssue[] {
     issues.push(issue('missing-focus-family', 'focusFamilyId', `当前宗支 ${publication.focusFamilyId} 不存在。`))
   }
 
+  // Cross-family duplicate validation
+  const adultFamilyMap = new Map<string, string[]>()
+  const childFamilyMap = new Map<string, string[]>()
+
+  Object.entries(publication.families ?? {}).forEach(([familyId, family]) => {
+    if (Array.isArray(family.adults)) {
+      family.adults.forEach((memberId: string) => {
+        if (!adultFamilyMap.has(memberId)) adultFamilyMap.set(memberId, [])
+        adultFamilyMap.get(memberId)!.push(familyId)
+      })
+    }
+    if (Array.isArray(family.children)) {
+      family.children.forEach((memberId: string) => {
+        if (!childFamilyMap.has(memberId)) childFamilyMap.set(memberId, [])
+        childFamilyMap.get(memberId)!.push(familyId)
+      })
+    }
+  })
+
+  const families = publication.families ?? {}
+
+  adultFamilyMap.forEach((familyIds, personId) => {
+    if (familyIds.length > 1) {
+      familyIds.slice(1).forEach((familyId) => {
+        const idx = (families[familyId]?.adults ?? []).indexOf(personId)
+        issues.push(issue('cross-family-duplicate-adult', `families.${familyId}.adults[${idx}]`, `人物 ${personId} 已在家庭 ${familyIds[0]} 中作为父母，不能同时作为家庭 ${familyId} 的父母。`))
+      })
+    }
+  })
+
+  childFamilyMap.forEach((familyIds, personId) => {
+    if (familyIds.length > 1) {
+      familyIds.slice(1).forEach((familyId) => {
+        const idx = (families[familyId]?.children ?? []).indexOf(personId)
+        issues.push(issue('cross-family-duplicate-child', `families.${familyId}.children[${idx}]`, `人物 ${personId} 已在家庭 ${familyIds[0]} 中作为子女，不能同时作为家庭 ${familyId} 的子女。`))
+      })
+    }
+  })
+
   return issues
 }
 
 export function normalizePublicationData(publication: PublicationData): PublicationData {
   const next = JSON.parse(JSON.stringify(publication)) as PublicationData
+
+  // Remove cross-family duplicates before per-family normalization
+  deduplicateCrossFamily(next)
 
   Object.values(next.families).forEach((family) => {
     const adultIds = new Set<string>()
@@ -275,6 +317,48 @@ export function validateSettings(input: unknown): ValidationIssue[] {
   })
 
   return issues
+}
+
+/**
+ * Remove cross-family duplicates: a person cannot be adult in more than one family,
+ * nor child in more than one family. The first occurrence is kept; extras are removed.
+ */
+function deduplicateCrossFamily(publication: PublicationData): void {
+  const adultFamilyMap = new Map<string, string[]>()
+  const childFamilyMap = new Map<string, string[]>()
+
+  Object.entries(publication.families).forEach(([familyId, family]) => {
+    family.adults?.forEach((pid) => {
+      if (!adultFamilyMap.has(pid)) adultFamilyMap.set(pid, [])
+      adultFamilyMap.get(pid)!.push(familyId)
+    })
+    family.children?.forEach((pid) => {
+      if (!childFamilyMap.has(pid)) childFamilyMap.set(pid, [])
+      childFamilyMap.get(pid)!.push(familyId)
+    })
+  })
+
+  adultFamilyMap.forEach((familyIds) => {
+    if (familyIds.length > 1) {
+      familyIds.slice(1).forEach((familyId) => {
+        const family = publication.families[familyId]
+        if (family) {
+          family.adults = family.adults.filter((id) => id !== familyIds[0])
+        }
+      })
+    }
+  })
+
+  childFamilyMap.forEach((familyIds) => {
+    if (familyIds.length > 1) {
+      familyIds.slice(1).forEach((familyId) => {
+        const family = publication.families[familyId]
+        if (family) {
+          family.children = family.children.filter((id) => id !== familyIds[0])
+        }
+      })
+    }
+  })
 }
 
 export function formatValidationIssues(issues: ValidationIssue[]): string {

@@ -46,11 +46,19 @@ public class PublicationAccessController {
         this.publicationService = publicationService;
     }
 
-    private UserSubject resolveSubject(HttpServletRequest request) {
+    private User resolveCachedUser(HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         if (username == null) throw new ForbiddenException("未登录");
+        User cached = (User) request.getAttribute("cachedUser");
+        if (cached != null && username.equals(cached.getUsername())) return cached;
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ForbiddenException("未登录"));
+        request.setAttribute("cachedUser", user);
+        return user;
+    }
+
+    private UserSubject resolveSubject(HttpServletRequest request) {
+        User user = resolveCachedUser(request);
         return new UserSubject(user.getId(), user.getRole(), user.getUsername());
     }
 

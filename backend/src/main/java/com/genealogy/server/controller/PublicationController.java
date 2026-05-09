@@ -42,18 +42,24 @@ public class PublicationController {
         this.shareLinkService = shareLinkService;
     }
 
-    private Long resolveUserId(HttpServletRequest request) {
+    private User resolveCachedUser(HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
+        if (username == null) throw new RuntimeException("用户不存在");
+        User cached = (User) request.getAttribute("cachedUser");
+        if (cached != null && username.equals(cached.getUsername())) return cached;
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
-        return user.getId();
+        request.setAttribute("cachedUser", user);
+        return user;
+    }
+
+    private Long resolveUserId(HttpServletRequest request) {
+        return resolveCachedUser(request).getId();
     }
 
     private UserSubject resolveSubject(HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
-        return new UserSubject(user.getId(), user.getRole(), username);
+        User user = resolveCachedUser(request);
+        return new UserSubject(user.getId(), user.getRole(), user.getUsername());
     }
 
     @GetMapping

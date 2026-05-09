@@ -13,6 +13,7 @@ import java.util.List;
 @Repository
 public interface FamilyMemberRepository extends JpaRepository<FamilyMember, Long> {
     List<FamilyMember> findByFamilyDbIdOrderBySortOrder(Long familyDbId);
+    List<FamilyMember> findByPersonDbId(Long personDbId);
     @Modifying
     @Transactional
     @Query("DELETE FROM FamilyMember fm WHERE fm.familyDbId = :familyDbId")

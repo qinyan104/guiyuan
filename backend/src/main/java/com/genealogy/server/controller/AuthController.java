@@ -25,7 +25,8 @@ import java.util.Map;
 public class AuthController {
 
     private static final String REFRESH_COOKIE_NAME = "refresh_token";
-    private static final String REFRESH_COOKIE_PATH = "/api/auth";
+    private static final String REFRESH_COOKIE_PATH = "/api";
+    private static final String LEGACY_REFRESH_COOKIE_PATH = "/api/auth";
     private static final long REFRESH_COOKIE_MAX_AGE = 2592000L; // 30 days
 
     private final UserService userService;
@@ -66,6 +67,7 @@ public class AuthController {
                 .path(REFRESH_COOKIE_PATH)
                 .maxAge(REFRESH_COOKIE_MAX_AGE)
                 .build();
+        clearRefreshCookie(response, LEGACY_REFRESH_COOKIE_PATH);
         response.addHeader("Set-Cookie", cookie.toString());
 
         Map<String, String> data = new HashMap<>();
@@ -95,6 +97,7 @@ public class AuthController {
         var userIdOpt = refreshTokenService.validateRefreshToken(refreshToken);
         if (userIdOpt.isEmpty()) {
             clearRefreshCookie(response);
+            clearRefreshCookie(response, LEGACY_REFRESH_COOKIE_PATH);
             return ApiResponse.error(401, "刷新令牌已过期或无效");
         }
 
@@ -102,6 +105,7 @@ public class AuthController {
         var userOpt = userService.findById(userId);
         if (userOpt.isEmpty()) {
             clearRefreshCookie(response);
+            clearRefreshCookie(response, LEGACY_REFRESH_COOKIE_PATH);
             return ApiResponse.error(401, "用户不存在");
         }
 
@@ -119,6 +123,7 @@ public class AuthController {
                 .path(REFRESH_COOKIE_PATH)
                 .maxAge(REFRESH_COOKIE_MAX_AGE)
                 .build();
+        clearRefreshCookie(response, LEGACY_REFRESH_COOKIE_PATH);
         response.addHeader("Set-Cookie", cookie.toString());
 
         Map<String, String> data = new HashMap<>();
@@ -139,6 +144,7 @@ public class AuthController {
             refreshTokenService.revokeRefreshToken(refreshToken);
         }
         clearRefreshCookie(response);
+        clearRefreshCookie(response, LEGACY_REFRESH_COOKIE_PATH);
         return ApiResponse.success("已退出登录", null);
     }
 
@@ -163,11 +169,15 @@ public class AuthController {
     }
 
     private void clearRefreshCookie(HttpServletResponse response) {
+        clearRefreshCookie(response, REFRESH_COOKIE_PATH);
+    }
+
+    private void clearRefreshCookie(HttpServletResponse response, String path) {
         ResponseCookie cookie = ResponseCookie.from(REFRESH_COOKIE_NAME, "")
                 .httpOnly(true)
                 .secure(false)
                 .sameSite("Strict")
-                .path(REFRESH_COOKIE_PATH)
+                .path(path)
                 .maxAge(0)
                 .build();
         response.addHeader("Set-Cookie", cookie.toString());

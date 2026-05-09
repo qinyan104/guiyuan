@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -67,6 +68,12 @@ class BranchMergeTest {
     @Mock
     private PublicationAuthorizationService authorizationService;
 
+    @Mock
+    private PublicationTreeLoader treeLoader;
+
+    @Mock
+    private PhotoService photoService;
+
     private PublicationService publicationService;
 
     @BeforeEach
@@ -80,7 +87,9 @@ class BranchMergeTest {
                 new ObjectMapper(),
                 publicationAccessRepository,
                 shareLinkRepository,
-                authorizationService
+                authorizationService,
+                treeLoader,
+                photoService
         );
     }
 
@@ -134,15 +143,8 @@ class BranchMergeTest {
         childMember.setRole("child");
         childMember.setSortOrder(0);
 
-        Photo sourcePhoto = new Photo();
-        sourcePhoto.setId(70L);
-        sourcePhoto.setPersonDbId(20L);
-        sourcePhoto.setMimeType("image/png");
-        sourcePhoto.setData(new byte[]{1, 2, 3, 4});
-
         AtomicLong personIds = new AtomicLong(1000L);
         AtomicLong familyIds = new AtomicLong(2000L);
-        AtomicLong photoIds = new AtomicLong(3000L);
         Map<String, Person> mergedPeopleBySourceId = new HashMap<>();
 
         when(personRepository.findByPublicationIdAndPersonId(MASTER_PUB_ID, MOUNT_POINT_PERSON_ID))
@@ -153,9 +155,18 @@ class BranchMergeTest {
                 .thenReturn(List.of(branchFamily));
         when(familyMemberRepository.findByFamilyDbIdOrderBySortOrder(30L))
                 .thenReturn(List.of(adultMember, childMember));
+        when(personRepository.findById(200L)).thenReturn(Optional.empty()); // BFS root fallback: person 200 does not exist in target
         when(personRepository.findById(20L)).thenReturn(Optional.of(branchRoot));
         when(personRepository.findById(21L)).thenReturn(Optional.of(branchChild));
-        when(photoRepository.findById(70L)).thenReturn(Optional.of(sourcePhoto));
+
+        when(photoService.clonePhotoForPerson(anyLong(), anyLong())).thenAnswer(invocation -> {
+            Photo cloned = new Photo();
+            cloned.setId(3000L);
+            cloned.setMimeType("image/png");
+            cloned.setData(new byte[]{1, 2, 3, 4});
+            cloned.setPersonDbId(invocation.getArgument(1));
+            return cloned;
+        });
 
         when(personRepository.save(any(Person.class))).thenAnswer(invocation -> {
             Person person = invocation.getArgument(0);
@@ -179,14 +190,6 @@ class BranchMergeTest {
             return family;
         });
 
-        when(photoRepository.save(any(Photo.class))).thenAnswer(invocation -> {
-            Photo photo = invocation.getArgument(0);
-            if (photo.getId() == null) {
-                photo.setId(photoIds.getAndIncrement());
-            }
-            return photo;
-        });
-
         publicationService.mergeBranch(MASTER_PUB_ID, MOUNT_POINT_PERSON_ID, actor);
 
         verify(authorizationService).require(actor, TARGET_PUB_ID, AccessPermission.READ_FULL);
@@ -202,13 +205,6 @@ class BranchMergeTest {
         assertThat(mergedChild.getIsMountPoint()).isTrue();
         assertThat(mergedChild.getTargetPublicationId()).isEqualTo(8L);
         assertThat(mergedChild.getTargetRootPersonId()).isEqualTo(88L);
-
-        ArgumentCaptor<Photo> photoCaptor = ArgumentCaptor.forClass(Photo.class);
-        verify(photoRepository).save(photoCaptor.capture());
-        Photo clonedPhoto = photoCaptor.getValue();
-        assertThat(clonedPhoto.getMimeType()).isEqualTo("image/png");
-        assertThat(clonedPhoto.getData()).containsExactly(1, 2, 3, 4);
-        assertThat(clonedPhoto.getPersonDbId()).isEqualTo(mergedRoot.getId());
 
         ArgumentCaptor<Family> familyCaptor = ArgumentCaptor.forClass(Family.class);
         verify(familyRepository).save(familyCaptor.capture());

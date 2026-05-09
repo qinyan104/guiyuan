@@ -61,11 +61,20 @@ public class ExportController {
                 .body(pdfBytes);
     }
 
-    private UserSubject resolveSubject(HttpServletRequest request) {
+    private User resolveCachedUser(HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
+        if (username == null) throw new RuntimeException("用户不存在");
+        User cached = (User) request.getAttribute("cachedUser");
+        if (cached != null && username.equals(cached.getUsername())) return cached;
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
-        return new UserSubject(user.getId(), user.getRole(), username);
+        request.setAttribute("cachedUser", user);
+        return user;
+    }
+
+    private UserSubject resolveSubject(HttpServletRequest request) {
+        User user = resolveCachedUser(request);
+        return new UserSubject(user.getId(), user.getRole(), user.getUsername());
     }
 
     private String resolveBaseUri(HttpServletRequest request) {

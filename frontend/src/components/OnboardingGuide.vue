@@ -26,7 +26,7 @@ const steps = [
     title: '完善人物详情',
     desc: '点击画布中的人物节点，进入纪传体个人志页面，可添加传文、照片、家训等丰富内容。',
     action: '完成',
-    routeName: null as const,
+    routeName: null,
   },
 ]
 

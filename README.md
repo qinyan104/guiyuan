@@ -40,7 +40,7 @@ CREATE DATABASE genealogy CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```bash
 export DB_USERNAME=root
 export DB_PASSWORD=your_password
-# 生产环境还需配置：
+# 开发和生产环境都必须配置，IDEA 启动配置中也要保持一致：
 export JWT_SECRET=your-256-bit-secret-key
 ```
 
@@ -64,6 +64,8 @@ npm run dev
 ```
 
 前端运行在 `http://localhost:5173`，打开浏览器访问即可。API 请求将自动代理至 `localhost:8080`。如需更改后端地址，可修改 `frontend/.env.development` 中的 `VITE_API_BASE_URL`。
+
+**前端结构约束：** 作为 `router-view` 直接承载的页面组件如果内部使用了 `Teleport`（例如弹窗、浮层），必须保持**单一根节点**。不要再用额外的路由过渡层去包裹这类页面，否则可能出现“登录后接口已成功、左侧导航正常、但中间内容区空白”的假性认证问题。
 
 ### 4. 导出说明
 

@@ -29,12 +29,20 @@ const feedbackMessage = ref('')
 const selectedTargetId = ref('')
 
 const availablePublications = computed(() =>
-  publications.value.filter((item) => item.id !== props.publicationId),
+  publications.value.filter(
+    (item) => item.id !== props.publicationId && item.accessRole !== 'VIEWER',
+  ),
 )
 
 const selectedTarget = computed(() =>
   availablePublications.value.find((item) => String(item.id) === selectedTargetId.value) ?? null,
 )
+
+function formatAccessRole(role: string): string {
+  if (role === 'OWNER') return '我的'
+  if (role === 'EDITOR') return '共享·编辑'
+  return role
+}
 
 watch(
   () => props.person.mountPointTarget?.publicationId,
@@ -44,7 +52,7 @@ watch(
   { immediate: true },
 )
 
-async function loadOwnedPublications() {
+async function loadAccessiblePublications() {
   if (!props.publicationId) return
 
   loading.value = true
@@ -143,7 +151,7 @@ async function handleMerge() {
   }
 }
 
-onMounted(loadOwnedPublications)
+onMounted(loadAccessiblePublications)
 </script>
 
 <template>
@@ -173,7 +181,7 @@ onMounted(loadOwnedPublications)
         <select :disabled="loading || !availablePublications.length" :value="selectedTargetId" @change="handleTargetChange">
           <option value="">选择一个目标族谱</option>
           <option v-for="item in availablePublications" :key="item.id" :value="item.id">
-            {{ item.title }}
+            {{ item.title }} ({{ formatAccessRole(item.accessRole) }})
           </option>
         </select>
       </label>
@@ -264,6 +272,7 @@ onMounted(loadOwnedPublications)
   background: rgba(255, 255, 255, 0.68);
   border: 1px solid rgba(91, 70, 42, 0.08);
 }
+
 
 .branch-mount-field span,
 .branch-mount-meta span {

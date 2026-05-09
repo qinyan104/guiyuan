@@ -32,7 +32,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -63,6 +67,12 @@ class PublicationServiceTest {
     @Mock
     private PublicationAuthorizationService authorizationService;
 
+    @Mock
+    private PublicationTreeLoader treeLoader;
+
+    @Mock
+    private PhotoService photoService;
+
     private PublicationService publicationService;
 
     @BeforeEach
@@ -76,7 +86,9 @@ class PublicationServiceTest {
                 new ObjectMapper(),
                 publicationAccessRepository,
                 shareLinkRepository,
-                authorizationService
+                authorizationService,
+                treeLoader,
+                photoService
         );
     }
 
@@ -84,7 +96,6 @@ class PublicationServiceTest {
     void createPublicationClonesReferencedPhotoWhenImportUsesApiPhotoUrl() {
         AtomicLong publicationIds = new AtomicLong(100L);
         AtomicLong personIds = new AtomicLong(200L);
-        AtomicLong photoIds = new AtomicLong(300L);
         AtomicLong familyIds = new AtomicLong(400L);
 
         when(publicationRepository.save(any(Publication.class))).thenAnswer(invocation -> {
@@ -111,34 +122,13 @@ class PublicationServiceTest {
             return family;
         });
 
-        when(photoRepository.save(any(Photo.class))).thenAnswer(invocation -> {
-            Photo photo = invocation.getArgument(0);
-            if (photo.getId() == null) {
-                photo.setId(photoIds.getAndIncrement());
-            }
-            return photo;
-        });
-
-        Photo existingPhoto = new Photo();
-        existingPhoto.setId(7L);
-        existingPhoto.setPersonDbId(999L);
-        existingPhoto.setMimeType("image/png");
-        existingPhoto.setData(new byte[]{1, 2, 3});
-        when(photoRepository.findById(7L)).thenReturn(Optional.of(existingPhoto));
+        when(photoService.handlePersonAvatar(anyLong(), eq("/api/photos/7"), eq(true))).thenReturn(300L);
 
         Map<String, Object> publicationData = buildPublicationData("/api/photos/7");
 
         Long publicationId = publicationService.createPublication(1L, "李氏族谱", "测试导入", publicationData, null, null);
 
         assertThat(publicationId).isEqualTo(100L);
-
-        ArgumentCaptor<Photo> photoCaptor = ArgumentCaptor.forClass(Photo.class);
-        verify(photoRepository).save(photoCaptor.capture());
-        Photo clonedPhoto = photoCaptor.getValue();
-        assertThat(clonedPhoto.getId()).isEqualTo(300L);
-        assertThat(clonedPhoto.getPersonDbId()).isEqualTo(200L);
-        assertThat(clonedPhoto.getMimeType()).isEqualTo("image/png");
-        assertThat(clonedPhoto.getData()).containsExactly(1, 2, 3);
 
         ArgumentCaptor<Person> personCaptor = ArgumentCaptor.forClass(Person.class);
         verify(personRepository, atLeast(2)).save(personCaptor.capture());
@@ -181,20 +171,14 @@ class PublicationServiceTest {
             return family;
         });
 
+        when(photoService.handlePersonAvatar(anyLong(), any(), anyBoolean())).thenReturn(null);
+
         Photo existingPhoto = new Photo();
         existingPhoto.setId(7L);
         existingPhoto.setPersonDbId(200L);
         existingPhoto.setMimeType("image/png");
         existingPhoto.setData(new byte[]{1, 2, 3});
-        when(photoRepository.findById(7L)).thenReturn(Optional.of(existingPhoto));
-        when(photoRepository.save(any(Photo.class))).thenAnswer(invocation -> {
-            Photo photo = invocation.getArgument(0);
-            if (photo.getId() == null) {
-                newPhotoRows.incrementAndGet();
-                photo.setId(999L);
-            }
-            return photo;
-        });
+        // reassignPhoto is void on a mock; stubbing not needed
 
         publicationService.updatePublication(100L, "李氏族谱", "更新", buildPublicationData("/api/photos/7"), null, null);
 
@@ -210,7 +194,6 @@ class PublicationServiceTest {
     void createPublicationImportsLegacyUploadUrlIntoPhotoTable() throws Exception {
         AtomicLong publicationIds = new AtomicLong(100L);
         AtomicLong personIds = new AtomicLong(200L);
-        AtomicLong photoIds = new AtomicLong(300L);
         AtomicLong familyIds = new AtomicLong(400L);
 
         when(publicationRepository.save(any(Publication.class))).thenAnswer(invocation -> {
@@ -237,13 +220,7 @@ class PublicationServiceTest {
             return family;
         });
 
-        when(photoRepository.save(any(Photo.class))).thenAnswer(invocation -> {
-            Photo photo = invocation.getArgument(0);
-            if (photo.getId() == null) {
-                photo.setId(photoIds.getAndIncrement());
-            }
-            return photo;
-        });
+        when(photoService.handlePersonAvatar(anyLong(), any(), anyBoolean())).thenReturn(300L);
 
         Files.createDirectories(Path.of("uploads"));
         String fileName = "legacy-import-" + UUID.randomUUID() + ".png";
@@ -255,13 +232,11 @@ class PublicationServiceTest {
             publicationService.createPublication(1L, "李氏族谱", "旧数据导入",
                     buildPublicationData("/uploads/" + fileName), null, null);
 
-            ArgumentCaptor<Photo> photoCaptor = ArgumentCaptor.forClass(Photo.class);
-            verify(photoRepository).save(photoCaptor.capture());
-            Photo savedPhoto = photoCaptor.getValue();
-            assertThat(savedPhoto.getId()).isEqualTo(300L);
-            assertThat(savedPhoto.getPersonDbId()).isEqualTo(200L);
-            assertThat(savedPhoto.getMimeType()).isEqualTo("image/png");
-            assertThat(savedPhoto.getData()).containsExactly(imageBytes);
+            ArgumentCaptor<Person> personCaptor = ArgumentCaptor.forClass(Person.class);
+            verify(personRepository, atLeast(2)).save(personCaptor.capture());
+            Person savedPerson = personCaptor.getAllValues().get(personCaptor.getAllValues().size() - 1);
+            assertThat(savedPerson.getId()).isEqualTo(200L);
+            assertThat(savedPerson.getPhotoId()).isEqualTo(300L);
         } finally {
             Files.deleteIfExists(uploadFile);
         }
@@ -322,24 +297,23 @@ class PublicationServiceTest {
         master.setSubtitle("Main Subtitle");
         master.setFocusFamilyId("f1");
 
-        Publication target = new Publication();
-        target.setId(9L);
-        target.setTitle("Branch Publication");
-
-        Person person = new Person();
-        person.setId(200L);
-        person.setPublicationId(100L);
-        person.setPersonId("p1");
-        person.setName("Mounted Person");
-        person.setGender("male");
-        person.setIsMountPoint(true);
-        person.setTargetPublicationId(9L);
-        person.setTargetRootPersonId(42L);
-
         when(publicationRepository.findById(100L)).thenReturn(Optional.of(master));
-        when(publicationRepository.findById(9L)).thenReturn(Optional.of(target));
-        when(personRepository.findByPublicationId(100L)).thenReturn(List.of(person));
-        when(familyRepository.findByPublicationId(100L)).thenReturn(List.of());
+        
+        // Mock the federated data loader
+        doAnswer(invocation -> {
+            Map<String, Map<String, Object>> people = invocation.getArgument(3);
+            Map<String, Object> personJson = new LinkedHashMap<>();
+            personJson.put("id", "p1");
+            personJson.put("name", "Mounted Person");
+            personJson.put("isMountPoint", true);
+            Map<String, Object> mountTarget = new LinkedHashMap<>();
+            mountTarget.put("publicationId", 9L);
+            mountTarget.put("publicationTitle", "Branch Publication");
+            mountTarget.put("rootPersonId", 42L);
+            personJson.put("mountPointTarget", mountTarget);
+            people.put("p1", personJson);
+            return null;
+        }).when(treeLoader).loadFederatedData(any(), any(Integer.class), any(String.class), any(Map.class), any(Map.class));
 
         Map<String, Object> response = publicationService.loadPublication(100L);
 

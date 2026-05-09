@@ -4,12 +4,15 @@ dist/
 Thumbs.db
 
 .worktrees/
+.claude/worktrees/
 .vscode/
 
 frontend/node_modules/
 frontend/dist/
+frontend/*.tsbuildinfo
 
 backend/target/
+backend/.mvn-local/
 backend/.idea/
 backend/tmp-run.out
 backend/tmp-run.err

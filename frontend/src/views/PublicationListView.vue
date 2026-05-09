@@ -18,8 +18,6 @@ const router = useRouter()
 
 const publications = ref<PublicationSummary[]>([])
 const loading = ref(true)
-const creatingTemplate = ref(false)
-
 const showCreateDialog = ref(false)
 const newTitle = ref('')
 const newSubtitle = ref('')
@@ -141,32 +139,16 @@ function formatDate(dateStr: string) {
   })
 }
 
-async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
-  if (creatingTemplate.value) return
-
-  creatingTemplate.value = true
-  const baseTitle = sample.publication.title || sample.label
-  const newTitle = baseTitle + ' (副本)'
-
-  try {
-    const id = await createPublication(
-      sample.publication,
-      defaultSettings,
-      newTitle,
-    )
-    router.push({ name: 'workbench', params: { id } })
-  } catch (err: any) {
-    alert('创建模板失败: ' + (err.message || '未知错误'))
-  } finally {
-    creatingTemplate.value = false
-  }
+function handleViewSample(sample: typeof builtinSamples[0]) {
+  router.push({ name: 'sample-preview', params: { sampleId: sample.id } })
 }
 </script>
 
 <template>
-  <div class="gallery-stage">
-    <!-- Header -->
-    <header class="gallery-header">
+  <div class="publication-list-view-root">
+    <div class="gallery-stage">
+      <!-- Header -->
+      <header class="gallery-header">
       <div class="header-left">
         <div class="header-meta">ARCHIVE GALLERY // {{ publications.length }} VOLUMES</div>
         <h1 class="header-title">谱系陈列馆</h1>
@@ -186,38 +168,39 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
     </div>
 
     <div v-else>
-      <div v-if="publications.length === 0" class="empty-state">
-        <div class="empty-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        </div>
-        <h3 class="empty-title">还没有族谱</h3>
-        <p class="empty-desc">快来创建第一个族谱，或从示例模板开始。</p>
-        <div class="empty-actions">
-          <button class="bento-btn primary" @click="showCreateDialog = true">创建族谱</button>
-        </div>
-      </div>
-      <div v-else class="publication-grid">
-        <!-- Template Section (Built-in) -->
+      <div class="publication-grid">
+        <!-- Template Section (Built-in) - Moved outside of the empty-state conditional for better discovery -->
         <section class="gallery-section">
           <div class="section-eyebrow">
             <span class="dot-ember"></span> 经典王朝世系模板
           </div>
           <div class="template-grid">
-            <div v-for="sample in builtinSamples" :key="sample.id" class="glass-card template-card" @click="handleCreateFromTemplate(sample)">
+            <div v-for="sample in builtinSamples" :key="sample.id" class="glass-card template-card" @click="handleViewSample(sample)">
               <div class="template-bg"></div>
               <div class="template-content">
                 <h3 class="template-title">{{ sample.publication.title }}</h3>
                 <p class="template-subtitle">{{ sample.publication.subtitle }}</p>
               </div>
               <div class="template-action">
-                以该模版建立 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                预览示例 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </div>
             </div>
           </div>
         </section>
 
+        <div v-if="publications.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <h3 class="empty-title">还没有族谱研究</h3>
+          <p class="empty-desc">您可以点击上方模板快速开始，或创建一个全新的空白宗谱。</p>
+          <div class="empty-actions">
+            <button class="bento-btn primary" @click="showCreateDialog = true">新建空白宗谱</button>
+          </div>
+        </div>
+
         <!-- Archive Section -->
-        <section class="gallery-section">
+        <section v-else class="gallery-section">
           <div class="section-eyebrow">
             <span class="dot-ink"></span> 私人研究档案
           </div>
@@ -276,8 +259,8 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
       </div>
     </div>
 
-    <!-- Modals: Glass Sheets -->
-    <Teleport to="body">
+      <!-- Modals: Glass Sheets -->
+      <Teleport to="body">
       <!-- Create Archive Sheet -->
       <transition name="sheet-slide">
         <div v-if="showCreateDialog" class="glass-modal-overlay" @click.self="showCreateDialog = false">
@@ -376,14 +359,8 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
         </div>
       </transition>
 
-      <!-- Loading Template Overlay -->
-      <transition name="fade">
-        <div v-if="creatingTemplate" class="glass-modal-overlay loading-overlay">
-          <div class="spinner"></div>
-          <p class="loading-text">正在从模板拓印宗谱结构...</p>
-        </div>
-      </transition>
-    </Teleport>
+      </Teleport>
+    </div>
   </div>
 </template>
 
@@ -916,17 +893,6 @@ async function handleCreateFromTemplate(sample: typeof builtinSamples[0]) {
   margin-top: 1rem;
 }
 
-/* Loading Overlay */
-.loading-overlay {
-  flex-direction: column;
-  gap: 1.5rem;
-}
-.loading-text {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-main);
-  letter-spacing: 0.1em;
-}
 .spinner {
   width: 48px;
   height: 48px;

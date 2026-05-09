@@ -25,17 +25,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,13 +49,17 @@ public class PublicationService {
     private final PublicationShareLinkRepository shareLinkRepository;
     private final ObjectMapper objectMapper;
     private final PublicationAuthorizationService authorizationService;
+    private final PublicationTreeLoader treeLoader;
+    private final PhotoService photoService;
 
     public PublicationService(PublicationRepository publicationRepository, PersonRepository personRepository,
                               FamilyRepository familyRepository, FamilyMemberRepository familyMemberRepository,
                               PhotoRepository photoRepository, ObjectMapper objectMapper,
                               PublicationAccessRepository publicationAccessRepository,
                               PublicationShareLinkRepository shareLinkRepository,
-                              PublicationAuthorizationService authorizationService) {
+                              PublicationAuthorizationService authorizationService,
+                              PublicationTreeLoader treeLoader,
+                              PhotoService photoService) {
         this.publicationRepository = publicationRepository;
         this.personRepository = personRepository;
         this.familyRepository = familyRepository;
@@ -70,6 +69,8 @@ public class PublicationService {
         this.publicationAccessRepository = publicationAccessRepository;
         this.shareLinkRepository = shareLinkRepository;
         this.authorizationService = authorizationService;
+        this.treeLoader = treeLoader;
+        this.photoService = photoService;
     }
 
     public List<Map<String, Object>> listPublications(Long userId) {
@@ -132,84 +133,11 @@ public class PublicationService {
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new NotFoundException("Publication not found"));
 
-        List<Person> personEntities = personRepository.findByPublicationId(publicationId);
-        Map<String, Long> personDbIdMap = new HashMap<>();
         Map<String, Map<String, Object>> people = new LinkedHashMap<>();
-        for (Person person : personEntities) {
-            personDbIdMap.put(person.getPersonId(), person.getId());
-
-            Map<String, Object> personJson = new LinkedHashMap<>();
-            personJson.put("id", person.getPersonId());
-            personJson.put("name", person.getName());
-            personJson.put("gender", person.getGender());
-            if (person.getBirth() != null) {
-                personJson.put("birth", person.getBirth());
-            }
-            if (person.getDeath() != null) {
-                personJson.put("death", person.getDeath());
-            }
-            if (Boolean.TRUE.equals(person.getDeceased())) {
-                personJson.put("deceased", true);
-            }
-            if (person.getAge() != null) {
-                personJson.put("age", person.getAge());
-            }
-            if (person.getTitleName() != null) {
-                personJson.put("titleName", person.getTitleName());
-            }
-            if (person.getClan() != null) {
-                personJson.put("clan", person.getClan());
-            }
-            if (person.getNote() != null) {
-                personJson.put("note", person.getNote());
-            }
-            if (person.getHighlightRole() != null) {
-                personJson.put("highlightRole", person.getHighlightRole());
-            }
-            if (person.getPhotoId() != null) {
-                personJson.put("avatarUrl", "/api/photos/" + person.getPhotoId());
-            }
-            if (Boolean.TRUE.equals(person.getIsMountPoint())) {
-                personJson.put("isMountPoint", true);
-                Map<String, Object> mountPointTarget = buildMountPointTarget(person);
-                if (!mountPointTarget.isEmpty()) {
-                    personJson.put("mountPointTarget", mountPointTarget);
-                }
-            }
-            people.put(person.getPersonId(), personJson);
-        }
-
-        Map<Long, String> dbIdToPersonIdMap = new HashMap<>();
-        personDbIdMap.forEach((personId, dbId) -> dbIdToPersonIdMap.put(dbId, personId));
-
-        List<Family> familyEntities = familyRepository.findByPublicationId(publicationId);
         Map<String, Map<String, Object>> families = new LinkedHashMap<>();
-        for (Family family : familyEntities) {
-            List<FamilyMember> members = familyMemberRepository.findByFamilyDbIdOrderBySortOrder(family.getId());
-            List<String> adults = new ArrayList<>();
-            List<String> children = new ArrayList<>();
-
-            for (FamilyMember member : members) {
-                String personId = dbIdToPersonIdMap.get(member.getPersonDbId());
-                if (personId == null) {
-                    continue;
-                }
-                if ("adult".equals(member.getRole())) {
-                    adults.add(personId);
-                } else {
-                    children.add(personId);
-                }
-            }
-
-            Map<String, Object> familyJson = new LinkedHashMap<>();
-            familyJson.put("id", family.getFamilyId());
-            familyJson.put("adults", adults);
-            familyJson.put("children", children);
-            if (family.getBranchMode() != null) {
-                familyJson.put("branchMode", family.getBranchMode());
-            }
-            families.put(family.getFamilyId(), familyJson);
-        }
+        
+        // Load federated data (root + linked branches up to depth 3)
+        treeLoader.loadFederatedData(publicationId, 3, "", people, families);
 
         Map<String, Object> publicationJson = new LinkedHashMap<>();
         publicationJson.put("title", publication.getTitle());
@@ -356,7 +284,7 @@ public class PublicationService {
             if (avatarUrl == null || avatarUrl.isEmpty()) {
                 person.setPhotoId(null);
             } else {
-                Long photoId = handlePersonAvatar(person.getId(), avatarUrl, false);
+                Long photoId = photoService.handlePersonAvatar(person.getId(), avatarUrl, false);
                 if (photoId != null) {
                     person.setPhotoId(photoId);
                 }
@@ -389,7 +317,57 @@ public class PublicationService {
         authorizationService.require(subject, targetPubId, AccessPermission.READ_FULL);
 
         String idPrefix = "merged_" + targetPubId + "_";
-        List<Person> targetPeople = personRepository.findByPublicationId(targetPubId);
+
+        // Resolve the root person in the target publication (for subtree pruning)
+        Person rootPerson = null;
+        if (mountPoint.getTargetRootPersonId() != null) {
+            rootPerson = personRepository.findById(mountPoint.getTargetRootPersonId()).orElse(null);
+        }
+        if (rootPerson == null) {
+            // Fallback: use the mount point person's own personId to look up in the target publication
+            rootPerson = personRepository.findByPublicationIdAndPersonId(
+                    targetPubId, mountPointPersonId).orElse(null);
+        }
+
+        // Collect the people and families to clone (subtree or full)
+        List<Person> targetPeople;
+        List<Family> targetFamilies;
+
+        if (rootPerson != null) {
+            // BFS traversal to collect the subtree rooted at rootPerson
+            Set<Long> collectedPersonDbIds = new HashSet<>();
+            Set<Long> collectedFamilyDbIds = new HashSet<>();
+            LinkedList<Long> queue = new LinkedList<>();
+            queue.add(rootPerson.getId());
+            collectedPersonDbIds.add(rootPerson.getId());
+
+            while (!queue.isEmpty()) {
+                Long currentPersonDbId = queue.poll();
+                List<FamilyMember> memberships = familyMemberRepository.findByPersonDbId(currentPersonDbId);
+
+                for (FamilyMember membership : memberships) {
+                    if (!collectedFamilyDbIds.contains(membership.getFamilyDbId())) {
+                        collectedFamilyDbIds.add(membership.getFamilyDbId());
+
+                        // Collect all members of this family and enqueue them
+                        List<FamilyMember> allFamilyMembers = familyMemberRepository
+                                .findByFamilyDbIdOrderBySortOrder(membership.getFamilyDbId());
+                        for (FamilyMember fm : allFamilyMembers) {
+                            if (collectedPersonDbIds.add(fm.getPersonDbId())) {
+                                queue.add(fm.getPersonDbId());
+                            }
+                        }
+                    }
+                }
+            }
+
+            targetPeople = personRepository.findAllById(collectedPersonDbIds);
+            targetFamilies = familyRepository.findAllById(collectedFamilyDbIds);
+        } else {
+            // Fallback: no root person found, clone everything (original behavior)
+            targetPeople = personRepository.findByPublicationId(targetPubId);
+            targetFamilies = familyRepository.findByPublicationId(targetPubId);
+        }
         Map<String, Long> mergedPersonDbIds = new HashMap<>();
 
         for (Person sourcePerson : targetPeople) {
@@ -413,7 +391,7 @@ public class PublicationService {
             mergedPerson = personRepository.save(mergedPerson);
 
             if (sourcePerson.getPhotoId() != null) {
-                Photo clonedPhoto = clonePhotoForPerson(sourcePerson.getPhotoId(), mergedPerson.getId());
+                Photo clonedPhoto = photoService.clonePhotoForPerson(sourcePerson.getPhotoId(), mergedPerson.getId());
                 if (clonedPhoto != null) {
                     mergedPerson.setPhotoId(clonedPhoto.getId());
                     mergedPerson = personRepository.save(mergedPerson);
@@ -423,7 +401,7 @@ public class PublicationService {
             mergedPersonDbIds.put(sourcePerson.getPersonId(), mergedPerson.getId());
         }
 
-        List<Family> targetFamilies = familyRepository.findByPublicationId(targetPubId);
+        // Clone collected families
         for (Family sourceFamily : targetFamilies) {
             Family mergedFamily = new Family();
             mergedFamily.setPublicationId(masterPubId);
@@ -504,7 +482,7 @@ public class PublicationService {
                 if (personData.containsKey("avatarUrl")) {
                     String avatarUrl = (String) personData.get("avatarUrl");
                     if (avatarUrl != null) {
-                        Long photoId = handlePersonAvatar(entity.getId(), avatarUrl, cloneReferencedPhotos);
+                        Long photoId = photoService.handlePersonAvatar(entity.getId(), avatarUrl, cloneReferencedPhotos);
                         if (photoId != null) {
                             entity.setPhotoId(photoId);
                             personRepository.save(entity);
@@ -517,17 +495,49 @@ public class PublicationService {
                     entity.setPhotoId(photoId);
                     personRepository.save(entity);
 
-                    final Long personDbId = entity.getId();
-                    photoRepository.findById(photoId).ifPresent(photo -> {
-                        photo.setPersonDbId(personDbId);
-                        photoRepository.save(photo);
-                    });
+                    photoService.reassignPhoto(entity.getId(), photoId);
                 }
             }
         }
 
         Map<String, Object> families = (Map<String, Object>) data.get("families");
         if (families != null) {
+            // Cross-family duplicate validation
+            Map<String, List<String>> adultToFamilies = new HashMap<>();
+            Map<String, List<String>> childToFamilies = new HashMap<>();
+
+            for (Map.Entry<String, Object> entry : families.entrySet()) {
+                Map<String, Object> familyData = (Map<String, Object>) entry.getValue();
+                List<String> adults = (List<String>) familyData.get("adults");
+                if (adults != null) {
+                    for (String adultId : adults) {
+                        adultToFamilies.computeIfAbsent(adultId, k -> new ArrayList<>()).add(entry.getKey());
+                    }
+                }
+                List<String> children = (List<String>) familyData.get("children");
+                if (children != null) {
+                    for (String childId : children) {
+                        childToFamilies.computeIfAbsent(childId, k -> new ArrayList<>()).add(entry.getKey());
+                    }
+                }
+            }
+
+            List<String> errors = new ArrayList<>();
+            adultToFamilies.forEach((personId, familyIds) -> {
+                if (familyIds.size() > 1) {
+                    errors.add("人物 " + personId + " 不能同时作为多个家庭的父母：" + String.join(", ", familyIds));
+                }
+            });
+            childToFamilies.forEach((personId, familyIds) -> {
+                if (familyIds.size() > 1) {
+                    errors.add("人物 " + personId + " 不能同时作为多个家庭的子女：" + String.join(", ", familyIds));
+                }
+            });
+
+            if (!errors.isEmpty()) {
+                throw new BadRequestException("数据校验失败：" + String.join("; ", errors));
+            }
+
             for (Map.Entry<String, Object> entry : families.entrySet()) {
                 String familyId = entry.getKey();
                 Map<String, Object> familyData = (Map<String, Object>) entry.getValue();
@@ -572,158 +582,6 @@ public class PublicationService {
                     }
                 }
             }
-        }
-    }
-
-    private Photo clonePhotoForPerson(Long sourcePhotoId, Long personDbId) {
-        return photoRepository.findById(sourcePhotoId)
-                .map(sourcePhoto -> {
-                    Photo clonedPhoto = new Photo();
-                    clonedPhoto.setPersonDbId(personDbId);
-                    clonedPhoto.setMimeType(sourcePhoto.getMimeType());
-                    clonedPhoto.setData(Arrays.copyOf(sourcePhoto.getData(), sourcePhoto.getData().length));
-                    return photoRepository.save(clonedPhoto);
-                })
-                .orElseGet(() -> {
-                    log.warn("Source photo {} was not found for person {}", sourcePhotoId, personDbId);
-                    return null;
-                });
-    }
-
-    private boolean isLegacyUploadAvatarUrl(String avatarUrl) {
-        return extractUploadFileName(avatarUrl) != null;
-    }
-
-    private Photo importLegacyUploadPhotoForPerson(String avatarUrl, Long personDbId) {
-        String fileName = extractUploadFileName(avatarUrl);
-        if (fileName == null || fileName.isBlank()) {
-            return null;
-        }
-
-        Path uploadRoot = Paths.get("uploads").toAbsolutePath().normalize();
-        Path uploadFile = uploadRoot.resolve(fileName).normalize();
-        if (!uploadFile.startsWith(uploadRoot)) {
-            log.warn("Invalid uploads path detected during import: {}", avatarUrl);
-            return null;
-        }
-        if (!Files.exists(uploadFile)) {
-            log.warn("Uploads photo file was not found during import: {}", uploadFile);
-            return null;
-        }
-
-        try {
-            Photo photo = new Photo();
-            photo.setPersonDbId(personDbId);
-            photo.setMimeType(detectMimeType(fileName));
-            photo.setData(Files.readAllBytes(uploadFile));
-            return photoRepository.save(photo);
-        } catch (IOException e) {
-            log.warn("Failed to import uploads photo (avatarUrl: {}): {}", avatarUrl, e.getMessage());
-            return null;
-        }
-    }
-
-    private String extractUploadFileName(String avatarUrl) {
-        String path = avatarUrl;
-        try {
-            path = URI.create(avatarUrl).getPath();
-        } catch (Exception ignored) {
-        }
-
-        if (path == null || path.isBlank()) {
-            return null;
-        }
-
-        int uploadIndex = path.indexOf("/uploads/");
-        if (uploadIndex < 0) {
-            if (path.startsWith("uploads/")) {
-                path = "/" + path;
-                uploadIndex = 0;
-            } else {
-                return null;
-            }
-        }
-
-        String remainder = path.substring(uploadIndex + "/uploads/".length());
-        if (remainder.isBlank()) {
-            return null;
-        }
-        return Paths.get(remainder).getFileName().toString();
-    }
-
-    private String detectMimeType(String fileName) {
-        String lowerName = fileName.toLowerCase();
-        if (lowerName.endsWith(".png")) {
-            return "image/png";
-        }
-        if (lowerName.endsWith(".gif")) {
-            return "image/gif";
-        }
-        if (lowerName.endsWith(".webp")) {
-            return "image/webp";
-        }
-        return "image/jpeg";
-    }
-
-    /**
-     * Handle avatar URL for a person: supports Base64 data URLs, /api/photos/ references,
-     * and legacy /uploads/ paths. Returns the photo DB ID, or null if no avatar or on failure.
-     */
-    private Long handlePersonAvatar(Long personDbId, String avatarUrl, boolean cloneReferencedPhotos) {
-        if (avatarUrl == null) {
-            return null;
-        }
-        if (avatarUrl.startsWith("data:image/")) {
-            return handleBase64Avatar(personDbId, avatarUrl);
-        } else if (avatarUrl.startsWith("/api/photos/")) {
-            return handleApiPhotoUrl(personDbId, avatarUrl, cloneReferencedPhotos);
-        } else if (isLegacyUploadAvatarUrl(avatarUrl)) {
-            Photo importedPhoto = importLegacyUploadPhotoForPerson(avatarUrl, personDbId);
-            return importedPhoto != null ? importedPhoto.getId() : null;
-        }
-        return null;
-    }
-
-    private Long handleBase64Avatar(Long personDbId, String base64Url) {
-        try {
-            int commaIndex = base64Url.indexOf(",");
-            if (commaIndex == -1) return null;
-
-            String header = base64Url.substring(0, commaIndex);
-            String mimeType = header.substring(header.indexOf(":") + 1, header.indexOf(";"));
-            String base64Data = base64Url.substring(commaIndex + 1).replaceAll("\\s", "");
-            byte[] dataBytes = Base64.getMimeDecoder().decode(base64Data);
-
-            log.info("正在导入 Base64 头像 (personDbId: {}, mimeType: {}, size: {} bytes)", personDbId, mimeType, dataBytes.length);
-
-            Photo photo = new Photo();
-            photo.setMimeType(mimeType);
-            photo.setData(dataBytes);
-            photo.setPersonDbId(personDbId);
-            photo = photoRepository.save(photo);
-            return photo.getId();
-        } catch (Exception e) {
-            log.error("解析 Base64 头像失败 (personDbId: {}): {}", personDbId, e.getMessage(), e);
-            return null; // skip this avatar, continue processing others
-        }
-    }
-
-    private Long handleApiPhotoUrl(Long personDbId, String photoUrl, boolean cloneReferencedPhotos) {
-        try {
-            Long photoId = Long.parseLong(photoUrl.substring("/api/photos/".length()));
-            if (cloneReferencedPhotos) {
-                Photo clonedPhoto = clonePhotoForPerson(photoId, personDbId);
-                return clonedPhoto != null ? clonedPhoto.getId() : null;
-            } else {
-                photoRepository.findById(photoId).ifPresent(photo -> {
-                    photo.setPersonDbId(personDbId);
-                    photoRepository.save(photo);
-                });
-                return photoId;
-            }
-        } catch (Exception e) {
-            log.warn("导入照片引用失败 (personDbId: {}, photoUrl: {}): {}", personDbId, photoUrl, e.getMessage());
-            return null;
         }
     }
 

@@ -121,6 +121,8 @@ export type ValidationIssueCode =
   | 'invalid-settings'
   | 'unsupported-draft-version'
   | 'operation-conflict'
+  | 'cross-family-duplicate-adult'
+  | 'cross-family-duplicate-child'
 
 export interface ValidationIssue {
   code: ValidationIssueCode
