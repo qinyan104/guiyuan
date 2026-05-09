@@ -71,6 +71,7 @@ public class PublicationAccessController {
             m.put("id", access.getId());
             m.put("userId", access.getUserId());
             m.put("role", access.getRole());
+            m.put("redactionProfile", access.getRedactionProfile());
             m.put("createdAt", access.getCreatedAt());
             userRepository.findById(access.getUserId()).ifPresent(u -> {
                 m.put("username", u.getUsername());
@@ -110,6 +111,7 @@ public class PublicationAccessController {
         access.setPublicationId(id);
         access.setUserId(targetUserId);
         access.setRole(role);
+        access.setRedactionProfile((String) body.get("redactionProfile"));
         access.setCreatedBy(subject.getUserId());
         access = accessRepository.save(access);
 
@@ -123,12 +125,12 @@ public class PublicationAccessController {
 
     @PutMapping("/{userId}")
     public ApiResponse<Void> updateAccess(@PathVariable Long id, @PathVariable Long userId,
-                                          @RequestBody Map<String, String> body, HttpServletRequest request) {
+                                          @RequestBody Map<String, Object> body, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
 
-        String newRole = body.get("role");
+        String newRole = (String) body.get("role");
         if (!ALLOWED_ROLES.contains(newRole)) {
             throw new BadRequestException("角色必须是 EDITOR 或 VIEWER");
         }
@@ -141,11 +143,14 @@ public class PublicationAccessController {
         }
 
         access.setRole(newRole);
+        if (body.containsKey("redactionProfile")) {
+            access.setRedactionProfile((String) body.get("redactionProfile"));
+        }
         accessRepository.save(access);
 
         logAction(username, "UPDATE_COLLABORATOR_ROLE",
-                "修改协作者角色为 " + newRole, id);
-        return ApiResponse.success("角色已更新", null);
+                "修改协作者角色为 " + newRole + (body.containsKey("redactionProfile") ? ", 脱敏配置: " + body.get("redactionProfile") : ""), id);
+        return ApiResponse.success("角色及配置已更新", null);
     }
 
     @DeleteMapping("/{userId}")
