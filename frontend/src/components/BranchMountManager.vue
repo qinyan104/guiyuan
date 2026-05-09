@@ -200,10 +200,6 @@ onMounted(loadAccessiblePublications)
       </label>
     </div>
 
-    <p class="branch-mount-panel__hint">
-      挂载只建立关联，不会自动把目标族谱写入当前稿件；“物理合并”才会复制快照并清除这个挂载点。
-    </p>
-
     <div class="branch-mount-panel__grid">
       <div class="branch-mount-field">
         <span>目标族谱</span>
@@ -266,17 +262,35 @@ onMounted(loadAccessiblePublications)
     </div>
 
     <p v-if="feedbackMessage" class="branch-mount-panel__feedback">{{ feedbackMessage }}</p>
+  </section>
 
-    <div class="branch-mount-actions">
-      <button
-        class="relation-btn relation-btn--accent"
-        type="button"
-        :disabled="mergePending || !person.isMountPoint || !person.mountPointTarget?.publicationId"
-        @click="handleMerge"
+  <section v-if="person.isMountPoint && selectedTargetId" class="advanced-merge-zone">
+    <div class="advanced-merge-zone__header">
+      <svg
+        fill="none"
+        height="18"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="18"
       >
-        {{ mergePending ? '合并中…' : '执行物理合并' }}
-      </button>
+        <path d="M11 17l5 5 5-5M11 7l5-5 5 5M16 22V2M8 2H1.5a.5.5 0 0 0-.5.5v19a.5.5 0 0 0 .5.5H8M4 12h4" />
+      </svg>
+      <strong>高级合并操作</strong>
     </div>
+    <p>
+      物理合并会不可逆地将目标族谱“{{ selectedTarget?.title }}”的数据副本直接写入当前稿件。操作完成后，该挂载点将被清除。
+    </p>
+    <button
+      class="relation-btn relation-btn--accent"
+      type="button"
+      :disabled="mergePending"
+      @click="handleMerge"
+    >
+      {{ mergePending ? '正在物理合并...' : '确认执行物理合并' }}
+    </button>
   </section>
 </template>
 
@@ -316,13 +330,6 @@ onMounted(loadAccessiblePublications)
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
-  color: var(--text-soft);
-}
-
-.branch-mount-panel__hint {
-  margin: 0;
-  font-size: 0.85rem;
-  line-height: 1.6;
   color: var(--text-soft);
 }
 
@@ -441,10 +448,31 @@ onMounted(loadAccessiblePublications)
   color: #2d59a2;
 }
 
-.branch-mount-actions {
+.advanced-merge-zone {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(217, 119, 6, 0.03);
+  border: 1px dashed rgba(217, 119, 6, 0.2);
+  border-radius: 16px;
+}
+
+.advanced-merge-zone__header {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #d97706;
+}
+
+.advanced-merge-zone__header strong {
+  font-size: 0.9rem;
+}
+
+.advanced-merge-zone p {
+  margin: 0 0 16px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-soft);
 }
 
 @media (max-width: 640px) {
