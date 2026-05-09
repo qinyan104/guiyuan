@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import { mergeBranch } from '../api/accessManage'
 import { getPublication, listPublications, type PublicationSummary } from '../api/publication'
@@ -54,12 +54,6 @@ const groupedPublications = computed(() => {
 const selectedTarget = computed(() =>
   availablePublications.value.find((item) => String(item.id) === selectedTargetId.value) ?? null,
 )
-
-function formatAccessRole(role: string): string {
-  if (role === 'OWNER') return '我的'
-  if (role === 'EDITOR') return '共享·编辑'
-  return role
-}
 
 function selectPublication(pub: PublicationSummary) {
   selectedTargetId.value = String(pub.id)
@@ -128,20 +122,6 @@ function handleToggleMountPoint(enabled: boolean) {
   applyTargetPublication(target)
 }
 
-function handleTargetChange(event: Event) {
-  const nextId = (event.target as HTMLSelectElement).value
-  selectedTargetId.value = nextId
-
-  if (!nextId) {
-    props.person.isMountPoint = false
-    props.person.mountPointTarget = undefined
-    feedbackMessage.value = '已清除挂载目标。'
-    return
-  }
-
-  applyTargetPublication(selectedTarget.value)
-}
-
 async function refreshPublicationFromServer() {
   if (!props.publicationId || !context) return
 
@@ -180,8 +160,22 @@ async function handleMerge() {
   }
 }
 
-onMounted(loadAccessiblePublications)
+const closeDropdown = (e: MouseEvent) => {
+  if (!(e.target as HTMLElement).closest('.custom-select')) {
+    isDropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  loadAccessiblePublications()
+  window.addEventListener('click', closeDropdown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', closeDropdown)
+})
 </script>
+
 
 <template>
   <section class="branch-mount-panel">
@@ -381,6 +375,15 @@ onMounted(loadAccessiblePublications)
 .custom-select__trigger:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.custom-select .chevron {
+  transition: transform 240ms cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-soft);
+}
+
+.custom-select.is-open .chevron {
+  transform: rotate(180deg);
 }
 
 .custom-select__options {
