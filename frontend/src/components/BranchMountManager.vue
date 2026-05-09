@@ -196,9 +196,6 @@ onMounted(loadAccessiblePublications)
     <p v-if="feedbackMessage" class="branch-mount-panel__feedback">{{ feedbackMessage }}</p>
 
     <div class="branch-mount-actions">
-      <button class="relation-btn" type="button" @click="handleToggleMountPoint(!person.isMountPoint)">
-        {{ person.isMountPoint ? '断开挂载' : '设为挂载点' }}
-      </button>
       <button
         class="relation-btn relation-btn--accent"
         type="button"
