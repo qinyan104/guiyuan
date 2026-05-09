@@ -22,7 +22,7 @@ public class PublicationAccess {
     @Column(nullable = false, length = 20)
     private String role;
 
-    @Column(name = "redaction_profile", length = 50)
+    @Column(name = "redaction_profile", columnDefinition = "TEXT")
     private String redactionProfile;
 
     @Column(name = "created_at")
