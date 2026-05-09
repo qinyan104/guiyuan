@@ -34,9 +34,10 @@ function navigateTo(routeName: string) {
   router.push({ name: routeName })
 }
 
-function handleLogout() {
-  logout()
-  router.push({ name: 'login' })
+async function handleLogout() {
+  await logout()
+  userDropdownOpen.value = false
+  await router.push({ name: 'login' })
 }
 
 function goToSettings() {
@@ -159,9 +160,15 @@ onBeforeUnmount(() => {
       <!-- Scrollable Router View -->
       <div class="scrollable-container">
         <router-view v-slot="{ Component }">
-          <transition name="fade-slide" mode="out-in">
-            <component :is="Component" />
-          </transition>
+          <component
+            :is="Component"
+            v-if="Component"
+            :key="route.fullPath"
+          />
+          <div v-else key="route-loading" class="route-loading-state">
+            <div class="spinner"></div>
+            <span>Loading page for {{ route.fullPath }}...</span>
+          </div>
         </router-view>
       </div>
     </main>
@@ -585,6 +592,16 @@ onBeforeUnmount(() => {
   padding: 40px;
 }
 
+.route-loading-state {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text-soft, #6b7280);
+}
+
 .scrollable-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -608,19 +625,6 @@ onBeforeUnmount(() => {
 .glass-pop-leave-to {
   opacity: 0;
   transform: scale(0.95) translateY(-8px);
-}
-
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.fade-slide-enter-from {
-  opacity: 0;
-  transform: scale(0.98) translateY(10px);
-}
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: scale(1.02) translateY(-10px);
 }
 
 @media (max-width: 960px) {

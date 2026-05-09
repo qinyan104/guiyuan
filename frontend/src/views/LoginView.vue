@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import LoginForm from '../components/LoginForm.vue'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import { useTheme } from '../composables/useTheme'
+import { navigateAfterLogin } from '../api/authNavigation'
 
-const router = useRouter()
 const theme = useTheme()
 
 function onLoginSuccess() {
-  router.push({ name: 'dashboard' })
+  navigateAfterLogin()
 }
 </script>
 

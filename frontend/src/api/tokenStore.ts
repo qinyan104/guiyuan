@@ -1,7 +1,17 @@
-/** In-memory access token. Survives within a page session, lost on refresh. */
-let accessToken: string | null = null
-let username: string | null = null
-let role: string | null = null
+const STORAGE_KEY_TOKEN = 'authToken'
+const STORAGE_KEY_USERNAME = 'authUsername'
+const STORAGE_KEY_ROLE = 'authRole'
+
+/** Restore from localStorage on module load (survives page refresh). */
+let accessToken: string | null = (() => {
+  try { return localStorage.getItem(STORAGE_KEY_TOKEN) } catch { return null }
+})()
+let username: string | null = (() => {
+  try { return localStorage.getItem(STORAGE_KEY_USERNAME) } catch { return null }
+})()
+let role: string | null = (() => {
+  try { return localStorage.getItem(STORAGE_KEY_ROLE) } catch { return null }
+})()
 
 export function getAccessToken(): string | null {
   return accessToken
@@ -9,10 +19,12 @@ export function getAccessToken(): string | null {
 
 export function setAccessToken(token: string): void {
   accessToken = token
+  try { localStorage.setItem(STORAGE_KEY_TOKEN, token) } catch {}
 }
 
 export function clearAccessToken(): void {
   accessToken = null
+  try { localStorage.removeItem(STORAGE_KEY_TOKEN) } catch {}
 }
 
 export function getUsername(): string | null {
@@ -21,7 +33,7 @@ export function getUsername(): string | null {
 
 export function setUsername(u: string): void {
   username = u
-  try { localStorage.setItem('authUsername', u) } catch {}
+  try { localStorage.setItem(STORAGE_KEY_USERNAME, u) } catch {}
 }
 
 export function getRole(): string | null {
@@ -30,7 +42,7 @@ export function getRole(): string | null {
 
 export function setRole(r: string): void {
   role = r
-  try { localStorage.setItem('authRole', r) } catch {}
+  try { localStorage.setItem(STORAGE_KEY_ROLE, r) } catch {}
 }
 
 export function clearSession(): void {
@@ -38,7 +50,8 @@ export function clearSession(): void {
   username = null
   role = null
   try {
-    localStorage.removeItem('authUsername')
-    localStorage.removeItem('authRole')
+    localStorage.removeItem(STORAGE_KEY_TOKEN)
+    localStorage.removeItem(STORAGE_KEY_USERNAME)
+    localStorage.removeItem(STORAGE_KEY_ROLE)
   } catch {}
 }

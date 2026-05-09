@@ -6,9 +6,9 @@ import {
   adminDeleteUser,
   adminResetPassword,
   adminChangeRole,
-  isSuperAdmin,
   type AdminUser,
-} from '../api/auth'
+} from '../api/admin'
+import { isSuperAdmin } from '../api/auth'
 
 const users = ref<AdminUser[]>([])
 const loading = ref(true)
@@ -115,8 +115,9 @@ function formatDate(dateStr: string) {
 </script>
 
 <template>
-  <div class="admin-users-view">
-    <div class="bento-header">
+  <div class="admin-users-view-root">
+    <div class="admin-users-view">
+      <div class="bento-header">
       <div class="header-content">
         <h1 class="page-title">编委名录 // DIRECTORY</h1>
         <p class="page-desc">管理家族成员账号与系统权限设定</p>
@@ -246,8 +247,8 @@ function formatDate(dateStr: string) {
       </div>
     </div>
 
-    <!-- Reset Password Dialog -->
-    <Teleport to="body">
+      <!-- Reset Password Dialog -->
+      <Teleport to="body">
       <transition name="glass-pop">
         <div v-if="resetUserId !== null" class="glass-dialog-overlay" @click.self="resetUserId = null">
           <div class="glass-dialog">
@@ -263,10 +264,10 @@ function formatDate(dateStr: string) {
           </div>
         </div>
       </transition>
-    </Teleport>
+      </Teleport>
 
-    <!-- Delete Confirm Dialog -->
-    <Teleport to="body">
+      <!-- Delete Confirm Dialog -->
+      <Teleport to="body">
       <transition name="glass-pop">
         <div v-if="deleteUserId !== null" class="glass-dialog-overlay" @click.self="deleteUserId = null">
           <div class="glass-dialog danger-mode">
@@ -279,7 +280,8 @@ function formatDate(dateStr: string) {
           </div>
         </div>
       </transition>
-    </Teleport>
+      </Teleport>
+    </div>
   </div>
 </template>
 

@@ -3,7 +3,8 @@ import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { listPublications, createPublication, type PublicationSummary } from '../api/publication'
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
-import { adminListUsers, isAdmin, isSuperAdmin, adminBackupDatabase } from '../api/auth'
+import { isAdmin, isSuperAdmin } from '../api/auth'
+import { adminListUsers, adminBackupDatabase } from '../api/admin'
 
 const router = useRouter()
 
@@ -11,9 +12,11 @@ const pubCount = ref(0)
 const userCount = ref(0)
 const recentPubs = ref<PublicationSummary[]>([])
 const loading = ref(true)
+const pageError = ref<string | null>(null)
 
 async function loadDashboard() {
   loading.value = true
+  pageError.value = null
   try {
     const pubs = await listPublications()
     pubCount.value = pubs.length
@@ -27,8 +30,9 @@ async function loadDashboard() {
         userCount.value = 0
       }
     }
-  } catch {
-    // ignore
+  } catch (e: any) {
+    pageError.value = e?.message || '加载失败，请检查后端服务是否正常运行'
+    pubCount.value = 0
   } finally {
     loading.value = false
   }
@@ -76,18 +80,32 @@ async function handleCreateFromDashboard() {
 </script>
 
 <template>
-  <div class="dashboard-stage">
-    <header class="dashboard-header">
-      <div class="header-meta">DASHBOARD // 01</div>
-      <h1 class="header-title">宗族全景</h1>
-    </header>
+  <div class="dashboard-view-root">
+    <div class="dashboard-stage">
+      <header class="dashboard-header">
+        <div class="header-meta">DASHBOARD // 01</div>
+        <h1 class="header-title">宗族全景</h1>
+      </header>
 
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>正在读取典藏记录...</p>
-    </div>
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>正在读取典藏记录...</p>
+      </div>
 
-    <div v-else-if="pubCount > 0" class="bento-grid">
+      <div v-else-if="pageError" class="error-stage">
+        <div class="error-card">
+          <div class="error-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h2 class="error-title">加载失败</h2>
+          <p class="error-desc">{{ pageError }}</p>
+          <div class="error-actions">
+            <button class="welcome-btn primary" @click="loadDashboard">重试</button>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="pubCount > 0" class="bento-grid">
       
       <!-- Box A: Latest Publication (Hero) -->
       <div v-if="latestPub" class="bento-card card-hero" @click="openPublication(latestPub.id)">
@@ -165,49 +183,50 @@ async function handleCreateFromDashboard() {
         </div>
       </div>
 
-    </div>
+      </div>
 
-    <!-- Welcome empty state -->
-    <div v-else class="welcome-stage">
-      <div class="welcome-card">
-        <div class="welcome-glow"></div>
-        <div class="welcome-content">
-          <div class="welcome-seal">序</div>
-          <h2 class="welcome-title">欢迎来到数字档案馆</h2>
-          <p class="welcome-desc">创建您的第一个族谱，开启家族编修之旅。</p>
-          <div class="welcome-actions">
-            <button class="welcome-btn primary" @click="showCreateDialog = true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              创建第一个族谱
-            </button>
-            <button class="welcome-btn secondary" @click="router.push({ name: 'publications' })">
-              浏览示例模板
-            </button>
-            <button class="welcome-btn ghost" @click="router.push({ name: 'publications' })">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              导入族谱数据
-            </button>
+      <!-- Welcome empty state -->
+      <div v-else class="welcome-stage">
+        <div class="welcome-card">
+          <div class="welcome-glow"></div>
+          <div class="welcome-content">
+            <div class="welcome-seal">序</div>
+            <h2 class="welcome-title">欢迎来到数字档案馆</h2>
+            <p class="welcome-desc">创建您的第一个族谱，开启家族编修之旅。</p>
+            <div class="welcome-actions">
+              <button class="welcome-btn primary" @click="showCreateDialog = true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                创建第一个族谱
+              </button>
+              <button class="welcome-btn secondary" @click="router.push({ name: 'publications' })">
+                浏览示例模板
+              </button>
+              <button class="welcome-btn ghost" @click="router.push({ name: 'publications' })">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                导入族谱数据
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Create dialog -->
-  <Teleport to="body">
-    <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
-      <div class="dialog-panel">
-        <h3>创建新族谱</h3>
-        <p style="color: var(--text-soft); margin: 8px 0 20px;">输入族谱名称后即可开始编撰。</p>
-        <input v-model="newTitle" placeholder="族谱名称..." class="glass-input" @keyup.enter="handleCreateFromDashboard" />
-        <input v-model="newSubtitle" placeholder="副标题（可选）..." class="glass-input" style="margin-top: 12px;" />
-        <div class="dialog-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
-          <button class="bento-btn" @click="showCreateDialog = false">取消</button>
-          <button class="bento-btn primary" @click="handleCreateFromDashboard">创建</button>
+    <!-- Create dialog -->
+    <Teleport to="body">
+      <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
+        <div class="dialog-panel">
+          <h3>创建新族谱</h3>
+          <p style="color: var(--text-soft); margin: 8px 0 20px;">输入族谱名称后即可开始编撰。</p>
+          <input v-model="newTitle" placeholder="族谱名称..." class="glass-input" @keyup.enter="handleCreateFromDashboard" />
+          <input v-model="newSubtitle" placeholder="副标题（可选）..." class="glass-input" style="margin-top: 12px;" />
+          <div class="dialog-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="bento-btn" @click="showCreateDialog = false">取消</button>
+            <button class="bento-btn primary" @click="handleCreateFromDashboard">创建</button>
+          </div>
         </div>
       </div>
-    </div>
-  </Teleport>
+    </Teleport>
+  </div>
 </template>
 
 <style scoped>
@@ -658,6 +677,54 @@ async function handleCreateFromDashboard() {
   .card-hero, .card-history { min-height: 280px; }
   .card-stat, .card-action, .card-users, .card-backup { min-height: 140px; }
 }
+/* ── Error State ── */
+.error-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.error-card {
+  max-width: 420px;
+  width: 100%;
+  background: var(--glass-panel-bg, rgba(255,255,255,0.6));
+  backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 32px;
+  border: 1px solid rgba(255, 59, 48, 0.2);
+  box-shadow: 0 32px 64px rgba(0,0,0,0.08);
+  padding: 48px 40px;
+  text-align: center;
+}
+:global([data-theme="ink-wash"]) .error-card,
+:global([data-theme="rosewood"]) .error-card,
+:global([data-theme="star-sea"]) .error-card {
+  background: rgba(0,0,0,0.5);
+  border-color: rgba(255, 59, 48, 0.3);
+}
+.error-icon {
+  color: #ff3b30;
+  margin-bottom: 16px;
+  opacity: 0.7;
+}
+.error-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 8px;
+}
+.error-desc {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+.error-actions {
+  display: flex;
+  justify-content: center;
+}
+
 /* ── Welcome Empty State ── */
 .welcome-stage {
   flex: 1;

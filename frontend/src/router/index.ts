@@ -1,5 +1,13 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { getToken, isAdmin } from '../api/auth'
+import { bootstrapAuthSession } from '../api/authSession'
+import AdminLayout from '../views/AdminLayout.vue'
+import DashboardView from '../views/DashboardView.vue'
+import PublicationListView from '../views/PublicationListView.vue'
+import AdminUsersView from '../views/AdminUsersView.vue'
+import AuditLogView from '../views/AuditLogView.vue'
+import SettingsView from '../views/SettingsView.vue'
+import SamplePreviewView from '../views/SamplePreviewView.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -15,35 +23,40 @@ const routes: RouteRecordRaw[] = [
     meta: { public: true },
   },
   {
+    path: '/sample/:sampleId',
+    name: 'sample-preview',
+    component: SamplePreviewView,
+  },
+  {
     path: '/',
-    component: () => import('../views/AdminLayout.vue'),
+    component: AdminLayout,
     children: [
       {
         path: '',
         name: 'dashboard',
-        component: () => import('../views/DashboardView.vue'),
+        component: DashboardView,
       },
       {
         path: 'publications',
         name: 'publications',
-        component: () => import('../views/PublicationListView.vue'),
+        component: PublicationListView,
       },
       {
         path: 'admin/users',
         name: 'admin-users',
-        component: () => import('../views/AdminUsersView.vue'),
+        component: AdminUsersView,
         meta: { admin: true },
       },
       {
         path: 'admin/logs',
         name: 'admin-logs',
-        component: () => import('../views/AuditLogView.vue'),
+        component: AuditLogView,
         meta: { admin: true },
       },
       {
         path: 'settings',
         name: 'settings',
-        component: () => import('../views/SettingsView.vue'),
+        component: SettingsView,
       },
     ],
   },
@@ -92,8 +105,13 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
-  const loggedIn = !!getToken()
+router.beforeEach(async (to) => {
+  let loggedIn = !!getToken()
+
+  if (!loggedIn && (!to.meta.public || to.name === 'login')) {
+    await bootstrapAuthSession()
+    loggedIn = !!getToken()
+  }
 
   if (!loggedIn && !to.meta.public) {
     return { name: 'login' }
