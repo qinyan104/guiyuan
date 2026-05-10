@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public final class DateTextParser {
 
-    private static final Pattern YEAR_PATTERN = Pattern.compile("(\\d{4})");
+    private static final Pattern YEAR_PATTERN = Pattern.compile("\\b(\\d{4})\\b");
 
     private DateTextParser() {}
 
