@@ -63,6 +63,20 @@ Stats: 50 obs (4,798t read) | 579,884t work | 99% savings
 1510 9:12p 🔴 修复页面内容延迟加载和退出登录跳转问题
 1511 9:41p 🔵 用户退出登录后直接进入主页的行为
 1512 9:43p 🔵 搜索 AuthController、/api/auth/logout 和 logout() 的代码引用
+### May 10, 2026
+1513 11:15a 🟣 并发冲突控制实施
+1514 " ✅ 引入 JPA @Version 乐观锁
+1515 " ✅ 实现聚合根联动自增逻辑
+1516 " ✅ 前端 http 拦截器与 App.vue 冲突对话框
+1517 " ✅ 更新测试用例覆盖版本冲突场景
+1518 11:45a ✅ 洁癖技能：同步文档与记忆
+1519 12:05p 🟣 精细化子树合并实施
+1520 " ✅ 后端 BFS 收集器重构 (collectSubtreeIds)
+1521 " ✅ 缝合加载剪枝逻辑 (PublicationTreeLoader)
+1522 " ✅ 视觉化起点选择器 (SubtreeRootSelector.vue)
+1523 " ✅ UI 集成 (BranchMountManager.vue)
+1524 " ✅ 完成全链路验证
+
 
 Access 580k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

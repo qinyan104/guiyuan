@@ -95,7 +95,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
     - `POST /api/publications/{id}/export/pdf/single-page`: 接收 `svgMarkup` 与宽高，生成**全尺寸、单页、无边框矢量 PDF**。
 - **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载。集成 `PublicationTreeLoader` 递归加载分支挂载数据。
 - **照片服务**：`PhotoService` 统一管理 Base64 头像解析、`/api/photos/` 克隆、旧版 `/uploads/` 路径迁移。`PublicationService` 通过 `photoService` 委托照片操作。
-- **合并引擎**：`PublicationService.mergeBranch` 实现物理数据迁入。使用 BFS 从根人物向后遍历收集子树，默认只克隆被遍历到的人物和家庭，未指定根人物时自动回退全量复制。使用 UUID 前缀 (`merged_{targetPubId}_*`) 进行 ID 重映射防冲突，递归克隆人物、家庭及照片记录。合并后会自动清空挂载点元数据。
+- **合并引擎**：`PublicationService.mergeBranch` 实现物理数据迁入。使用 `collectSubtreeIds` 进行 BFS 遍历。若指定了子树起点，则仅克隆该分支及其后代；否则执行全量克隆。使用 UUID 前缀 (`merged_{targetPubId}_*`) 进行 ID 重映射防冲突，递归克隆人物、家庭及照片记录。合并后自动清空挂载点。
 - **照片导入链路**：`PublicationService.savePersonsAndFamilies` 委托 `PhotoService.handlePersonAvatar` 在新建/导入时支持 Base64、`/api/photos/{id}` 克隆、旧版 `/uploads/...` 文件迁移；更新时复用既有照片记录，避免重复插图
 - **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`。管理员端点使用 `@PreAuthorize("hasRole('ADMIN')")` / `hasRole('SUPER_ADMIN')` 声明式权限。分支合并要求对主族谱具 `OWNER` 权限，对分支具 `VIEWER` 权限。
 - 文件上传限制：100MB；`FileController` 有扩展名白名单校验（图片/PDF），`PhotoController` 有 MIME 类型校验
