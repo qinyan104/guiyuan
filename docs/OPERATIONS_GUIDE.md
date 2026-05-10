@@ -26,7 +26,8 @@ npm run dev
 
 ### 族谱管理 (Publications)
 - `GET /api/publications`: 获取列表 (含权限角色)
-- `GET /api/publications/{id}`: 获取详情 (支持联邦缝合加载)
+- `GET /api/publications/{id}`: 获取详情 (支持联邦缝合加载，对 VIEWER 自动应用脱敏)
+- `PUT /api/publications/{id}/access/{userId}`: 更新协作者角色或脱敏配置 (`redactionProfile` 字段)
 - `POST /api/publications/{id}/access/{personId}/merge`: 执行物理分支合并（BFS 子树克隆，支持回退全量）
 
 ### 导出与分享
@@ -56,6 +57,17 @@ npm run dev
 - **修复原则**: 带 `Teleport` 的路由页必须改成**单根节点**；不要在 `AdminLayout` 这类壳层上对整页路由组件再套过渡动画。
 - **受影响过的页面类型**: Dashboard、族谱列表、管理员用户页。这类页面都有弹窗/对话框，后续新增后台页时按同一规则设计。
 
+### 3.4 Invalid CORS request / 403 Forbidden 登录失败
+- **故障现象**: 登录请求返回 403，控制台或 Network 面板显示 `Invalid CORS request` 或 `Access Denied`。日志中可能出现 `Using generated security password` 警告。
+- **根因分析**: 
+    1. **配置冲突**: 同时在 `WebConfig` (addCorsMappings) 和 `SecurityConfig` 中配置了 CORS，导致过滤器冲突。
+    2. **Auth 回退**: 缺少 `UserDetailsService` 导致 Spring Security 进入默认安全模式。
+- **解决方案**:
+    1. **统一配置**: 所有的 CORS 策略必须集中在 `SecurityConfig.java` 中。
+    2. **放行 OPTIONS**: 必须显式允许 `HttpMethod.OPTIONS` 请求通过。
+    3. **实现 UserDetailsService**: 确保 `CustomUserDetailsService` 已加载，消除随机密码生成。
+    4. **重启**: 必须 **完全停止 (Stop)** 后端进程后再启动，不可直接使用热加载。
+
 ### 3.4 退出登录后刷新又回到主页
 - **预期行为**: 不应回到主页。`/api/auth/logout` 已放行且豁免 CSRF，用于撤销 refresh token 并清除 `refresh_token` cookie。
 - **排查重点**: 如果仍复现，查看 `POST /api/auth/logout` 是否为 200，以及响应头是否包含清除 `refresh_token` 的 `Set-Cookie`。
@@ -63,6 +75,12 @@ npm run dev
 ### 3.5 图片显示异常
 - **原则**: 系统强制执行 **Uncropped Original Aspect Ratio**。
 - **检查**: 确认 `photos` 表中数据完整，且前端 `PublicationCanvas` 的 `preserveAspectRatio` 属性正确。
+
+### 3.6 Publication 保存冲突 (HTTP 409)
+- **症状**：编辑器显示"Publication is stale. Reload before saving."冲突横幅，自动保存暂停。
+- **原因**：另一位协作者抢先保存了更新的版本，当前客户端基于过期 revision 提交。
+- **操作指引**：点击冲突横幅上的"Reload latest version"按钮，加载最新版本后重新编辑并保存。
+- **注意**：冲突不会导致数据丢失——被拒绝的本地修改仍保留在编辑器内存中，重新加载后需手动重新应用。
 
 ## 4. 数据库表结构
 - `users`: 系统账号

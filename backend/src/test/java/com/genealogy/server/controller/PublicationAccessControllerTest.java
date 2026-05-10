@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -127,5 +128,15 @@ class PublicationAccessControllerTest {
         assertThat(authSubjectCaptor.getValue().getUsername()).isEqualTo("testuser");
         assertThat(mergeSubjectCaptor.getValue().getUserId()).isEqualTo(1L);
         assertThat(mergeSubjectCaptor.getValue().getUsername()).isEqualTo("testuser");
+    }
+
+    @Test
+    void mergeBranchStillRequiresManageAccess() throws Exception {
+        mockMvc.perform(post("/api/publications/100/access/person-9/merge")
+                        .requestAttr("currentUsername", "testuser")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(authorizationService).require(isA(UserSubject.class), eq(100L), eq(AccessPermission.MANAGE_ACCESS));
     }
 }
