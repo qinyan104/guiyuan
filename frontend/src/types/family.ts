@@ -45,6 +45,7 @@ export interface PublicationData {
   people: Record<string, Person>
   families: Record<string, FamilyUnit>
   info?: PublicationInfo
+  revision?: number
 }
 
 export interface PublicationSettings {

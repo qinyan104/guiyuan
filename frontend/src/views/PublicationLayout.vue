@@ -54,7 +54,8 @@ async function saveToServer() {
   if (syncStatus.value === 'syncing' || syncStatus.value === 'conflict' || !serverPublicationId.value) return
   syncStatus.value = 'syncing'
   try {
-    await updatePublication(serverPublicationId.value, serverRevision.value!, pub.publication, pub.settings)
+    pub.publication.revision = serverRevision.value!
+    await updatePublication(serverPublicationId.value, pub.publication, pub.settings)
     serverRevision.value = (serverRevision.value ?? 0) + 1
     syncStatus.value = 'saved'
     feedback.errorMessage.value = ''

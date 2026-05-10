@@ -24,6 +24,7 @@ const newSubtitle = ref('')
 
 const showEditDialog = ref(false)
 const editingId = ref<number | null>(null)
+const editingRevision = ref<number>(0)
 const editForm = ref({
   title: '',
   subtitle: '',
@@ -58,6 +59,7 @@ function openPublication(id: number) {
 
 function openEditDialog(pub: PublicationSummary) {
   editingId.value = pub.id
+  editingRevision.value = pub.revision
   editForm.value = {
     title: pub.title || '',
     subtitle: pub.subtitle || '',
@@ -82,7 +84,7 @@ async function handleEditSave() {
   }
 
   try {
-    await updatePublicationMetadata(editingId.value, title, subtitle, info)
+    await updatePublicationMetadata(editingId.value, editingRevision.value, title, subtitle, info)
     showEditDialog.value = false
     await loadPublications()
   } catch (err: any) {

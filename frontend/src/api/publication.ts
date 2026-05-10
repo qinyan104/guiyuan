@@ -4,6 +4,7 @@ import type { PublicationData, PublicationSettings, PublicationInfo, Person } fr
 
 export interface PublicationSummary {
   id: number
+  revision: number
   title: string
   subtitle: string
   description?: string
@@ -50,12 +51,11 @@ export async function createPublication(
 
 export async function updatePublication(
   id: number,
-  revision: number,
   publication: PublicationData,
   settings: PublicationSettings,
 ): Promise<void> {
   await http.put(`/publications/${id}`, {
-    revision,
+    revision: publication.revision,
     title: publication.title,
     subtitle: publication.subtitle,
     publication,
@@ -82,7 +82,7 @@ export async function updatePublicationMetadata(
 export async function updatePerson(
   pubId: number,
   personId: string,
-  personData: Partial<Person>,
+  personData: Partial<Person> & { expectedRevision?: number },
 ): Promise<void> {
   await http.put(`/publications/${pubId}/people/${personId}`, personData)
 }
