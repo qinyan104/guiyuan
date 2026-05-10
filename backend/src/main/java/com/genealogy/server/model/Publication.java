@@ -29,6 +29,9 @@ public class Publication {
     @Column(name = "publication_info_json", columnDefinition = "TEXT")
     private String publicationInfoJson;
 
+    @Column(name = "revision", nullable = false)
+    private Long revision = 0L;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -60,6 +63,8 @@ public class Publication {
     public void setSettingsJson(String settingsJson) { this.settingsJson = settingsJson; }
     public String getPublicationInfoJson() { return publicationInfoJson; }
     public void setPublicationInfoJson(String publicationInfoJson) { this.publicationInfoJson = publicationInfoJson; }
+    public Long getRevision() { return revision; }
+    public void setRevision(Long revision) { this.revision = revision; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

@@ -12,6 +12,7 @@ import com.genealogy.server.repository.PhotoRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.PublicationRepository;
 import com.genealogy.server.repository.PublicationShareLinkRepository;
+import com.genealogy.server.exception.ConflictException;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -328,6 +330,27 @@ class PublicationServiceTest {
         assertThat(mountTarget).containsEntry("publicationId", 9L);
         assertThat(mountTarget).containsEntry("publicationTitle", "Branch Publication");
         assertThat(mountTarget).containsEntry("rootPersonId", 42L);
+    }
+
+    @Test
+    void updatePublicationRejectsStaleRevision() {
+        Publication publication = new Publication();
+        publication.setId(7L);
+        publication.setTitle("Current");
+        publication.setRevision(5L);
+
+        when(publicationRepository.findById(7L)).thenReturn(Optional.of(publication));
+
+        assertThatThrownBy(() -> publicationService.updatePublication(
+                7L,
+                4L,
+                "Updated",
+                "",
+                Map.of("focusFamilyId", "", "people", Map.of(), "families", Map.of()),
+                "{}",
+                "{}"))
+            .isInstanceOf(ConflictException.class)
+            .hasMessageContaining("stale");
     }
 
     private Map<String, Object> buildPublicationData(String avatarUrl) {
