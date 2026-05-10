@@ -93,6 +93,10 @@ let panStartX = 0
 let panStartY = 0
 let resizeObserver: ResizeObserver | null = null
 let rafId: number | null = null
+let pinchStartDist = 0
+let pinchStartZoom = 0
+let pinchMidX = 0
+let pinchMidY = 0
 
 const MINIMAP_WIDTH = 220
 const MINIMAP_HEIGHT = 164
@@ -290,6 +294,43 @@ function handleWheel(event: WheelEvent) {
   emit('update-zoom', nextZoom)
 }
 
+function handleTouchStart(event: TouchEvent) {
+  if (event.touches.length === 2) {
+    updateViewportSize()
+    const dx = event.touches[0].clientX - event.touches[1].clientX
+    const dy = event.touches[0].clientY - event.touches[1].clientY
+    pinchStartDist = Math.hypot(dx, dy)
+    pinchStartZoom = props.settings.zoom
+    pinchMidX = (event.touches[0].clientX + event.touches[1].clientX) / 2
+    pinchMidY = (event.touches[0].clientY + event.touches[1].clientY) / 2
+  }
+}
+
+function handleTouchMove(event: TouchEvent) {
+  if (event.touches.length === 2) {
+    event.preventDefault()
+    const dx = event.touches[0].clientX - event.touches[1].clientX
+    const dy = event.touches[0].clientY - event.touches[1].clientY
+    const dist = Math.hypot(dx, dy)
+    const scale = dist / pinchStartDist
+    const nextZoom = clamp(Number((pinchStartZoom * scale).toFixed(2)), 0.55, 1.35)
+
+    if (nextZoom === props.settings.zoom || !viewportRef.value) return
+
+    const rect = viewportRef.value.getBoundingClientRect()
+    const midX = pinchMidX - rect.left
+    const midY = pinchMidY - rect.top
+    const worldX = props.layout.width / 2 + (midX - rect.width / 2 - props.panX) / props.settings.zoom
+    const worldY = props.layout.height / 2 + (midY - rect.height / 2 - props.panY) / props.settings.zoom
+
+    const nextPanX = midX - rect.width / 2 - (worldX - props.layout.width / 2) * nextZoom
+    const nextPanY = midY - rect.height / 2 - (worldY - props.layout.height / 2) * nextZoom
+
+    setPan(nextPanX, nextPanY)
+    emit('update-zoom', nextZoom)
+  }
+}
+
 function updatePanFromMinimap(clientX: number, clientY: number) {
   if (!minimapContainerRef.value) {
     return
@@ -408,6 +449,8 @@ defineExpose({
     @pointerup="finishDrag"
     @pointercancel="finishDrag"
     @wheel="handleWheel"
+    @touchstart.passive="handleTouchStart"
+    @touchmove.prevent="handleTouchMove"
   >
     <div class="canvas-camera" :style="cameraStyle">
       <div id="publication-canvas-root" class="publication-stage" :style="stageStyle">
