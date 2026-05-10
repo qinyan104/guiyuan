@@ -18,6 +18,9 @@ cd frontend && npm run dev          # 启动 Vite 开发服务器 → http://loc
 # 前端类型检查
 cd frontend && npx vue-tsc --noEmit
 
+# 前端 lint
+cd frontend && npm run lint
+
 # 前端构建
 cd frontend && npm run build
 
@@ -44,11 +47,12 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 ```
 
 **测试现状：**
-- 后端 105 个测试（含 2 个 `@Disabled` 需 MySQL），`@WebMvcTest` 在无 MySQL 环境也可运行
-- 前端 83 个单元测试（vitest + jsdom + @vue/test-utils）
+- 后端 124 个测试（全通过，使用 H2 内存数据库无需 MySQL），`@WebMvcTest` + `@SpringBootTest` + `@ActiveProfiles("test")` 均可在无外部数据库环境运行
+- 前端 85 个单元测试（vitest + jsdom + @vue/test-utils），0 失败
 - 前端 **11 个 E2E 测试**（Playwright + Chromium）：登录/登出、谱书 CRUD、全局搜索、分享链接创建与访问
+- 后端测试默认使用 `application-test.properties`（H2 内存数据库 + Flyway 禁用 + Hibernate `create-drop`），无需外部 MySQL
 - E2E 测试默认使用测试用户 `e2e_test` / `test1234`（自动注册/创建），可通过 `E2E_USERNAME` / `E2E_PASSWORD` 环境变量覆盖
-- 需 MySQL 的 `@SpringBootTest` 测试在无数据库环境自动跳过
+- 前端 ESLint 已配置（`eslint.config.js` — flat config + TS + Vue），当前 0 errors
 
 ## 前端架构
 
@@ -96,6 +100,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 - **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载。集成 `PublicationTreeLoader` 递归加载分支挂载数据。
 - **照片服务**：`PhotoService` 统一管理 Base64 头像解析、`/api/photos/` 克隆、旧版 `/uploads/` 路径迁移。`PublicationService` 通过 `photoService` 委托照片操作。
 - **合并引擎**：`PublicationService.mergeBranch` 实现物理数据迁入。使用 `collectSubtreeIds` 进行 BFS 遍历。若指定了子树起点，则仅克隆该分支及其后代；否则执行全量克隆。使用 UUID 前缀 (`merged_{targetPubId}_*`) 进行 ID 重映射防冲突，递归克隆人物、家庭及照片记录。合并后自动清空挂载点。
+- **数据安全**：`DateTextParser` 从自由文本中提取四位数年份（支持 `2024`、`2024-01-15`、`2024年1月15日`）。`PublicationService` 在 `savePersonsAndFamilies` 中执行三态校验：生卒年份大小比较（V1）、已故状态与去世日期一致性（V2）、循环祖先引用检测（V3，上限 50 代）。`ConsistencyService` 提供全库数据扫描（`GET /api/admin/check-consistency`）：孤立人物、日期矛盾、状态不一致、空家族。`BackupService.restoreDatabase()` 支持 `POST /api/admin/restore` 一键还原 `.sql` 备份，均仅限 SUPER_ADMIN。
 - **照片导入链路**：`PublicationService.savePersonsAndFamilies` 委托 `PhotoService.handlePersonAvatar` 在新建/导入时支持 Base64、`/api/photos/{id}` 克隆、旧版 `/uploads/...` 文件迁移；更新时复用既有照片记录，避免重复插图
 - **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`。管理员端点使用 `@PreAuthorize("hasRole('ADMIN')")` / `hasRole('SUPER_ADMIN')` 声明式权限。分支合并要求对主族谱具 `OWNER` 权限，对分支具 `VIEWER` 权限。
 - 文件上传限制：100MB；`FileController` 有扩展名白名单校验（图片/PDF），`PhotoController` 有 MIME 类型校验
