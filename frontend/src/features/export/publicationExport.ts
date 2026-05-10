@@ -25,6 +25,9 @@ const SVG_THEME_VARIABLES = [
   '--accent-amber',
   '--border-color',
   '--line-soft',
+  '--shell-bg-image',
+  '--bg-panel',
+  '--text-sub',
 ] as const
 
 const PAPER_SIZE_NAMES: Record<PublicationPaper, string> = {

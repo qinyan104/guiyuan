@@ -479,7 +479,7 @@ ${options.themeCss}
 
 body {
   font-family: 'Manrope', 'Microsoft YaHei', 'PingFang SC', sans-serif;
-  background: var(--bg-shell, #f5f0e8);
+  background: var(--shell-bg-image, var(--bg-shell, #f5f0e8));
   color: var(--text-main, #241a10);
   overflow: hidden;
   height: 100vh;
@@ -492,7 +492,7 @@ body {
   display: none;
   position: fixed;
   inset: 0;
-  background: var(--bg-shell, #f5f0e8);
+  background: var(--shell-bg-image, var(--bg-shell, #f5f0e8));
   z-index: 9999;
   align-items: center;
   justify-content: center;
