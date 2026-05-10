@@ -100,3 +100,21 @@ export async function adminRestoreDatabase(file: File): Promise<string> {
   if (resp.data.code !== 200) throw new Error(resp.data.message || '数据库还原失败')
   return resp.data.message || '数据库已还原'
 }
+
+export interface ConsistencyIssue {
+  type: string
+  personId: string
+  personName: string
+  detail: string
+}
+
+export interface ConsistencyReport {
+  totalIssues: number
+  issues: ConsistencyIssue[]
+}
+
+export async function adminCheckConsistency(): Promise<ConsistencyReport> {
+  const resp = await http.get<ApiResponse<ConsistencyReport>>('/admin/check-consistency')
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '一致性检查失败')
+  return resp.data.data
+}

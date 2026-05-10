@@ -2,7 +2,7 @@
 import { ref, computed, inject } from 'vue'
 import { getUsername, isSuperAdmin } from '../api/auth'
 import { changePassword, changeNickname, uploadAvatar } from '../api/profile'
-import { downloadBackup, adminRestoreDatabase } from '../api/admin'
+import { downloadBackup, adminRestoreDatabase, adminCheckConsistency, type ConsistencyIssue } from '../api/admin'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const showOnboarding = inject<() => void>('show-onboarding', () => {})
@@ -57,6 +57,25 @@ const restorePending = ref(false)
 const showRestoreConfirm = ref(false)
 const restoreFileInputRef = ref<HTMLInputElement | null>(null)
 
+const consistencyResult = ref<ConsistencyIssue[]>([])
+const consistencyRunning = ref(false)
+
+const groupedIssues = computed(() => {
+  const groups: Record<string, ConsistencyIssue[]> = {}
+  for (const issue of consistencyResult.value) {
+    if (!groups[issue.type]) groups[issue.type] = []
+    groups[issue.type].push(issue)
+  }
+  return groups
+})
+
+const typeLabels: Record<string, string> = {
+  orphan: '孤立人物',
+  date_conflict: '生卒日期矛盾',
+  status_conflict: '在世状态矛盾',
+  empty_family: '空家族',
+}
+
 async function handleBackup() {
   backupError.value = ''
   backupLoading.value = true
@@ -80,6 +99,18 @@ async function handleRestore() {
     alert(e.message || '数据库还原失败')
   } finally {
     restorePending.value = false
+  }
+}
+
+async function handleConsistencyCheck() {
+  consistencyRunning.value = true
+  try {
+    const report = await adminCheckConsistency()
+    consistencyResult.value = report.issues
+  } catch (e: any) {
+    alert(e.message || '一致性检查失败')
+  } finally {
+    consistencyRunning.value = false
   }
 }
 
@@ -294,6 +325,39 @@ async function handleChangeNickname() {
           @cancel="showRestoreConfirm = false"
           @update:modelValue="(v: boolean) => { if (!v) showRestoreConfirm = false }"
         />
+
+        <!-- Data Consistency Card (SUPER_ADMIN only) -->
+        <div v-if="isSuperAdmin()" class="bento-card">
+          <div class="card-header">
+            <h3 class="card-title">数据一致性检查</h3>
+            <p class="card-subtitle">扫描全库数据，检测孤立人物、日期矛盾、状态不一致等问题。</p>
+          </div>
+          <div class="glass-form-row">
+            <button
+              class="bento-btn primary"
+              :disabled="consistencyRunning"
+              @click="handleConsistencyCheck"
+            >
+              {{ consistencyRunning ? '检查中...' : '开始检查' }}
+            </button>
+          </div>
+
+          <div v-if="consistencyResult.length > 0" class="consistency-report">
+            <p class="consistency-summary">发现 {{ consistencyResult.length }} 个问题：</p>
+            <details v-for="(group, type) in groupedIssues" :key="type" class="consistency-group">
+              <summary>{{ typeLabels[type] || type }} ({{ group.length }})</summary>
+              <ul>
+                <li v-for="issue in group" :key="issue.personId + issue.detail">
+                  <strong>{{ issue.personName || issue.personId }}</strong>
+                  — {{ issue.detail }}
+                </li>
+              </ul>
+            </details>
+          </div>
+          <p v-else-if="consistencyResult.length === 0 && !consistencyRunning" class="consistency-clean">
+            未发现问题，数据一致性良好。
+          </p>
+        </div>
 
       </div>
     </div>

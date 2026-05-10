@@ -1,6 +1,7 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.dto.ConsistencyReport;
 import com.genealogy.server.dto.CreateUserRequest;
 import com.genealogy.server.dto.ResetPasswordRequest;
 import com.genealogy.server.exception.BadRequestException;
@@ -8,6 +9,7 @@ import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.service.BackupService;
+import com.genealogy.server.service.ConsistencyService;
 import com.genealogy.server.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,12 +32,14 @@ public class AdminController {
     private final UserService userService;
     private final AuditLogRepository auditLogRepository;
     private final BackupService backupService;
+    private final ConsistencyService consistencyService;
 
     public AdminController(UserService userService, AuditLogRepository auditLogRepository,
-                           BackupService backupService) {
+                           BackupService backupService, ConsistencyService consistencyService) {
         this.userService = userService;
         this.auditLogRepository = auditLogRepository;
         this.backupService = backupService;
+        this.consistencyService = consistencyService;
     }
 
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
@@ -138,6 +142,12 @@ public class AdminController {
             Thread.currentThread().interrupt();
             throw new IOException("备份进程被中断", e);
         }
+    }
+
+    @GetMapping("/check-consistency")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<ConsistencyReport> checkConsistency() {
+        return ApiResponse.success(consistencyService.runCheck());
     }
 
     @PostMapping("/restore")
