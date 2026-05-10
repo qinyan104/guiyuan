@@ -346,6 +346,32 @@ function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
         updateTransform();
       }
     }, { passive: false });
+
+    // Double-tap to zoom on a person card
+    var lastTapTime = 0;
+    camera.addEventListener('click', function(e) {
+      var card = e.target.closest('[data-person-id]');
+      if (!card) return;
+      var now = Date.now();
+      if (now - lastTapTime < 350) {
+        // Double tap: zoom to this card
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          var bbox = card.getBBox();
+          var cardCenterX = bbox.x + bbox.width / 2;
+          var cardCenterY = bbox.y + bbox.height / 2;
+          var targetZoom = 1.5;
+          var viewW = viewport.clientWidth;
+          var viewH = viewport.clientHeight;
+          zoom = targetZoom;
+          panX = viewW / 2 - cardCenterX * targetZoom;
+          panY = viewH / 2 - cardCenterY * targetZoom;
+          updateTransform();
+        } catch(e) {}
+      }
+      lastTapTime = now;
+    });
   }
 
   // --- Card click ---
@@ -750,10 +776,37 @@ body {
 }
 
 @media (max-width: 640px) {
-  #pub-header { padding: 14px 16px 10px; }
-  #pub-header h1 { font-size: 1.2rem; }
-  #detail-panel { width: 100vw; max-width: 100vw; }
-  #pub-footer { padding: 8px 16px; flex-direction: column; gap: 4px; }
+  #pub-header { padding: 10px 14px; }
+  #pub-header h1 { font-size: 1.1rem; }
+  #detail-panel {
+    top: auto; bottom: 0; left: 0; right: 0;
+    width: 100vw; max-width: 100vw;
+    height: 45vh;
+    border-radius: 16px 16px 0 0;
+    padding-top: 24px;
+  }
+  #detail-panel::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: #ccc;
+  }
+  #tree-viewport { font-size: 16px; }
+  .detail-close { width: 44px; height: 44px; font-size: 18px; }
+  #pub-footer { padding: 8px 12px; flex-direction: column; gap: 4px; font-size: 0.78rem; }
+  #password-gate input {
+    font-size: 16px;
+    padding: 12px 16px;
+  }
+  #password-gate button {
+    padding: 12px 24px;
+    font-size: 16px;
+  }
 }
 </style>
 </head>
