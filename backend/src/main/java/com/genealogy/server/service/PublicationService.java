@@ -21,6 +21,7 @@ import com.genealogy.server.repository.PhotoRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.PublicationRepository;
 import com.genealogy.server.repository.PublicationShareLinkRepository;
+import com.genealogy.server.util.DateTextParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -549,6 +550,29 @@ public class PublicationService {
                 throw new BadRequestException("数据校验失败：" + String.join("; ", errors));
             }
 
+            // Data validation: check each person's birth/death dates and life status
+            for (Map.Entry<String, Object> entry : people.entrySet()) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> person = (Map<String, Object>) entry.getValue();
+                validatePersonDates(person);
+                validatePersonLifeStatus(person);
+            }
+
+            // Build ancestry map from current families and check for circular references
+            Map<String, String> childToParent = new HashMap<>();
+            for (Map.Entry<String, Object> entry : families.entrySet()) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> familyData = (Map<String, Object>) entry.getValue();
+                List<String> adults = (List<String>) familyData.getOrDefault("adults", List.of());
+                List<String> children = (List<String>) familyData.getOrDefault("children", List.of());
+                for (String childId : children) {
+                    if (!adults.isEmpty()) {
+                        childToParent.putIfAbsent(childId, adults.get(0));
+                    }
+                }
+            }
+            checkCircularAncestry(childToParent);
+
             for (Map.Entry<String, Object> entry : families.entrySet()) {
                 String familyId = entry.getKey();
                 Map<String, Object> familyData = (Map<String, Object>) entry.getValue();
@@ -690,6 +714,45 @@ public class PublicationService {
             }
         }
         return new SubtreeResult(collectedPersonDbIds, collectedFamilyDbIds);
+    }
+
+    static void validatePersonDates(Map<String, Object> person) {
+        String birth = (String) person.get("birth");
+        String death = (String) person.get("death");
+        if (birth == null || birth.isBlank() || death == null || death.isBlank()) {
+            return;
+        }
+        var birthYear = DateTextParser.extractYear(birth);
+        var deathYear = DateTextParser.extractYear(death);
+        if (birthYear.isPresent() && deathYear.isPresent()
+                && birthYear.get() > deathYear.get()) {
+            throw new BadRequestException("出生年份不能晚于去世年份");
+        }
+    }
+
+    static void validatePersonLifeStatus(Map<String, Object> person) {
+        Boolean deceased = (Boolean) person.get("deceased");
+        String death = (String) person.get("death");
+        if (Boolean.TRUE.equals(deceased) && (death == null || death.isBlank())) {
+            throw new BadRequestException("已故人物必须填写去世日期");
+        }
+    }
+
+    static void checkCircularAncestry(Map<String, String> childToParent) {
+        for (String childId : childToParent.keySet()) {
+            Set<String> visited = new HashSet<>();
+            String current = childToParent.get(childId);
+            while (current != null && visited.size() < 50) {
+                if (!visited.add(current)) {
+                    break;
+                }
+                if (current.equals(childId)) {
+                    throw new BadRequestException(
+                        "检测到循环祖先引用：人物 " + childId + " 的祖先链中包含自身");
+                }
+                current = childToParent.get(current);
+            }
+        }
     }
 
     public static class SubtreeResult {
