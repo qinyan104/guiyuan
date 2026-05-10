@@ -4,6 +4,7 @@ import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { mergeBranch } from '../api/accessManage'
 import { getPublication, listPublications, type PublicationSummary } from '../api/publication'
 import type { Person } from '../types/family'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const props = defineProps<{
   person: Person
@@ -26,6 +27,7 @@ const publications = ref<PublicationSummary[]>([])
 const loading = ref(false)
 const mergePending = ref(false)
 const feedbackMessage = ref('')
+const showMergeConfirm = ref(false)
 const selectedTargetId = ref('')
 const isDropdownOpen = ref(false)
 
@@ -142,10 +144,13 @@ async function handleMerge() {
     alert('请先将当前人物设置为有效挂载点。')
     return
   }
-  if (!confirm('物理合并会把目标族谱当前快照复制进当前族谱，并清除这个挂载点。确定继续吗？')) {
-    return
-  }
+  showMergeConfirm.value = true
+}
 
+async function executeMerge() {
+  if (!props.publicationId || !props.person.isMountPoint || !props.person.mountPointTarget?.publicationId) return
+
+  showMergeConfirm.value = false
   mergePending.value = true
   feedbackMessage.value = ''
   try {
@@ -286,6 +291,17 @@ onUnmounted(() => {
       {{ mergePending ? '正在物理合并...' : '确认执行物理合并' }}
     </button>
   </section>
+
+    <ConfirmDialog
+      :modelValue="showMergeConfirm"
+      title="物理合并确认"
+      message="物理合并会把目标族谱当前快照复制进当前族谱，并清除这个挂载点。确定继续吗？"
+      confirmLabel="确认合并"
+      tone="danger"
+      @confirm="executeMerge"
+      @cancel="showMergeConfirm = false"
+      @update:modelValue="(v: boolean) => { if (!v) showMergeConfirm = false }"
+    />
 </template>
 
 <style scoped>

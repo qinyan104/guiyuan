@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import ConfirmDialog from './ConfirmDialog.vue'
 import {
   searchUsers,
   listAccessRecords,
@@ -25,6 +26,7 @@ const selectedUserId = ref<number | null>(null)
 const newRole = ref<'EDITOR' | 'VIEWER'>('EDITOR')
 const searching = ref(false)
 const adding = ref(false)
+const pendingRemovalUserId = ref<number | null>(null)
 
 let searchAbortController: AbortController | null = null
 
@@ -144,14 +146,25 @@ async function handleProfileChange(record: AccessRecord, field: string, value: s
 }
 
 async function handleRemove(userId: number) {
-  if (!confirm('确定要移除该协作者吗？')) return
+  pendingRemovalUserId.value = userId
+}
+
+async function confirmRemove() {
+  const userId = pendingRemovalUserId.value
+  if (userId === null) return
   error.value = null
   try {
     await removeAccessRecord(props.publicationId, userId)
     await load(true)
   } catch (err: any) {
     error.value = err.message || '移除失败'
+  } finally {
+    pendingRemovalUserId.value = null
   }
+}
+
+function cancelRemove() {
+  pendingRemovalUserId.value = null
 }
 
 onMounted(() => {
@@ -302,6 +315,15 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+    <ConfirmDialog
+      :modelValue="pendingRemovalUserId !== null"
+      title="移除协作者"
+      message="确定要移除该协作者吗？"
+      tone="warning"
+      @confirm="confirmRemove"
+      @cancel="cancelRemove"
+      @update:modelValue="(v: boolean) => { if (!v) cancelRemove() }"
+    />
   </div>
 </template>
 
