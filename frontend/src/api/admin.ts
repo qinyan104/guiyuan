@@ -90,3 +90,13 @@ export async function downloadBackup(): Promise<void> {
     a.click()
   }
 }
+
+export async function adminRestoreDatabase(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const resp = await http.post<ApiResponse<{ filename: string }>>('/admin/restore', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '数据库还原失败')
+  return resp.data.message || '数据库已还原'
+}

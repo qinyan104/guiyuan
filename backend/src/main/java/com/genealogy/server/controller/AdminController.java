@@ -3,6 +3,7 @@ package com.genealogy.server.controller;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.dto.CreateUserRequest;
 import com.genealogy.server.dto.ResetPasswordRequest;
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.AuditLogRepository;
@@ -11,9 +12,12 @@ import com.genealogy.server.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -33,6 +37,8 @@ public class AdminController {
         this.auditLogRepository = auditLogRepository;
         this.backupService = backupService;
     }
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     @GetMapping("/users")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
@@ -131,6 +137,30 @@ public class AdminController {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("备份进程被中断", e);
+        }
+    }
+
+    @PostMapping("/restore")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<Map<String, String>> restoreDatabase(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request) {
+        if (file.isEmpty()) {
+            throw new BadRequestException("请选择要还原的 SQL 文件");
+        }
+        String filename = file.getOriginalFilename();
+        if (filename == null || !filename.endsWith(".sql")) {
+            throw new BadRequestException("仅支持 .sql 格式的文件");
+        }
+
+        String username = (String) request.getAttribute("currentUsername");
+        try {
+            backupService.restoreDatabase(file.getInputStream());
+            saveAuditLog(username, "RESTORE_DB", "从文件 " + filename + " 还原数据库", null, null);
+            return ApiResponse.success("数据库已还原", Map.of("filename", filename));
+        } catch (Exception e) {
+            logger.error("数据库还原失败", e);
+            throw new RuntimeException("数据库还原失败: " + e.getMessage(), e);
         }
     }
 

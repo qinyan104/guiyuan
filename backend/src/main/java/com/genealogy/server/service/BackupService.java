@@ -94,4 +94,31 @@ public class BackupService {
             throw new IllegalArgumentException("无效的 JDBC URL 格式");
         }
     }
+
+    public void restoreDatabase(InputStream sqlStream) throws IOException, InterruptedException {
+        String dbName = extractDbName(datasourceUrl);
+        String host = extractHost(datasourceUrl);
+        int port = extractPort(datasourceUrl);
+
+        ProcessBuilder pb = new ProcessBuilder(
+            "mysql",
+            "-h" + host,
+            "-P" + port,
+            "-u" + datasourceUsername,
+            "--default-character-set=utf8mb4",
+            dbName
+        );
+        pb.environment().put("MYSQL_PWD", datasourcePassword);
+        pb.redirectErrorStream(true);
+
+        Process process = pb.start();
+        try (var stdin = process.getOutputStream()) {
+            sqlStream.transferTo(stdin);
+        }
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            String errorOutput = new String(process.getInputStream().readAllBytes());
+            throw new IOException("数据库还原失败 (exit " + exitCode + "): " + errorOutput);
+        }
+    }
 }

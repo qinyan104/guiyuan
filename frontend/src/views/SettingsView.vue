@@ -2,7 +2,8 @@
 import { ref, computed, inject } from 'vue'
 import { getUsername, isSuperAdmin } from '../api/auth'
 import { changePassword, changeNickname, uploadAvatar } from '../api/profile'
-import { downloadBackup } from '../api/admin'
+import { downloadBackup, adminRestoreDatabase } from '../api/admin'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const showOnboarding = inject<() => void>('show-onboarding', () => {})
 
@@ -51,6 +52,11 @@ const nicknameLoading = ref(false)
 const backupLoading = ref(false)
 const backupError = ref('')
 
+const restoreFile = ref<File | null>(null)
+const restorePending = ref(false)
+const showRestoreConfirm = ref(false)
+const restoreFileInputRef = ref<HTMLInputElement | null>(null)
+
 async function handleBackup() {
   backupError.value = ''
   backupLoading.value = true
@@ -60,6 +66,27 @@ async function handleBackup() {
     backupError.value = err.message || '备份失败'
   } finally {
     backupLoading.value = false
+  }
+}
+
+async function handleRestore() {
+  if (!restoreFile.value) return
+  restorePending.value = true
+  try {
+    const msg = await adminRestoreDatabase(restoreFile.value)
+    alert(msg)
+    window.location.reload()
+  } catch (e: any) {
+    alert(e.message || '数据库还原失败')
+  } finally {
+    restorePending.value = false
+  }
+}
+
+function onFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement
+  if (input.files?.length) {
+    restoreFile.value = input.files[0]
   }
 }
 
@@ -233,6 +260,40 @@ async function handleChangeNickname() {
             <p v-if="backupError" class="feedback-msg error">{{ backupError }}</p>
           </transition>
         </div>
+
+        <!-- Database Restore Card (SUPER_ADMIN only) -->
+        <div v-if="isSuperAdmin()" class="settings-card">
+          <h3>数据库还原</h3>
+          <p class="settings-card__desc">
+            从备份文件还原数据库。此操作<strong>不可逆</strong>，将覆盖当前全部数据。
+          </p>
+          <div class="restore-controls">
+            <input
+              ref="restoreFileInputRef"
+              type="file"
+              accept=".sql"
+              @change="onFileSelected"
+            />
+            <button
+              class="btn btn--danger"
+              :disabled="!restoreFile || restorePending"
+              @click="showRestoreConfirm = true"
+            >
+              {{ restorePending ? '还原中...' : '还原数据库' }}
+            </button>
+          </div>
+        </div>
+
+        <ConfirmDialog
+          :modelValue="showRestoreConfirm"
+          title="确认还原数据库"
+          message="此操作不可逆，将覆盖当前全部数据。请确保已备份。"
+          confirmLabel="确认还原"
+          tone="danger"
+          @confirm="showRestoreConfirm = false; handleRestore()"
+          @cancel="showRestoreConfirm = false"
+          @update:modelValue="(v: boolean) => { if (!v) showRestoreConfirm = false }"
+        />
 
       </div>
     </div>
