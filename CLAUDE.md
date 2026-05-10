@@ -64,7 +64,8 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 - **核心编辑器**：`views/WorkbenchView.vue` 专注排版。支持跨页面视角记忆，取消点击自动跳屏。
 - **全局搜索**：`components/GlobalSearch.vue` 集成在 `AdminLayout` 顶栏，300ms debounce，搜索人物/族谱标题，结果分组展示，点击跳转对应视图。后端 `search/` 包（`SearchController` + `SearchService` + `SearchResult` DTO）提供 `GET /api/search?q=` 端点。**设计要点原则**：前缀匹配优先于子串匹配。
 - **画布渲染**：`components/PublicationCanvas.vue` — **GPU 加速核心**。采用 `translate3d` 硬件加速，并在拖拽时动态停用阴影滤镜（Filter Culling）。图片强制采用 `meet` 比例展示。
-- **数据上下文**：`views/PublicationLayout.vue` **单源事实提供者**。通过 Provide/Inject 共享内存数据与撤销历史，支持多视图秒开。支持**乐观并发**：保存时携带服务端 revision 版本号，409 冲突时暂停自动保存并显示冲突横幅和"Reload latest version"按钮。
+- **数据上下文**：`views/PublicationLayout.vue` **单源事实提供者**。通过 Provide/Inject 共享内存数据与撤销历史，支持多视图秒开。支持**乐观并发**：保存时携带服务端 `revision` 版本号；后端 `PUT` 接口成功后返回 `newRevision` 以保持前端同步。
+- **冲突处理**：`http.ts` 拦截 409 冲突错误并抛出 `concurrency-conflict` 事件，由 `App.vue` 显示强制刷新模态框，防止过期数据覆盖。
 - **确认对话框**：`components/ConfirmDialog.vue` **共享确认对话框**。Teleport 到 body，支持 `danger`/`warning`/`default` 三种色调，替代 `window.confirm()`。用于协作者移除、物理合并等高危操作。
 - **联邦协作**：支持“分支挂载点”系统。`PersonCardSvg.vue` 识别 `isMountPoint` 渲染门户节点（蓝色虚线/图标）；`BranchMountManager.vue`（集成在 `PersonEditorDrawer.vue`）负责管理挂载与触发合并。**UI 优化 (2026-05-09)**：采用定制的分组下拉菜单选择目标，并将高风险的“物理合并”操作隔离在独立的“高级合并操作”区块。
 - **字段级隐私**：`components/CollaboratorManager.vue` 支持为 `VIEWER` 配置脱敏规则。后端强制置 `null` 方案，前端渲染逻辑天然适配。

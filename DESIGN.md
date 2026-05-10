@@ -32,6 +32,12 @@
 - **字段组**: 脱敏分为 `dates` (生卒年/年龄)、`note` (生平笔记/联系方式)、`photo` (头像照片)。
 - **安全保障**: 后端置 `null` 方案。由于 `VIEWER` 角色被剥夺了 `EDIT` 权限，脱敏后的残缺数据无法被存回数据库。
 
+### 3.5 并发冲突控制 (Concurrency Control)
+- **机制**: 采用 **JPA `@Version`** 乐观锁机制。
+- **聚合根保护**: `Publication` 实体作为整个族谱的聚合根。任何对人物 (`Person`) 或家庭 (`Family`) 的修改，都会联动触发 `Publication` 的 `updatedAt` 更新，从而迫使 `revision` 自增。
+- **API 约束**: 所有写入 API (`PUT`) 必须携带 `expectedRevision` 负载。后端会校验传入版本与数据库版本是否一致，不匹配则抛出 `ConflictException` (HTTP 409)。
+- **前端拦截**: `http.ts` 响应拦截器捕获 409 状态码，并触发全局 `concurrency-conflict` 事件，由 `App.vue` 弹出强制刷新模态框，确保用户不基于过期数据进行覆盖保存。
+
 ## 4. 数据库设计要点
 - **对象级权限**: `publication_access` 表存储用户与族谱的 `OWNER/EDITOR/VIEWER` 关系，并存储 `redaction_profile` JSON 脱敏配置。
 - **照片存储**: `photos` 表采用二进制存储（或文件映射），支持 Base64、URL 引用等多种导入模式。
