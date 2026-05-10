@@ -180,6 +180,30 @@ describe('App auth bootstrap', () => {
     expect(routerReplace).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="route-content"]').exists()).toBe(true)
   })
+
+  it('shows concurrency conflict modal when event is dispatched', async () => {
+    const wrapper = mount(App, {
+      global: {
+        stubs: {
+          RouterView: true,
+          OnboardingGuide: true,
+        },
+      },
+    })
+
+    await flushPromises()
+    
+    // Simulate the event
+    window.dispatchEvent(new CustomEvent('concurrency-conflict', {
+      detail: { message: 'Conflict!' }
+    }))
+    
+    await wrapper.vm.$nextTick()
+    
+    expect(wrapper.text()).toContain('数据版本冲突')
+    expect(wrapper.text()).toContain('Conflict!')
+    expect(wrapper.find('button').text()).toBe('立即刷新')
+  })
 })
 
 function createDeferred<T>() {

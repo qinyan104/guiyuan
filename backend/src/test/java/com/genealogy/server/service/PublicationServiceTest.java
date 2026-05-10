@@ -351,7 +351,24 @@ class PublicationServiceTest {
                 "{}",
                 "{}"))
             .isInstanceOf(ConflictException.class)
-            .hasMessageContaining("stale");
+            .hasMessageContaining("数据已过期");
+    }
+
+    @Test
+    void updatePersonRejectsStaleRevision() {
+        Publication publication = new Publication();
+        publication.setId(7L);
+        publication.setRevision(10L);
+
+        when(publicationRepository.findById(7L)).thenReturn(Optional.of(publication));
+
+        assertThatThrownBy(() -> publicationService.updatePerson(
+                7L,
+                9L,
+                "p1",
+                Map.of("name", "New Name")))
+            .isInstanceOf(ConflictException.class)
+            .hasMessageContaining("数据已过期");
     }
 
     private Map<String, Object> buildPublicationData(String avatarUrl) {

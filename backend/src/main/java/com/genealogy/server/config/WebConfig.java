@@ -19,12 +19,15 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // Unify CORS management in SecurityConfig.java to avoid conflicts
+        /*
         registry.addMapping("/**")
                 .allowedOriginPatterns(allowedOrigins.split(","))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .exposedHeaders("Set-Cookie");
+        */
     }
 
     @Override

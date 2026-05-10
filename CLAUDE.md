@@ -44,8 +44,8 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 ```
 
 **测试现状：**
-- 后端 96 个测试（含 2 个 `@Disabled` 需 MySQL），`@WebMvcTest` 在无 MySQL 环境也可运行
-- 前端 74 个单元测试（vitest + jsdom + @vue/test-utils）
+- 后端 105 个测试（含 2 个 `@Disabled` 需 MySQL），`@WebMvcTest` 在无 MySQL 环境也可运行
+- 前端 83 个单元测试（vitest + jsdom + @vue/test-utils）
 - 前端 **11 个 E2E 测试**（Playwright + Chromium）：登录/登出、谱书 CRUD、全局搜索、分享链接创建与访问
 - E2E 测试默认使用测试用户 `e2e_test` / `test1234`（自动注册/创建），可通过 `E2E_USERNAME` / `E2E_PASSWORD` 环境变量覆盖
 - 需 MySQL 的 `@SpringBootTest` 测试在无数据库环境自动跳过
@@ -64,8 +64,10 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 - **核心编辑器**：`views/WorkbenchView.vue` 专注排版。支持跨页面视角记忆，取消点击自动跳屏。
 - **全局搜索**：`components/GlobalSearch.vue` 集成在 `AdminLayout` 顶栏，300ms debounce，搜索人物/族谱标题，结果分组展示，点击跳转对应视图。后端 `search/` 包（`SearchController` + `SearchService` + `SearchResult` DTO）提供 `GET /api/search?q=` 端点。**设计要点原则**：前缀匹配优先于子串匹配。
 - **画布渲染**：`components/PublicationCanvas.vue` — **GPU 加速核心**。采用 `translate3d` 硬件加速，并在拖拽时动态停用阴影滤镜（Filter Culling）。图片强制采用 `meet` 比例展示。
-- **数据上下文**：`views/PublicationLayout.vue` **单源事实提供者**。通过 Provide/Inject 共享内存数据与撤销历史，支持多视图秒开。
+- **数据上下文**：`views/PublicationLayout.vue` **单源事实提供者**。通过 Provide/Inject 共享内存数据与撤销历史，支持多视图秒开。支持**乐观并发**：保存时携带服务端 revision 版本号，409 冲突时暂停自动保存并显示冲突横幅和"Reload latest version"按钮。
+- **确认对话框**：`components/ConfirmDialog.vue` **共享确认对话框**。Teleport 到 body，支持 `danger`/`warning`/`default` 三种色调，替代 `window.confirm()`。用于协作者移除、物理合并等高危操作。
 - **联邦协作**：支持“分支挂载点”系统。`PersonCardSvg.vue` 识别 `isMountPoint` 渲染门户节点（蓝色虚线/图标）；`BranchMountManager.vue`（集成在 `PersonEditorDrawer.vue`）负责管理挂载与触发合并。**UI 优化 (2026-05-09)**：采用定制的分组下拉菜单选择目标，并将高风险的“物理合并”操作隔离在独立的“高级合并操作”区块。
+- **字段级隐私**：`components/CollaboratorManager.vue` 支持为 `VIEWER` 配置脱敏规则。后端强制置 `null` 方案，前端渲染逻辑天然适配。
 - **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置 and 连线
 - **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）。另含**跨家庭重复校验**：一个人不能同时是多个家庭的 parents 或 children（但可同时是 parent 和 child，多代际正常）。`publicationOperations.ts` 中的关系操作自动调用 `deduplicateCrossFamily()` 清理。
 - 草稿持久化：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化，并在便携式导出时将 `/api/photos/...` 与旧版 `/uploads/...` 头像尽量内联为 Base64
@@ -75,10 +77,17 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 
 - 12 个 Controller（含 `SearchController`、`SharePublicationController`、`PublicationAccessController`、`UserController`），全部 `/api/*` 前缀，依赖注入统一使用构造器注入
 - Spring Security 完整 filter chain：`JwtAuthenticationFilter`（JWT 验签 + SecurityContext）、`LoginRateLimitFilter`（IP 限流 10次/5分钟）。`/api/auth/login`、`/api/auth/register`、`/api/auth/refresh`、`/api/auth/logout`、`GET /api/photos/**`、`/api/shares/**` 明确放行；其余 `/api/**` 需认证。未认证访问受保护 API 返回 HTTP 401，供前端触发 refresh/retry。CSRF 启用（`CookieCsrfTokenRepository`，auth 登录/注册/刷新/退出豁免）。安全头：X-Frame-Options DENY、X-Content-Type-Options、Referrer-Policy、Permissions-Policy
-- **资源级授权**：`PublicationAuthorizationService` 基于 `publication_access` 表实现对象级权限控制。每个 publication 端点在执行前调用 `require(subject, pubId, permission)`，无权限均返回 403（IDOR 防护）。`auth` 包提供 `AccessSubject`（`UserSubject`/`ShareSubject`）、`AccessPermission`（9 个动作枚举）。创建族谱时自动写入 OWNER 记录，`AccessControlMigrationRunner` 启动时回填历史数据。
-- 自定义异常体系：`NotFoundException`(404)、`ForbiddenException`(403)、`BadRequestException`(400)，`GlobalExceptionHandler` 统一映射；未捕获 RuntimeException 返回 500
+- **资源级授权**：`PublicationAuthorizationService` 基于 `publication_access` 表实现对象级权限控制。每个 publication 端点在执行前调用 `require(subject, pubId, permission)`，无权限均返回 403（IDOR 防护）。**性能优化 (2026-05-09)**：实现了请求级缓存，单次请求内重复鉴权不再查询数据库。`auth` 包提供 `AccessSubject`（`UserSubject`/`ShareSubject`）、`AccessPermission`（9 个动作枚举）。创建族谱时自动写入 OWNER 记录，`AccessControlMigrationRunner` 启动时回填历史数据。
+- 自定义异常体系：`NotFoundException`(404)、`ForbiddenException`(403)、`BadRequestException`(400)、`GoneException`(410)、`ConflictException`(409)，`GlobalExceptionHandler` 统一映射；未捕获 RuntimeException 返回 500
 - **JWT + Refresh Token 双 Token 体系**：Access Token (JWT, HS256, 15分钟) 通过 `Authorization: Bearer` 请求头传输；Refresh Token (SecureRandom 32字节, 30天) 存 `refresh_tokens` 表（仅存 SHA-256 哈希），通过 HttpOnly Cookie 传输。Refresh Token 单次使用（用后轮换）。`JwtService` 负责签发/验证，`RefreshTokenService` 负责生命周期管理
-- 数据库：MySQL `genealogy`，连接配置在 `application.properties`。由 **Flyway** 管理迁移（`ddl-auto=validate`，`baseline-on-migrate=true`）。表含 `publications`、`persons`、`families`、`family_members`、`photos`、`users`、`audit_logs`、`publication_access`、`publication_share_links`、`refresh_tokens`。迁移脚本在 `backend/src/main/resources/db/migration/`
+- **认证核心**：`CustomUserDetailsService` 实现 Spring Security 的 `UserDetailsService` 接口，负责从数据库加载用户。确保消除 `Using generated security password` 警告。
+- **CORS 统一配置**：跨域策略统一在 `SecurityConfig.java` 中通过 `CorsConfigurationSource` 管理。**严禁**在 `WebConfig.java` 中使用 `addCorsMappings` 或在 Controller 上使用 `@CrossOrigin`，以防过滤器冲突。
+- 数据库：MySQL `genealogy`，连接配置在 `application.properties`。由 **Flyway** 管理迁移（`ddl-auto=validate`，`baseline-on-migrate=true`）。表含 `publications`、`persons`、`families`、`family_members`、`photos`、`users`、`audit_logs`、`publication_access`、`publication_share_links`、`refresh_tokens`。迁移脚本在 `backend/src/main/resources/db/migration/`：
+  - `V1__init.sql` — 初始建表
+  - `V2__add_redaction_profile_to_access.sql` — 字段级脱敏配置
+  - `V3__add_publication_revision.sql` — 乐观并发 revision 计数器
+
+- **字段级脱敏**：`PublicationViewProjector` 提供三态（NONE/LIVING/ALL）脱敏引擎。`PublicationController.get()` 为 `VIEWER` 角色应用该引擎，确保敏感数据（生卒、笔记、照片）在离开后端前被抹除。
 - **传输限制**：已提升至 **100MB** (Servlet, Tomcat Post/Swallow size) 以支持带 Base64 图片的族谱导入
 - **PDF 生成**：集成 **iText 7** (kernel, io, layout, svg)。
     - `POST /api/publications/{id}/export/pdf`: 生成多页谱书 PDF（含标题、前言、成员志、切片图）。

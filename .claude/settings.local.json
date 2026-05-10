@@ -42,7 +42,18 @@
       "Bash(echo \"Build exit: $?\")",
       "Bash(export JWT_SECRET=a11aa0d0cb10ddc8e6ba642022fc0848c3ab387c8a4e9643be2cf7d9a5f02b7f)",
       "WebFetch(domain:github.com)",
-      "Bash(bun --version)"
+      "Bash(bun --version)",
+      "Bash(./setup)",
+      "Bash(ls ~/.claude/skills/gstack/.claude/)",
+      "Bash(kill %1)",
+      "Bash(bun install *)",
+      "Bash(powershell *)",
+      "Bash(.\\\\mvnw test *)",
+      "Bash(./mvnw.cmd -Dtest=PublicationControllerConflictTest test)",
+      "Bash(./mvnw.cmd \"-Dtest=PublicationControllerConflictTest,PublicationServiceTest\" test)",
+      "Bash(./mvnw.cmd test *)",
+      "Bash(./mvnw.cmd -Dtest=PublicationAccessControllerTest test)",
+      "Bash(./mvnw.cmd \"-Dtest=PublicationServiceTest,PublicationControllerConflictTest,PublicationAccessControllerTest\" test)"
     ]
   }
 }

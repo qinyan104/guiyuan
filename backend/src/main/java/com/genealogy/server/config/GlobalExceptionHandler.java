@@ -9,6 +9,7 @@ import com.genealogy.server.exception.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -50,6 +51,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiResponse<Void> handleConflict(ConflictException e) {
         return ApiResponse.error(409, e.getMessage());
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleOptimisticLockingFailure(ObjectOptimisticLockingFailureException e) {
+        return ApiResponse.error(409, "数据已被其他人修改，请刷新页面后重试。");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

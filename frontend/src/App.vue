@@ -12,9 +12,15 @@ const route = useRoute()
 
 const onboardingRef = ref<InstanceType<typeof OnboardingGuide> | null>(null)
 const authReady = ref(false)
+const conflictMessage = ref<string | null>(null)
+
 provide('show-onboarding', () => onboardingRef.value?.show())
 
 onMounted(async () => {
+  window.addEventListener('concurrency-conflict', (e: any) => {
+    conflictMessage.value = e.detail?.message || '数据已被他人修改。'
+  })
+
   const sessionTokenAtStart = getAccessToken()
   const restored = sessionTokenAtStart ? true : await bootstrapAuthSession()
 
@@ -36,6 +42,18 @@ onMounted(async () => {
   <router-view v-else />
 
   <OnboardingGuide ref="onboardingRef" />
+
+  <!-- Concurrency Conflict Modal -->
+  <div v-if="conflictMessage" class="conflict-overlay">
+    <div class="conflict-modal">
+      <div class="conflict-icon">⚠️</div>
+      <h3>数据版本冲突</h3>
+      <p>{{ conflictMessage }}</p>
+      <div class="conflict-actions">
+        <button class="reload-btn" @click="() => window.location.reload()">立即刷新</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Material Textures -->
   <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
@@ -82,5 +100,60 @@ onMounted(async () => {
   to {
     transform: rotate(360deg);
   }
+}
+
+.conflict-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.conflict-modal {
+  background: var(--bg-card, #fff);
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.conflict-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.conflict-modal h3 {
+  margin: 0 0 12px;
+  color: var(--text-main, #111827);
+  font-size: 20px;
+}
+
+.conflict-modal p {
+  margin: 0 0 24px;
+  color: var(--text-soft, #6b7280);
+  line-height: 1.5;
+}
+
+.reload-btn {
+  background: var(--accent-amber, #a96e35);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reload-btn:hover {
+  background: var(--accent-amber-dark, #8e5c2d);
+  transform: translateY(-1px);
 }
 </style>

@@ -197,7 +197,7 @@ public class PublicationService {
     }
 
     @Transactional
-    public void updatePublication(Long publicationId, Long expectedRevision, String title, String subtitle,
+    public Long updatePublication(Long publicationId, Long expectedRevision, String title, String subtitle,
                                   Map<String, Object> publicationData, String settingsJson,
                                   String infoJson) {
         Publication publication = publicationRepository.findById(publicationId)
@@ -206,10 +206,11 @@ public class PublicationService {
         long clientRevision = expectedRevision == null ? -1L : expectedRevision;
         long serverRevision = publication.getRevision() == null ? 0L : publication.getRevision();
         if (clientRevision != serverRevision) {
-            throw new ConflictException("Publication is stale. Reload before saving.");
+            throw new ConflictException("数据已过期，请刷新页面。");
         }
 
-        publication.setRevision(serverRevision + 1);
+        long nextRevision = serverRevision + 1;
+        publication.setRevision(nextRevision);
 
         if (title != null) {
             publication.setTitle(title);
@@ -237,6 +238,7 @@ public class PublicationService {
         personRepository.deleteByPublicationId(publicationId);
 
         savePersonsAndFamilies(publicationId, publicationData, photoIdMap, false);
+        return nextRevision;
     }
 
     @Transactional
@@ -253,7 +255,16 @@ public class PublicationService {
     }
 
     @Transactional
-    public void updatePerson(Long publicationId, String personId, Map<String, Object> data) {
+    public Long updatePerson(Long publicationId, Long expectedRevision, String personId, Map<String, Object> data) {
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new NotFoundException("Publication not found"));
+
+        long clientRevision = expectedRevision == null ? -1L : expectedRevision;
+        long serverRevision = publication.getRevision() == null ? 0L : publication.getRevision();
+        if (clientRevision != serverRevision) {
+            throw new ConflictException("数据已过期，请刷新页面。");
+        }
+
         Person person = personRepository.findByPublicationIdAndPersonId(publicationId, personId)
                 .orElseThrow(() -> new NotFoundException("Person not found"));
 
@@ -312,6 +323,12 @@ public class PublicationService {
                 }
             });
         }
+
+        long nextRevision = serverRevision + 1;
+        publication.setRevision(nextRevision);
+        publication.setUpdatedAt(java.time.LocalDateTime.now());
+        publicationRepository.save(publication);
+        return nextRevision;
     }
 
     @Transactional
@@ -447,17 +464,18 @@ public class PublicationService {
     }
 
     @Transactional
-    public void updatePublicationMetadata(Long publicationId, Long expectedRevision, String title, String subtitle, String infoJson) {
+    public Long updatePublicationMetadata(Long publicationId, Long expectedRevision, String title, String subtitle, String infoJson) {
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new NotFoundException("Publication not found"));
 
         long clientRevision = expectedRevision == null ? -1L : expectedRevision;
         long serverRevision = publication.getRevision() == null ? 0L : publication.getRevision();
         if (clientRevision != serverRevision) {
-            throw new ConflictException("Publication is stale. Reload before saving.");
+            throw new ConflictException("数据已过期，请刷新页面。");
         }
 
-        publication.setRevision(serverRevision + 1);
+        long nextRevision = serverRevision + 1;
+        publication.setRevision(nextRevision);
 
         if (title != null) {
             publication.setTitle(title);
@@ -467,6 +485,7 @@ public class PublicationService {
         }
         publication.setPublicationInfoJson(infoJson);
         publicationRepository.save(publication);
+        return nextRevision;
     }
 
     @SuppressWarnings("unchecked")

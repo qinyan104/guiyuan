@@ -55,8 +55,9 @@ async function saveToServer() {
   syncStatus.value = 'syncing'
   try {
     pub.publication.revision = serverRevision.value!
-    await updatePublication(serverPublicationId.value, pub.publication, pub.settings)
-    serverRevision.value = (serverRevision.value ?? 0) + 1
+    const newRevision = await updatePublication(serverPublicationId.value, pub.publication, pub.settings)
+    serverRevision.value = newRevision
+    pub.publication.revision = newRevision
     syncStatus.value = 'saved'
     feedback.errorMessage.value = ''
   } catch (err) {

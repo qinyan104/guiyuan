@@ -49,6 +49,13 @@ export function formatHttpError(error: any): string {
 http.interceptors.response.use(
   (resp) => resp,
   async (error) => {
+    if (error.response?.status === 409) {
+      window.dispatchEvent(
+        new CustomEvent('concurrency-conflict', {
+          detail: { message: error.response.data?.message || '数据已被他人修改，请刷新页面以获取最新版本。' },
+        }),
+      )
+    }
     const original = error.config
     if (error.response?.status === 401 && !original._retry && shouldRetryAuthRefresh(original)) {
       original._retry = true

@@ -53,8 +53,8 @@ export async function updatePublication(
   id: number,
   publication: PublicationData,
   settings: PublicationSettings,
-): Promise<void> {
-  await http.put(`/publications/${id}`, {
+): Promise<number> {
+  const resp = await http.put<ApiResponse<{ newRevision: number }>>(`/publications/${id}`, {
     revision: publication.revision,
     title: publication.title,
     subtitle: publication.subtitle,
@@ -62,6 +62,7 @@ export async function updatePublication(
     settings,
     info: publication.info,
   })
+  return resp.data.data.newRevision
 }
 
 export async function updatePublicationMetadata(
@@ -70,21 +71,23 @@ export async function updatePublicationMetadata(
   title: string,
   subtitle: string,
   info: PublicationInfo | null,
-): Promise<void> {
-  await http.put(`/publications/${id}/metadata`, {
+): Promise<number> {
+  const resp = await http.put<ApiResponse<{ newRevision: number }>>(`/publications/${id}/metadata`, {
     revision,
     title,
     subtitle,
     info,
   })
+  return resp.data.data.newRevision
 }
 
 export async function updatePerson(
   pubId: number,
   personId: string,
   personData: Partial<Person> & { expectedRevision?: number },
-): Promise<void> {
-  await http.put(`/publications/${pubId}/people/${personId}`, personData)
+): Promise<number> {
+  const resp = await http.put<ApiResponse<{ newRevision: number }>>(`/publications/${pubId}/people/${personId}`, personData)
+  return resp.data.data.newRevision
 }
 
 export async function deletePublication(id: number): Promise<void> {
