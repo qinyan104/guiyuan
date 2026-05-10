@@ -14,7 +14,9 @@ const publicationId = computed(() => Number(route.params.id))
 
 const loading = ref(true)
 const serverPublicationId = ref<number | null>(null)
-const syncStatus = ref<'saved' | 'pending' | 'syncing' | 'error'>('saved')
+const syncStatus = ref<'saved' | 'pending' | 'syncing' | 'error' | 'conflict'>('saved')
+const conflictMessage = ref('')
+const serverRevision = ref<number | null>(null)
 
 // Viewport state to persist camera across views
 const viewportPan = ref({ x: 0, y: 0 })
@@ -52,10 +54,21 @@ async function saveToServer() {
   if (syncStatus.value === 'syncing' || !serverPublicationId.value) return
   syncStatus.value = 'syncing'
   try {
-    await updatePublication(serverPublicationId.value, pub.publication, pub.settings)
+    await updatePublication(serverPublicationId.value, serverRevision.value!, pub.publication, pub.settings)
+    serverRevision.value = (serverRevision.value ?? 0) + 1
     syncStatus.value = 'saved'
     feedback.errorMessage.value = ''
   } catch (err) {
+    // Check for 409 conflict
+    const { asPublicationConflict } = await import('../api/conflict')
+    const conflict = asPublicationConflict(err)
+    if (conflict) {
+      syncStatus.value = 'conflict'
+      conflictMessage.value = conflict.message
+      feedback.errorMessage.value = conflict.message
+      if (serverSaveTimeout) clearTimeout(serverSaveTimeout)
+      return
+    }
     syncStatus.value = 'error'
     feedback.setError('同步到服务器失败')
   }
@@ -100,6 +113,7 @@ async function load() {
     }
     
     serverPublicationId.value = result.id
+    serverRevision.value = result.revision
     history.initializeHistoryBaseline()
   } catch (err) {
     feedback.setError('加载族谱失败')
@@ -141,6 +155,12 @@ function handleHistoryShortcut(event: KeyboardEvent) {
   }
 }
 
+async function reloadFromServerAfterConflict() {
+  conflictMessage.value = ''
+  await load()
+  syncStatus.value = 'saved'
+}
+
 onMounted(() => {
   load()
   window.addEventListener('keydown', handleHistoryShortcut)
@@ -151,6 +171,8 @@ onBeforeUnmount(() => {
   history.disposeHistory()
   if (serverSaveTimeout) clearTimeout(serverSaveTimeout)
 })
+
+defineExpose({ saveToServer, reloadFromServerAfterConflict })
 </script>
 
 <template>
@@ -159,6 +181,10 @@ onBeforeUnmount(() => {
     <span>正在加载族谱数据...</span>
   </div>
   <router-view v-else />
+  <div v-if="syncStatus === 'conflict'" class="sync-conflict-banner">
+    <span>{{ conflictMessage }}</span>
+    <button type="button" @click="reloadFromServerAfterConflict">Reload latest version</button>
+  </div>
 </template>
 
 <style scoped>
@@ -187,5 +213,35 @@ onBeforeUnmount(() => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.sync-conflict-banner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fff3cd;
+  border-bottom: 1px solid #ffc107;
+  color: #856404;
+  font-weight: 600;
+}
+
+.sync-conflict-banner button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #856404;
+  border-radius: 4px;
+  background: #fff;
+  color: #856404;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.sync-conflict-banner button:hover {
+  background: #856404;
+  color: #fff;
 }
 </style>
