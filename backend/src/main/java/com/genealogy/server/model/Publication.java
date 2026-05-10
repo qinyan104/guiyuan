@@ -29,6 +29,7 @@ public class Publication {
     @Column(name = "publication_info_json", columnDefinition = "TEXT")
     private String publicationInfoJson;
 
+    @Version
     @Column(name = "revision", nullable = false)
     private Long revision = 0L;
 
