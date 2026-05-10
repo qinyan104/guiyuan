@@ -102,9 +102,56 @@ export interface PublicationHistoryEntry {
   createdAt: string
 }
 
+export interface ActivityEntry {
+  id: number
+  username: string
+  action: string
+  detail: string
+  createdAt: string
+}
+
+export interface ParsedActivity extends ActivityEntry {
+  parsedDetail: PersonChangeEntry[] | null
+}
+
+export interface PersonChangeEntry {
+  personName: string
+  personId: string
+  changes: FieldChange[]
+}
+
+export interface FieldChange {
+  field: string
+  fieldLabel: string
+  old: string
+  new: string
+}
+
 export async function getPublicationHistory(id: number): Promise<PublicationHistoryEntry[]> {
   const resp = await http.get<ApiResponse<PublicationHistoryEntry[]>>(`/publications/${id}/history`)
   return resp.data.data
+}
+
+function tryParseDetail(detail: string): PersonChangeEntry[] | null {
+  if (!detail || detail === '[]') return null
+  try {
+    const parsed = JSON.parse(detail)
+    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].personName) {
+      return parsed
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+export async function getPublicationActivity(id: number): Promise<ParsedActivity[]> {
+  const resp = await http.get<ApiResponse<ActivityEntry[]>>(`/publications/${id}/history`)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '获取活动记录失败')
+  return (resp.data.data || []).map((entry) => ({
+    ...entry,
+    parsedDetail: tryParseDetail(entry.detail),
+  }))
 }
 
 export async function loadLatestPublication(): Promise<PublicationLoadResult | null> {

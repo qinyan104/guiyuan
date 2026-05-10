@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { getPublicationHistory, type PublicationHistoryEntry } from '../api/publication'
+import { getPublicationHistory, getPublicationActivity, type ParsedActivity } from '../api/publication'
 import type { Person, FamilyUnit, PublicationData } from '../types/family'
 import { parseYear } from '../lib/dateUtils'
 
@@ -16,7 +16,7 @@ const { pub, serverPublicationId } = inject('publication-context') as {
 const pubData = computed<PublicationData>(() => pub.publication)
 
 const loadingHistory = ref(true)
-const history = ref<PublicationHistoryEntry[]>([])
+const history = ref<ParsedActivity[]>([])
 
 async function loadHistory() {
   if (!serverPublicationId.value) {
@@ -25,7 +25,7 @@ async function loadHistory() {
   }
   loadingHistory.value = true
   try {
-    history.value = await getPublicationHistory(serverPublicationId.value)
+    history.value = await getPublicationActivity(serverPublicationId.value)
   } catch { history.value = [] }
   finally { loadingHistory.value = false }
 }
@@ -243,6 +243,38 @@ function formatHistoryDate(dateStr: string) {
     month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
   })
 }
+
+function actionLabel(action: string): string {
+  const labels: Record<string, string> = {
+    CREATE_PUB: '创建族谱',
+    UPDATE_PUB: '保存修改',
+    DELETE_PUB: '删除族谱',
+    UPDATE_PUB_META: '修改信息',
+    UPDATE_PERSON: '编辑人物',
+    BACKUP: '数据库备份',
+  }
+  return labels[action] || action
+}
+
+function actionTagClass(action: string): string {
+  if (action === 'DELETE_PUB') return 'tag--danger'
+  if (action === 'CREATE_PUB') return 'tag--success'
+  return 'tag--info'
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  if (diffMin < 1) return '刚刚'
+  if (diffMin < 60) return `${diffMin} 分钟前`
+  const diffHour = Math.floor(diffMin / 60)
+  if (diffHour < 24) return `${diffHour} 小时前`
+  const diffDay = Math.floor(diffHour / 24)
+  if (diffDay < 30) return `${diffDay} 天前`
+  return date.toLocaleDateString('zh-CN')
+}
 </script>
 
 <template>
@@ -435,26 +467,42 @@ function formatHistoryDate(dateStr: string) {
           <div v-if="loadingHistory" class="empty-hint">调取档案中...</div>
           <div v-else-if="history.length === 0" class="empty-hint">尚无修订记录</div>
           <div v-else class="glass-history">
-            <div v-for="entry in history" :key="entry.id" class="history-node">
+            <article
+              v-for="entry in history"
+              :key="entry.id"
+              class="audit-entry"
+            >
               <div class="node-line">
                 <div class="node-dot"></div>
               </div>
               <div class="node-card">
-                <div class="node-meta">
-                  <span class="time">{{ formatHistoryDate(entry.createdAt) }}</span>
-                  <div class="actor">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                    </svg>
-                    {{ entry.username }}
+                <div class="audit-entry__meta">
+                  <span class="audit-entry__username">{{ entry.username }}</span>
+                  <time class="audit-entry__time" :datetime="entry.createdAt">
+                    {{ formatRelativeTime(entry.createdAt) }}
+                  </time>
+                  <span class="audit-entry__action-tag" :class="actionTagClass(entry.action)">
+                    {{ actionLabel(entry.action) }}
+                  </span>
+                </div>
+
+                <!-- Field-level diff (only when parsedDetail exists) -->
+                <div v-if="entry.parsedDetail" class="audit-entry__diff">
+                  <div v-for="person in entry.parsedDetail" :key="person.personId" class="diff-person">
+                    <strong class="diff-person__name">{{ person.personName }}</strong>
+                    <div v-for="change in person.changes" :key="change.field" class="diff-field">
+                      <span class="diff-field__label">{{ change.fieldLabel }}</span>
+                      <span class="diff-field__old">{{ change.old || '（空）' }}</span>
+                      <span class="diff-field__arrow">→</span>
+                      <span class="diff-field__new">{{ change.new || '（空）' }}</span>
+                    </div>
                   </div>
                 </div>
-                <div class="node-body">
-                  <span class="tag" :class="historyActionClass(entry.action)">{{ historyActionLabel(entry.action) }}</span>
-                  <span class="detail">{{ entry.detail || '常规维护' }}</span>
-                </div>
+
+                <!-- Fallback for legacy entries without parsed diff -->
+                <p v-else class="audit-entry__detail">{{ entry.detail }}</p>
               </div>
-            </div>
+            </article>
           </div>
         </div>
       </div>
@@ -791,5 +839,108 @@ function formatHistoryDate(dateStr: string) {
 .bento-btn.primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+/* ── Audit Entry / Activity Timeline ── */
+.audit-entry {
+  display: flex;
+  gap: 20px;
+}
+
+.audit-entry__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.audit-entry__username {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  background: var(--glass-border-shadow, rgba(0,0,0,0.05));
+  padding: 2px 8px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.audit-entry__time {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-amber);
+  font-family: monospace;
+}
+
+.audit-entry__action-tag {
+  font-size: 0.7rem;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.tag--info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.tag--success { background: rgba(39, 174, 96, 0.1); color: #27ae60; }
+.tag--danger { background: rgba(192, 57, 43, 0.1); color: #c0392b; }
+
+.audit-entry__diff {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.diff-person {
+  margin-bottom: 6px;
+}
+
+.diff-person__name {
+  color: var(--accent-amber, #a96e35);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.diff-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 0;
+  font-size: 0.82rem;
+}
+
+.diff-field__label {
+  min-width: 42px;
+  color: var(--text-soft, #8a6845);
+  font-size: 0.75rem;
+}
+
+.diff-field__old {
+  text-decoration: line-through;
+  color: #c0392b;
+  background: rgba(192, 57, 43, 0.06);
+  padding: 0 6px;
+  border-radius: 3px;
+}
+
+.diff-field__arrow {
+  color: var(--text-soft, #8a6845);
+  font-size: 0.75rem;
+}
+
+.diff-field__new {
+  color: #27ae60;
+  background: rgba(39, 174, 96, 0.06);
+  padding: 0 6px;
+  border-radius: 3px;
+}
+
+.audit-entry__detail {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-soft);
+  margin: 4px 0 0;
 }
 </style>
