@@ -512,6 +512,17 @@ public class PublicationService {
             }
         }
 
+        // Data validation: check each person's birth/death dates and life status
+        // (runs regardless of whether families are present, reuses 'people' from above)
+        if (people != null) {
+            for (Map.Entry<String, Object> entry : people.entrySet()) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> person = (Map<String, Object>) entry.getValue();
+                validatePersonDates(person);
+                validatePersonLifeStatus(person);
+            }
+        }
+
         Map<String, Object> families = (Map<String, Object>) data.get("families");
         if (families != null) {
             // Cross-family duplicate validation
@@ -550,15 +561,11 @@ public class PublicationService {
                 throw new BadRequestException("数据校验失败：" + String.join("; ", errors));
             }
 
-            // Data validation: check each person's birth/death dates and life status
-            for (Map.Entry<String, Object> entry : people.entrySet()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> person = (Map<String, Object>) entry.getValue();
-                validatePersonDates(person);
-                validatePersonLifeStatus(person);
-            }
-
-            // Build ancestry map from current families and check for circular references
+            // Build ancestry map from current families and check for circular references.
+            // Uses the first adult as parent (genealogy convention: the primary bloodline
+            // parent is listed first). A cycle through the second adult would still be
+            // caught because both adults share children — the child-to-parent mapping
+            // only needs one edge per child to detect any reachable cycle.
             Map<String, String> childToParent = new HashMap<>();
             for (Map.Entry<String, Object> entry : families.entrySet()) {
                 @SuppressWarnings("unchecked")
