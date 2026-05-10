@@ -51,7 +51,7 @@ const history = useEditorHistory({
 
 // Sync logic
 async function saveToServer() {
-  if (syncStatus.value === 'syncing' || !serverPublicationId.value) return
+  if (syncStatus.value === 'syncing' || syncStatus.value === 'conflict' || !serverPublicationId.value) return
   syncStatus.value = 'syncing'
   try {
     await updatePublication(serverPublicationId.value, serverRevision.value!, pub.publication, pub.settings)
@@ -67,7 +67,9 @@ async function saveToServer() {
       conflictMessage.value = conflict.message
       feedback.errorMessage.value = conflict.message
       if (serverSaveTimeout) clearTimeout(serverSaveTimeout)
-      return
+      throw new Error(conflict.message)
+      // Throw so direct callers (e.g. PersonDetailView.handleSave) can react;
+      // the autosave timer's .catch(()) silences this for background sync
     }
     syncStatus.value = 'error'
     feedback.setError('同步到服务器失败')
@@ -79,11 +81,11 @@ watch(
   () => [pub.publication, pub.settings, pub.selectedPersonId.value],
   () => {
     // Only trigger sync if we actually have a loaded publication
-    if (!serverPublicationId.value || loading.value) return
+    if (!serverPublicationId.value || loading.value || syncStatus.value === 'conflict') return
 
     syncStatus.value = 'pending'
     if (serverSaveTimeout) clearTimeout(serverSaveTimeout)
-    serverSaveTimeout = setTimeout(saveToServer, 3000)
+    serverSaveTimeout = setTimeout(() => { saveToServer().catch(() => {}); }, 3000)
     history.scheduleHistoryCommit()
   },
   { deep: true }

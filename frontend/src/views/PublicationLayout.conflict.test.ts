@@ -70,10 +70,18 @@ describe('PublicationLayout conflict handling', () => {
 
     // Call saveToServer directly to test conflict handling
     // (avoids waiting for the 3000ms autosave debounce timer)
-    await (wrapper.vm as any).saveToServer()
+    // The throw is expected — direct callers (e.g. PersonDetailView)
+    // receive it so they can react to the conflict
+    await (wrapper.vm as any).saveToServer().catch(() => {})
 
     // Check conflict banner is shown — this string comes from the
     // 409 response data.message rendered in the sync-conflict-banner
     expect(wrapper.text()).toContain('Reload before saving')
+
+    // Verify autosave is paused: calling saveToServer again should bail
+    // due to syncStatus === 'conflict' guard (won't call updatePublication again)
+    vi.mocked(updatePublication).mockClear()
+    await (wrapper.vm as any).saveToServer().catch(() => {})
+    expect(vi.mocked(updatePublication)).not.toHaveBeenCalled()
   })
 })
