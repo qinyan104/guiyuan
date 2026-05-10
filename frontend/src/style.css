@@ -1957,7 +1957,7 @@ textarea {
 }
 
 @media (max-width: 1320px) {
-  body {
+  .admin-layout {
     min-width: 1320px;
   }
 }

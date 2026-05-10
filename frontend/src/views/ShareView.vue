@@ -252,4 +252,54 @@ function handleSelectPerson(personId: string) {
   background: var(--glass-panel-bg, rgba(255,255,255,0.85));
   border-top: 1px solid var(--border-light, #e8e6e0);
 }
+
+@media (max-width: 640px) {
+  .share-header {
+    padding: 12px 16px;
+  }
+
+  .share-header-content h1 {
+    font-size: 1rem;
+  }
+
+  .share-header-content .subtitle {
+    font-size: 0.8rem;
+  }
+
+  .meta-tags {
+    gap: 4px;
+  }
+
+  .tag {
+    padding: 2px 8px;
+    font-size: 0.7rem;
+  }
+
+  .share-footer {
+    padding: 8px 16px;
+    font-size: 0.72rem;
+  }
+
+  .share-overlay {
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .spinner {
+    width: 28px;
+    height: 28px;
+  }
+
+  .share-error h2 {
+    font-size: 1.1rem;
+  }
+
+  .share-error p {
+    font-size: 0.9rem;
+  }
+
+  .error-icon {
+    font-size: 40px;
+  }
+}
 </style>
