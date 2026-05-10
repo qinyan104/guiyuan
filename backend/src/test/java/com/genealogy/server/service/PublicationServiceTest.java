@@ -182,7 +182,7 @@ class PublicationServiceTest {
         existingPhoto.setData(new byte[]{1, 2, 3});
         // reassignPhoto is void on a mock; stubbing not needed
 
-        publicationService.updatePublication(100L, "李氏族谱", "更新", buildPublicationData("/api/photos/7"), null, null);
+        publicationService.updatePublication(100L, 0L, "李氏族谱", "更新", buildPublicationData("/api/photos/7"), null, null);
 
         assertThat(newPhotoRows.get()).isZero();
 
@@ -275,6 +275,7 @@ class PublicationServiceTest {
 
         publicationService.updatePublication(
                 100L,
+                0L,
                 "Main Publication",
                 "Updated",
                 buildPublicationData("/api/photos/7", true, 9L, 42L),

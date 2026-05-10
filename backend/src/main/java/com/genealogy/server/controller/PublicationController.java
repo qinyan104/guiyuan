@@ -112,7 +112,7 @@ public class PublicationController {
         authorizationService.require(subject, id, AccessPermission.EDIT);
         String settingsJson = serializeSettings(body.getSettings());
         String infoJson = serializeSettings(body.getInfo());
-        publicationService.updatePublication(id, body.getTitle(), body.getSubtitle(),
+        publicationService.updatePublication(id, body.getRevision(), body.getTitle(), body.getSubtitle(),
                 body.getPublication(), settingsJson, infoJson);
         logAction(username, "UPDATE_PUB", "保存族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」", id);
         return ApiResponse.success("族谱已保存", null);
@@ -124,7 +124,7 @@ public class PublicationController {
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.EDIT);
         String infoJson = serializeSettings(body.getInfo());
-        publicationService.updatePublicationMetadata(id, body.getTitle(), body.getSubtitle(), infoJson);
+        publicationService.updatePublicationMetadata(id, body.getRevision(), body.getTitle(), body.getSubtitle(), infoJson);
         logAction(username, "UPDATE_PUB_META", "更新族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」的信息", id);
         return ApiResponse.success("族谱信息已更新", null);
     }

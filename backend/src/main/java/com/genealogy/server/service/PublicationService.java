@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.exception.BadRequestException;
+import com.genealogy.server.exception.ConflictException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.Family;
 import com.genealogy.server.model.FamilyMember;
@@ -156,6 +157,7 @@ public class PublicationService {
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("id", publication.getId());
+        response.put("revision", publication.getRevision());
         response.put("publication", publicationJson);
         if (publication.getSettingsJson() != null) {
             try {
@@ -195,11 +197,19 @@ public class PublicationService {
     }
 
     @Transactional
-    public void updatePublication(Long publicationId, String title, String subtitle,
+    public void updatePublication(Long publicationId, Long expectedRevision, String title, String subtitle,
                                   Map<String, Object> publicationData, String settingsJson,
                                   String infoJson) {
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new NotFoundException("Publication not found"));
+
+        long clientRevision = expectedRevision == null ? -1L : expectedRevision;
+        long serverRevision = publication.getRevision() == null ? 0L : publication.getRevision();
+        if (clientRevision != serverRevision) {
+            throw new ConflictException("Publication is stale. Reload before saving.");
+        }
+
+        publication.setRevision(serverRevision + 1);
 
         if (title != null) {
             publication.setTitle(title);
@@ -437,9 +447,17 @@ public class PublicationService {
     }
 
     @Transactional
-    public void updatePublicationMetadata(Long publicationId, String title, String subtitle, String infoJson) {
+    public void updatePublicationMetadata(Long publicationId, Long expectedRevision, String title, String subtitle, String infoJson) {
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new NotFoundException("Publication not found"));
+
+        long clientRevision = expectedRevision == null ? -1L : expectedRevision;
+        long serverRevision = publication.getRevision() == null ? 0L : publication.getRevision();
+        if (clientRevision != serverRevision) {
+            throw new ConflictException("Publication is stale. Reload before saving.");
+        }
+
+        publication.setRevision(serverRevision + 1);
 
         if (title != null) {
             publication.setTitle(title);
