@@ -29,10 +29,13 @@ export function shouldRetryAuthRefresh(config: { url?: string }): boolean {
 }
 
 export function formatHttpError(error: any): string {
+  const apiMessage = error?.response?.data?.message
+  if (error?.response?.status === 409 && apiMessage) {
+    return apiMessage
+  }
   const status = error?.response?.status
   const method = error?.config?.method?.toUpperCase?.() ?? 'REQUEST'
   const url = error?.config?.url ?? 'unknown-url'
-  const apiMessage = error?.response?.data?.message
   const fallbackMessage = error?.message || 'Unknown error'
   const message = apiMessage || fallbackMessage
 

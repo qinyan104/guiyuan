@@ -15,6 +15,7 @@ export interface PublicationSummary {
 
 export interface PublicationLoadResult {
   id: number
+  revision: number
   publication: PublicationData
   settings: PublicationSettings
 }
@@ -49,10 +50,12 @@ export async function createPublication(
 
 export async function updatePublication(
   id: number,
+  revision: number,
   publication: PublicationData,
   settings: PublicationSettings,
 ): Promise<void> {
   await http.put(`/publications/${id}`, {
+    revision,
     title: publication.title,
     subtitle: publication.subtitle,
     publication,
@@ -63,11 +66,13 @@ export async function updatePublication(
 
 export async function updatePublicationMetadata(
   id: number,
+  revision: number,
   title: string,
   subtitle: string,
   info: PublicationInfo | null,
 ): Promise<void> {
   await http.put(`/publications/${id}/metadata`, {
+    revision,
     title,
     subtitle,
     info,
