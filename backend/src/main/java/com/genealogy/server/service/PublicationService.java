@@ -361,35 +361,9 @@ public class PublicationService {
         List<Family> targetFamilies;
 
         if (rootPerson != null) {
-            // BFS traversal to collect the subtree rooted at rootPerson
-            Set<Long> collectedPersonDbIds = new HashSet<>();
-            Set<Long> collectedFamilyDbIds = new HashSet<>();
-            LinkedList<Long> queue = new LinkedList<>();
-            queue.add(rootPerson.getId());
-            collectedPersonDbIds.add(rootPerson.getId());
-
-            while (!queue.isEmpty()) {
-                Long currentPersonDbId = queue.poll();
-                List<FamilyMember> memberships = familyMemberRepository.findByPersonDbId(currentPersonDbId);
-
-                for (FamilyMember membership : memberships) {
-                    if (!collectedFamilyDbIds.contains(membership.getFamilyDbId())) {
-                        collectedFamilyDbIds.add(membership.getFamilyDbId());
-
-                        // Collect all members of this family and enqueue them
-                        List<FamilyMember> allFamilyMembers = familyMemberRepository
-                                .findByFamilyDbIdOrderBySortOrder(membership.getFamilyDbId());
-                        for (FamilyMember fm : allFamilyMembers) {
-                            if (collectedPersonDbIds.add(fm.getPersonDbId())) {
-                                queue.add(fm.getPersonDbId());
-                            }
-                        }
-                    }
-                }
-            }
-
-            targetPeople = personRepository.findAllById(collectedPersonDbIds);
-            targetFamilies = familyRepository.findAllById(collectedFamilyDbIds);
+            SubtreeResult result = collectSubtreeIds(rootPerson.getId());
+            targetPeople = personRepository.findAllById(result.getPersonDbIds());
+            targetFamilies = familyRepository.findAllById(result.getFamilyDbIds());
         } else {
             // Fallback: no root person found, clone everything (original behavior)
             targetPeople = personRepository.findByPublicationId(targetPubId);
@@ -688,5 +662,51 @@ public class PublicationService {
             }
         }
         return null;
+    }
+
+    public SubtreeResult collectSubtreeIds(Long rootPersonDbId) {
+        Set<Long> collectedPersonDbIds = new HashSet<>();
+        Set<Long> collectedFamilyDbIds = new HashSet<>();
+        LinkedList<Long> queue = new LinkedList<>();
+        
+        queue.add(rootPersonDbId);
+        collectedPersonDbIds.add(rootPersonDbId);
+
+        while (!queue.isEmpty()) {
+            Long currentPersonDbId = queue.poll();
+            List<FamilyMember> memberships = familyMemberRepository.findByPersonDbId(currentPersonDbId);
+
+            for (FamilyMember membership : memberships) {
+                if (collectedFamilyDbIds.add(membership.getFamilyDbId())) {
+                    // Collect all members of this family and enqueue them
+                    List<FamilyMember> allFamilyMembers = familyMemberRepository
+                            .findByFamilyDbIdOrderBySortOrder(membership.getFamilyDbId());
+                    for (FamilyMember fm : allFamilyMembers) {
+                        if (collectedPersonDbIds.add(fm.getPersonDbId())) {
+                            queue.add(fm.getPersonDbId());
+                        }
+                    }
+                }
+            }
+        }
+        return new SubtreeResult(collectedPersonDbIds, collectedFamilyDbIds);
+    }
+
+    public static class SubtreeResult {
+        private final Set<Long> personDbIds;
+        private final Set<Long> familyDbIds;
+
+        public SubtreeResult(Set<Long> personDbIds, Set<Long> familyDbIds) {
+            this.personDbIds = personDbIds;
+            this.familyDbIds = familyDbIds;
+        }
+
+        public Set<Long> getPersonDbIds() {
+            return personDbIds;
+        }
+
+        public Set<Long> getFamilyDbIds() {
+            return familyDbIds;
+        }
     }
 }
