@@ -76,6 +76,7 @@ public class PublicationTreeLoader {
 
             Map<String, Object> personJson = new LinkedHashMap<>();
             personJson.put("id", federatedId);
+            personJson.put("dbId", person.getId());
             personJson.put("name", person.getName());
             personJson.put("gender", person.getGender());
             if (person.getBirth() != null) personJson.put("birth", person.getBirth());
