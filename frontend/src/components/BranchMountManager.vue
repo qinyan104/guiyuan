@@ -5,6 +5,7 @@ import { mergeBranch } from '../api/accessManage'
 import { getPublication, listPublications, type PublicationSummary } from '../api/publication'
 import type { Person } from '../types/family'
 import ConfirmDialog from './ConfirmDialog.vue'
+import SubtreeRootSelector from './SubtreeRootSelector.vue'
 
 const props = defineProps<{
   person: Person
@@ -28,6 +29,7 @@ const loading = ref(false)
 const mergePending = ref(false)
 const feedbackMessage = ref('')
 const showMergeConfirm = ref(false)
+const showRootSelector = ref(false)
 const selectedTargetId = ref('')
 const isDropdownOpen = ref(false)
 
@@ -100,8 +102,26 @@ function applyTargetPublication(publication: PublicationSummary | null) {
   props.person.mountPointTarget = {
     publicationId: publication.id,
     publicationTitle: publication.title,
+    rootPersonId: props.person.mountPointTarget?.rootPersonId,
+    rootPersonName: props.person.mountPointTarget?.rootPersonName,
   }
   feedbackMessage.value = `已选择目标族谱：${publication.title}`
+}
+
+function handleRootSelected(dbId: number, name: string) {
+  if (props.person.mountPointTarget) {
+    props.person.mountPointTarget.rootPersonId = dbId
+    props.person.mountPointTarget.rootPersonName = name
+    feedbackMessage.value = `已设定子树起点：${name}`
+  }
+}
+
+function clearRootSelection() {
+  if (props.person.mountPointTarget) {
+    props.person.mountPointTarget.rootPersonId = undefined
+    props.person.mountPointTarget.rootPersonName = undefined
+    feedbackMessage.value = '已清除子树起点，将全量合并。'
+  }
 }
 
 function handleToggleMountPoint(enabled: boolean) {
@@ -251,6 +271,32 @@ onUnmounted(() => {
             </button>
           </div>
         </div>
+        <div v-if="person.isMountPoint && selectedTarget" class="subtree-config">
+          <div class="subtree-info">
+            <span class="label">子树起点</span>
+            <div class="root-display">
+              <strong v-if="person.mountPointTarget?.rootPersonName" class="root-name">
+                {{ person.mountPointTarget.rootPersonName }}
+              </strong>
+              <em v-else class="root-none">未指定（全量）</em>
+              <button 
+                v-if="person.mountPointTarget?.rootPersonName" 
+                class="clear-root-btn" 
+                title="清除起点"
+                @click="clearRootSelection"
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+          <button 
+            class="select-root-btn" 
+            type="button" 
+            @click="showRootSelector = true"
+          >
+            {{ person.mountPointTarget?.rootPersonName ? '更换起点' : '视觉化指定起点' }}
+          </button>
+        </div>
       </div>
 
       <article class="branch-mount-meta">
@@ -301,6 +347,14 @@ onUnmounted(() => {
       @confirm="executeMerge"
       @cancel="showMergeConfirm = false"
       @update:modelValue="(v: boolean) => { if (!v) showMergeConfirm = false }"
+    />
+
+    <SubtreeRootSelector
+      v-if="showRootSelector"
+      v-model="showRootSelector"
+      :publication-id="Number(selectedTargetId)"
+      :publication-title="selectedTarget?.title"
+      @selected="handleRootSelected"
     />
 </template>
 
@@ -448,6 +502,73 @@ onUnmounted(() => {
   border-top: 1px solid rgba(91, 70, 42, 0.08);
   margin-top: 4px;
   border-radius: 0 0 8px 8px;
+}
+
+.subtree-config {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(91, 70, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subtree-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.subtree-info .label {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+}
+
+.root-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.root-name {
+  font-size: 0.88rem;
+  color: #8b4513;
+}
+
+.root-none {
+  font-size: 0.82rem;
+  color: #999;
+  font-style: normal;
+}
+
+.clear-root-btn {
+  background: #eee;
+  border: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  color: #666;
+}
+
+.select-root-btn {
+  width: 100%;
+  padding: 6px;
+  border: 1px dashed #8b4513;
+  background: rgba(139, 69, 19, 0.04);
+  color: #8b4513;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.select-root-btn:hover {
+  background: rgba(139, 69, 19, 0.08);
 }
 
 .branch-mount-meta strong {
