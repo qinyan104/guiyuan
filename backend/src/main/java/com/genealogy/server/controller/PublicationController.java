@@ -114,7 +114,11 @@ public class PublicationController {
         String infoJson = serializeSettings(body.getInfo());
         Long newRevision = publicationService.updatePublication(id, body.getRevision(), body.getTitle(), body.getSubtitle(),
                 body.getPublication(), settingsJson, infoJson);
-        logAction(username, "UPDATE_PUB", "保存族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」", id);
+        String personDiff = publicationService.getLastPersonDiff();
+        String detail = (personDiff != null && !personDiff.equals("[]"))
+                ? personDiff
+                : "保存族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」";
+        logAction(username, "UPDATE_PUB", detail, id);
         return ApiResponse.success("族谱已保存", Map.of("newRevision", newRevision));
     }
 
@@ -150,7 +154,11 @@ public class PublicationController {
         }
 
         Long newRevision = publicationService.updatePerson(pubId, expectedRevision, personId, body);
-        logAction(username, "UPDATE_PERSON", "更新人物「" + body.getOrDefault("name", personId) + "」的详细信息", pubId);
+        String personDiff = publicationService.getLastPersonDiff();
+        String detail = (personDiff != null && !personDiff.equals("[]"))
+                ? personDiff
+                : "更新人物「" + body.getOrDefault("name", personId) + "」的详细信息";
+        logAction(username, "UPDATE_PERSON", detail, pubId);
         return ApiResponse.success("个人信息已更新", Map.of("newRevision", newRevision));
     }
 
