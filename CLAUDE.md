@@ -77,6 +77,8 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 - **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）。另含**跨家庭重复校验**：一个人不能同时是多个家庭的 parents 或 children（但可同时是 parent 和 child，多代际正常）。`publicationOperations.ts` 中的关系操作自动调用 `deduplicateCrossFamily()` 清理。
 - 草稿持久化：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化，并在便携式导出时将 `/api/photos/...` 与旧版 `/uploads/...` 头像尽量内联为 Base64
 - **导出**：`features/export/publicationExport.ts` — SVG 导出和打印排版；`features/export/shareHtmlExport.ts` — 自包含 HTML 快照分享（AES-256-GCM 可选密码保护）；`features/export/ExportDialog.vue` 现在提供**单页矢量 PDF**（由后端生成）、多页谱书实验室与**分享网页**导出。
+- **移动端浏览**：`ShareView.vue`（`/share/:token` 路由）适配 640px 以下手机屏幕。`PublicationCanvas` 支持触屏双指缩放（pinch-to-zoom）。HTML 导出在手机上自动切换为底部弹出面板（bottom sheet），支持双击人物卡片放大。`index.html` 包含静态 OG 标签（og:title/og:description/og:image）用于微信分享预览卡片，默认通用文案以保护隐私。
+- **活动时间线**：`PublicationStatsView.vue` 族谱修订志展示字段级变更 diff（旧值→新值），红色删除线 + 绿色高亮，支持相对时间（刚刚 / N 分钟前 / N 天前）。
 
 ## 后端架构
 
@@ -101,6 +103,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 - **照片服务**：`PhotoService` 统一管理 Base64 头像解析、`/api/photos/` 克隆、旧版 `/uploads/` 路径迁移。`PublicationService` 通过 `photoService` 委托照片操作。
 - **合并引擎**：`PublicationService.mergeBranch` 实现物理数据迁入。使用 `collectSubtreeIds` 进行 BFS 遍历。若指定了子树起点，则仅克隆该分支及其后代；否则执行全量克隆。使用 UUID 前缀 (`merged_{targetPubId}_*`) 进行 ID 重映射防冲突，递归克隆人物、家庭及照片记录。合并后自动清空挂载点。
 - **数据安全**：`DateTextParser` 从自由文本中提取四位数年份（支持 `2024`、`2024-01-15`、`2024年1月15日`）。`PublicationService` 在 `savePersonsAndFamilies` 中执行三态校验：生卒年份大小比较（V1）、已故状态与去世日期一致性（V2）、循环祖先引用检测（V3，上限 50 代）。`ConsistencyService` 提供全库数据扫描（`GET /api/admin/check-consistency`）：孤立人物、日期矛盾、状态不一致、空家族。`BackupService.restoreDatabase()` 支持 `POST /api/admin/restore` 一键还原 `.sql` 备份，均仅限 SUPER_ADMIN。
+- **协作活动**：`PublicationService.savePersonsAndFamilies()` 和 `updatePerson()` 在保存时自动计算人物级字段 diff（旧值→新值），序列化为 JSON 存入 `AuditLog.detail`。`GET /api/publications/{id}/history` 端点返回结构化变更记录。前端 `PublicationStatsView.vue` 活动面板解析并展示字段级 diff（红色删除线旧值 + 绿色新值），支持相对时间显示。
 - **照片导入链路**：`PublicationService.savePersonsAndFamilies` 委托 `PhotoService.handlePersonAvatar` 在新建/导入时支持 Base64、`/api/photos/{id}` 克隆、旧版 `/uploads/...` 文件迁移；更新时复用既有照片记录，避免重复插图
 - **角色权限映射**：`OWNER` = 全部 9 权限，`EDITOR` = 读+编辑+历史+导出，`VIEWER` = 读+历史。匿名分享仅允许 `READ_REDACTED` / `EXPORT_REDACTED`。管理员端点使用 `@PreAuthorize("hasRole('ADMIN')")` / `hasRole('SUPER_ADMIN')` 声明式权限。分支合并要求对主族谱具 `OWNER` 权限，对分支具 `VIEWER` 权限。
 - 文件上传限制：100MB；`FileController` 有扩展名白名单校验（图片/PDF），`PhotoController` 有 MIME 类型校验
