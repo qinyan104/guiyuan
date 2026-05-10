@@ -6,6 +6,7 @@ import com.genealogy.server.model.Person;
 import com.genealogy.server.repository.FamilyMemberRepository;
 import com.genealogy.server.repository.FamilyRepository;
 import com.genealogy.server.repository.PersonRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class PublicationTreeLoader {
@@ -21,15 +23,18 @@ public class PublicationTreeLoader {
     private final FamilyRepository familyRepository;
     private final FamilyMemberRepository familyMemberRepository;
     private final com.genealogy.server.repository.PublicationRepository publicationRepository;
+    private final PublicationService publicationService;
 
     public PublicationTreeLoader(PersonRepository personRepository,
                                  FamilyRepository familyRepository,
                                  FamilyMemberRepository familyMemberRepository,
-                                 com.genealogy.server.repository.PublicationRepository publicationRepository) {
+                                 com.genealogy.server.repository.PublicationRepository publicationRepository,
+                                 @Lazy PublicationService publicationService) {
         this.personRepository = personRepository;
         this.familyRepository = familyRepository;
         this.familyMemberRepository = familyMemberRepository;
         this.publicationRepository = publicationRepository;
+        this.publicationService = publicationService;
     }
 
     public void loadFederatedData(Long publicationId, 
@@ -37,10 +42,11 @@ public class PublicationTreeLoader {
                                   String idPrefix, 
                                   Map<String, Map<String, Object>> allPeople, 
                                   Map<String, Map<String, Object>> allFamilies) {
-        loadRecursive(publicationId, 0, maxDepth, idPrefix, allPeople, allFamilies);
+        loadRecursive(publicationId, null, 0, maxDepth, idPrefix, allPeople, allFamilies);
     }
 
     private void loadRecursive(Long publicationId, 
+                               Long rootPersonDbId,
                                int currentDepth, 
                                int maxDepth, 
                                String idPrefix, 
@@ -50,7 +56,18 @@ public class PublicationTreeLoader {
             return;
         }
 
-        List<Person> personEntities = personRepository.findByPublicationId(publicationId);
+        List<Person> personEntities;
+        List<Family> familyEntities;
+        
+        if (rootPersonDbId != null) {
+            PublicationService.SubtreeResult subtree = publicationService.collectSubtreeIds(rootPersonDbId);
+            personEntities = personRepository.findAllById(subtree.getPersonDbIds());
+            familyEntities = familyRepository.findAllById(subtree.getFamilyDbIds());
+        } else {
+            personEntities = personRepository.findByPublicationId(publicationId);
+            familyEntities = familyRepository.findByPublicationId(publicationId);
+        }
+        
         Map<Long, String> dbIdToFederatedId = new HashMap<>();
 
         for (Person person : personEntities) {
@@ -85,13 +102,12 @@ public class PublicationTreeLoader {
                     
                     // Recursive load
                     String nextPrefix = idPrefix + "branch_" + person.getTargetPublicationId() + "_";
-                    loadRecursive(person.getTargetPublicationId(), currentDepth + 1, maxDepth, nextPrefix, allPeople, allFamilies);
+                    loadRecursive(person.getTargetPublicationId(), person.getTargetRootPersonId(), currentDepth + 1, maxDepth, nextPrefix, allPeople, allFamilies);
                 }
             }
             allPeople.put(federatedId, personJson);
         }
 
-        List<Family> familyEntities = familyRepository.findByPublicationId(publicationId);
         for (Family family : familyEntities) {
             String federatedFamilyId = idPrefix + family.getFamilyId();
             

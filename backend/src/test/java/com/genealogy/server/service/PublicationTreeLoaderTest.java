@@ -29,12 +29,14 @@ class PublicationTreeLoaderTest {
     private FamilyMemberRepository familyMemberRepository;
     @Mock
     private PublicationRepository publicationRepository;
+    @Mock
+    private PublicationService publicationService;
     
     private PublicationTreeLoader treeLoader;
 
     @BeforeEach
     void setUp() {
-        treeLoader = new PublicationTreeLoader(personRepository, familyRepository, familyMemberRepository, publicationRepository);
+        treeLoader = new PublicationTreeLoader(personRepository, familyRepository, familyMemberRepository, publicationRepository, publicationService);
     }
 
     @Test
