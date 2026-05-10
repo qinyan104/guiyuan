@@ -12,6 +12,8 @@ export interface PublicationSummary {
   accessRole: string
   createdAt: string
   updatedAt: string
+  lastUpdatedBy?: string
+  lastActivityAction?: string
 }
 
 export interface PublicationLoadResult {

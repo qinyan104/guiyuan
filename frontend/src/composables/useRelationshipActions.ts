@@ -22,6 +22,7 @@ interface RelationshipActionsDeps {
   draftFileHandle: Ref<unknown>
   draftFileName: Ref<string>
   hasUnsavedFileChanges: Ref<boolean>
+  confirmFn?: (message: string) => Promise<boolean>
 }
 
 export function useRelationshipActions(deps: RelationshipActionsDeps) {
@@ -40,7 +41,13 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     draftFileHandle,
     draftFileName,
     hasUnsavedFileChanges,
+    confirmFn,
   } = deps
+
+  async function confirm(message: string): Promise<boolean> {
+    if (confirmFn) return confirmFn(message)
+    return window.confirm(message)
+  }
 
   const {
     publication,
@@ -57,8 +64,8 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     getDefaultSelectedPersonId,
   } = pub
 
-  function applyEditorAction(action: RelationshipAction, confirmation?: string) {
-    if (confirmation && !window.confirm(confirmation)) return
+  async function applyEditorAction(action: RelationshipAction, confirmation?: string) {
+    if (confirmation && !(await confirm(confirmation))) return
 
     const result = applyRelationshipAction(publication, action)
     if (!result.ok) {
@@ -140,26 +147,26 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     }
   }
 
-  function removeSpouseRelation() {
+  async function removeSpouseRelation() {
     const person = selectedPerson.value
     const spouse = selectedSpouse.value
     if (!person || !spouse) return
-    applyEditorAction(
+    await applyEditorAction(
       { type: 'remove-spouse', personId: person.id },
       `将解除 ${person.name} 与 ${spouse.name} 的配偶关系，是否继续？`,
     )
   }
 
-  function removeParentsRelation() {
+  async function removeParentsRelation() {
     const person = selectedPerson.value
     if (!person || !selectedParents.value.length) return
-    applyEditorAction(
+    await applyEditorAction(
       { type: 'remove-parents', personId: person.id },
       `将解除 ${person.name} 与 ${selectedParents.value.map((parent) => parent.name).join('、')} 的父母关系，是否继续？`,
     )
   }
 
-  function deleteSelectedPerson() {
+  async function deleteSelectedPerson() {
     const person = selectedPerson.value
     if (!person) return
 
@@ -175,7 +182,7 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
           .join('\n')
       : ''
 
-    applyEditorAction(
+    await applyEditorAction(
       { type: 'delete-person', personId: person.id },
       `将删除人物"${person.name}"。${summary ? `\n${summary}\n` : '\n'}是否继续？`,
     )

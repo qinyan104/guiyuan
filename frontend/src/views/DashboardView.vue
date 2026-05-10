@@ -5,6 +5,7 @@ import { listPublications, createPublication, type PublicationSummary } from '..
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { isAdmin, isSuperAdmin } from '../api/auth'
 import { adminListUsers, adminBackupDatabase } from '../api/admin'
+import { getPublicationActivityLabel } from '../lib/publicationActivity'
 
 const router = useRouter()
 
@@ -42,6 +43,10 @@ onMounted(loadDashboard)
 
 function openPublication(id: number) {
   router.push({ name: 'workbench', params: { id } })
+}
+
+function viewActivity(id: number) {
+  router.push({ name: 'publication-stats', params: { id } })
 }
 
 const backupLoading = ref(false)
@@ -115,7 +120,11 @@ async function handleCreateFromDashboard() {
           <h2 class="hero-pub-title">{{ latestPub.title || '未命名族谱' }}</h2>
           <p class="hero-pub-subtitle">{{ latestPub.subtitle || '暂无副标题' }}</p>
           <div class="hero-footer">
-            <span class="hero-date">{{ formatDate(latestPub.updatedAt) }} 更新</span>
+            <div class="hero-meta">
+              <span class="hero-date">{{ formatDate(latestPub.updatedAt) }} 更新</span>
+              <span v-if="latestPub.lastUpdatedBy" class="hero-updater">最近更新：{{ latestPub.lastUpdatedBy }}</span>
+              <button v-if="latestPub.lastActivityAction" class="hero-activity-link" @click.stop="viewActivity(latestPub.id)">查看活动记录</button>
+            </div>
             <button class="ghost-pill" @click.stop="openPublication(latestPub.id)">
               继续编撰 
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -154,6 +163,8 @@ async function handleCreateFromDashboard() {
             <div class="history-time">{{ formatDate(pub.updatedAt) }}</div>
             <div class="history-detail">
               <div class="history-title">{{ pub.title || '未命名' }}</div>
+              <div v-if="pub.lastUpdatedBy" class="history-updater">最近更新：{{ pub.lastUpdatedBy }}</div>
+              <button v-if="pub.lastActivityAction" class="history-activity-link" @click.stop="viewActivity(pub.id)">查看活动记录</button>
             </div>
             <svg class="history-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
@@ -380,6 +391,10 @@ async function handleCreateFromDashboard() {
   justify-content: space-between;
   align-items: flex-end;
 }
+.hero-meta {
+  display: grid;
+  gap: 0.2rem;
+}
 
 .hero-date {
   font-family: monospace;
@@ -387,6 +402,22 @@ async function handleCreateFromDashboard() {
   font-size: 0.85rem;
   letter-spacing: 0.05em;
   padding-bottom: 0.5rem;
+}
+.hero-updater {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+.hero-activity-link {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--accent-blue, #6d8fb0);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.hero-activity-link:hover {
+  color: var(--accent-blue-hover, #5080a8);
+  text-decoration: none;
 }
 
 .ghost-pill {
@@ -559,6 +590,24 @@ async function handleCreateFromDashboard() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.history-updater {
+  margin-top: 0.18rem;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+.history-activity-link {
+  all: unset;
+  cursor: pointer;
+  margin-top: 0.12rem;
+  font-size: 0.75rem;
+  color: var(--accent-blue, #6d8fb0);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.history-activity-link:hover {
+  color: var(--accent-blue-hover, #5080a8);
+  text-decoration: none;
 }
 .history-arrow {
   width: 18px;
