@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, inject, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import type { ThemeId } from '../composables/useTheme'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 import CollaboratorManager from './CollaboratorManager.vue'
@@ -19,9 +19,7 @@ interface SampleGroup {
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const showExportDialog = ref(false)
 const showCollabDialog = ref(false)
-const isExporting = ref(false)
 
-const router = useRouter()
 const route = useRoute()
 const context = inject<any>('publication-context')
 
@@ -78,10 +76,6 @@ const userInitials = computed(() => {
 })
 function toggleUserDropdown() {
   userDropdownOpen.value = !userDropdownOpen.value
-}
-function goToSettings() {
-  userDropdownOpen.value = false
-  router.push({ name: 'settings' })
 }
 
 </script>
@@ -176,7 +170,7 @@ function goToSettings() {
     <Teleport to="body">
       <ExportDialog
         v-model="showExportDialog"
-        :is-processing="isExporting"
+        :is-processing="false"
         @export-svg="emit('download-svg'); showExportDialog = false"
         @export-share-html="handleExportShareHtml"
       />
