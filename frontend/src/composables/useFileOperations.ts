@@ -1,10 +1,7 @@
-import { nextTick, ref, shallowRef, type Ref } from 'vue'
+﻿import { nextTick, ref, shallowRef, type Ref } from 'vue'
 
 import type { DraftPackage, PublicationData, PublicationLayout, PublicationSettings } from '../types/family'
 import {
-  createPrintDocument,
-  createPrintLayoutPages,
-  createPrintPageSvg,
   createStandalonePublicationSvg,
   serializeSvg as serializeStandaloneSvg,
 } from '../features/export/publicationExport'
@@ -212,41 +209,6 @@ export function useFileOperations(deps: FileOperationsDeps) {
     downloadTextFile(`${sanitizeFileName(publication.title)}.svg`, serialized, 'image/svg+xml;charset=utf-8')
   }
 
-  async function printPublication() {
-    const svg = await createCurrentStandaloneSvg()
-    if (!svg) {
-      errorMessage.value = '当前画布还没有可导出的 SVG。'
-      statusMessage.value = ''
-      return
-    }
-
-    const title = publication.title.trim() || '族谱出版预览'
-    const pages = createPrintLayoutPages(layout.value, settings.paper)
-    const pageSvgMarkups = pages.map((page) =>
-      serializeStandaloneSvg(createPrintPageSvg(svg, page, title), false),
-    )
-    const printWindow = window.open('', '_blank', 'width=1440,height=960')
-
-    if (!printWindow) {
-      errorMessage.value = '浏览器阻止了打印窗口，请允许弹出窗口后重试。'
-      statusMessage.value = ''
-      return
-    }
-
-    errorMessage.value = ''
-    statusMessage.value = `已生成 ${pages.length} 页打印排版。`
-    printWindow.document.open()
-    printWindow.document.write(
-      createPrintDocument({
-        title,
-        paper: settings.paper,
-        pages,
-        pageSvgMarkups,
-      }),
-    )
-    printWindow.document.close()
-  }
-
   async function exportJson() {
     statusMessage.value = '正在导出 (处理图片中)...'
     try {
@@ -330,7 +292,6 @@ export function useFileOperations(deps: FileOperationsDeps) {
     openDraftFile,
     saveDraftFile,
     downloadSvg,
-    printPublication,
     exportJson,
     exportShareHtml,
     importDraftFromFileEvent,
