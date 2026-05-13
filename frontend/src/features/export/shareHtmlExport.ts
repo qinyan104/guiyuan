@@ -67,7 +67,7 @@ async function encryptPayload(jsonString: string, password: string): Promise<Enc
   }
 }
 
-function buildInfoHeader(pub: PublicationData): string {
+export function buildInfoHeader(pub: PublicationData): string {
   const parts: string[] = []
   if (pub.title) {
     parts.push(`<h1>${escapeHtml(pub.title)}</h1>`)
@@ -116,7 +116,7 @@ function buildStatsHtml(pub: PublicationData): string {
   return parts.join(' · ')
 }
 
-function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
+export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
   return `
 (function() {
   'use strict';
@@ -198,7 +198,7 @@ function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
     if (person.death) details.push({ label: '去世', value: person.death });
     if (person.age) details.push({ label: '年龄', value: person.age });
     if (person.clan) details.push({ label: '宗族', value: person.clan });
-    if (person.titleName) details.push({ label: '字/号', value: person.titleName });
+    if (person.titleName) details.push({ label: '称号', value: person.titleName });
     if (person.note) details.push({ label: '备注', value: person.note });
 
     if (details.length > 0) {
@@ -455,7 +455,7 @@ function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
 })();`
 }
 
-function buildHtmlTemplate(options: {
+export function buildHtmlTemplate(options: {
   title: string
   themeCss: string
   infoHeader: string
@@ -816,7 +816,7 @@ body {
   <div class="gate-box">
     <h2>族谱已加密</h2>
     <p>请输入密码以查看内容</p>
-    <input type="password" id="pwd-input" placeholder="输入密码" autocomplete="off">
+    <input type="password" id="pwd-input" placeholder="请输入密码" autocomplete="off">
     <button id="pwd-submit">解锁</button>
     <div id="pwd-error"></div>
   </div>
@@ -839,7 +839,7 @@ body {
 
   <footer id="pub-footer">
     <span>${options.statsHtml}</span>
-    <span>生成于 ${escapeHtml(options.generatedAt)} · 仅供内部传阅</span>
+    <span>生成于：${escapeHtml(options.generatedAt)} · 仅供内部传阅</span>
   </footer>
 </div>
 
@@ -921,3 +921,4 @@ export async function generateShareHtml(options: ShareHtmlOptions): Promise<stri
   onProgress?.('done', 100)
   return html
 }
+
