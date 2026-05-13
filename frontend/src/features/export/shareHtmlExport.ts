@@ -81,13 +81,13 @@ export function buildInfoHeader(pub: PublicationData): string {
     infoItems.push(`<p class="info-desc">${escapeHtml(pub.info.description)}</p>`)
   }
   if (pub.info?.ancestralOrigin) {
-    infoItems.push(`<span class="info-tag">郡望/祖籍：${escapeHtml(pub.info.ancestralOrigin)}</span>`)
+    infoItems.push(`<span class="info-tag">\u90e1\u671b/\u7956\u7c4d\uff1a${escapeHtml(pub.info.ancestralOrigin)}</span>`)
   }
   if (pub.info?.hallName) {
-    infoItems.push(`<span class="info-tag">堂号：${escapeHtml(pub.info.hallName)}</span>`)
+    infoItems.push(`<span class="info-tag">\u5802\u53f7\uff1a${escapeHtml(pub.info.hallName)}</span>`)
   }
   if (pub.info?.familyMotto) {
-    infoItems.push(`<span class="info-tag">族训：${escapeHtml(pub.info.familyMotto)}</span>`)
+    infoItems.push(`<span class="info-tag">\u65cf\u8bad\uff1a${escapeHtml(pub.info.familyMotto)}</span>`)
   }
   if (infoItems.length) {
     parts.push(`<div class="pub-info">${infoItems.join('')}</div>`)
@@ -110,9 +110,9 @@ function buildStatsHtml(pub: PublicationData): string {
   const deceased = people.filter(p => p.deceased).length
   const alive = total - deceased
 
-  const parts: string[] = [`<span>共 ${total} 人</span>`]
-  if (alive > 0) parts.push(`<span>在世 ${alive} 人</span>`)
-  if (deceased > 0) parts.push(`<span>已故 ${deceased} 人</span>`)
+  const parts: string[] = [`<span>\u5171 ${total} \u4eba</span>`]
+  if (alive > 0) parts.push(`<span>\u5728\u4e16 ${alive} \u4eba</span>`)
+  if (deceased > 0) parts.push(`<span>\u5df2\u6545 ${deceased} \u4eba</span>`)
   return parts.join(' · ')
 }
 
@@ -814,9 +814,9 @@ body {
 
 <div id="password-gate">
   <div class="gate-box">
-    <h2>族谱已加密</h2>
-    <p>请输入密码以查看内容</p>
-    <input type="password" id="pwd-input" placeholder="请输入密码" autocomplete="off">
+    <h2>\u65cf\u8c31\u5df2\u52a0\u5bc6</h2>
+    <p>\u8bf7\u8f93\u5165\u5bc6\u7801\u4ee5\u67e5\u770b\u5185\u5bb9</p>
+    <input type="password" id="pwd-input" placeholder="\u8bf7\u8f93\u5165\u5bc6\u7801" autocomplete="off">
     <button id="pwd-submit">解锁</button>
     <div id="pwd-error"></div>
   </div>
