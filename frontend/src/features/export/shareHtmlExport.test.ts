@@ -61,5 +61,6 @@ describe('shareHtmlExport helpers', () => {
     expect(() => new Function(script)).not.toThrow()
     expect(script).toContain('请输入密码')
     expect(script).toContain('密码错误或文件已损坏')
+    expect(script).toContain('称号')
   })
 })
