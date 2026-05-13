@@ -5,27 +5,15 @@
       <button class="close-btn" @click="$emit('update:modelValue', false)">&times;</button>
       <header class="dialog-header">
         <span class="dialog-eyebrow">Export</span>
-        <h2>导出与发布</h2>
+        <h2>导出与分享</h2>
       </header>
 
       <div class="tabs">
-        <button 
-          @click="activeTab = 'pdf-single'" 
-          :class="['tab-btn', { active: activeTab === 'pdf-single' }]"
-        >
-          单页矢量 PDF
-        </button>
-        <button 
-          @click="activeTab = 'svg'" 
+        <button
+          @click="activeTab = 'svg'"
           :class="['tab-btn', { active: activeTab === 'svg' }]"
         >
           矢量 SVG
-        </button>
-        <button
-          @click="activeTab = 'pdf'"
-          :class="['tab-btn', { active: activeTab === 'pdf' }]"
-        >
-          谱书 PDF
         </button>
         <button
           @click="activeTab = 'share'"
@@ -34,37 +22,14 @@
           分享网页
         </button>
       </div>
-      
-      <div v-if="activeTab === 'pdf-single'" class="tab-content">
-         <p class="description">导出为全尺寸、单页的无损矢量 PDF。无论怎么放大都不会模糊，非常适合在电脑和平板上全景拖拽浏览，或直接发给专业打印店。</p>
-         <div class="actions">
-           <button class="btn btn--primary" @click="emitExportPdfSingle" :disabled="isProcessing">
-             {{ isProcessing ? '正在生成 PDF...' : '一键导出 PDF' }}
-           </button>
-         </div>
-      </div>
 
       <div v-if="activeTab === 'svg'" class="tab-content">
-         <p class="description">导出为无限放大的矢量文件。这是最保真的格式，适合专业排版、印刷或作为原始备份。</p>
-         <div class="actions">
-           <button class="btn btn--primary" @click="$emit('export-svg')" :disabled="isProcessing">
-             立即下载矢量 SVG
-           </button>
-         </div>
-      </div>
-
-      <div v-if="activeTab === 'pdf'" class="tab-content">
-         <p class="description">进入"谱书实验室"，在线预览、修改文字内容，并生成多页 A4 格式的 PDF 电子谱书。</p>
-         <div class="options-group">
-           <label class="checkbox-label">
-             <input type="checkbox" v-model="pdfOptions.includeBios"> 包含人物传记
-           </label>
-         </div>
-         <div class="actions">
-           <button class="btn btn--primary" @click="emitPreviewPdf">
-             进入打印预览与编辑
-           </button>
-         </div>
+        <p class="description">导出为无限放大的矢量文件。这是最保真的格式，适合专业排版、印刷或作为原始备份。</p>
+        <div class="actions">
+          <button class="btn btn--primary" @click="$emit('export-svg')" :disabled="isProcessing">
+            立即下载矢量 SVG
+          </button>
+        </div>
       </div>
 
       <div v-if="activeTab === 'share'" class="tab-content">
@@ -72,8 +37,8 @@
         <div class="options-group">
           <label class="field-label">密码保护（可选）</label>
           <input
-            type="password"
             v-model="sharePassword"
+            type="password"
             placeholder="留空则不加密"
             class="share-password-input"
           />
@@ -101,21 +66,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { computed, ref } from 'vue'
 
 defineProps<{
-  modelValue: boolean,
-  isProcessing?: boolean,
+  modelValue: boolean
+  isProcessing?: boolean
 }>()
 
-const emit = defineEmits(['update:modelValue', 'export-pdf-single', 'export-svg', 'preview-pdf', 'export-share-html'])
+const emit = defineEmits(['update:modelValue', 'export-svg', 'export-share-html'])
 
-const activeTab = ref<'pdf-single' | 'svg' | 'pdf' | 'share'>('pdf-single')
-
-const pdfOptions = reactive({
-  includeBios: true
-})
-
+const activeTab = ref<'svg' | 'share'>('svg')
 const sharePassword = ref('')
 
 const passwordStrength = computed(() => {
@@ -134,14 +94,6 @@ const passwordStrength = computed(() => {
   if (score <= 3) return { level: 'medium', label: '中等', color: '#e67e22', percent: 70 }
   return { level: 'strong', label: '强', color: '#27ae60', percent: 100 }
 })
-
-function emitExportPdfSingle() {
-  emit('export-pdf-single')
-}
-
-function emitPreviewPdf() {
-  emit('preview-pdf', { ...pdfOptions })
-}
 
 function emitExportShareHtml() {
   emit('export-share-html', { password: sharePassword.value })
@@ -179,7 +131,6 @@ function emitExportShareHtml() {
   animation: slideUp 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-/* Dark themes */
 :global([data-theme="ink-wash"]) .export-dialog,
 :global([data-theme="rosewood"]) .export-dialog,
 :global([data-theme="star-sea"]) .export-dialog {
@@ -319,36 +270,6 @@ function emitExportShareHtml() {
   margin-bottom: 10px;
 }
 
-.options-group label {
-  display: block;
-  font-family: monospace;
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.2em;
-  color: var(--text-soft, #8f8878);
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
-
-.options-group select {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.18));
-  background: var(--bg-paper, rgba(255, 255, 252, 0.92));
-  color: var(--text-main, #241a10);
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.options-group select:focus {
-  border-color: var(--accent-amber, rgba(114, 79, 46, 0.45));
-  box-shadow: 0 0 0 4px var(--line-soft, rgba(130, 99, 68, 0.12));
-}
-
 .share-password-input {
   width: 100%;
   padding: 12px 14px;
@@ -412,23 +333,6 @@ function emitExportShareHtml() {
   white-space: nowrap;
 }
 
-.checkbox-label {
-  display: flex !important;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-sub, #6b5e52);
-}
-
-.checkbox-label input {
-  accent-color: var(--accent-amber, #8a6534);
-  width: 16px;
-  height: 16px;
-}
-
 .actions {
   margin-top: 28px;
 }
@@ -478,4 +382,3 @@ function emitExportShareHtml() {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 </style>
-

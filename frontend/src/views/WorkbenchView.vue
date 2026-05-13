@@ -182,7 +182,6 @@ watch(
       @download-svg="fileOps.downloadSvg"
       @export-json="fileOps.exportJson"
       @export-share-html="fileOps.exportShareHtml"
-      @print-publication="fileOps.printPublication"
       @change-theme="theme.setTheme"
       @logout="goBackToList"
       @go-back="goBackToList"
