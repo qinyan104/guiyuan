@@ -1,4 +1,4 @@
-﻿import { nextTick, ref, shallowRef, type Ref } from 'vue'
+import { nextTick, ref, shallowRef, type Ref } from 'vue'
 
 import type { DraftPackage, PublicationData, PublicationLayout, PublicationSettings } from '../types/family'
 import {
