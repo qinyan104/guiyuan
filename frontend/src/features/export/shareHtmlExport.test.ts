@@ -1,10 +1,33 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import type { PublicationData } from '../../types/family'
-import { buildEmbeddedScript, buildHtmlTemplate, buildInfoHeader } from './shareHtmlExport'
+import type {
+  PublicationData,
+  PublicationLayout,
+  PublicationSettings,
+} from '../../types/family'
+
+vi.mock('../persistence/draftPersistence', () => ({
+  createPortablePublication: vi.fn(async (publication: PublicationData) => publication),
+}))
+
+vi.mock('./publicationExport', () => ({
+  createStandalonePublicationSvg: vi.fn(async ({ svgElement }: { svgElement: SVGSVGElement }) => svgElement),
+  escapeHtml: vi.fn((value: string) => value),
+  getSvgThemeMap: vi.fn(() => ({ '--bg-paper': '#fffdf8' })),
+  serializeSvg: vi.fn(
+    () => '<svg viewBox="0 0 100 100"><g class="person-card" data-person-id="p1"></g></svg>',
+  ),
+}))
+
+import {
+  buildEmbeddedScript,
+  buildHtmlTemplate,
+  buildInfoHeader,
+  generateShareHtml,
+} from './shareHtmlExport'
 
 const samplePublication: PublicationData = {
-  title: '李氏族谱',
+  title: '李氏宗谱',
   subtitle: '陇西堂支谱',
   focusFamilyId: 'f1',
   people: {
@@ -30,6 +53,36 @@ const samplePublication: PublicationData = {
   },
 }
 
+const sampleSettings: PublicationSettings = {
+  paper: 'A4',
+  layoutMode: 'modern',
+  cardWidth: 240,
+  generationGap: 120,
+  siblingGap: 48,
+  partnerGap: 32,
+  fontScale: 1,
+  zoom: 1,
+  showDeath: true,
+  showAge: true,
+  showNote: true,
+  showPhoto: true,
+  paddingX: 40,
+  paddingY: 40,
+}
+
+const sampleLayout: PublicationLayout = {
+  width: 100,
+  height: 100,
+  cards: [],
+  lines: [],
+  displayedPeople: 1,
+  generationCount: 1,
+  pageCount: 1,
+  paperPixelWidth: 100,
+  paperPixelHeight: 100,
+  titleAreaHeight: 0,
+}
+
 describe('shareHtmlExport helpers', () => {
   it('buildInfoHeader renders readable publication metadata', () => {
     const html = buildInfoHeader(samplePublication)
@@ -43,7 +96,7 @@ describe('shareHtmlExport helpers', () => {
     const html = buildHtmlTemplate({
       title: samplePublication.title,
       themeCss: ':root {}',
-      infoHeader: '<h1>李氏族谱</h1>',
+      infoHeader: '<h1>李氏宗谱</h1>',
       statsHtml: '共 1 人',
       script: 'console.log("ok")',
       isEncrypted: true,
@@ -62,5 +115,21 @@ describe('shareHtmlExport helpers', () => {
     expect(script).toContain('请输入密码')
     expect(script).toContain('密码错误或文件已损坏')
     expect(script).toContain('称号')
+  })
+
+  it('generateShareHtml keeps the standalone document shell viewable', async () => {
+    const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    const html = await generateShareHtml({
+      publication: samplePublication,
+      settings: sampleSettings,
+      layout: sampleLayout,
+      svgElement,
+    })
+
+    expect(html).toContain('id="app"')
+    expect(html).toContain('id="tree-viewport"')
+    expect(html).toContain('id="detail-panel"')
+    expect(html).toContain('李氏宗谱')
+    expect(html).toContain('setupCardClick')
   })
 })
