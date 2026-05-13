@@ -10,20 +10,6 @@ vi.mock('../persistence/draftPersistence', () => ({
   createPortablePublication: vi.fn(async (publication: PublicationData) => publication),
 }))
 
-vi.mock('./publicationExport', async () => {
-  const actual = await vi.importActual<typeof import('./publicationExport')>('./publicationExport')
-  return {
-    ...actual,
-    createStandalonePublicationSvg: vi.fn(
-      async ({ svgElement }: { svgElement: SVGSVGElement }) => svgElement,
-    ),
-    getSvgThemeMap: vi.fn(() => ({ '--bg-paper': '#fffdf8' })),
-    serializeSvg: vi.fn(
-      () => '<svg viewBox="0 0 100 100"><g class="person-card" data-person-id="p1"></g></svg>',
-    ),
-  }
-})
-
 import {
   buildEmbeddedScript,
   buildHtmlTemplate,
@@ -32,20 +18,20 @@ import {
 } from './shareHtmlExport'
 
 const samplePublication: PublicationData = {
-  title: '李氏宗谱',
-  subtitle: '陇西堂支谱',
+  title: '\u674e\u6c0f\u5b97\u8c31',
+  subtitle: '\u9647\u897f\u5802\u652f\u8c31',
   focusFamilyId: 'f1',
   people: {
     p1: {
       id: 'p1',
-      name: '李明',
+      name: '\u674e\u660e',
       gender: 'male',
       deceased: false,
-      titleName: '族长',
+      titleName: '\u65cf\u957f',
     },
     p2: {
       id: 'p2',
-      name: '李远',
+      name: '\u674e\u8fdc',
       gender: 'male',
       deceased: true,
     },
@@ -58,9 +44,9 @@ const samplePublication: PublicationData = {
     },
   },
   info: {
-    ancestralOrigin: '陇西',
-    hallName: '敦本堂',
-    familyMotto: '敦亲睦族',
+    ancestralOrigin: '\u9647\u897f',
+    hallName: '\u6566\u672c\u5802',
+    familyMotto: '\u6566\u4eb2\u7766\u65cf',
   },
 }
 
@@ -94,70 +80,89 @@ const sampleLayout: PublicationLayout = {
   titleAreaHeight: 0,
 }
 
+function createSvgFixture(): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('viewBox', '0 0 100 100')
+
+  const card = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+  card.setAttribute('class', 'person-card')
+  card.setAttribute('data-person-id', 'p1')
+  svg.appendChild(card)
+
+  return svg
+}
+
 describe('shareHtmlExport helpers', () => {
   it('buildInfoHeader renders readable publication metadata', () => {
     const html = buildInfoHeader(samplePublication)
 
-    expect(html).toContain('郡望/祖籍：陇西')
-    expect(html).toContain('堂号：敦本堂')
-    expect(html).toContain('族训：敦亲睦族')
+    expect(html).toContain('\u90e1\u671b/\u7956\u7c4d\uff1a\u9647\u897f')
+    expect(html).toContain('\u5802\u53f7\uff1a\u6566\u672c\u5802')
+    expect(html).toContain('\u65cf\u8bad\uff1a\u6566\u4eb2\u7766\u65cf')
   })
 
   it('buildHtmlTemplate renders readable password gate copy', () => {
     const html = buildHtmlTemplate({
       title: samplePublication.title,
       themeCss: ':root {}',
-      infoHeader: '<h1>李氏宗谱</h1>',
-      statsHtml: '共 2 人',
+      infoHeader: '<h1>\u674e\u6c0f\u5b97\u8c31</h1>',
+      statsHtml: '\u5171 2 \u4eba',
       script: 'console.log("ok")',
       isEncrypted: true,
       generatedAt: '2026/05/13 23:00:00',
     })
 
-    expect(html).toContain('<h2>族谱已加密</h2>')
-    expect(html).toContain('<p>请输入密码以查看内容</p>')
-    expect(html).toContain('placeholder="请输入密码"')
+    expect(html).toContain('<h2>\u65cf\u8c31\u5df2\u52a0\u5bc6</h2>')
+    expect(html).toContain('<p>\u8bf7\u8f93\u5165\u5bc6\u7801\u4ee5\u67e5\u770b\u5185\u5bb9</p>')
+    expect(html).toContain('placeholder="\u8bf7\u8f93\u5165\u5bc6\u7801"')
     expect(html).toContain('autocomplete="off"')
-    expect(html).toContain('生成于：2026/05/13 23:00:00')
+    expect(html).toContain('\u751f\u6210\u4e8e\uff1a2026/05/13 23:00:00')
   })
 
   it('buildEmbeddedScript emits valid unlock script text', () => {
     const script = buildEmbeddedScript('{"v":1}', true)
 
     expect(() => new Function(script)).not.toThrow()
-    expect(script).toContain('请输入密码')
-    expect(script).toContain('密码错误或文件已损坏')
-    expect(script).toContain('称号')
+    expect(script).toContain('\u8bf7\u8f93\u5165\u5bc6\u7801')
+    expect(script).toContain('\u5bc6\u7801\u9519\u8bef\u6216\u6587\u4ef6\u5df2\u635f\u574f')
+    expect(script).toContain('\u79f0\u53f7')
   })
 
   it('generateShareHtml builds a parseable standalone document shell', async () => {
-    const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     const html = await generateShareHtml({
       publication: samplePublication,
       settings: sampleSettings,
       layout: sampleLayout,
-      svgElement,
-      password: 'secret',
+      svgElement: createSvgFixture(),
     })
 
     const doc = new DOMParser().parseFromString(html, 'text/html')
+    const dataJsonMatch = html.match(/var DATA_JSON = ("(?:[^"\\]|\\.)*");/)
+
+    expect(dataJsonMatch).not.toBeNull()
+
+    const payloadJson = JSON.parse(dataJsonMatch![1]) as string
+    const payload = JSON.parse(payloadJson) as { svgMarkup: string }
 
     expect(doc.querySelector('#app')).not.toBeNull()
     expect(doc.querySelector('#tree-viewport')).not.toBeNull()
     expect(doc.querySelector('#detail-panel')).not.toBeNull()
     expect(doc.querySelector('#tree-camera')).not.toBeNull()
     expect(doc.querySelector('#detail-content')).not.toBeNull()
+    expect(html).toContain('<svg')
+    expect(payload.svgMarkup).toContain('<g class="person-card"')
+    expect(payload.svgMarkup).toContain('data-person-id="p1"')
     expect(html).toContain('setupCardClick')
-    expect(doc.body.textContent).toContain('李氏宗谱')
-    expect(doc.body.textContent).toContain('郡望/祖籍：陇西')
-    expect(doc.body.textContent).toContain('堂号：敦本堂')
-    expect(doc.body.textContent).toContain('族训：敦亲睦族')
-    expect(doc.body.textContent).toContain('共 2 人')
-    expect(doc.body.textContent).toContain('在世 1 人')
-    expect(doc.body.textContent).toContain('已故 1 人')
-    expect(doc.body.textContent).toContain('族谱已加密')
-    expect(doc.body.textContent).toContain('请输入密码以查看内容')
-    expect(doc.querySelector('#pwd-input')?.getAttribute('placeholder')).toBe('请输入密码')
+    expect(doc.body.textContent).toContain('\u674e\u6c0f\u5b97\u8c31')
+    expect(doc.body.textContent).toContain('\u90e1\u671b/\u7956\u7c4d\uff1a\u9647\u897f')
+    expect(doc.body.textContent).toContain('\u5802\u53f7\uff1a\u6566\u672c\u5802')
+    expect(doc.body.textContent).toContain('\u65cf\u8bad\uff1a\u6566\u4eb2\u7766\u65cf')
+    expect(doc.body.textContent).toContain('\u5171 2 \u4eba')
+    expect(doc.body.textContent).toContain('\u5728\u4e16 1 \u4eba')
+    expect(doc.body.textContent).toContain('\u5df2\u6545 1 \u4eba')
+    expect(doc.body.textContent).toContain('\u65cf\u8c31\u5df2\u52a0\u5bc6')
+    expect(doc.body.textContent).toContain('\u8bf7\u8f93\u5165\u5bc6\u7801\u4ee5\u67e5\u770b\u5185\u5bb9')
+    expect(doc.querySelector('#pwd-input')?.getAttribute('placeholder')).toBe('\u8bf7\u8f93\u5165\u5bc6\u7801')
     expect(doc.querySelector('#pwd-input')?.getAttribute('autocomplete')).toBe('off')
   })
 })
