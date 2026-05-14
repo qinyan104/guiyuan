@@ -111,6 +111,7 @@ public class PublicationService {
         return publications.stream().map(publication -> {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("id", publication.getId());
+            result.put("revision", publication.getRevision());
             result.put("title", publication.getTitle());
             result.put("subtitle", publication.getSubtitle());
             result.put("createdAt", publication.getCreatedAt());
