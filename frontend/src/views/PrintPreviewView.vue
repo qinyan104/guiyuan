@@ -117,7 +117,7 @@ onMounted(() => {
     const people = Object.values(pub.publication.people) as Person[]
     editedBios.value = people.map((person) => {
       const years = person.birth || person.death ? ` (${person.birth || '?'} - ${person.death || 'Present'})` : ''
-      const note = person.note || 'No biography available.'
+      const note = person.note || '暂无传记信息。'
       return `${person.name}${years}\n${note}`
     }).join('\n\n')
   }
@@ -169,7 +169,7 @@ async function generatePdf() {
     window.URL.revokeObjectURL(url)
   } catch (error) {
     console.error('PDF export failed', error)
-    alert('Failed to export PDF. The backend may be unavailable.')
+    alert('导出PDF失败，后端可能不可用。')
   } finally {
     isGenerating.value = false
   }

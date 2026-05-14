@@ -4,7 +4,7 @@
     <div class="export-dialog">
       <button class="close-btn" @click="$emit('update:modelValue', false)">&times;</button>
       <header class="dialog-header">
-        <span class="dialog-eyebrow">Export</span>
+        <span class="dialog-eyebrow">导出</span>
         <h2>导出与分享</h2>
       </header>
 

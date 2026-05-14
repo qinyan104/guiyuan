@@ -77,6 +77,13 @@ Stats: 50 obs (4,798t read) | 579,884t work | 99% savings
 1523 " ✅ UI 集成 (BranchMountManager.vue)
 1524 " ✅ 完成全链路验证
 
+1525 6:30p 🔴 修复AdminUsersView角色变更弹窗中文乱码
+1526 " ✅ 修复ExportDialog 'Export'改'导出'
+1527 " ✅ 修复useFileOperations.ts 10+条英文提示改中文
+1528 " ✅ 修复PrintPreviewView 2条英文改中文
+1529 " ✅ 修复shareHtmlExport.ts 25+处中文乱码（性别/字段/关系/按钮）
+1530 " ✅ 重新构建前端dist并同步到release目录
+
 
 Access 580k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

@@ -79,7 +79,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     return await createStandalonePublicationSvg({
       svgElement,
       layout: layout.value,
-      title: publication.title.trim() || 'Guiyuan Archive Preview',
+      title: publication.title.trim() || '归元档案预览',
     })
   }
 
@@ -159,7 +159,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
         statusMessage: `Opened file: ${openedDraft.name}`,
       })
     } catch (error) {
-      errorMessage.value = getErrorMessage(error, 'Failed to open file.')
+      errorMessage.value = getErrorMessage(error, '打开文件失败。')
       statusMessage.value = ''
     }
   }
@@ -196,7 +196,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
       errorMessage.value = ''
       statusMessage.value = `Downloaded file: ${suggestedName}`
     } catch (error) {
-      errorMessage.value = getErrorMessage(error, 'Failed to save file.')
+      errorMessage.value = getErrorMessage(error, '保存文件失败。')
       statusMessage.value = ''
     }
   }
@@ -204,7 +204,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
   async function downloadSvg() {
     const serialized = await serializeCurrentSvg()
     if (!serialized) {
-      errorMessage.value = 'There is no exportable SVG on the current canvas.'
+      errorMessage.value = '当前画布没有可导出的SVG。'
       statusMessage.value = ''
       return
     }
@@ -215,12 +215,12 @@ export function useFileOperations(deps: FileOperationsDeps) {
   async function printPublication() {
     const svg = await createCurrentStandaloneSvg()
     if (!svg) {
-      errorMessage.value = 'There is no exportable SVG on the current canvas.'
+      errorMessage.value = '当前画布没有可导出的SVG。'
       statusMessage.value = ''
       return
     }
 
-    const title = publication.title.trim() || 'Guiyuan Archive Preview'
+    const title = publication.title.trim() || '归元档案预览'
     const pages = createPrintLayoutPages(layout.value, settings.paper)
     const pageSvgMarkups = pages.map((page) =>
       serializeStandaloneSvg(createPrintPageSvg(svg, page, title), false),
@@ -228,13 +228,13 @@ export function useFileOperations(deps: FileOperationsDeps) {
     const printWindow = window.open('', '_blank', 'width=1440,height=960')
 
     if (!printWindow) {
-      errorMessage.value = 'The browser blocked the print window. Please allow popups and try again.'
+      errorMessage.value = '浏览器阻止了打印窗口。请允许弹出窗口后重试。'
       statusMessage.value = ''
       return
     }
 
     errorMessage.value = ''
-    statusMessage.value = `Generated ${pages.length} print pages.`
+    statusMessage.value = `已生成${pages.length}个打印页面。`
     printWindow.document.open()
     printWindow.document.write(
       createPrintDocument({
@@ -248,7 +248,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
   }
 
   async function exportJson() {
-    statusMessage.value = 'Exporting JSON package...'
+    statusMessage.value = '正在导出JSON...'
     try {
       const portablePub = await createPortablePublication(publication)
       const draft = createDraftPackage(portablePub, settings)
@@ -257,7 +257,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
         serializeDraftPackage(draft),
         'application/json;charset=utf-8',
       )
-      statusMessage.value = 'Exported JSON package with embedded images.'
+      statusMessage.value = '已导出包含图片的JSON包。'
       errorMessage.value = ''
     } catch (err) {
       errorMessage.value = getErrorMessage(err, '导出失败')
@@ -282,19 +282,19 @@ export function useFileOperations(deps: FileOperationsDeps) {
     applyFileDraft(parsed.value, {
       fileName: file.name,
       handle: null,
-      statusMessage: `Imported file: ${file.name}`,
+      statusMessage: `已导入文件：${file.name}`,
     })
   }
 
   async function exportShareHtml(password?: string) {
     const svgElement = canvasRef.value?.getSvgElement?.()
     if (!svgElement || layout.value.cards.length === 0) {
-      errorMessage.value = 'There is no exportable content on the current canvas.'
+      errorMessage.value = '当前画布没有可导出的内容。'
       statusMessage.value = ''
       return
     }
 
-    statusMessage.value = 'Generating share page...'
+    statusMessage.value = '正在生成分享页面...'
     errorMessage.value = ''
 
     try {
@@ -311,10 +311,10 @@ export function useFileOperations(deps: FileOperationsDeps) {
 
       const fileName = `${sanitizeFileName(publication.title)}-分享.html`
       downloadTextFile(fileName, html, 'text/html;charset=utf-8')
-      statusMessage.value = 'Share page generated and downloaded.'
+      statusMessage.value = '分享页面已生成并下载。'
       errorMessage.value = ''
     } catch (err) {
-      errorMessage.value = getErrorMessage(err, 'Failed to generate share page.')
+      errorMessage.value = getErrorMessage(err, '生成分享页面失败。')
       statusMessage.value = ''
     }
   }
