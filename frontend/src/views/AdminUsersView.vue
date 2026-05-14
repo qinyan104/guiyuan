@@ -9,8 +9,10 @@ import {
   type AdminUser,
 } from '../api/admin'
 import { isSuperAdmin } from '../api/auth'
+import { useLexicon } from '../composables/useLexicon'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 
+const { lexicon } = useLexicon()
 const users = ref<AdminUser[]>([])
 const loading = ref(true)
 
@@ -31,9 +33,9 @@ const pendingRoleChange = ref<{ userId: number; role: string } | null>(null)
 const canManageRoles = computed(() => isSuperAdmin())
 
 const roleConfig: Record<string, { label: string }> = {
-  SUPER_ADMIN: { label: '超级管理员' },
-  ADMIN: { label: '管理员' },
-  USER: { label: '普通编委' },
+  SUPER_ADMIN: { label: '主修' },
+  ADMIN: { label: '协修' },
+  USER: { label: '编委' },
 }
 
 const tabCounts = computed(() => ({
@@ -86,10 +88,6 @@ async function handleDelete(id: number) {
   }
 }
 
-function requestRoleChange(userId: number, newRoleVal: string) {
-  pendingRoleChange.value = { userId, role: newRoleVal }
-}
-
 async function handleResetPassword() {
   if (resetUserId.value === null || !resetNewPassword.value.trim()) return
   try {
@@ -101,13 +99,8 @@ async function handleResetPassword() {
   }
 }
 
-async function handleRoleChange(userId: number, newRoleVal: string) {
-  try {
-    await adminChangeRole(userId, newRoleVal)
-    await loadUsers()
-  } catch {
-    // error
-  }
+function requestRoleChange(userId: number, newRoleVal: string) {
+  pendingRoleChange.value = { userId, role: newRoleVal }
 }
 
 async function confirmRoleChange() {
@@ -119,6 +112,15 @@ async function confirmRoleChange() {
 
 function cancelRoleChange() {
   pendingRoleChange.value = null
+}
+
+async function handleRoleChange(userId: number, newRoleVal: string) {
+  try {
+    await adminChangeRole(userId, newRoleVal)
+    await loadUsers()
+  } catch {
+    // error
+  }
 }
 
 function isProtected(user: AdminUser): boolean {
@@ -134,16 +136,19 @@ function formatDate(dateStr: string) {
 <template>
   <div class="admin-users-view-root">
     <div class="admin-users-view">
-      <div class="bento-header">
-      <div class="header-content">
-        <h1 class="page-title">编委名录 // DIRECTORY</h1>
-        <p class="page-desc">管理家族成员账号与系统权限设定</p>
-      </div>
-      <button class="bento-btn primary" @click="showCreateForm = true">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        添加编委
-      </button>
-    </div>
+      <header class="poetic-header">
+        <div class="poetic-header__main">
+          <div class="poetic-eyebrow">{{ lexicon.users.headerEyebrow }}</div>
+          <h1 class="poetic-title">{{ lexicon.users.headerTitle }}<span class="text-italic">{{ lexicon.users.headerTitleItalic }}</span></h1>
+        </div>
+        <div class="poetic-header__extra" style="display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
+          <p class="poetic-quote" v-html="lexicon.users.quote.replace(/\\n/g, '<br/>')"></p>
+          <button class="bento-btn primary" @click="showCreateForm = true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            添加编委
+          </button>
+        </div>
+      </header>
 
     <!-- Role Tabs -->
     <div class="glass-tabs">
@@ -184,11 +189,11 @@ function formatDate(dateStr: string) {
             <span class="label">分配角色：</span>
             <label class="role-radio" :class="{ 'is-active': newRole === 'USER' }">
               <input v-model="newRole" type="radio" value="USER" />
-              <span>普通编委</span>
+              <span>编委</span>
             </label>
             <label class="role-radio admin" :class="{ 'is-active': newRole === 'ADMIN' }">
               <input v-model="newRole" type="radio" value="ADMIN" />
-              <span>管理员</span>
+              <span>协修</span>
             </label>
           </div>
           <div class="actions">
@@ -207,11 +212,11 @@ function formatDate(dateStr: string) {
 
     <div v-else class="bento-card table-card">
       <div class="table-header">
-        <span class="col-id">UID</span>
-        <span class="col-user">账号 / 昵称</span>
-        <span class="col-role">权限组</span>
-        <span class="col-date">注册时间</span>
-        <span class="col-ops">操作</span>
+        <span class="col-id">卷号</span>
+        <span class="col-user">名讳 / 字号</span>
+        <span class="col-role">职官</span>
+        <span class="col-date">入录时日</span>
+        <span class="col-ops">行事</span>
       </div>
       <div class="table-body">
         <div v-for="user in filteredUsers" :key="user.id" class="table-row" :class="{ 'is-protected': isProtected(user) }">
@@ -235,8 +240,8 @@ function formatDate(dateStr: string) {
               class="glass-select"
               @change="requestRoleChange(user.id, ($event.target as HTMLSelectElement).value)"
             >
-              <option value="USER">普通编委</option>
-              <option value="ADMIN">管理员</option>
+              <option value="USER">编委</option>
+              <option value="ADMIN">协修</option>
             </select>
             <span
               v-else
@@ -284,26 +289,31 @@ function formatDate(dateStr: string) {
       </Teleport>
 
       <ConfirmDialog
-        :modelValue="deleteUserId !== null"
-        title="确认删除编委"
-        message="此操作将永久移除该编委的系统访问权限，该操作不可撤销。"
-        confirmLabel="确认删除"
-        tone="danger"
-        @confirm="deleteUserId !== null && handleDelete(deleteUserId)"
-        @cancel="deleteUserId = null"
-        @update:modelValue="(v: boolean) => { if (!v) deleteUserId = null }"
-      />
-
-      <ConfirmDialog
         :modelValue="pendingRoleChange !== null"
         title="确认调整系统角色"
-        message="此操作会立即改变该账号的后台权限范围。请确认这是预期的角色变更。"
+        :message="'此操作会立即改变该账号的后台权限范围。请确认这是预期的角色变更。'"
         confirmLabel="确认调整"
         tone="warning"
         @confirm="confirmRoleChange"
         @cancel="cancelRoleChange"
         @update:modelValue="(v: boolean) => { if (!v) cancelRoleChange() }"
       />
+
+<!-- Delete Confirm Dialog -->
+      <Teleport to="body">
+      <transition name="glass-pop">
+        <div v-if="deleteUserId !== null" class="glass-dialog-overlay" @click.self="deleteUserId = null">
+          <div class="glass-dialog danger-mode">
+            <h2 class="dialog-title">确认删除编委</h2>
+            <p class="dialog-desc">此操作将永久移除该编委的系统访问权限，该操作不可撤销。</p>
+            <div class="dialog-actions">
+              <button class="bento-btn ghost" @click="deleteUserId = null">保留</button>
+              <button class="bento-btn danger" @click="handleDelete(deleteUserId!)">确认删除</button>
+            </div>
+          </div>
+        </div>
+      </transition>
+      </Teleport>
     </div>
   </div>
 </template>
@@ -560,19 +570,19 @@ function formatDate(dateStr: string) {
   grid-template-columns: 80px 1.5fr 1fr 150px 100px;
   gap: 16px;
   padding: 16px 24px;
-  background: rgba(0,0,0,0.02);
-  border-bottom: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.05));
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--text-soft);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  background: transparent;
+  border-bottom: 1px dashed var(--glass-border-shadow, rgba(0,0,0,0.1));
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-amber, #a96e35);
+  text-transform: none;
+  letter-spacing: 0.2em;
 }
 :global([data-theme="ink-wash"]) .table-header,
 :global([data-theme="rosewood"]) .table-header,
 :global([data-theme="star-sea"]) .table-header {
-  background: rgba(255,255,255,0.02);
-  border-color: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.1);
 }
 
 .table-row {
@@ -581,16 +591,19 @@ function formatDate(dateStr: string) {
   gap: 16px;
   padding: 16px 24px;
   align-items: center;
-  border-bottom: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.03));
+  border-bottom: 1px dashed var(--glass-border-shadow, rgba(0,0,0,0.05));
   transition: background 0.2s ease;
 }
+.table-row:last-child {
+  border-bottom: none;
+}
 .table-row:hover {
-  background: rgba(255,255,255,0.4);
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.02), transparent);
 }
 :global([data-theme="ink-wash"]) .table-row:hover,
 :global([data-theme="rosewood"]) .table-row:hover,
 :global([data-theme="star-sea"]) .table-row:hover {
-  background: rgba(255,255,255,0.03);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
 }
 .table-row.is-protected {
   background: rgba(180, 83, 9, 0.02);
@@ -608,26 +621,28 @@ function formatDate(dateStr: string) {
   gap: 12px;
 }
 .user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  background: var(--glass-border-highlight, rgba(255,255,255,0.8));
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
-  font-weight: 800;
   font-family: 'Noto Serif SC', serif;
-  color: var(--text-main);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: #c82c2c;
+  border: 2px solid #c82c2c;
+  background: transparent;
+  opacity: 0.85;
 }
 .user-avatar.super_admin {
-  background: var(--accent-amber);
-  color: #fff;
+  border-width: 3px;
+  font-weight: 700;
+  background: rgba(200, 44, 44, 0.05);
 }
 .user-avatar.admin {
-  background: var(--accent-ink);
-  color: #fff;
+  border-width: 2px;
+  font-weight: 500;
 }
 
 .user-info {
