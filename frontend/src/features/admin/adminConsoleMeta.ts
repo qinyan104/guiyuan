@@ -1,70 +1,87 @@
-export type AdminNavIcon = 'home' | 'book' | 'users' | 'log' | 'settings'
+export type AdminRouteName =
+  | 'dashboard'
+  | 'publications'
+  | 'admin-users'
+  | 'admin-logs'
+  | 'settings'
 
 export interface AdminPageMeta {
-  routeName: string
-  icon: AdminNavIcon
+  routeName: AdminRouteName
   sectionTitle: string
   pageTitle: string
+  pageDescription: string
   sidebarLabel: string
+  icon: 'home' | 'book' | 'users' | 'log' | 'settings'
   adminOnly?: boolean
 }
 
-const ADMIN_PAGE_META: AdminPageMeta[] = [
-  {
+export interface AdminNavItem {
+  key: string
+  routeName: AdminRouteName
+  label: string
+  icon: AdminPageMeta['icon']
+  adminOnly?: boolean
+}
+
+const ADMIN_PAGE_META: Record<AdminRouteName, AdminPageMeta> = {
+  dashboard: {
     routeName: 'dashboard',
-    icon: 'home',
     sectionTitle: '后台总览',
     pageTitle: '工作台',
+    pageDescription: '总览馆藏概况、最近编研卷册与关键系统动作。',
     sidebarLabel: '首页',
+    icon: 'home',
   },
-  {
+  publications: {
     routeName: 'publications',
+    sectionTitle: '谱牒馆藏',
+    pageTitle: '族谱管理',
+    pageDescription: '归档、检索并继续编研现有族谱卷册。',
+    sidebarLabel: '族谱管理',
     icon: 'book',
-    sectionTitle: '藏谱管理',
-    pageTitle: '族谱藏馆',
-    sidebarLabel: '藏馆谱目',
   },
-  {
-    routeName: 'settings',
-    icon: 'settings',
-    sectionTitle: '系统偏好',
-    pageTitle: '偏好设置',
-    sidebarLabel: '设置',
-  },
-  {
+  'admin-users': {
     routeName: 'admin-users',
-    icon: 'users',
     sectionTitle: '系统治理',
-    pageTitle: '编委名录',
-    sidebarLabel: '编委名录',
+    pageTitle: '用户管理',
+    pageDescription: '维护账号、角色与后台访问秩序。',
+    sidebarLabel: '用户管理',
+    icon: 'users',
     adminOnly: true,
   },
-  {
+  'admin-logs': {
     routeName: 'admin-logs',
-    icon: 'log',
     sectionTitle: '系统治理',
     pageTitle: '操作日志',
-    sidebarLabel: '修谱纪事',
+    pageDescription: '查阅后台行为流水、风险动作与备份记录。',
+    sidebarLabel: '操作日志',
+    icon: 'log',
     adminOnly: true,
   },
-]
-
-const DEFAULT_PAGE_META = ADMIN_PAGE_META[0]
-
-function findAdminPageMeta(routeName: string | null | undefined): AdminPageMeta | undefined {
-  return ADMIN_PAGE_META.find((item) => item.routeName === routeName)
+  settings: {
+    routeName: 'settings',
+    sectionTitle: '系统治理',
+    pageTitle: '系统设置',
+    pageDescription: '调整后台主题、偏好与基础系统配置。',
+    sidebarLabel: '系统设置',
+    icon: 'settings',
+  },
 }
 
-export function getAdminPageMeta(routeName: string | null | undefined): AdminPageMeta {
-  return findAdminPageMeta(routeName) ?? DEFAULT_PAGE_META
+export function getAdminPageMeta(routeName: unknown): AdminPageMeta {
+  if (typeof routeName === 'string' && Object.hasOwn(ADMIN_PAGE_META, routeName)) {
+    return ADMIN_PAGE_META[routeName as AdminRouteName]
+  }
+  return ADMIN_PAGE_META.dashboard
 }
 
-export function getAdminNavItems(): AdminPageMeta[] {
-  return ADMIN_PAGE_META.map((item) => ({ ...item }))
-}
-
-export function isAdminOnlyRouteName(routeName: string | null | undefined): boolean {
-  return findAdminPageMeta(routeName)?.adminOnly === true
+export function getAdminNavItems(): AdminNavItem[] {
+  return [
+    { key: 'dashboard', routeName: 'dashboard', label: '首页', icon: 'home' },
+    { key: 'publications', routeName: 'publications', label: '族谱管理', icon: 'book' },
+    { key: 'users', routeName: 'admin-users', label: '用户管理', icon: 'users', adminOnly: true },
+    { key: 'logs', routeName: 'admin-logs', label: '操作日志', icon: 'log', adminOnly: true },
+  ]
 }
 
 export function buildAdminBreadcrumb(meta: AdminPageMeta): string {
