@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { listLogs, type AuditLogEntry } from '../api/audit'
+import { useLexicon } from '../composables/useLexicon'
 
+const { lexicon } = useLexicon()
 const logs = ref<AuditLogEntry[]>([])
 const loading = ref(true)
 const errorMsg = ref('')
@@ -21,53 +23,50 @@ async function loadLogs() {
 
 onMounted(loadLogs)
 
-function formatDate(dateStr: string) {
+function formatChronicleDate(dateStr: string) {
   const d = new Date(dateStr)
-  return d.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
+  return `${d.getMonth() + 1}月${d.getDate()}日`
 }
 
-function actionLabel(action: string): string {
+function formatChronicleTime(dateStr: string) {
+  const d = new Date(dateStr)
+  const h = d.getHours().toString().padStart(2, '0')
+  const min = d.getMinutes().toString().padStart(2, '0')
+  return `${h}:${min}`
+}
+
+function actionToNarrative(action: string): string {
   const map: Record<string, string> = {
-    LOGIN: '登录',
-    LOGOUT: '退出',
-    CREATE_PUB: '创建族谱',
-    DELETE_PUB: '删除族谱',
-    UPDATE_PUB: '保存族谱',
-    CREATE_USER: '创建用户',
-    DELETE_USER: '删除用户',
-    RESET_PASSWORD: '重置密码',
-    BACKUP: '数据库备份',
+    LOGIN: '步入阁中',
+    LOGOUT: '离阁',
+    CREATE_PUB: '提笔新撰了',
+    DELETE_PUB: '将旧档付之一炬：',
+    UPDATE_PUB: '修缮并封存了',
+    CREATE_USER: '引荐了新同道：',
+    DELETE_USER: '将此人除名：',
+    RESET_PASSWORD: '重铸了密钥：',
+    BACKUP: '将全部卷宗妥善归档',
   }
   return map[action] || action
-}
-
-function actionClass(action: string): string {
-  if (action.includes('DELETE')) return 'action-tag danger'
-  if (action.includes('CREATE') || action === 'BACKUP') return 'action-tag success'
-  if (action === 'LOGIN') return 'action-tag info'
-  return 'action-tag'
 }
 </script>
 
 <template>
-  <div class="audit-log-view">
-    <div class="bento-header">
-      <div class="header-content">
-        <h1 class="page-title">修谱纪事 // AUDIT LOGS</h1>
-        <p class="page-desc">系统全局重要操作与数据流转追踪</p>
-      </div>
-      <button class="bento-btn ghost" @click="loadLogs" title="刷新日志">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-        刷新记录
-      </button>
-    </div>
+  <div class="audit-log-view-root">
+    <div class="audit-log-view">
+      <header class="poetic-header">
+        <div class="poetic-header__main">
+          <div class="poetic-eyebrow">{{ lexicon.logs.headerEyebrow }}</div>
+          <h1 class="poetic-title">{{ lexicon.logs.headerTitle }}<span class="text-italic">{{ lexicon.logs.headerTitleItalic }}</span></h1>
+        </div>
+        <div class="poetic-header__extra" style="display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
+          <p class="poetic-quote" v-html="lexicon.logs.quote.replace(/\\n/g, '<br/>')"></p>
+          <button class="bento-btn ghost" @click="loadLogs" title="刷新日志">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            刷新记录
+          </button>
+        </div>
+      </header>
 
     <div v-if="errorMsg" class="audit-notice bento-card">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -84,31 +83,22 @@ function actionClass(action: string): string {
       <span>暂无操作记录</span>
     </div>
 
-    <div v-else-if="logs.length > 0" class="bento-card table-card">
-      <div class="table-header">
-        <span class="col-time">发生时间</span>
-        <span class="col-user">操作人</span>
-        <span class="col-action">动作类型</span>
-        <span class="col-detail">操作详情与系统快照</span>
-      </div>
-      <div class="table-body">
-        <div v-for="log in logs" :key="log.id" class="table-row">
-          <span class="col-time">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            {{ formatDate(log.createdAt) }}
-          </span>
-          <span class="col-user">
-            <div class="mini-avatar">
-              {{ log.username.charAt(0).toUpperCase() }}
-            </div>
-            {{ log.username }}
-          </span>
-          <span class="col-action">
-            <span :class="actionClass(log.action)">{{ actionLabel(log.action) }}</span>
-          </span>
-          <span class="col-detail">{{ log.detail || '未记录详细信息' }}</span>
+    <div v-else-if="logs.length > 0" class="bento-card chronicle-card">
+      <div class="chronicle-body">
+        <div v-for="log in logs" :key="log.id" class="chronicle-row">
+          <div class="chronicle-time">
+            <div class="c-date">{{ formatChronicleDate(log.createdAt) }}</div>
+            <div class="c-hour">{{ formatChronicleTime(log.createdAt) }}</div>
+          </div>
+          <div class="chronicle-node"></div>
+          <div class="chronicle-content">
+            <span class="c-user">{{ log.username }}</span>
+            <span class="c-action">{{ actionToNarrative(log.action) }}</span>
+            <span v-if="log.detail" class="c-detail">《{{ log.detail }}》</span>
+          </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -229,149 +219,116 @@ function actionClass(action: string): string {
   to { transform: rotate(360deg); }
 }
 
-/* ── Table Layout ── */
-.table-card {
-  padding: 0;
-  overflow: hidden;
+/* ── Chronicle Layout ── */
+.chronicle-card {
+  padding: 32px 48px;
 }
-.table-header {
-  display: grid;
-  grid-template-columns: 180px 140px 120px 1fr;
-  gap: 16px;
-  padding: 16px 24px;
-  background: rgba(0,0,0,0.02);
-  border-bottom: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.05));
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--text-soft);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-:global([data-theme="ink-wash"]) .table-header,
-:global([data-theme="rosewood"]) .table-header,
-:global([data-theme="star-sea"]) .table-header {
-  background: rgba(255,255,255,0.02);
-  border-color: rgba(255,255,255,0.05);
-}
-
-.table-row {
-  display: grid;
-  grid-template-columns: 180px 140px 120px 1fr;
-  gap: 16px;
-  padding: 16px 24px;
-  align-items: center;
-  border-bottom: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.03));
-  transition: background 0.2s ease;
-}
-.table-row:hover {
-  background: rgba(255,255,255,0.4);
-}
-:global([data-theme="ink-wash"]) .table-row:hover,
-:global([data-theme="rosewood"]) .table-row:hover,
-:global([data-theme="star-sea"]) .table-row:hover {
-  background: rgba(255,255,255,0.03);
-}
-
-.col-time {
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: var(--text-soft);
+.chronicle-body {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
 }
-
-.col-user {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.mini-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+.chronicle-body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 140px;
+  width: 1px;
   background: var(--glass-border-shadow, rgba(0,0,0,0.1));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 800;
-  font-family: 'Noto Serif SC', serif;
-  color: var(--text-main);
 }
-:global([data-theme="ink-wash"]) .mini-avatar,
-:global([data-theme="rosewood"]) .mini-avatar,
-:global([data-theme="star-sea"]) .mini-avatar {
+:global([data-theme="ink-wash"]) .chronicle-body::before,
+:global([data-theme="rosewood"]) .chronicle-body::before,
+:global([data-theme="star-sea"]) .chronicle-body::before {
   background: rgba(255,255,255,0.1);
+}
+
+.chronicle-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 0;
+  transition: all 0.3s;
+}
+.chronicle-row:hover {
+  transform: translateX(4px);
+}
+.chronicle-row:hover .chronicle-node {
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+.chronicle-time {
+  width: 120px;
+  text-align: right;
+  padding-right: 32px;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--text-soft);
+  letter-spacing: 0.05em;
+  padding-top: 2px;
+}
+.c-date {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+.c-hour {
+  font-family: monospace;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.chronicle-node {
+  position: absolute;
+  left: 140px;
+  top: 24px;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-amber, #a96e35);
+  box-shadow: 0 0 0 4px var(--glass-panel-bg, #fff);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+:global([data-theme="ink-wash"]) .chronicle-node,
+:global([data-theme="rosewood"]) .chronicle-node,
+:global([data-theme="star-sea"]) .chronicle-node {
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.5);
+}
+
+.chronicle-content {
+  flex: 1;
+  padding-left: 32px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  line-height: 1.6;
+}
+.c-user {
+  font-weight: 700;
+  color: var(--accent-ink, #1a1a1a);
+  margin-right: 6px;
+}
+:global([data-theme="ink-wash"]) .c-user,
+:global([data-theme="rosewood"]) .c-user,
+:global([data-theme="star-sea"]) .c-user {
   color: #fff;
 }
-
-.col-action {
-  display: flex;
-  align-items: center;
+.c-action {
+  color: var(--text-main);
+  opacity: 0.8;
 }
-.action-tag {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.7rem;
+.c-detail {
   font-weight: 700;
-  background: rgba(100,100,100,0.1);
-  color: var(--text-sub);
-}
-.action-tag.danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-.action-tag.success {
-  background: rgba(22, 163, 74, 0.1);
-  color: #16a34a;
-}
-.action-tag.info {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-}
-:global([data-theme="ink-wash"]) .action-tag.danger,
-:global([data-theme="rosewood"]) .action-tag.danger,
-:global([data-theme="star-sea"]) .action-tag.danger {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
-}
-:global([data-theme="ink-wash"]) .action-tag.success,
-:global([data-theme="rosewood"]) .action-tag.success,
-:global([data-theme="star-sea"]) .action-tag.success {
-  background: rgba(22, 163, 74, 0.2);
-  color: #86efac;
-}
-:global([data-theme="ink-wash"]) .action-tag.info,
-:global([data-theme="rosewood"]) .action-tag.info,
-:global([data-theme="star-sea"]) .action-tag.info {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
-}
-
-.col-detail {
-  color: var(--text-soft);
-  font-size: 0.8rem;
-  line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--accent-amber, #a96e35);
+  margin-left: 4px;
 }
 
 @media (max-width: 960px) {
-  .table-header {
-    display: none;
-  }
-  .table-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 16px;
-  }
-  .col-time { font-size: 0.75rem; }
-  .col-detail { white-space: normal; }
+  .chronicle-body::before { left: 80px; }
+  .chronicle-node { left: 80px; }
+  .chronicle-time { width: 80px; padding-right: 16px; }
+  .c-date { font-size: 0.9rem; }
+  .chronicle-content { padding-left: 16px; font-size: 1rem; }
 }
 </style>

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLexicon } from '../composables/useLexicon'
 import { listPublications, createPublication, type PublicationSummary } from '../api/publication'
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { isAdmin, isSuperAdmin } from '../api/auth'
 import { adminListUsers, adminBackupDatabase } from '../api/admin'
-import { getPublicationActivityLabel } from '../lib/publicationActivity'
 
 const router = useRouter()
+const { lexicon } = useLexicon()
 
 const pubCount = ref(0)
 const userCount = ref(0)
@@ -45,10 +46,6 @@ function openPublication(id: number) {
   router.push({ name: 'workbench', params: { id } })
 }
 
-function viewActivity(id: number) {
-  router.push({ name: 'publication-stats', params: { id } })
-}
-
 const backupLoading = ref(false)
 async function handleBackup() {
   backupLoading.value = true
@@ -63,7 +60,7 @@ async function handleBackup() {
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
-  return d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+  return `${d.getMonth() + 1}月${d.getDate()}日`
 }
 
 const latestPub = computed(() => recentPubs.value.length > 0 ? recentPubs.value[0] : null)
@@ -87,9 +84,14 @@ async function handleCreateFromDashboard() {
 <template>
   <div class="dashboard-view-root">
     <div class="dashboard-stage">
-      <header class="dashboard-header">
-        <div class="header-meta">DASHBOARD // 01</div>
-        <h1 class="header-title">宗族全景</h1>
+      <header class="poetic-header">
+        <div class="poetic-header__main">
+          <div class="poetic-eyebrow">{{ lexicon.dashboard.headerEyebrow }}</div>
+          <h1 class="poetic-title">{{ lexicon.dashboard.headerTitle }}<span class="text-italic">{{ lexicon.dashboard.headerTitleItalic }}</span></h1>
+        </div>
+        <div class="poetic-header__extra">
+          <p class="poetic-quote" v-html="lexicon.dashboard.quote.replace(/\\n/g, '<br/>')"></p>
+        </div>
       </header>
 
       <div v-if="loading" class="loading-state">
@@ -120,11 +122,7 @@ async function handleCreateFromDashboard() {
           <h2 class="hero-pub-title">{{ latestPub.title || '未命名族谱' }}</h2>
           <p class="hero-pub-subtitle">{{ latestPub.subtitle || '暂无副标题' }}</p>
           <div class="hero-footer">
-            <div class="hero-meta">
-              <span class="hero-date">{{ formatDate(latestPub.updatedAt) }} 更新</span>
-              <span v-if="latestPub.lastUpdatedBy" class="hero-updater">最近更新：{{ latestPub.lastUpdatedBy }}</span>
-              <button v-if="latestPub.lastActivityAction" class="hero-activity-link" @click.stop="viewActivity(latestPub.id)">查看活动记录</button>
-            </div>
+            <span class="hero-date">{{ formatDate(latestPub.updatedAt) }} 更新</span>
             <button class="ghost-pill" @click.stop="openPublication(latestPub.id)">
               继续编撰 
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -160,13 +158,11 @@ async function handleCreateFromDashboard() {
         
         <div class="history-list">
           <div v-for="pub in otherRecentPubs" :key="pub.id" class="history-item" @click="openPublication(pub.id)">
+            <div class="history-thread"></div>
             <div class="history-time">{{ formatDate(pub.updatedAt) }}</div>
             <div class="history-detail">
               <div class="history-title">{{ pub.title || '未命名' }}</div>
-              <div v-if="pub.lastUpdatedBy" class="history-updater">最近更新：{{ pub.lastUpdatedBy }}</div>
-              <button v-if="pub.lastActivityAction" class="history-activity-link" @click.stop="viewActivity(pub.id)">查看活动记录</button>
             </div>
-            <svg class="history-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
           <div v-if="otherRecentPubs.length === 0" class="empty-hint">暂无更多记录</div>
         </div>
@@ -391,10 +387,6 @@ async function handleCreateFromDashboard() {
   justify-content: space-between;
   align-items: flex-end;
 }
-.hero-meta {
-  display: grid;
-  gap: 0.2rem;
-}
 
 .hero-date {
   font-family: monospace;
@@ -402,22 +394,6 @@ async function handleCreateFromDashboard() {
   font-size: 0.85rem;
   letter-spacing: 0.05em;
   padding-bottom: 0.5rem;
-}
-.hero-updater {
-  font-size: 0.78rem;
-  color: var(--text-soft);
-}
-.hero-activity-link {
-  all: unset;
-  cursor: pointer;
-  font-size: 0.78rem;
-  color: var(--accent-blue, #6d8fb0);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.hero-activity-link:hover {
-  color: var(--accent-blue-hover, #5080a8);
-  text-decoration: none;
 }
 
 .ghost-pill {
@@ -456,8 +432,8 @@ async function handleCreateFromDashboard() {
 
 /* Stat Box */
 .card-dark {
-  background: var(--text-main, #1a1a1a);
-  color: var(--bg-panel, #fff);
+  background: var(--card-dark-bg, var(--text-main, #1a1a1a));
+  color: var(--card-dark-color, var(--bg-panel, #fff));
   padding: 2rem;
   justify-content: space-between;
   border: none;
@@ -468,12 +444,29 @@ async function handleCreateFromDashboard() {
 }
 .stat-value {
   font-family: 'Noto Serif SC', serif;
-  font-size: 4rem;
+  font-size: 5rem;
   line-height: 1;
   font-weight: 300;
+  background: linear-gradient(135deg, #d4af37, #f3e5ab, #d4af37);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.card-users .stat-value {
+  background: linear-gradient(135deg, var(--text-main), var(--text-sub));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+:global([data-theme="ink-wash"]) .card-users .stat-value,
+:global([data-theme="rosewood"]) .card-users .stat-value,
+:global([data-theme="star-sea"]) .card-users .stat-value {
+  background: linear-gradient(135deg, #fff, #aaa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .stat-value.small {
-  font-size: 3rem;
+  font-size: 3.5rem;
 }
 .stat-label {
   font-size: 0.85rem;
@@ -549,21 +542,63 @@ async function handleCreateFromDashboard() {
 .history-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0;
+  position: relative;
   flex: 1;
   overflow-y: auto;
+  padding-left: 8px;
 }
+.history-list::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 17px;
+  width: 1px;
+  background: var(--border-color, rgba(0,0,0,0.1));
+  z-index: 0;
+}
+:global([data-theme="ink-wash"]) .history-list::before,
+:global([data-theme="rosewood"]) .history-list::before,
+:global([data-theme="star-sea"]) .history-list::before {
+  background: rgba(255,255,255,0.1);
+}
+
 .history-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 1.2rem;
   padding: 0.85rem 1rem;
-  border-radius: 12px;
-  transition: background 0.2s;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
+  z-index: 1;
 }
+.history-thread {
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-amber, #a96e35);
+  box-shadow: 0 0 0 4px var(--glass-panel-bg, #fff);
+  transition: transform 0.2s;
+}
+:global([data-theme="ink-wash"]) .history-thread,
+:global([data-theme="rosewood"]) .history-thread,
+:global([data-theme="star-sea"]) .history-thread {
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.5);
+}
+
 .history-item:hover {
-  background: rgba(0,0,0,0.04);
+  background: var(--glass-pill-bg, rgba(0,0,0,0.03));
+  transform: translateX(4px);
+}
+.history-item:hover .history-thread {
+  transform: translateY(-50%) scale(1.5);
 }
 :global([data-theme="ink-wash"]) .history-item:hover,
 :global([data-theme="rosewood"]) .history-item:hover,
@@ -591,36 +626,7 @@ async function handleCreateFromDashboard() {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.history-updater {
-  margin-top: 0.18rem;
-  font-size: 0.75rem;
-  color: var(--text-soft);
-}
-.history-activity-link {
-  all: unset;
-  cursor: pointer;
-  margin-top: 0.12rem;
-  font-size: 0.75rem;
-  color: var(--accent-blue, #6d8fb0);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.history-activity-link:hover {
-  color: var(--accent-blue-hover, #5080a8);
-  text-decoration: none;
-}
-.history-arrow {
-  width: 18px;
-  height: 18px;
-  color: var(--text-soft);
-  opacity: 0;
-  transition: opacity 0.2s, transform 0.2s;
-  transform: translateX(-4px);
-}
-.history-item:hover .history-arrow {
-  opacity: 1;
-  transform: translateX(0);
-}
+
 
 .empty-hint {
   text-align: center;

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, provide, ref, watch, onMounted, onBeforeUnmount, toRaw } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { usePublicationState } from '../composables/usePublicationState'
-import { useEditorHistory } from '../features/history/useEditorHistory'
+import { getPublication, updatePublication } from '../api/publication'
 import { useFeedback } from '../composables/useFeedback'
-import { getPublication, updatePublication, createPublication } from '../api/publication'
-import { defaultSettings, samplePublication } from '../data/sampleFamily'
+import { usePublicationState } from '../composables/usePublicationState'
+import { defaultSettings } from '../data/sampleFamily'
+import { useEditorHistory } from '../features/history/useEditorHistory'
 import type { EditorSnapshot } from '../features/history/historyCore'
 import type { PublicationData, PublicationSettings } from '../types/family'
 
@@ -17,17 +17,16 @@ const serverPublicationId = ref<number | null>(null)
 const syncStatus = ref<'saved' | 'pending' | 'syncing' | 'error' | 'conflict'>('saved')
 const conflictMessage = ref('')
 const serverRevision = ref<number | null>(null)
+const lastSyncedSignature = ref('')
 
 // Viewport state to persist camera across views
 const viewportPan = ref({ x: 0, y: 0 })
 
 const feedback = useFeedback()
 
-// Initialize with sample data, will be replaced by loadPublication
-// NOTE: We use empty data for initial state to avoid showing Ming data before real load
+// NOTE: Start empty so the UI does not flash sample data before the real payload loads.
 const pub = usePublicationState({ title: '', people: {}, families: {}, focusFamilyId: '' } as any, defaultSettings)
 
-// History setup
 function createEditorSnapshot(): EditorSnapshot {
   return {
     publication: structuredClone(pub.publication) as PublicationData,
@@ -49,76 +48,96 @@ const history = useEditorHistory({
   restoreSnapshot: restoreEditorSnapshot,
 })
 
-let serverSaveTimeout: any = null
+function buildPersistedSignature() {
+  const publicationSnapshot = JSON.parse(JSON.stringify(pub.publication)) as PublicationData
+  delete (publicationSnapshot as Partial<PublicationData>).revision
+
+  return JSON.stringify({
+    publication: publicationSnapshot,
+    settings: JSON.parse(JSON.stringify(pub.settings)) as PublicationSettings,
+  })
+}
+
+const persistedSignature = computed(() => buildPersistedSignature())
+
+let serverSaveTimeout: ReturnType<typeof setTimeout> | null = null
 let saveRequestedWhileSyncing = false
 
-function clearServerSaveTimeout() {
+function clearScheduledSave() {
   if (serverSaveTimeout) {
     clearTimeout(serverSaveTimeout)
     serverSaveTimeout = null
   }
 }
 
-function scheduleServerSave(delay = 3000) {
-  clearServerSaveTimeout()
-  syncStatus.value = 'pending'
+function scheduleAutosave(delay = 3000) {
+  clearScheduledSave()
   serverSaveTimeout = setTimeout(() => {
-    serverSaveTimeout = null
     saveToServer().catch(() => {})
   }, delay)
 }
 
-// Sync logic
 async function saveToServer() {
-  if (syncStatus.value === 'syncing' || syncStatus.value === 'conflict' || !serverPublicationId.value) return
-  syncStatus.value = 'syncing'
-  try {
-    const publicationToSave = structuredClone(toRaw(pub.publication)) as PublicationData
-    publicationToSave.revision = serverRevision.value!
-    const newRevision = await updatePublication(serverPublicationId.value, publicationToSave, pub.settings)
-    serverRevision.value = newRevision
+  if (syncStatus.value === 'conflict' || !serverPublicationId.value) return
+  if (syncStatus.value === 'syncing') {
+    saveRequestedWhileSyncing = true
+    return
+  }
+
+  clearScheduledSave()
+  if (persistedSignature.value === lastSyncedSignature.value) {
     syncStatus.value = 'saved'
+    return
+  }
+
+  syncStatus.value = 'syncing'
+  const signatureAtSaveStart = persistedSignature.value
+
+  try {
+    pub.publication.revision = serverRevision.value ?? 0
+    const newRevision = await updatePublication(serverPublicationId.value, pub.publication, pub.settings)
+    serverRevision.value = newRevision
+    pub.publication.revision = newRevision
+    lastSyncedSignature.value = signatureAtSaveStart
     feedback.errorMessage.value = ''
-    if (saveRequestedWhileSyncing) {
-      saveRequestedWhileSyncing = false
-      scheduleServerSave(0)
-    }
   } catch (err) {
-    // Check for 409 conflict
     const { asPublicationConflict } = await import('../api/conflict')
     const conflict = asPublicationConflict(err)
+
     if (conflict) {
-      saveRequestedWhileSyncing = false
       syncStatus.value = 'conflict'
       conflictMessage.value = conflict.message
       feedback.errorMessage.value = conflict.message
-      clearServerSaveTimeout()
+      clearScheduledSave()
       throw new Error(conflict.message)
-      // Throw so direct callers can react;
-      // the autosave timer's .catch(()) silences this for background sync
     }
-    saveRequestedWhileSyncing = false
+
     syncStatus.value = 'error'
     feedback.setError('同步到服务器失败')
+  }
+
+  // After successful save (no exception was thrown by conflict handler):
+  const hasUnsavedChanges = persistedSignature.value !== lastSyncedSignature.value
+  if (saveRequestedWhileSyncing || hasUnsavedChanges) {
+    saveRequestedWhileSyncing = false
+    syncStatus.value = 'pending'
+    scheduleAutosave()
+  } else if (syncStatus.value !== 'error') {
+    syncStatus.value = 'saved'
   }
 }
 
 watch(
-  () => [pub.publication, pub.settings, pub.selectedPersonId.value],
-  () => {
-    // Only trigger sync if we actually have a loaded publication
+  persistedSignature,
+  (nextSignature) => {
     if (!serverPublicationId.value || loading.value || syncStatus.value === 'conflict') return
+    if (nextSignature === lastSyncedSignature.value) return
 
-    if (syncStatus.value === 'syncing') {
-      saveRequestedWhileSyncing = true
-      history.scheduleHistoryCommit()
-      return
-    }
-
-    scheduleServerSave()
+    syncStatus.value = 'pending'
+    scheduleAutosave()
     history.scheduleHistoryCommit()
   },
-  { deep: true }
+  { flush: 'post' },
 )
 
 async function load() {
@@ -128,24 +147,29 @@ async function load() {
     return
   }
 
-  // Only skip loading if the IDs truly match and we have data
   if (serverPublicationId.value === targetId && Object.keys(pub.publication.people).length > 0) {
     loading.value = false
     return
   }
-  
+
   loading.value = true
+  clearScheduledSave()
+
   try {
     const result = await getPublication(targetId)
     pub.replaceReactiveObject(pub.publication, result.publication)
     pub.replaceReactiveObject(pub.settings, result.settings)
-    
+
     if (!pub.selectedPersonId.value || !result.publication.people[pub.selectedPersonId.value]) {
       pub.selectedPersonId.value = Object.keys(result.publication.people)[0] ?? ''
     }
-    
+
     serverPublicationId.value = result.id
     serverRevision.value = result.revision
+    pub.publication.revision = result.revision
+    conflictMessage.value = ''
+    syncStatus.value = 'saved'
+    lastSyncedSignature.value = persistedSignature.value
     history.initializeHistoryBaseline()
   } catch (err) {
     feedback.setError('加载族谱失败')
@@ -154,7 +178,6 @@ async function load() {
   }
 }
 
-// Watch for publication ID changes (e.g. switching between different publications)
 watch(publicationId, (newId) => {
   if (newId && newId !== serverPublicationId.value) {
     load()
@@ -190,7 +213,6 @@ function handleHistoryShortcut(event: KeyboardEvent) {
 async function reloadFromServerAfterConflict() {
   conflictMessage.value = ''
   await load()
-  syncStatus.value = 'saved'
 }
 
 onMounted(() => {
@@ -201,10 +223,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleHistoryShortcut)
   history.disposeHistory()
-  clearServerSaveTimeout()
+  clearScheduledSave()
 })
 
-defineExpose({ saveToServer, reloadFromServerAfterConflict })
+defineExpose({ pub, saveToServer, reloadFromServerAfterConflict })
 </script>
 
 <template>

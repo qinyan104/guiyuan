@@ -53,4 +53,23 @@ describe('http interceptors', () => {
       type: 'concurrency-conflict'
     }))
   })
+
+  it('does not dispatch the global concurrency event for publication save conflicts', async () => {
+    const { default: http } = await import('./http')
+    const axiosMock = (http as any)
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+
+    const error = {
+      response: {
+        status: 409,
+        data: { message: 'Publication is stale. Reload before saving.' }
+      },
+      config: { url: '/publications/7' }
+    }
+
+    const responseInterceptor = axiosMock.interceptors.response.handlers[0].rejected
+    await responseInterceptor(error).catch(() => {})
+
+    expect(dispatchSpy).not.toHaveBeenCalled()
+  })
 })

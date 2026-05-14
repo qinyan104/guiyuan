@@ -54,6 +54,7 @@ const emit = defineEmits<{
   (event: 'update-person-gender', gender: Gender): void
   (event: 'apply-note-suggestion', value: string): void
   (event: 'delete-person'): void
+  (event: 'view-detail'): void
 }>()
 
 function updatePersonField(field: EditablePersonField, event: Event) {
@@ -91,10 +92,10 @@ async function uploadAvatar(event: Event) {
       <aside class="editor-sheet-panel">
         <div class="editor-sheet-panel__header">
           <div>
-            <p class="editor-sheet-panel__eyebrow">Person Editor</p>
+            <p class="editor-sheet-panel__eyebrow">卷宗编修</p>
             <h3>{{ person.name }}</h3>
           </div>
-          <button class="editor-sheet-panel__close" type="button" @click="$emit('close')">关闭</button>
+          <button class="editor-sheet-panel__close" type="button" @click="$emit('close')">合卷</button>
         </div>
 
         <div class="editor-focus">
@@ -105,10 +106,10 @@ async function uploadAvatar(event: Event) {
               <input type="file" accept="image/*" @change="uploadAvatar" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" title="上传照片" />
             </div>
             <div style="flex: 1;">
-              <p>当前人物</p>
+              <p>当前传主</p>
               <h3>{{ person.name }}</h3>
             </div>
-            <span>{{ [person.titleName, person.clan, person.note || lineageSuggestion].filter(Boolean).join(' · ') || '待补注记' }}</span>
+            <span>{{ [person.titleName, person.clan, person.note || lineageSuggestion].filter(Boolean).join(' · ') || '尚未定论' }}</span>
           </div>
           <p class="editor-focus__hint">{{ suggestion }}</p>
 
@@ -123,10 +124,10 @@ async function uploadAvatar(event: Event) {
         <section class="relationship-panel">
           <div class="relationship-panel__header">
             <div>
-              <p class="relationship-panel__eyebrow">Relations</p>
-              <h4>关系编辑</h4>
+              <p class="relationship-panel__eyebrow">宗法关系</p>
+              <h4>世系编排</h4>
             </div>
-            <span class="relationship-panel__badge">{{ children.length }} 位子女</span>
+            <span class="relationship-panel__badge">{{ children.length }} 位子嗣</span>
           </div>
 
           <div class="relationship-grid">
@@ -150,10 +151,10 @@ async function uploadAvatar(event: Event) {
               <span>建立或调整夫妻位置</span>
             </div>
             <div class="relationship-actions">
-              <button class="relation-btn" type="button" :disabled="!canAddSpouse" @click="$emit('add-spouse')">新增配偶</button>
-              <button class="relation-btn" type="button" :disabled="!canSwapAdults" @click="$emit('swap-partners')">切换夫妻位置</button>
+              <button class="relation-btn" type="button" :disabled="!canAddSpouse" @click="$emit('add-spouse')">缔结姻亲</button>
+              <button class="relation-btn" type="button" :disabled="!canSwapAdults" @click="$emit('swap-partners')">调配尊卑位次</button>
               <button class="relation-btn relation-btn--danger relationship-actions__wide" type="button" :disabled="!spouse" @click="$emit('remove-spouse')">
-                解除配偶关系
+                断绝姻缘
               </button>
             </div>
           </div>
@@ -168,7 +169,7 @@ async function uploadAvatar(event: Event) {
                 {{ parentActionLabel }}
               </button>
               <button class="relation-btn relation-btn--danger" type="button" :disabled="!parents.length" @click="$emit('remove-parents')">
-                解除父母关系
+                斩断血脉渊源
               </button>
             </div>
           </div>
@@ -179,8 +180,8 @@ async function uploadAvatar(event: Event) {
               <span>按性别新增，并可调整排序</span>
             </div>
             <div class="relationship-actions">
-              <button class="relation-btn" type="button" @click="$emit('add-child', 'male')">新增儿子</button>
-              <button class="relation-btn" type="button" @click="$emit('add-child', 'female')">新增女儿</button>
+              <button class="relation-btn" type="button" @click="$emit('add-child', 'male')">录入男丁</button>
+              <button class="relation-btn" type="button" @click="$emit('add-child', 'female')">录入女眷</button>
             </div>
           </div>
 
@@ -208,7 +209,7 @@ async function uploadAvatar(event: Event) {
                 type="button"
                 @click="$emit('update-branch-mode', 'married-out')"
               >
-                外嫁
+                适人
               </button>
               <button
                 class="relation-btn"
@@ -216,15 +217,15 @@ async function uploadAvatar(event: Event) {
                 type="button"
                 @click="$emit('update-branch-mode', 'uxorilocal')"
               >
-                招婿
+                赘婿
               </button>
             </div>
           </div>
 
           <div v-if="childItems.length" class="child-order-panel">
             <div class="child-order-panel__header">
-              <span>子女顺序</span>
-              <strong>左右顺序会影响画布排布</strong>
+              <span>子嗣长幼</span>
+              <strong>左右顺序会影响画卷排布</strong>
             </div>
 
             <div class="child-order-list">
@@ -294,23 +295,30 @@ async function uploadAvatar(event: Event) {
           </label>
 
           <div v-if="lineageSuggestion" class="lineage-suggestion">
-            <span>系统推算：{{ lineageSuggestion }}</span>
+            <span>史馆推演：{{ lineageSuggestion }}</span>
             <button
               v-if="person.note !== lineageSuggestion"
               type="button"
               @click="$emit('apply-note-suggestion', lineageSuggestion)"
             >
-              填入注记
+              落笔注记
             </button>
           </div>
         </div>
 
+        <section class="detail-link-zone">
+          <button class="relation-btn relation-btn--secondary" type="button" @click="$emit('view-detail')">
+            披阅本纪 (详情)
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </section>
+
         <section class="danger-zone">
           <div>
-            <p>危险操作</p>
-            <span>删除会同步清理此人物在配偶、父母、子女关系中的引用。</span>
+            <p>非常行事</p>
+            <span>除名后，此人在所有姻亲、血脉网络中的关联将一并抹除。</span>
           </div>
-          <button class="relation-btn relation-btn--danger" type="button" @click="$emit('delete-person')">删除人物</button>
+          <button class="relation-btn relation-btn--danger" type="button" @click="$emit('delete-person')">从宗谱除名</button>
         </section>
       </aside>
     </div>

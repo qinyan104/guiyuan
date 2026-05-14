@@ -38,8 +38,8 @@ async function onSubmit() {
           <div class="editorial-layout">
             <div class="layout-header">
               <div class="logo-mark">
-                <div class="logo-seal">序</div>
-                <span class="logo-text">PROLOGUE</span>
+                <div class="logo-seal">溯</div>
+                <span class="logo-text">GUIYUAN</span>
               </div>
               <div class="layout-meta">01 // VISIONS</div>
             </div>
@@ -77,8 +77,8 @@ async function onSubmit() {
         <main class="form-section">
           <div class="form-wrapper">
             <div class="form-header">
-              <h2 class="form-title">家族认证</h2>
-              <p class="form-desc">系统私有化部署，请输入通行凭证</p>
+              <h2 class="form-title">归源·数字档案馆</h2>
+              <p class="form-desc">进入无涯画布，追溯家族源流</p>
             </div>
 
             <form class="auth-form" @submit.prevent="onSubmit">

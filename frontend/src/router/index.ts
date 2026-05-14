@@ -72,13 +72,11 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'person/:personId',
-        redirect: (route) => ({
-          name: 'workbench',
-          params: { id: route.params.id as string },
-          query: {
-            ...route.query,
-            personId: route.params.personId as string,
-          },
+        name: 'person-detail',
+        component: () => import('../views/PersonDetailView.vue'),
+        props: (route) => ({
+          publicationId: Number(route.params.id),
+          personId: route.params.personId as string,
         }),
       },
       {
@@ -93,7 +91,16 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/TimelineView.vue'),
         props: (route) => ({ publicationId: Number(route.params.id) }),
       },
+      {
+        path: 'print-preview',
+        name: 'print-preview',
+        component: () => import('../views/PrintPreviewView.vue'),
+      },
     ],
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/',
   },
 ]
 

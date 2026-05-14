@@ -82,15 +82,11 @@ function personGenderClass(p: Person): string {
 }
 
 function goToPerson(personId: string) {
-  router.push({
-    name: 'workbench',
-    params: { id: props.publicationId },
-    query: { personId },
-  })
+  router.push({ name: 'person-detail', params: { personId } })
 }
 
 const goBack = () => {
-  router.push({ name: 'workbench', params: { id: props.publicationId } })
+  router.push({ name: 'workbench' })
 }
 
 const showBackToTop = ref(false)
@@ -419,7 +415,7 @@ const scrollToTop = () => {
 
 .person-name { font-family: 'Noto Serif SC', serif; font-size: 0.95rem; font-weight: 800; color: var(--text-main); }
 .person-name.male { color: var(--accent-earth); }
-.person-name.female { color: #8b2d1c; }
+.person-name.female { color: var(--accent-amber, #8b2d1c); }
 .event-extra { font-size: 0.75rem; color: var(--text-soft); font-style: italic; }
 
 /* ── Float Actions ── */

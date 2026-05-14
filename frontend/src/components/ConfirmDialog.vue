@@ -54,7 +54,9 @@ function onCancel() {
   background: rgba(0, 0, 0, 0.4);
 }
 .confirm-dialog {
-  background: #fff;
+  background: var(--bg-panel-strong, #fff);
+  color: var(--text-main);
+  border: 1px solid var(--line-soft, rgba(0,0,0,0.1));
   border-radius: 12px;
   padding: 24px;
   max-width: 420px;
@@ -65,10 +67,11 @@ function onCancel() {
   margin: 0 0 8px;
   font-size: 1.1rem;
   font-weight: 700;
+  color: var(--text-main);
 }
 .confirm-message {
   margin: 0 0 20px;
-  color: #666;
+  color: var(--text-sub, #666);
   line-height: 1.5;
 }
 .confirm-actions {
@@ -79,28 +82,30 @@ function onCancel() {
 .confirm-btn {
   padding: 8px 20px;
   border-radius: 6px;
-  border: 1px solid #ddd;
-  background: #fff;
+  border: 1px solid var(--line-soft, #ddd);
+  background: var(--bg-paper, #fff);
+  color: var(--text-main);
   cursor: pointer;
   font-weight: 500;
   font-size: 0.9rem;
+  transition: all 0.2s ease;
 }
 .confirm-btn--primary.tone-danger {
-  background: #dc3545;
+  background: var(--danger-btn-color, #dc3545);
   color: #fff;
-  border-color: #dc3545;
+  border-color: var(--danger-border, #dc3545);
 }
 .confirm-btn--primary.tone-warning {
-  background: #ffc107;
+  background: var(--task-warm, #ffc107);
   color: #333;
-  border-color: #ffc107;
+  border-color: var(--task-warm, #ffc107);
 }
 .confirm-btn--primary.tone-default {
-  background: #0d6efd;
-  color: #fff;
-  border-color: #0d6efd;
+  background: var(--btn-primary-bg, #0d6efd);
+  color: var(--btn-primary-color, #fff);
+  border-color: var(--btn-primary-bg, #0d6efd);
 }
 .confirm-btn--secondary:hover {
-  background: #f5f5f5;
+  background: var(--bg-panel, #f5f5f5);
 }
 </style>

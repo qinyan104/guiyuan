@@ -646,7 +646,7 @@ function formatRelativeTime(dateStr: string): string {
   font-weight: 700;
   color: var(--text-main);
 }
-.seal.motto .value { color: #8b2d1c; font-style: italic; }
+.seal.motto .value { color: var(--accent-amber, #8b2d1c); font-style: italic; }
 
 /* ── Metrics Grid ── */
 .metrics-grid {
@@ -679,10 +679,10 @@ function formatRelativeTime(dateStr: string): string {
   font-weight: 700;
   color: var(--text-soft);
 }
-.metric-card.male .metric-value { color: #3c5363; }
-.metric-card.female .metric-value { color: #8b2d1c; }
+.metric-card.male .metric-value { color: var(--accent-ink, #3c5363); }
+.metric-card.female .metric-value { color: var(--accent-amber, #8b2d1c); }
 .metric-card.generation .metric-value { color: var(--accent-amber); }
-.metric-card.alive .metric-value { color: #2e7d32; }
+.metric-card.alive .metric-value { color: var(--accent-olive, #2e7d32); }
 
 /* ── Analysis Grid ── */
 .analysis-grid {

@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, inject, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { buildAuthHeaders } from '../api/auth'
 import type { ThemeId } from '../composables/useTheme'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 import CollaboratorManager from './CollaboratorManager.vue'
 import ExportDialog from '../features/export/ExportDialog.vue'
+import { buildSinglePagePdfRequest, captureCanvasAsBase64, captureCanvasAsSvgMarkup } from '../features/export/useCanvasExport'
+import { useExportState } from '../features/export/useExportState'
 
 interface SampleOption {
   id: string
@@ -19,14 +22,115 @@ interface SampleGroup {
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const showExportDialog = ref(false)
 const showCollabDialog = ref(false)
+const isExporting = ref(false)
 
+const router = useRouter()
 const route = useRoute()
 const context = inject<any>('publication-context')
+const { setExportData } = useExportState()
 
 const isOwner = computed(() => context?.currentAccessRole?.value === 'OWNER')
 
 function triggerFileInput() {
   fileInputRef.value?.click()
+}
+
+async function handleExportPdfSingle() {
+  // handleExportPdfSingle
+  try {
+    isExporting.value = true
+
+    // 1. Capture SVG markup
+    const layout = context.pub.layout.value
+    const pub = context.pub.publication
+    const infoLines: string[] = []
+    if (pub.info?.ancestralOrigin) infoLines.push(`郡望/祖籍：${pub.info.ancestralOrigin}`)
+    if (pub.info?.hallName) infoLines.push(`堂号：${pub.info.hallName}`)
+    if (pub.info?.familyMotto) infoLines.push(`族训：${pub.info.familyMotto}`)
+    if (pub.info?.revisionNotes) infoLines.push(`修订说明：${pub.info.revisionNotes}`)
+
+    const exportHeader = {
+      title: pub.title || '归源档案预览',
+      subtitle: pub.subtitle || undefined,
+      lines: infoLines.length > 0 ? infoLines : undefined,
+    }
+    const svgMarkup = await captureCanvasAsSvgMarkup(
+      'publication-canvas-root',
+      layout,
+      pub.title,
+      {
+        forPdf: true,
+        embedImages: false,
+        exportHeader,
+      },
+    )
+    const request = buildSinglePagePdfRequest({
+      svgMarkup,
+      layout,
+      title: pub.title,
+      prefaceText: pub.info?.description ?? '',
+      exportHeader,
+    })
+    // 2. Send to backend
+    const response = await fetch(`/api/publications/${route.params.id}/export/pdf/single-page`, {
+      method: 'POST',
+      headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Export] Backend error:', response.status, errorText);
+      throw new Error(`服务器生成失败 (${response.status}): ${errorText}`);
+    }
+
+    // 3. Download
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${context.pub.publication.title}-全尺寸世系图.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+    showExportDialog.value = false
+  } catch (error: unknown) {
+    console.error('[Export] Fatal error in handleExportPdfSingle:', error);
+    const message = error instanceof Error ? error.message : '网络或未知错误'
+    alert(`导出单页 PDF 失败!\n\n具体错误: ${message}`);
+  } finally {
+    isExporting.value = false
+  }
+}
+async function handlePreviewPdf(options: any) {
+  try {
+    isExporting.value = true
+    // 1. 捕获用于预览显示的低分辨率图 (1x)
+    const base64 = await captureCanvasAsBase64('publication-canvas-root', { scale: 1, backgroundColor: '#ffffff' })
+
+    // 2. 捕获用于 PDF 嵌入的高保真矢量 SVG 源码
+    const svgMarkup = await captureCanvasAsSvgMarkup(
+      'publication-canvas-root',
+      context.pub.layout.value,
+      context.pub.publication.title,
+      {
+        forPdf: true,
+        embedImages: false,
+      }
+    )
+
+    setExportData(base64, options, svgMarkup)
+    showExportDialog.value = false
+    router.push(`/publication/${route.params.id}/print-preview`)
+  } catch (error: unknown) {
+    console.error('[Export] Fatal error in handlePreviewPdf:', error);
+    const message = error instanceof Error ? error.message : '未知错误'
+    alert(`准备预览失败!\n\n具体错误: ${message}`)
+  } finally {
+    isExporting.value = false
+  }
 }
 
 function handleExportShareHtml(options: { password: string }) {
@@ -41,7 +145,7 @@ const props = withDefaults(
     nativeFileAccess?: boolean
     currentTheme?: ThemeId
     currentUsername?: string
-    syncStatus?: 'saved' | 'pending' | 'syncing' | 'error'
+    syncStatus?: 'saved' | 'pending' | 'syncing' | 'error' | 'conflict'
   }>(),
   {
     fileName: '',
@@ -60,6 +164,7 @@ const emit = defineEmits<{
   (event: 'save-file'): void
   (event: 'save-file-as'): void
   (event: 'download-svg'): void
+  (event: 'print-publication'): void
   (event: 'export-json'): void
   (event: 'export-share-html', password: string): void
   (event: 'change-theme', themeId: ThemeId): void
@@ -77,6 +182,10 @@ const userInitials = computed(() => {
 function toggleUserDropdown() {
   userDropdownOpen.value = !userDropdownOpen.value
 }
+function goToSettings() {
+  userDropdownOpen.value = false
+  router.push({ name: 'settings' })
+}
 
 </script>
 
@@ -92,16 +201,20 @@ function toggleUserDropdown() {
     />
 
     <div class="topbar__intro">
-      <h1 class="clickable-title" @click="emit('go-back')">族谱管理系统</h1>
+      <h1 class="clickable-title" @click="emit('go-back')">无涯画布</h1>
       <div class="sync-status" :class="[`sync-status--${syncStatus}`]">
         <span class="sync-icon">
           <svg v-if="syncStatus === 'syncing'" class="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
           <svg v-else-if="syncStatus === 'saved'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           <svg v-else-if="syncStatus === 'error'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg v-else-if="syncStatus === 'conflict'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
           <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/></svg>
         </span>
         <span class="sync-text">
-          {{ syncStatus === 'syncing' ? '正在同步...' : syncStatus === 'saved' ? '已同步到云端' : syncStatus === 'error' ? '同步失败' : '等待同步...' }}
+          {{ syncStatus === 'syncing' ? '正在封存卷宗...' : syncStatus === 'saved' ? '卷宗已妥善归档' : syncStatus === 'error' ? '归档遇挫' : '等待封存...' }}
+        </span>
+        <span class="sync-text sync-text--resolved">
+          {{ syncStatus === 'syncing' ? '正在封存卷宗...' : syncStatus === 'saved' ? '卷宗已妥善归档' : syncStatus === 'error' ? '归档遇挫' : syncStatus === 'conflict' ? '数据发生冲突，请刷新后继续' : '等待封存...' }}
         </span>
       </div>
     </div>
@@ -109,22 +222,22 @@ function toggleUserDropdown() {
     <div class="topbar__actions" aria-label="工作台操作">
       <div class="topbar__action-strip">
         <div class="dropdown">
-          <button class="btn btn--secondary dropdown-trigger" type="button">分析 <span class="caret">&#x25BE;</span></button>
+          <button class="btn btn--secondary dropdown-trigger" type="button">考据 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu">
-            <button class="dropdown-item" type="button" @click="emit('view-stats')">统计报告</button>
-            <button class="dropdown-item" type="button" @click="emit('view-timeline')">家族时间线</button>
+            <button class="dropdown-item" type="button" @click="emit('view-stats')">宗族纪略</button>
+            <button class="dropdown-item" type="button" @click="emit('view-timeline')">家族编年史</button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="triggerFileInput">导入 JSON 草稿</button>
+            <button class="dropdown-item" type="button" @click="triggerFileInput">引入前朝旧卷 (JSON)</button>
           </div>
         </div>
 
         <div class="dropdown">
-          <button class="btn btn--secondary dropdown-trigger" type="button">导出与分享 <span class="caret">&#x25BE;</span></button>
+          <button class="btn btn--secondary dropdown-trigger" type="button">付梓 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu">
-            <button class="dropdown-item" type="button" @click="showExportDialog = true">导出与分享</button>
+            <button class="dropdown-item" type="button" @click="showExportDialog = true">付梓发行 (高精影印/PDF)</button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="emit('download-svg')">快速导出 SVG</button>
-            <button class="dropdown-item" type="button" @click="emit('export-json')">导出 JSON 草稿 (含图片)</button>
+            <button class="dropdown-item" type="button" @click="emit('download-svg')">拓印长卷 (SVG)</button>
+            <button class="dropdown-item" type="button" @click="emit('export-json')">封存卷宗草本 (JSON)</button>
           </div>
         </div>
 
@@ -134,7 +247,7 @@ function toggleUserDropdown() {
           type="button"
           @click="showCollabDialog = true"
         >
-          协作者
+          同修编委
         </button>
 
         <span class="topbar__action-divider" aria-hidden="true" />
@@ -170,8 +283,10 @@ function toggleUserDropdown() {
     <Teleport to="body">
       <ExportDialog
         v-model="showExportDialog"
-        :is-processing="false"
+        :is-processing="isExporting"
+        @export-pdf-single="handleExportPdfSingle"
         @export-svg="emit('download-svg'); showExportDialog = false"
+        @preview-pdf="handlePreviewPdf"
         @export-share-html="handleExportShareHtml"
       />
     </Teleport>
@@ -549,6 +664,10 @@ function toggleUserDropdown() {
   font-weight: 600;
 }
 
+.sync-text:not(.sync-text--resolved) {
+  display: none;
+}
+
 .sync-status--saved {
   color: #16a34a;
   background: rgba(22, 163, 74, 0.08);
@@ -562,6 +681,11 @@ function toggleUserDropdown() {
 .sync-status--error {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.08);
+}
+
+.sync-status--conflict {
+  color: #b7791f;
+  background: rgba(245, 158, 11, 0.14);
 }
 
 .spinner {

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import ConfirmDialog from './ConfirmDialog.vue'
 import {
   createShareLink,
   listShareLinks,
@@ -21,7 +20,6 @@ const error = ref<string | null>(null)
 const showCreateForm = ref(false)
 const allowExport = ref(false)
 const expiresInDays = ref(30)
-const pendingRevokeLinkId = ref<number | null>(null)
 
 // Newly created token (shown once)
 const newToken = ref<string | null>(null)
@@ -59,25 +57,14 @@ async function handleCreate() {
 }
 
 async function handleRevoke(linkId: number) {
-  pendingRevokeLinkId.value = linkId
-}
-
-async function confirmRevoke() {
-  const linkId = pendingRevokeLinkId.value
-  if (linkId === null) return
+  if (!confirm('确定要撤销此分享链接吗？撤销后将无法恢复。')) return
   error.value = null
   try {
     await revokeShareLink(props.publicationId, linkId)
     await load()
   } catch (err: any) {
     error.value = err.message || '撤销失败'
-  } finally {
-    pendingRevokeLinkId.value = null
   }
-}
-
-function cancelRevoke() {
-  pendingRevokeLinkId.value = null
 }
 
 function copyShareUrl() {
@@ -176,16 +163,6 @@ onMounted(load)
         </button>
       </div>
     </div>
-    <ConfirmDialog
-      :modelValue="pendingRevokeLinkId !== null"
-      title="确定要撤销此分享链接吗"
-      message="撤销后将无法恢复，原链接会立即失效。"
-      confirmLabel="确认撤销"
-      tone="danger"
-      @confirm="confirmRevoke"
-      @cancel="cancelRevoke"
-      @update:modelValue="(v: boolean) => { if (!v) cancelRevoke() }"
-    />
   </div>
 </template>
 
@@ -209,8 +186,8 @@ onMounted(load)
 .error-msg {
   padding: 8px 12px;
   margin-bottom: 12px;
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--danger-bg, #fef2f2);
+  color: var(--danger-title, #dc2626);
   border-radius: 8px;
   font-size: 0.875rem;
 }
@@ -218,24 +195,25 @@ onMounted(load)
 .new-token-card {
   padding: 16px;
   margin-bottom: 16px;
-  background: #fffbeb;
-  border: 1px solid #fbbf24;
+  background: var(--bg-panel-strong, #fffbeb);
+  border: 1px solid var(--accent-amber, #fbbf24);
   border-radius: 12px;
 }
 
 .token-warning {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #92400e;
+  color: var(--accent-earth, #92400e);
   margin-bottom: 8px;
 }
 
 .token-url {
   padding: 8px 12px;
-  background: rgba(0,0,0,0.04);
+  background: var(--bg-paper, rgba(0,0,0,0.04));
   border-radius: 8px;
   margin-bottom: 12px;
   word-break: break-all;
+  color: var(--text-main);
 }
 
 .token-url code {
@@ -254,7 +232,7 @@ onMounted(load)
   align-items: center;
   padding: 12px;
   margin-bottom: 16px;
-  background: rgba(0,0,0,0.02);
+  background: var(--bg-panel, rgba(0,0,0,0.02));
   border-radius: 12px;
 }
 
@@ -263,19 +241,22 @@ onMounted(load)
   align-items: center;
   gap: 6px;
   font-size: 0.875rem;
+  color: var(--text-sub);
 }
 
 .form-field input[type="number"] {
   width: 60px;
   padding: 4px 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--line-soft, #ddd);
   border-radius: 6px;
+  background: var(--bg-paper, #fff);
+  color: var(--text-main);
 }
 
 .loading, .empty {
   text-align: center;
   padding: 16px;
-  color: #999;
+  color: var(--text-soft, #999);
   font-size: 0.875rem;
 }
 
@@ -290,7 +271,7 @@ onMounted(load)
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background: rgba(0,0,0,0.02);
+  background: var(--bg-panel, rgba(0,0,0,0.02));
   border-radius: 10px;
 }
 
@@ -309,32 +290,38 @@ onMounted(load)
 }
 
 .status-active {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(103, 114, 79, 0.12);
+  color: var(--accent-olive, #166534);
 }
 
 .status-revoked {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--bg-paper, #f3f4f6);
+  color: var(--text-soft, #6b7280);
 }
 
 .status-expired {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--danger-bg, #fef3c7);
+  color: var(--danger-title, #92400e);
 }
 
 .link-meta {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-sub, #666);
 }
 
 .btn {
   padding: 6px 14px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--line-soft, #ddd);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-paper, #fff);
+  color: var(--text-main);
   cursor: pointer;
   font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: var(--bg-panel, #f9f9f9);
 }
 
 .btn--sm {
@@ -343,9 +330,9 @@ onMounted(load)
 }
 
 .btn--primary {
-  background: #3b82f6;
-  color: #fff;
-  border-color: #3b82f6;
+  background: var(--btn-primary-bg, #3b82f6);
+  color: var(--btn-primary-color, #fff);
+  border-color: var(--btn-primary-bg, #3b82f6);
 }
 
 .btn--primary:disabled {
@@ -354,12 +341,12 @@ onMounted(load)
 }
 
 .btn--danger {
-  background: #fff;
-  color: #dc2626;
-  border-color: #fca5a5;
+  background: var(--bg-paper, #fff);
+  color: var(--danger-title, #dc2626);
+  border-color: var(--danger-border, #fca5a5);
 }
 
 .btn--danger:hover {
-  background: #fef2f2;
+  background: var(--danger-bg, #fef2f2);
 }
 </style>

@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, inject, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
 import { getUsername, isSuperAdmin } from '../api/auth'
 import { changePassword, changeNickname, uploadAvatar } from '../api/profile'
 import { downloadBackup, adminRestoreDatabase, adminCheckConsistency, type ConsistencyIssue } from '../api/admin'
-import { listLogs, type AuditLogEntry } from '../api/audit'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
-
-const router = useRouter()
-const showOnboarding = inject<() => void>('show-onboarding', () => {})
 
 const avatarUrl = ref('')
 const avatarUploading = ref(false)
@@ -62,8 +57,6 @@ const restoreFileInputRef = ref<HTMLInputElement | null>(null)
 
 const consistencyResult = ref<ConsistencyIssue[]>([])
 const consistencyRunning = ref(false)
-const latestBackupLog = ref<AuditLogEntry | null>(null)
-const latestRestoreLog = ref<AuditLogEntry | null>(null)
 
 const groupedIssues = computed(() => {
   const groups: Record<string, ConsistencyIssue[]> = {}
@@ -80,40 +73,6 @@ const typeLabels: Record<string, string> = {
   status_conflict: '在世状态矛盾',
   empty_family: '空家族',
 }
-
-function formatAuditStamp(dateStr: string) {
-  const d = new Date(dateStr)
-  return d.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function summarizeAuditLog(log: AuditLogEntry | null): string {
-  if (!log) return '暂无记录'
-  return `${log.username} · ${formatAuditStamp(log.createdAt)}`
-}
-
-function goToAuditLogs() {
-  router.push({ name: 'admin-logs' })
-}
-
-async function loadRecoveryAuditSummary() {
-  if (!isSuperAdmin()) return
-  try {
-    const logs = await listLogs()
-    latestBackupLog.value = logs.find((entry) => entry.action === 'BACKUP') ?? null
-    latestRestoreLog.value = logs.find((entry) => entry.action === 'RESTORE_DB') ?? null
-  } catch {
-    latestBackupLog.value = null
-    latestRestoreLog.value = null
-  }
-}
-
-onMounted(loadRecoveryAuditSummary)
 
 async function handleBackup() {
   backupError.value = ''
@@ -208,13 +167,20 @@ async function handleChangeNickname() {
 </script>
 
 <template>
-  <div class="settings-view">
-    <div class="bento-header">
-      <div class="header-content">
-        <h1 class="page-title">偏好设置 // SETTINGS</h1>
-        <p class="page-desc">管理您的系统身份标识与账户通行安全</p>
-      </div>
-    </div>
+  <div class="settings-view-root">
+    <div class="settings-view">
+      <header class="poetic-header">
+        <div class="poetic-header__main">
+          <div class="poetic-eyebrow">PREFERENCES // SETTINGS</div>
+          <h1 class="poetic-title">偏好<span class="text-italic">设置</span></h1>
+        </div>
+        <div class="poetic-header__extra">
+          <p class="poetic-quote">
+            工欲善其事，必先利其器。<br/>
+            于此调和规矩，方成方圆。
+          </p>
+        </div>
+      </header>
 
     <div class="bento-grid">
       <!-- Big Profile Identity Card -->
@@ -306,22 +272,12 @@ async function handleChangeNickname() {
           </div>
         </div>
 
-        <!-- Onboarding Card -->
-        <div class="bento-card guide-card">
-          <div class="card-header">
-            <h3 class="card-title">新手引导</h3>
-            <p class="card-subtitle">重新查看入门引导步骤，了解系统基本用法。</p>
-          </div>
-          <button class="bento-btn primary" @click="showOnboarding">查看引导</button>
-        </div>
-
         <!-- Data Backup Card (SUPER_ADMIN only) -->
         <div v-if="isSuperAdmin()" class="bento-card backup-card">
           <div class="card-header">
             <h3 class="card-title">数据备份</h3>
             <p class="card-subtitle">导出数据库完整备份，包含所有族谱、人物和用户数据。</p>
           </div>
-          <p class="audit-summary">最近备份：<button class="audit-link" @click="goToAuditLogs">{{ summarizeAuditLog(latestBackupLog) }}</button></p>
           <div class="glass-form-row">
             <button class="bento-btn primary" :disabled="backupLoading" @click="handleBackup">
               {{ backupLoading ? '备份生成中...' : '创建备份并下载' }}
@@ -338,7 +294,6 @@ async function handleChangeNickname() {
           <p class="settings-card__desc">
             从备份文件还原数据库。此操作<strong>不可逆</strong>，将覆盖当前全部数据。
           </p>
-          <p class="audit-summary">最近还原：<button class="audit-link" @click="goToAuditLogs">{{ summarizeAuditLog(latestRestoreLog) }}</button></p>
           <div class="restore-controls">
             <input
               ref="restoreFileInputRef"
@@ -400,13 +355,13 @@ async function handleChangeNickname() {
           </p>
         </div>
 
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-.settings-view {
+<style scoped>.settings-view {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -597,22 +552,6 @@ async function handleChangeNickname() {
   font-size: 0.85rem;
   color: var(--text-soft);
   margin: 0;
-}
-.audit-summary {
-  margin: 0 0 16px;
-  font-size: 0.82rem;
-  color: var(--text-soft);
-}
-.audit-link {
-  all: unset;
-  cursor: pointer;
-  color: var(--accent-blue, #6d8fb0);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.audit-link:hover {
-  color: var(--accent-blue-hover, #5080a8);
-  text-decoration: none;
 }
 
 .glass-form-row {

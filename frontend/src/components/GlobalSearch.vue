@@ -82,9 +82,8 @@ function navigateToPublication(hit: PublicationHit) {
 function navigateToPerson(hit: PersonHit) {
   isOpen.value = false
   router.push({
-    name: 'workbench',
-    params: { id: hit.publicationId },
-    query: { personId: hit.personId },
+    name: 'person-detail',
+    params: { id: hit.publicationId, personId: hit.personId },
   })
 }
 
@@ -206,14 +205,6 @@ onBeforeUnmount(() => {
   background: var(--glass-bg, rgba(255, 255, 255, 0.4));
 }
 
-:global([data-theme="ink-wash"]) .search-input-wrapper:focus-within,
-:global([data-theme="rosewood"]) .search-input-wrapper:focus-within,
-:global([data-theme="star-sea"]) .search-input-wrapper:focus-within {
-  border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .search-icon {
   flex-shrink: 0;
   color: var(--text-soft, #888);
@@ -236,18 +227,6 @@ onBeforeUnmount(() => {
   color: var(--text-soft, #888);
   font-weight: 400;
   letter-spacing: 0.02em;
-}
-
-:global([data-theme="ink-wash"]) .search-input,
-:global([data-theme="rosewood"]) .search-input,
-:global([data-theme="star-sea"]) .search-input {
-  color: #fff;
-}
-
-:global([data-theme="ink-wash"]) .search-input::placeholder,
-:global([data-theme="rosewood"]) .search-input::placeholder,
-:global([data-theme="star-sea"]) .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
 }
 
 /* Spinner for loading state */
@@ -278,17 +257,9 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--glass-border-shadow, rgba(0, 0, 0, 0.05));
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--glass-border-shadow, rgba(0, 0, 0, 0.05));
   z-index: 9999;
   padding: 8px;
-}
-
-:global([data-theme="ink-wash"]) .search-dropdown,
-:global([data-theme="rosewood"]) .search-dropdown,
-:global([data-theme="star-sea"]) .search-dropdown {
-  background: rgba(20, 20, 20, 0.85);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
 }
 
 .search-dropdown::-webkit-scrollbar {
@@ -324,12 +295,6 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--glass-border-shadow, rgba(0, 0, 0, 0.05));
 }
 
-:global([data-theme="ink-wash"]) .result-section + .result-section,
-:global([data-theme="rosewood"]) .result-section + .result-section,
-:global([data-theme="star-sea"]) .result-section + .result-section {
-  border-top-color: rgba(255, 255, 255, 0.06);
-}
-
 .section-header {
   padding: 8px 12px 6px;
   font-size: 0.65rem;
@@ -356,13 +321,7 @@ onBeforeUnmount(() => {
 }
 
 .result-item:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-:global([data-theme="ink-wash"]) .result-item:hover,
-:global([data-theme="rosewood"]) .result-item:hover,
-:global([data-theme="star-sea"]) .result-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--glass-pill-bg, rgba(0, 0, 0, 0.04));
 }
 
 .result-item-icon {
@@ -375,13 +334,6 @@ onBeforeUnmount(() => {
   border-radius: 8px;
   background: var(--glass-pill-bg, rgba(255, 255, 255, 0.5));
   color: var(--accent-amber, #a96e35);
-}
-
-:global([data-theme="ink-wash"]) .result-item-icon,
-:global([data-theme="rosewood"]) .result-item-icon,
-:global([data-theme="star-sea"]) .result-item-icon {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
 }
 
 .result-item-content {

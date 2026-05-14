@@ -23,7 +23,7 @@ interface DraftFilePickerWindow extends Window {
 const DRAFT_FILE_PICKER_OPTIONS = {
   types: [
     {
-      description: 'Genealogy draft JSON',
+      description: 'Guiyuan draft JSON',
       accept: {
         'application/json': ['.json'],
       },

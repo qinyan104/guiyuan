@@ -10,13 +10,13 @@ import {
 } from '../api/publication'
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { builtinSamples } from '../data/builtinDynastySamples'
-import { getPublicationActivityLabel } from '../lib/publicationActivity'
 import type { PublicationInfo } from '../types/family'
 import ShareLinkManager from '../components/ShareLinkManager.vue'
 import CollaboratorManager from '../components/CollaboratorManager.vue'
-import ConfirmDialog from '../components/ConfirmDialog.vue'
+import { useLexicon } from '../composables/useLexicon'
 
 const router = useRouter()
+const { lexicon } = useLexicon()
 
 const publications = ref<PublicationSummary[]>([])
 const loading = ref(true)
@@ -57,10 +57,6 @@ onMounted(loadPublications)
 
 function openPublication(id: number) {
   router.push({ name: 'workbench', params: { id } })
-}
-
-function viewActivity(id: number) {
-  router.push({ name: 'publication-stats', params: { id } })
 }
 
 function openEditDialog(pub: PublicationSummary) {
@@ -126,14 +122,6 @@ function openCollabDialog(pubId: number) {
   showCollabDialog.value = true
 }
 
-function requestDelete(id: number) {
-  deleteConfirmId.value = id
-}
-
-function cancelDelete() {
-  deleteConfirmId.value = null
-}
-
 async function handleDelete(id: number) {
   try {
     await deletePublication(id)
@@ -164,19 +152,20 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   <div class="publication-list-view-root">
     <div class="gallery-stage">
       <!-- Header -->
-      <header class="gallery-header">
-      <div class="header-left">
-        <div class="header-meta">ARCHIVE GALLERY // {{ publications.length }} VOLUMES</div>
-        <h1 class="header-title">谱系陈列馆</h1>
-        <p class="header-desc">家族史料的数字编研与归档中心</p>
-      </div>
-      <div class="header-right">
-        <button class="glass-pill-btn primary-action" @click="showCreateDialog = true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          新建宗谱存档
-        </button>
-      </div>
-    </header>
+      <header class="poetic-header">
+        <div class="poetic-header__main">
+          <div class="poetic-eyebrow">{{ lexicon.publications.headerEyebrow }}</div>
+          <h1 class="poetic-title">{{ lexicon.publications.headerTitle }}<span class="text-italic">{{ lexicon.publications.headerTitleItalic }}</span></h1>
+        </div>
+        
+        <div class="poetic-header__extra" style="display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
+          <p class="poetic-quote" v-html="lexicon.publications.quote.replace(/\\n/g, '<br/>')"></p>
+          <button class="glass-pill-btn primary-action" @click="showCreateDialog = true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            新建宗谱存档
+          </button>
+        </div>
+      </header>
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
@@ -205,13 +194,11 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
         </section>
 
         <div v-if="publications.length === 0" class="empty-state">
-          <div class="empty-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          </div>
-          <h3 class="empty-title">还没有族谱研究</h3>
-          <p class="empty-desc">您可以点击上方模板快速开始，或创建一个全新的空白宗谱。</p>
+          <div class="empty-seal">空</div>
+          <h3 class="empty-title">书卷空余，待君挥墨</h3>
+          <p class="empty-desc">尚未收录任何宗族典藏，您可以开宗立派，或从上方经典模板中演化。</p>
           <div class="empty-actions">
-            <button class="bento-btn primary" @click="showCreateDialog = true">新建空白宗谱</button>
+            <button class="bento-btn primary" @click="showCreateDialog = true">新建宗谱存档</button>
           </div>
         </div>
 
@@ -225,8 +212,9 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
             <article v-for="pub in publications" :key="pub.id" class="glass-card archive-card" @click="openPublication(pub.id)">
               <!-- Visual Left Pane -->
               <div class="archive-visual">
-                <div class="visual-meta">NO. {{ pub.id.toString().padStart(3, '0') }}</div>
-                <div class="visual-seal">{{ pub.title?.substring(0, 1) || '典' }}</div>
+                <div class="visual-meta">第{{ pub.id }}卷</div>
+                <div class="visual-title-vertical">{{ pub.title?.substring(0, 6) || '未命名' }}</div>
+                <div class="visual-spine-line"></div>
               </div>
 
               <!-- Content Right Pane -->
@@ -241,11 +229,7 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
                 </div>
 
                 <div class="archive-footer">
-                  <div class="archive-meta">
-                    <span class="archive-date">{{ formatDate(pub.updatedAt) }} 更新</span>
-                    <span v-if="pub.lastUpdatedBy" class="archive-updater">最近更新：{{ pub.lastUpdatedBy }}</span>
-                    <button v-if="pub.lastActivityAction" class="archive-activity-link" @click.stop="viewActivity(pub.id)">查看活动记录</button>
-                  </div>
+                  <span class="archive-date">{{ formatDate(pub.updatedAt) }} 更新</span>
                   <div class="archive-actions" @click.stop>
                     <button class="icon-btn" title="编辑属性" @click="openEditDialog(pub)">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -256,13 +240,23 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
                     <button class="icon-btn" title="分享链接" @click="openShareDialog(pub.id)">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                     </button>
-                    <button class="icon-btn danger" title="焚毁档案" @click="requestDelete(pub.id)">
+                    <button class="icon-btn danger" title="焚毁档案" @click="deleteConfirmId = pub.id">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
                   </div>
                 </div>
               </div>
 
+              <!-- Delete Confirm Overlay -->
+              <transition name="fade">
+                <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
+                  <p>焚毁此宗谱将彻底抹除数据，是否确认？</p>
+                  <div class="delete-btns">
+                    <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认焚毁</button>
+                    <button class="glass-pill-btn" @click="deleteConfirmId = null">暂且保留</button>
+                  </div>
+                </div>
+              </transition>
             </article>
           </div>
         </section>
@@ -368,17 +362,6 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
           </div>
         </div>
       </transition>
-
-      <ConfirmDialog
-        :modelValue="deleteConfirmId !== null"
-        title="确认删除族谱"
-        message="删除后将彻底移除当前族谱及其相关数据，且无法恢复。"
-        confirmLabel="确认删除"
-        tone="danger"
-        @confirm="deleteConfirmId !== null && handleDelete(deleteConfirmId)"
-        @cancel="cancelDelete"
-        @update:modelValue="(v: boolean) => { if (!v) cancelDelete() }"
-      />
 
       </Teleport>
     </div>
@@ -595,37 +578,44 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   min-height: 180px;
 }
 .archive-visual {
-  width: 90px;
-  background: var(--text-main, #1a1a1a);
+  width: 64px;
+  background: linear-gradient(to right, rgba(255,255,255,0.05), transparent 10%, transparent 90%, rgba(0,0,0,0.2)), var(--text-main, #1a1a1a);
   color: var(--bg-panel, #fff);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  padding: 1.25rem 0.5rem;
+  padding: 1.5rem 0;
   flex-shrink: 0;
-  border-right: 1px solid var(--border-color, rgba(0,0,0,0.1));
+  border-right: 2px solid rgba(0,0,0,0.2);
+  position: relative;
+}
+.visual-spine-line {
+  position: absolute;
+  right: 6px;
+  top: 15%;
+  bottom: 15%;
+  width: 1px;
+  background: transparent;
+  border-top: 8px solid var(--accent-amber, #a96e35);
+  border-bottom: 8px solid var(--accent-amber, #a96e35);
 }
 .visual-meta {
-  font-family: monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  opacity: 0.6;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-}
-.visual-seal {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-family: 'Noto Serif SC', serif;
-  font-size: 1.6rem;
-  font-weight: 300;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
-  background: rgba(255,255,255,0.05);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+  writing-mode: vertical-rl;
+  margin-bottom: 1rem;
+}
+.visual-title-vertical {
+  writing-mode: vertical-rl;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--bg-panel, #fff);
+  z-index: 1;
 }
 .archive-details {
   flex: 1;
@@ -675,31 +665,10 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   padding-top: 1rem;
   border-top: 1px dashed var(--border-color, rgba(0,0,0,0.1));
 }
-.archive-meta {
-  display: grid;
-  gap: 0.12rem;
-}
 .archive-date {
   font-family: monospace;
   font-size: 0.75rem;
   color: var(--text-soft);
-}
-.archive-updater {
-  font-size: 0.72rem;
-  color: var(--text-soft);
-  opacity: 0.88;
-}
-.archive-activity-link {
-  all: unset;
-  cursor: pointer;
-  font-size: 0.72rem;
-  color: var(--accent-blue, #6d8fb0);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.archive-activity-link:hover {
-  color: var(--accent-blue-hover, #5080a8);
-  text-decoration: none;
 }
 .archive-actions {
   display: flex;
@@ -774,8 +743,20 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   padding: 80px 40px;
   text-align: center;
 }
-.empty-icon {
-  margin-bottom: 20px;
+.empty-seal {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 3rem;
+  color: var(--accent-amber, #a96e35);
+  border: 3px solid currentColor;
+  border-radius: 12px;
+  opacity: 0.5;
+  margin-bottom: 24px;
+  box-shadow: inset 0 0 0 2px var(--glass-panel-bg);
 }
 .empty-title {
   font-family: 'Noto Serif SC', serif;

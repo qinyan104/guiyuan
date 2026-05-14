@@ -99,7 +99,6 @@ describe('App auth bootstrap', () => {
           RouterView: {
             template: '<div data-testid="route-content">route</div>',
           },
-          OnboardingGuide: true,
         },
       },
     })
@@ -130,7 +129,6 @@ describe('App auth bootstrap', () => {
           RouterView: {
             template: '<div data-testid="route-content">route</div>',
           },
-          OnboardingGuide: true,
         },
       },
     })
@@ -146,7 +144,6 @@ describe('App auth bootstrap', () => {
       global: {
         stubs: {
           RouterView: true,
-          OnboardingGuide: true,
         },
       },
     })
@@ -168,7 +165,6 @@ describe('App auth bootstrap', () => {
           RouterView: {
             template: '<div data-testid="route-content">route</div>',
           },
-          OnboardingGuide: true,
         },
       },
     })
@@ -186,7 +182,6 @@ describe('App auth bootstrap', () => {
       global: {
         stubs: {
           RouterView: true,
-          OnboardingGuide: true,
         },
       },
     })
