@@ -41,6 +41,10 @@ describe('PersonEditorDrawer', () => {
       },
     })
 
+    expect(wrapper.text()).not.toContain('查看详情页')
     expect(wrapper.find('.detail-link-zone').exists()).toBe(false)
+    expect(
+      wrapper.findAll('button').some((button) => button.text().includes('查看详情页')),
+    ).toBe(false)
   })
 })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, nextTick, ref, watch } from 'vue'
+import { inject, nextTick, ref, toRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import FeedbackStrip from '../components/FeedbackStrip.vue'
@@ -135,6 +135,8 @@ useWorkbenchRouteFocus({
   route,
   router,
   publication: context.pub.publication,
+  targetPublicationId: toRef(props, 'publicationId'),
+  loadedPublicationId: context.serverPublicationId,
   selectedPersonId: context.pub.selectedPersonId,
   editorOpen: panels.editorOpen,
   revealPersonInCanvas,

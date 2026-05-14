@@ -70,7 +70,7 @@ async function saveToServer() {
       feedback.errorMessage.value = conflict.message
       if (serverSaveTimeout) clearTimeout(serverSaveTimeout)
       throw new Error(conflict.message)
-      // Throw so direct callers (e.g. PersonDetailView.handleSave) can react;
+      // Throw so direct callers can react;
       // the autosave timer's .catch(()) silences this for background sync
     }
     syncStatus.value = 'error'

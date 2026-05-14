@@ -8,6 +8,8 @@ interface UseWorkbenchRouteFocusOptions {
   route: Pick<RouteLocationNormalizedLoaded, 'name' | 'params' | 'query'>
   router: Pick<Router, 'replace'>
   publication: Pick<PublicationData, 'people'>
+  targetPublicationId: Ref<number | null>
+  loadedPublicationId: Ref<number | null>
   selectedPersonId: Ref<string>
   editorOpen: Ref<boolean>
   revealPersonInCanvas: (personId: string) => void
@@ -27,27 +29,40 @@ export function useWorkbenchRouteFocus({
   route,
   router,
   publication,
+  targetPublicationId,
+  loadedPublicationId,
   selectedPersonId,
   editorOpen,
   revealPersonInCanvas,
 }: UseWorkbenchRouteFocusOptions) {
-  let handledPersonId = ''
+  let handledFocusKey = ''
 
   watch(
-    () => [route.query.personId, Object.keys(publication.people).length] as const,
-    async ([rawPersonId]) => {
-      const personId = getQueryPersonId(rawPersonId)
-
+    () => {
+      const personId = getQueryPersonId(route.query.personId)
+      return {
+        personId,
+        targetPublicationId: targetPublicationId.value,
+        loadedPublicationId: loadedPublicationId.value,
+        personPresent: personId ? Boolean(publication.people[personId]) : false,
+      }
+    },
+    async ({ personId, targetPublicationId: targetId, loadedPublicationId: loadedId, personPresent }) => {
       if (!personId) {
-        handledPersonId = ''
+        handledFocusKey = ''
         return
       }
 
-      if (handledPersonId === personId || !publication.people[personId]) {
+      if (!targetId || loadedId !== targetId || !personPresent) {
         return
       }
 
-      handledPersonId = personId
+      const focusKey = `${targetId}:${personId}`
+      if (handledFocusKey === focusKey) {
+        return
+      }
+
+      handledFocusKey = focusKey
       selectedPersonId.value = personId
       editorOpen.value = true
       revealPersonInCanvas(personId)

@@ -70,7 +70,7 @@ describe('PublicationLayout conflict handling', () => {
 
     // Call saveToServer directly to test conflict handling
     // (avoids waiting for the 3000ms autosave debounce timer)
-    // The throw is expected — direct callers (e.g. PersonDetailView)
+    // The throw is expected — direct callers
     // receive it so they can react to the conflict
     await (wrapper.vm as any).saveToServer().catch(() => {})
 
