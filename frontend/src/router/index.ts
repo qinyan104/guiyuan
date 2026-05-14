@@ -71,6 +71,17 @@ const routes: RouteRecordRaw[] = [
         props: (route) => ({ publicationId: Number(route.params.id) }),
       },
       {
+        path: 'person/:personId',
+        redirect: (route) => ({
+          name: 'workbench',
+          params: { id: route.params.id as string },
+          query: {
+            ...route.query,
+            personId: route.params.personId as string,
+          },
+        }),
+      },
+      {
         path: 'stats',
         name: 'publication-stats',
         component: () => import('../views/PublicationStatsView.vue'),
