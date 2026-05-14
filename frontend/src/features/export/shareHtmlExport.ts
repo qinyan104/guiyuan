@@ -81,13 +81,13 @@ export function buildInfoHeader(pub: PublicationData): string {
     infoItems.push(`<p class="info-desc">${escapeHtml(pub.info.description)}</p>`)
   }
   if (pub.info?.ancestralOrigin) {
-    infoItems.push(`<span class="info-tag">郡望/祖籍�?{escapeHtml(pub.info.ancestralOrigin)}</span>`)
+    infoItems.push(`<span class="info-tag">\u90e1\u671b/\u7956\u7c4d\uff1a${escapeHtml(pub.info.ancestralOrigin)}</span>`)
   }
   if (pub.info?.hallName) {
-    infoItems.push(`<span class="info-tag">堂号�?{escapeHtml(pub.info.hallName)}</span>`)
+    infoItems.push(`<span class="info-tag">\u5802\u53f7\uff1a${escapeHtml(pub.info.hallName)}</span>`)
   }
   if (pub.info?.familyMotto) {
-    infoItems.push(`<span class="info-tag">族训�?{escapeHtml(pub.info.familyMotto)}</span>`)
+    infoItems.push(`<span class="info-tag">\u65cf\u8bad\uff1a${escapeHtml(pub.info.familyMotto)}</span>`)
   }
   if (infoItems.length) {
     parts.push(`<div class="pub-info">${infoItems.join('')}</div>`)
@@ -110,10 +110,10 @@ function buildStatsHtml(pub: PublicationData): string {
   const deceased = people.filter(p => p.deceased).length
   const alive = total - deceased
 
-  const parts: string[] = [`<span>�?${total} �?/span>`]
-  if (alive > 0) parts.push(`<span>在世 ${alive} �?/span>`)
-  if (deceased > 0) parts.push(`<span>已故 ${deceased} �?/span>`)
-  return parts.join(' · ')
+  const parts: string[] = [`<span>\u5171 ${total} \u4eba</span>`]
+  if (alive > 0) parts.push(`<span>\u5728\u4e16 ${alive} \u4eba</span>`)
+  if (deceased > 0) parts.push(`<span>\u5df2\u6545 ${deceased} \u4eba</span>`)
+  return parts.join(' ? ')
 }
 
 export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
@@ -188,18 +188,18 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
       html += '<img class="detail-photo" src="' + person.avatarUrl + '" alt="' + escapeAttr(person.name) + '">';
     }
     html += '<h3>' + escapeHtml(person.name) + '</h3>';
-    html += '<span class="detail-gender">' + (person.gender === 'male' ? '�? : person.gender === 'female' ? '�? : '未知') + '</span>';
-    if (person.deceased) html += '<span class="detail-status deceased">已故</span>';
-    else html += '<span class="detail-status alive">在世</span>';
+    html += '<span class="detail-gender">' + (person.gender === 'male' ? '?' : person.gender === 'female' ? '?' : '??') + '</span>';
+    if (person.deceased) html += '<span class="detail-status deceased">??</span>';
+    else html += '<span class="detail-status alive">??</span>';
     html += '</div>';
 
     var details = [];
-    if (person.birth) details.push({ label: '出生', value: person.birth });
-    if (person.death) details.push({ label: '去世', value: person.death });
-    if (person.age) details.push({ label: '年龄', value: person.age });
-    if (person.clan) details.push({ label: '宗族', value: person.clan });
-    if (person.titleName) details.push({ label: '�?�?, value: person.titleName });
-    if (person.note) details.push({ label: '备注', value: person.note });
+    if (person.birth) details.push({ label: '??', value: person.birth });
+    if (person.death) details.push({ label: '??', value: person.death });
+    if (person.age) details.push({ label: '??', value: person.age });
+    if (person.clan) details.push({ label: '??', value: person.clan });
+    if (person.titleName) details.push({ label: '??', value: person.titleName });
+    if (person.note) details.push({ label: '??', value: person.note });
 
     if (details.length > 0) {
       html += '<div class="detail-fields">';
@@ -212,7 +212,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     // Relationships
     var relHtml = '';
     if (rels.parents.length > 0) {
-      relHtml += '<div class="rel-group"><span class="rel-label">父母</span>';
+      relHtml += '<div class="rel-group"><span class="rel-label">??</span>';
       for (var j = 0; j < rels.parents.length; j++) {
         var pp = data.publication.people[rels.parents[j]];
         if (pp) relHtml += '<span class="rel-item" data-pid="' + rels.parents[j] + '">' + escapeHtml(pp.name) + '</span>';
@@ -220,7 +220,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
       relHtml += '</div>';
     }
     if (rels.spouses.length > 0) {
-      relHtml += '<div class="rel-group"><span class="rel-label">配偶</span>';
+      relHtml += '<div class="rel-group"><span class="rel-label">??</span>';
       for (var k = 0; k < rels.spouses.length; k++) {
         var sp = data.publication.people[rels.spouses[k]];
         if (sp) relHtml += '<span class="rel-item" data-pid="' + rels.spouses[k] + '">' + escapeHtml(sp.name) + '</span>';
@@ -228,7 +228,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
       relHtml += '</div>';
     }
     if (rels.children.length > 0) {
-      relHtml += '<div class="rel-group"><span class="rel-label">子女</span>';
+      relHtml += '<div class="rel-group"><span class="rel-label">??</span>';
       for (var m = 0; m < rels.children.length; m++) {
         var cp = data.publication.people[rels.children[m]];
         if (cp) relHtml += '<span class="rel-item" data-pid="' + rels.children[m] + '">' + escapeHtml(cp.name) + '</span>';
@@ -399,7 +399,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     if (!btn || !header) return;
     btn.addEventListener('click', function() {
       header.classList.toggle('collapsed');
-      btn.textContent = header.classList.contains('collapsed') ? '展开' : '收起';
+      btn.textContent = header.classList.contains('collapsed') ? '??' : '??';
     });
   }
 
@@ -429,15 +429,15 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     document.getElementById('pwd-submit').addEventListener('click', async function() {
       var pwd = document.getElementById('pwd-input').value;
       var errEl = document.getElementById('pwd-error');
-      if (!pwd) { errEl.textContent = '请输入密�?; return; }
-      errEl.textContent = '解密�?..';
+      if (!pwd) { errEl.textContent = '?????'; return; }
+      errEl.textContent = '???...';
       try {
         var json = await decryptPayload(ENCRYPTED_BLOB, pwd);
         var data = JSON.parse(json);
         gate.style.display = 'none';
         init(data);
       } catch (err) {
-        errEl.textContent = '密码错误或文件已损坏';
+        errEl.textContent = '??????????';
       }
     });
     document.getElementById('pwd-input').addEventListener('keydown', function(e) {
@@ -469,7 +469,7 @@ export function buildHtmlTemplate(options: {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(options.title)} - Guiyuan Share</title>
+<title>${escapeHtml(options.title)} - ????</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
 
@@ -814,17 +814,17 @@ body {
 
 <div id="password-gate">
   <div class="gate-box">
-    <h2>族谱已加�?/h2>
-    <p>请输入密码以查看内容</p>
-    <input type="password" id="pwd-input" placeholder="输入密码" autocomplete="off">
-    <button id="pwd-submit">解锁</button>
+    <h2>\u65cf\u8c31\u5df2\u52a0\u5bc6</h2>
+    <p>\u8bf7\u8f93\u5165\u5bc6\u7801\u4ee5\u67e5\u770b\u5185\u5bb9</p>
+    <input type="password" id="pwd-input" placeholder="\u8bf7\u8f93\u5165\u5bc6\u7801" autocomplete="off">
+    <button id="pwd-submit">??</button>
     <div id="pwd-error"></div>
   </div>
 </div>
 
 <div id="app">
   <header id="pub-header">
-    <button id="header-toggle">收起</button>
+    <button id="header-toggle">??</button>
     ${options.infoHeader}
   </header>
 
@@ -839,7 +839,7 @@ body {
 
   <footer id="pub-footer">
     <span>${options.statsHtml}</span>
-    <span>生成�?${escapeHtml(options.generatedAt)} · 仅供内部传阅</span>
+    <span>????${escapeHtml(options.generatedAt)} ? ??????</span>
   </footer>
 </div>
 
@@ -859,7 +859,7 @@ export async function generateShareHtml(options: ShareHtmlOptions): Promise<stri
   const standaloneSvg = await createStandalonePublicationSvg({
     svgElement,
     layout,
-    title: publication.title.trim() || 'Guiyuan Archive Preview',
+    title: publication.title.trim() || '??????',
     embedImages: true,
   })
   onProgress?.('capturing', 25)
@@ -909,7 +909,7 @@ export async function generateShareHtml(options: ShareHtmlOptions): Promise<stri
   const script = buildEmbeddedScript(dataJson, isEncrypted)
 
   const html = buildHtmlTemplate({
-    title: publication.title.trim() || 'Guiyuan Share',
+    title: publication.title.trim() || '????',
     themeCss,
     infoHeader,
     statsHtml,
@@ -921,3 +921,4 @@ export async function generateShareHtml(options: ShareHtmlOptions): Promise<stri
   onProgress?.('done', 100)
   return html
 }
+
