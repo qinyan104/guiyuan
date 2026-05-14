@@ -67,7 +67,7 @@ async function encryptPayload(jsonString: string, password: string): Promise<Enc
   }
 }
 
-function buildInfoHeader(pub: PublicationData): string {
+export function buildInfoHeader(pub: PublicationData): string {
   const parts: string[] = []
   if (pub.title) {
     parts.push(`<h1>${escapeHtml(pub.title)}</h1>`)
@@ -116,7 +116,7 @@ function buildStatsHtml(pub: PublicationData): string {
   return parts.join(' · ')
 }
 
-function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
+export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
   return `
 (function() {
   'use strict';
@@ -455,7 +455,7 @@ function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
 })();`
 }
 
-function buildHtmlTemplate(options: {
+export function buildHtmlTemplate(options: {
   title: string
   themeCss: string
   infoHeader: string

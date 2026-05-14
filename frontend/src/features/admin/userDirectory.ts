@@ -1,4 +1,10 @@
-﻿import type { AdminUser } from '../../api/auth'
+﻿export interface AdminUser {
+  id: number
+  username: string
+  nickname?: string
+  role: string
+  createdAt: string
+}
 
 export type UserRoleTab = 'all' | 'SUPER_ADMIN' | 'ADMIN' | 'USER'
 
