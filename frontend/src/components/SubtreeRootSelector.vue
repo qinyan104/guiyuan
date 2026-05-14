@@ -128,8 +128,8 @@ onMounted(() => {
           </div>
           <div class="actions">
             <button class="action-btn cancel" @click="onCancel">取消</button>
-            <button 
-              class="action-btn confirm" 
+            <button
+              class="action-btn confirm"
               :disabled="!selectedPersonId"
               @click="onConfirm"
             >
