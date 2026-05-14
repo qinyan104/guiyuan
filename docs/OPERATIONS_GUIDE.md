@@ -31,8 +31,13 @@ npm run dev
 - `POST /api/publications/{id}/access/{personId}/merge`: 执行物理分支合并（BFS 子树克隆，支持回退全量）
 
 ### 导出与分享
-- `POST /api/publications/{id}/export/pdf/single-page`: 生成矢量 PDF
+- 前端正式入口保留 `JSON` 导出、`SVG` 导出与分享网页。
 - `GET /api/shares/{token}`: 访问公开分享的族谱
+
+### 1.0 正式版范围
+- 前端正式入口仅保留 `JSON`、`SVG` 与 `分享网页`。
+- `单页矢量 PDF` 与 `谱书 PDF` 不属于 1.0 正式前端面。
+- 独立人物详情页已移除，人物查看与编辑统一回到工作台上下文。
 
 ### 数据安全与管理（SUPER_ADMIN）
 - `GET /api/admin/backup`: 生成并下载数据库 mysqldump 备份
