@@ -53,7 +53,8 @@
       "Bash(./mvnw.cmd \"-Dtest=PublicationControllerConflictTest,PublicationServiceTest\" test)",
       "Bash(./mvnw.cmd test *)",
       "Bash(./mvnw.cmd -Dtest=PublicationAccessControllerTest test)",
-      "Bash(./mvnw.cmd \"-Dtest=PublicationServiceTest,PublicationControllerConflictTest,PublicationAccessControllerTest\" test)"
+      "Bash(./mvnw.cmd \"-Dtest=PublicationServiceTest,PublicationControllerConflictTest,PublicationAccessControllerTest\" test)",
+      "Bash(docker compose *)"
     ]
   }
 }
