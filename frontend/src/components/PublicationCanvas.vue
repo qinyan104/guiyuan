@@ -468,7 +468,7 @@ defineExpose({
             </filter>
             <!-- Ou Grid Pattern -->
             <pattern v-if="isOu" id="ou-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--line-soft)" stroke-width="0.5"/>
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--line-soft)" stroke-width="0.5" />
             </pattern>
           </defs>
 

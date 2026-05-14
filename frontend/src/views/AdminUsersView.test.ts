@@ -52,7 +52,7 @@ describe('AdminUsersView', () => {
     expect(adminDeleteUser).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('确认删除编委')
 
-    await wrapper.get('button[data-role="confirm"]').trigger('click')
+    await wrapper.get('.glass-dialog.danger-mode .bento-btn.danger').trigger('click')
 
     expect(adminDeleteUser).toHaveBeenCalledWith(7)
   })

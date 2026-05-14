@@ -60,7 +60,7 @@ describe('DashboardView', () => {
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('alice')
-    expect(wrapper.text()).toContain('查看活动记录')
+    expect(wrapper.text()).toContain('陈氏宗谱')
+    expect(wrapper.text()).toContain('继续编撰')
   })
 })

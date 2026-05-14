@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref, inject } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import type { Person } from '../types/family'
 import { parseYear, parseExactDate } from '../lib/dateUtils'
 
-const props = defineProps<{ publicationId: number }>()
+defineProps<{ publicationId: number }>()
 const router = useRouter()
+const route = useRoute()
 
 // ─── Shared Context ─────────────────────────────────────────────
 const { pub } = inject('publication-context') as any
@@ -82,7 +83,7 @@ function personGenderClass(p: Person): string {
 }
 
 function goToPerson(personId: string) {
-  router.push({ name: 'person-detail', params: { personId } })
+  router.push({ name: 'workbench', params: { id: route.params.id }, query: { personId } })
 }
 
 const goBack = () => {
@@ -111,7 +112,7 @@ const scrollToTop = () => {
   <div class="timeline-view">
     <div class="bento-header">
       <div class="header-left">
-        <button class="action-btn back-btn" @click="goBack" title="返回工作台">
+        <button class="action-btn back-btn" title="返回工作台" @click="goBack">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
@@ -131,12 +132,12 @@ const scrollToTop = () => {
           <div class="metric-value">{{ totalEvents }}</div>
           <div class="metric-label">历史纪事节点</div>
         </div>
-        <div class="bento-card metric-card start" v-if="earliestYear">
+        <div v-if="earliestYear" class="bento-card metric-card start">
           <div class="metric-bg-icon">始</div>
           <div class="metric-value">{{ earliestYear }}</div>
           <div class="metric-label">源起年份</div>
         </div>
-        <div class="bento-card metric-card end" v-if="latestYear">
+        <div v-if="latestYear" class="bento-card metric-card end">
           <div class="metric-bg-icon">承</div>
           <div class="metric-value">{{ latestYear }}</div>
           <div class="metric-label">传承至今</div>
@@ -145,7 +146,7 @@ const scrollToTop = () => {
 
       <div v-if="events.length === 0" class="timeline-empty">
         <div class="empty-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
         </div>
         <h3 class="empty-title">时间线尚未生成</h3>
         <p class="empty-desc">添加人物并填写生卒年份后，时间线将自动生成。</p>
@@ -153,47 +154,47 @@ const scrollToTop = () => {
       </div>
       <div v-else>
         <div class="scroll-timeline">
-        <!-- Spine -->
-        <div class="timeline-spine"></div>
+          <!-- Spine -->
+          <div class="timeline-spine"></div>
 
-        <div v-for="[century, centuryEvents] in centuries" :key="century" class="century-block">
-          <!-- Century Indicator -->
-          <div class="century-indicator">
-            <div class="bg-num">{{ century }}</div>
-            <div class="indicator-tag">{{ centuryLabel(century) }}</div>
-          </div>
+          <div v-for="[century, centuryEvents] in centuries" :key="century" class="century-block">
+            <!-- Century Indicator -->
+            <div class="century-indicator">
+              <div class="bg-num">{{ century }}</div>
+              <div class="indicator-tag">{{ centuryLabel(century) }}</div>
+            </div>
 
-          <!-- Event Cards -->
-          <div 
-            v-for="(event, idx) in centuryEvents" 
-            :key="idx" 
-            class="event-wrapper"
-            :class="idx % 2 === 0 ? 'left' : 'right'"
-            @click="goToPerson(event.person.id)"
-          >
-            <div class="bento-card event-card">
-              <div class="event-anchor">
-                <div class="anchor-dot" :class="event.type"></div>
-              </div>
-              <div class="event-content">
-                <div class="event-top">
-                  <span class="year">{{ event.year }}年</span>
-                  <span class="type-badge" :class="event.type">
-                    {{ event.type === 'birth' ? '出生' : '去世' }}
-                  </span>
+            <!-- Event Cards -->
+            <div 
+              v-for="(event, idx) in centuryEvents" 
+              :key="idx" 
+              class="event-wrapper"
+              :class="idx % 2 === 0 ? 'left' : 'right'"
+              @click="goToPerson(event.person.id)"
+            >
+              <div class="bento-card event-card">
+                <div class="event-anchor">
+                  <div class="anchor-dot" :class="event.type"></div>
                 </div>
-                <div class="person-name" :class="personGenderClass(event.person)">
-                  {{ event.person.name }}
-                </div>
-                <div v-if="event.label !== event.year + '年'" class="event-extra">
-                  {{ event.label }}
+                <div class="event-content">
+                  <div class="event-top">
+                    <span class="year">{{ event.year }}年</span>
+                    <span class="type-badge" :class="event.type">
+                      {{ event.type === 'birth' ? '出生' : '去世' }}
+                    </span>
+                  </div>
+                  <div class="person-name" :class="personGenderClass(event.person)">
+                    {{ event.person.name }}
+                  </div>
+                  <div v-if="event.label !== event.year + '年'" class="event-extra">
+                    {{ event.label }}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     </main>
 
     <!-- Floating Back to Top -->

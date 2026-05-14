@@ -54,7 +54,6 @@ const emit = defineEmits<{
   (event: 'update-person-gender', gender: Gender): void
   (event: 'apply-note-suggestion', value: string): void
   (event: 'delete-person'): void
-  (event: 'view-detail'): void
 }>()
 
 function updatePersonField(field: EditablePersonField, event: Event) {
@@ -103,7 +102,7 @@ async function uploadAvatar(event: Event) {
             <div class="avatar-upload" style="position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: rgba(169, 110, 53, 0.05); border: 1px solid var(--border-color); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer;">
               <img v-if="person.avatarUrl" :src="person.avatarUrl" style="width: 100%; height: 100%; object-fit: contain;" />
               <div v-else style="font-size: 28px; opacity: 0.5;">👤</div>
-              <input type="file" accept="image/*" @change="uploadAvatar" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" title="上传照片" />
+              <input type="file" accept="image/*" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" title="上传照片" @change="uploadAvatar" />
             </div>
             <div style="flex: 1;">
               <p>当前传主</p>
@@ -247,7 +246,7 @@ async function uploadAvatar(event: Event) {
           </div>
         </section>
 
-        <BranchMountManager :person="person" :publication-id="publicationId" />
+        <BranchMountManager :person="person" :publicationId="publicationId" />
 
         <div class="editor-form">
           <label class="field">
@@ -305,13 +304,6 @@ async function uploadAvatar(event: Event) {
             </button>
           </div>
         </div>
-
-        <section class="detail-link-zone">
-          <button class="relation-btn relation-btn--secondary" type="button" @click="$emit('view-detail')">
-            披阅本纪 (详情)
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </section>
 
         <section class="danger-zone">
           <div>

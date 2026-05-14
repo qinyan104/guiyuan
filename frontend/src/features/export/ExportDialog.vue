@@ -10,14 +10,14 @@
 
       <div class="tabs">
         <button
-          @click="activeTab = 'svg'"
           :class="['tab-btn', { active: activeTab === 'svg' }]"
+          @click="activeTab = 'svg'"
         >
           矢量 SVG
         </button>
         <button
-          @click="activeTab = 'share'"
           :class="['tab-btn', { active: activeTab === 'share' }]"
+          @click="activeTab = 'share'"
         >
           分享网页
         </button>
@@ -26,7 +26,7 @@
       <div v-if="activeTab === 'svg'" class="tab-content">
         <p class="description">导出为无限放大的矢量文件。这是最保真的格式，适合专业排版、印刷或作为原始备份。</p>
         <div class="actions">
-          <button class="btn btn--primary" @click="$emit('export-svg')" :disabled="isProcessing">
+          <button class="btn btn--primary" :disabled="isProcessing" @click="$emit('export-svg')">
             立即下载矢量 SVG
           </button>
         </div>
@@ -56,7 +56,7 @@
           </div>
         </div>
         <div class="actions">
-          <button class="btn btn--primary" @click="emitExportShareHtml" :disabled="isProcessing">
+          <button class="btn btn--primary" :disabled="isProcessing" @click="emitExportShareHtml">
             {{ isProcessing ? '正在生成...' : '生成分享网页' }}
           </button>
         </div>

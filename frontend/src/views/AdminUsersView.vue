@@ -144,148 +144,148 @@ function formatDate(dateStr: string) {
         <div class="poetic-header__extra" style="display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
           <p class="poetic-quote" v-html="lexicon.users.quote.replace(/\\n/g, '<br/>')"></p>
           <button class="bento-btn primary" @click="showCreateForm = true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             添加编委
           </button>
         </div>
       </header>
 
-    <!-- Role Tabs -->
-    <div class="glass-tabs">
-      <button
-        v-for="tab in (['all', 'SUPER_ADMIN', 'ADMIN', 'USER'] as const)"
-        :key="tab"
-        class="glass-tab"
-        :class="{ 'is-active': activeTab === tab }"
-        @click="activeTab = tab"
-      >
-        {{ tab === 'all' ? '全部账号' : roleConfig[tab].label }}
-        <span class="tab-count">{{ tabCounts[tab] }}</span>
-      </button>
-    </div>
-
-    <!-- Create Form -->
-    <transition name="glass-pop">
-      <div v-if="showCreateForm" class="bento-card create-form">
-        <div class="form-header">
-          <h3>新增编委账号</h3>
-        </div>
-        <div class="form-grid">
-          <div class="field">
-            <label>用户名</label>
-            <input v-model="newUsername" type="text" placeholder="输入登录账号" />
-          </div>
-          <div class="field">
-            <label>初始密码</label>
-            <input v-model="newPassword" type="password" placeholder="设置初始密码" />
-          </div>
-          <div class="field">
-            <label>真实姓名/昵称</label>
-            <input v-model="newNickname" type="text" placeholder="选填" />
-          </div>
-        </div>
-        <div class="form-footer">
-          <div class="role-selector">
-            <span class="label">分配角色：</span>
-            <label class="role-radio" :class="{ 'is-active': newRole === 'USER' }">
-              <input v-model="newRole" type="radio" value="USER" />
-              <span>编委</span>
-            </label>
-            <label class="role-radio admin" :class="{ 'is-active': newRole === 'ADMIN' }">
-              <input v-model="newRole" type="radio" value="ADMIN" />
-              <span>协修</span>
-            </label>
-          </div>
-          <div class="actions">
-            <button class="bento-btn ghost" @click="showCreateForm = false">取消</button>
-            <button class="bento-btn primary" @click="handleCreate">确认创建</button>
-          </div>
-        </div>
+      <!-- Role Tabs -->
+      <div class="glass-tabs">
+        <button
+          v-for="tab in (['all', 'SUPER_ADMIN', 'ADMIN', 'USER'] as const)"
+          :key="tab"
+          class="glass-tab"
+          :class="{ 'is-active': activeTab === tab }"
+          @click="activeTab = tab"
+        >
+          {{ tab === 'all' ? '全部账号' : roleConfig[tab].label }}
+          <span class="tab-count">{{ tabCounts[tab] }}</span>
+        </button>
       </div>
-    </transition>
 
-    <!-- Data Table -->
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <span>加载名录中...</span>
-    </div>
-
-    <div v-else class="bento-card table-card">
-      <div class="table-header">
-        <span class="col-id">卷号</span>
-        <span class="col-user">名讳 / 字号</span>
-        <span class="col-role">职官</span>
-        <span class="col-date">入录时日</span>
-        <span class="col-ops">行事</span>
-      </div>
-      <div class="table-body">
-        <div v-for="user in filteredUsers" :key="user.id" class="table-row" :class="{ 'is-protected': isProtected(user) }">
-          <span class="col-id">{{ String(user.id).padStart(4, '0') }}</span>
-          <div class="col-user">
-            <div class="user-avatar" :class="user.role.toLowerCase()">
-              {{ user.nickname ? user.nickname.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase() }}
-            </div>
-            <div class="user-info">
-              <span class="uname">
-                {{ user.username }}
-                <svg v-if="isProtected(user)" class="lock-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </span>
-              <span class="unick">{{ user.nickname || '未设置昵称' }}</span>
-            </div>
-          </div>
-          <span class="col-role">
-            <select
-              v-if="canManageRoles && !isProtected(user)"
-              :value="user.role"
-              class="glass-select"
-              @change="requestRoleChange(user.id, ($event.target as HTMLSelectElement).value)"
-            >
-              <option value="USER">编委</option>
-              <option value="ADMIN">协修</option>
-            </select>
-            <span
-              v-else
-              class="role-badge"
-              :class="user.role.toLowerCase()"
-            >
-              {{ roleConfig[user.role]?.label || user.role }}
-            </span>
-          </span>
-          <span class="col-date">{{ formatDate(user.createdAt) }}</span>
-          <div class="col-ops">
-            <button class="icon-btn reset" @click="resetUserId = user.id; resetNewPassword = ''" title="重置密码">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
-            </button>
-            <button
-              v-if="!isProtected(user)"
-              class="icon-btn danger"
-              @click="deleteUserId = user.id"
-              title="删除编委"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-      <!-- Reset Password Dialog -->
-      <Teleport to="body">
+      <!-- Create Form -->
       <transition name="glass-pop">
-        <div v-if="resetUserId !== null" class="glass-dialog-overlay" @click.self="resetUserId = null">
-          <div class="glass-dialog">
-            <h2 class="dialog-title">重置密码</h2>
-            <div class="dialog-field">
-              <label>为该编委设置新密码</label>
-              <input v-model="resetNewPassword" type="password" placeholder="输入新密码" @keyup.enter="handleResetPassword" />
+        <div v-if="showCreateForm" class="bento-card create-form">
+          <div class="form-header">
+            <h3>新增编委账号</h3>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>用户名</label>
+              <input v-model="newUsername" type="text" placeholder="输入登录账号" />
             </div>
-            <div class="dialog-actions">
-              <button class="bento-btn ghost" @click="resetUserId = null">取消</button>
-              <button class="bento-btn primary" @click="handleResetPassword">确认重置</button>
+            <div class="field">
+              <label>初始密码</label>
+              <input v-model="newPassword" type="password" placeholder="设置初始密码" />
+            </div>
+            <div class="field">
+              <label>真实姓名/昵称</label>
+              <input v-model="newNickname" type="text" placeholder="选填" />
+            </div>
+          </div>
+          <div class="form-footer">
+            <div class="role-selector">
+              <span class="label">分配角色：</span>
+              <label class="role-radio" :class="{ 'is-active': newRole === 'USER' }">
+                <input v-model="newRole" type="radio" value="USER" />
+                <span>编委</span>
+              </label>
+              <label class="role-radio admin" :class="{ 'is-active': newRole === 'ADMIN' }">
+                <input v-model="newRole" type="radio" value="ADMIN" />
+                <span>协修</span>
+              </label>
+            </div>
+            <div class="actions">
+              <button class="bento-btn ghost" @click="showCreateForm = false">取消</button>
+              <button class="bento-btn primary" @click="handleCreate">确认创建</button>
             </div>
           </div>
         </div>
       </transition>
+
+      <!-- Data Table -->
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <span>加载名录中...</span>
+      </div>
+
+      <div v-else class="bento-card table-card">
+        <div class="table-header">
+          <span class="col-id">卷号</span>
+          <span class="col-user">名讳 / 字号</span>
+          <span class="col-role">职官</span>
+          <span class="col-date">入录时日</span>
+          <span class="col-ops">行事</span>
+        </div>
+        <div class="table-body">
+          <div v-for="user in filteredUsers" :key="user.id" class="table-row" :class="{ 'is-protected': isProtected(user) }">
+            <span class="col-id">{{ String(user.id).padStart(4, '0') }}</span>
+            <div class="col-user">
+              <div class="user-avatar" :class="user.role.toLowerCase()">
+                {{ user.nickname ? user.nickname.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase() }}
+              </div>
+              <div class="user-info">
+                <span class="uname">
+                  {{ user.username }}
+                  <svg v-if="isProtected(user)" class="lock-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                </span>
+                <span class="unick">{{ user.nickname || '未设置昵称' }}</span>
+              </div>
+            </div>
+            <span class="col-role">
+              <select
+                v-if="canManageRoles && !isProtected(user)"
+                :value="user.role"
+                class="glass-select"
+                @change="requestRoleChange(user.id, ($event.target as HTMLSelectElement).value)"
+              >
+                <option value="USER">编委</option>
+                <option value="ADMIN">协修</option>
+              </select>
+              <span
+                v-else
+                class="role-badge"
+                :class="user.role.toLowerCase()"
+              >
+                {{ roleConfig[user.role]?.label || user.role }}
+              </span>
+            </span>
+            <span class="col-date">{{ formatDate(user.createdAt) }}</span>
+            <div class="col-ops">
+              <button class="icon-btn reset" title="重置密码" @click="resetUserId = user.id; resetNewPassword = ''">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6" /><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /></svg>
+              </button>
+              <button
+                v-if="!isProtected(user)"
+                class="icon-btn danger"
+                title="删除编委"
+                @click="deleteUserId = user.id"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset Password Dialog -->
+      <Teleport to="body">
+        <transition name="glass-pop">
+          <div v-if="resetUserId !== null" class="glass-dialog-overlay" @click.self="resetUserId = null">
+            <div class="glass-dialog">
+              <h2 class="dialog-title">重置密码</h2>
+              <div class="dialog-field">
+                <label>为该编委设置新密码</label>
+                <input v-model="resetNewPassword" type="password" placeholder="输入新密码" @keyup.enter="handleResetPassword" />
+              </div>
+              <div class="dialog-actions">
+                <button class="bento-btn ghost" @click="resetUserId = null">取消</button>
+                <button class="bento-btn primary" @click="handleResetPassword">确认重置</button>
+              </div>
+            </div>
+          </div>
+        </transition>
       </Teleport>
 
       <ConfirmDialog
@@ -296,23 +296,23 @@ function formatDate(dateStr: string) {
         tone="warning"
         @confirm="confirmRoleChange"
         @cancel="cancelRoleChange"
-        @update:modelValue="(v: boolean) => { if (!v) cancelRoleChange() }"
+        @update:model-value="(v: boolean) => { if (!v) cancelRoleChange() }"
       />
 
-<!-- Delete Confirm Dialog -->
+      <!-- Delete Confirm Dialog -->
       <Teleport to="body">
-      <transition name="glass-pop">
-        <div v-if="deleteUserId !== null" class="glass-dialog-overlay" @click.self="deleteUserId = null">
-          <div class="glass-dialog danger-mode">
-            <h2 class="dialog-title">确认删除编委</h2>
-            <p class="dialog-desc">此操作将永久移除该编委的系统访问权限，该操作不可撤销。</p>
-            <div class="dialog-actions">
-              <button class="bento-btn ghost" @click="deleteUserId = null">保留</button>
-              <button class="bento-btn danger" @click="handleDelete(deleteUserId!)">确认删除</button>
+        <transition name="glass-pop">
+          <div v-if="deleteUserId !== null" class="glass-dialog-overlay" @click.self="deleteUserId = null">
+            <div class="glass-dialog danger-mode">
+              <h2 class="dialog-title">确认删除编委</h2>
+              <p class="dialog-desc">此操作将永久移除该编委的系统访问权限，该操作不可撤销。</p>
+              <div class="dialog-actions">
+                <button class="bento-btn ghost" @click="deleteUserId = null">保留</button>
+                <button class="bento-btn danger" @click="handleDelete(deleteUserId!)">确认删除</button>
+              </div>
             </div>
           </div>
-        </div>
-      </transition>
+        </transition>
       </Teleport>
     </div>
   </div>

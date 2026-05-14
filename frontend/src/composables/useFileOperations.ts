@@ -1,6 +1,6 @@
 import { nextTick, ref, shallowRef, type Ref } from 'vue'
 
-import type { DraftPackage, PublicationData, PublicationLayout, PublicationSettings } from '../types/family'
+import type { DraftPackage } from '../types/family'
 import {
   createPrintDocument,
   createPrintLayoutPages,
@@ -68,7 +68,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
   }
 
   function sanitizeFileName(raw: string): string {
-    return raw.replace(/[\\/:*?\"<>|]/g, '-').trim() || 'Guiyuan-archive-preview'
+    return raw.replace(/[\\/:*?"<>|]/g, '-').trim() || 'Guiyuan-archive-preview'
   }
 
   async function createCurrentStandaloneSvg(): Promise<SVGSVGElement | null> {

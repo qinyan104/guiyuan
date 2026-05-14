@@ -176,185 +176,183 @@ async function handleChangeNickname() {
         </div>
         <div class="poetic-header__extra">
           <p class="poetic-quote">
-            工欲善其事，必先利其器。<br/>
+            工欲善其事，必先利其器。<br />
             于此调和规矩，方成方圆。
           </p>
         </div>
       </header>
 
-    <div class="bento-grid">
-      <!-- Big Profile Identity Card -->
-      <div class="bento-card profile-card">
-        <div class="avatar-glow-ring" @click="fileInputRef?.click()" style="cursor: pointer;">
-          <img v-if="avatarUrl" :src="avatarUrl" class="large-avatar-img" />
-          <div v-else class="large-avatar">{{ userInitials }}</div>
-        </div>
-        <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleAvatarUpload" />
-        <div class="profile-info">
-          <span class="profile-status">已验证通行证</span>
-          <h2 class="profile-name">{{ currentUsername }}</h2>
-          <span class="profile-role">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            档案系统注册编委
-          </span>
-        </div>
-      </div>
-
-      <!-- Detail Forms Grid -->
-      <div class="forms-container">
-        
-        <!-- Nickname Card -->
-        <div class="bento-card nickname-card">
-          <div class="card-header">
-            <h3 class="card-title">公开身份标识</h3>
-            <p class="card-subtitle">系统内对外展出的别名或真实姓名，若留空则自动显示登录账号。</p>
+      <div class="bento-grid">
+        <!-- Big Profile Identity Card -->
+        <div class="bento-card profile-card">
+          <div class="avatar-glow-ring" style="cursor: pointer;" @click="fileInputRef?.click()">
+            <img v-if="avatarUrl" :src="avatarUrl" class="large-avatar-img" />
+            <div v-else class="large-avatar">{{ userInitials }}</div>
           </div>
-          <div class="glass-form-row">
-            <input
-              v-model="nickname"
-              type="text"
-              placeholder="输入全新的身份标识..."
-              class="glass-input"
-              @keyup.enter="handleChangeNickname"
-            />
-            <button class="bento-btn primary" :disabled="nicknameLoading" @click="handleChangeNickname">
-              {{ nicknameLoading ? '验证中...' : '更新身份' }}
-            </button>
+          <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleAvatarUpload" />
+          <div class="profile-info">
+            <span class="profile-status">已验证通行证</span>
+            <h2 class="profile-name">{{ currentUsername }}</h2>
+            <span class="profile-role">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+              档案系统注册编委
+            </span>
           </div>
-          <transition name="fade-slide">
-            <p v-if="nicknameMsg" class="feedback-msg success">{{ nicknameMsg }}</p>
-          </transition>
         </div>
 
-        <!-- Password Card -->
-        <div class="bento-card password-card">
-          <div class="card-header">
-            <h3 class="card-title">系统通行密钥</h3>
-            <p class="card-subtitle">为保障数字档案馆资产安全，请定期进行密钥轮换更新。</p>
-          </div>
-          <div class="glass-form-col">
-            <div class="field">
-              <label>当前通行密钥</label>
-              <input v-model="oldPassword" type="password" class="glass-input" placeholder="输入当前密码进行权限验证" />
+        <!-- Detail Forms Grid -->
+        <div class="forms-container">
+          <!-- Nickname Card -->
+          <div class="bento-card nickname-card">
+            <div class="card-header">
+              <h3 class="card-title">公开身份标识</h3>
+              <p class="card-subtitle">系统内对外展出的别名或真实姓名，若留空则自动显示登录账号。</p>
             </div>
-            <div class="field-group">
-              <div class="field">
-                <label>新设密钥</label>
-                <input v-model="newPassword" type="password" class="glass-input" placeholder="新密码要求不少于 4 个字符" />
-              </div>
-              <div class="field">
-                <label>确认密钥</label>
-                <input
-                  v-model="confirmPassword"
-                  type="password"
-                  class="glass-input"
-                  placeholder="请再次输入新密码"
-                  @keyup.enter="handleChangePassword"
-                />
-              </div>
-            </div>
-            
-            <div class="form-actions">
-              <button class="bento-btn primary" :disabled="passwordLoading" @click="handleChangePassword">
-                {{ passwordLoading ? '重铸进程中...' : '重铸通行密钥' }}
+            <div class="glass-form-row">
+              <input
+                v-model="nickname"
+                type="text"
+                placeholder="输入全新的身份标识..."
+                class="glass-input"
+                @keyup.enter="handleChangeNickname"
+              />
+              <button class="bento-btn primary" :disabled="nicknameLoading" @click="handleChangeNickname">
+                {{ nicknameLoading ? '验证中...' : '更新身份' }}
               </button>
             </div>
             <transition name="fade-slide">
-              <div v-if="passwordError" class="feedback-msg error">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                {{ passwordError }}
-              </div>
-              <div v-else-if="passwordMsg" class="feedback-msg success">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                {{ passwordMsg }}
-              </div>
+              <p v-if="nicknameMsg" class="feedback-msg success">{{ nicknameMsg }}</p>
             </transition>
           </div>
-        </div>
 
-        <!-- Data Backup Card (SUPER_ADMIN only) -->
-        <div v-if="isSuperAdmin()" class="bento-card backup-card">
-          <div class="card-header">
-            <h3 class="card-title">数据备份</h3>
-            <p class="card-subtitle">导出数据库完整备份，包含所有族谱、人物和用户数据。</p>
-          </div>
-          <div class="glass-form-row">
-            <button class="bento-btn primary" :disabled="backupLoading" @click="handleBackup">
-              {{ backupLoading ? '备份生成中...' : '创建备份并下载' }}
-            </button>
-          </div>
-          <transition name="fade-slide">
-            <p v-if="backupError" class="feedback-msg error">{{ backupError }}</p>
-          </transition>
-        </div>
-
-        <!-- Database Restore Card (SUPER_ADMIN only) -->
-        <div v-if="isSuperAdmin()" class="settings-card">
-          <h3>数据库还原</h3>
-          <p class="settings-card__desc">
-            从备份文件还原数据库。此操作<strong>不可逆</strong>，将覆盖当前全部数据。
-          </p>
-          <div class="restore-controls">
-            <input
-              ref="restoreFileInputRef"
-              type="file"
-              accept=".sql"
-              @change="onFileSelected"
-            />
-            <button
-              class="btn btn--danger"
-              :disabled="!restoreFile || restorePending"
-              @click="showRestoreConfirm = true"
-            >
-              {{ restorePending ? '还原中...' : '还原数据库' }}
-            </button>
-          </div>
-        </div>
-
-        <ConfirmDialog
-          :modelValue="showRestoreConfirm"
-          title="确认还原数据库"
-          message="此操作不可逆，将覆盖当前全部数据。请确保已备份。"
-          confirmLabel="确认还原"
-          tone="danger"
-          @confirm="showRestoreConfirm = false; handleRestore()"
-          @cancel="showRestoreConfirm = false"
-          @update:modelValue="(v: boolean) => { if (!v) showRestoreConfirm = false }"
-        />
-
-        <!-- Data Consistency Card (SUPER_ADMIN only) -->
-        <div v-if="isSuperAdmin()" class="bento-card">
-          <div class="card-header">
-            <h3 class="card-title">数据一致性检查</h3>
-            <p class="card-subtitle">扫描全库数据，检测孤立人物、日期矛盾、状态不一致等问题。</p>
-          </div>
-          <div class="glass-form-row">
-            <button
-              class="bento-btn primary"
-              :disabled="consistencyRunning"
-              @click="handleConsistencyCheck"
-            >
-              {{ consistencyRunning ? '检查中...' : '开始检查' }}
-            </button>
+          <!-- Password Card -->
+          <div class="bento-card password-card">
+            <div class="card-header">
+              <h3 class="card-title">系统通行密钥</h3>
+              <p class="card-subtitle">为保障数字档案馆资产安全，请定期进行密钥轮换更新。</p>
+            </div>
+            <div class="glass-form-col">
+              <div class="field">
+                <label>当前通行密钥</label>
+                <input v-model="oldPassword" type="password" class="glass-input" placeholder="输入当前密码进行权限验证" />
+              </div>
+              <div class="field-group">
+                <div class="field">
+                  <label>新设密钥</label>
+                  <input v-model="newPassword" type="password" class="glass-input" placeholder="新密码要求不少于 4 个字符" />
+                </div>
+                <div class="field">
+                  <label>确认密钥</label>
+                  <input
+                    v-model="confirmPassword"
+                    type="password"
+                    class="glass-input"
+                    placeholder="请再次输入新密码"
+                    @keyup.enter="handleChangePassword"
+                  />
+                </div>
+              </div>
+            
+              <div class="form-actions">
+                <button class="bento-btn primary" :disabled="passwordLoading" @click="handleChangePassword">
+                  {{ passwordLoading ? '重铸进程中...' : '重铸通行密钥' }}
+                </button>
+              </div>
+              <transition name="fade-slide">
+                <div v-if="passwordError" class="feedback-msg error">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                  {{ passwordError }}
+                </div>
+                <div v-else-if="passwordMsg" class="feedback-msg success">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                  {{ passwordMsg }}
+                </div>
+              </transition>
+            </div>
           </div>
 
-          <div v-if="consistencyResult.length > 0" class="consistency-report">
-            <p class="consistency-summary">发现 {{ consistencyResult.length }} 个问题：</p>
-            <details v-for="(group, type) in groupedIssues" :key="type" class="consistency-group">
-              <summary>{{ typeLabels[type] || type }} ({{ group.length }})</summary>
-              <ul>
-                <li v-for="issue in group" :key="issue.personId + issue.detail">
-                  <strong>{{ issue.personName || issue.personId }}</strong>
-                  — {{ issue.detail }}
-                </li>
-              </ul>
-            </details>
+          <!-- Data Backup Card (SUPER_ADMIN only) -->
+          <div v-if="isSuperAdmin()" class="bento-card backup-card">
+            <div class="card-header">
+              <h3 class="card-title">数据备份</h3>
+              <p class="card-subtitle">导出数据库完整备份，包含所有族谱、人物和用户数据。</p>
+            </div>
+            <div class="glass-form-row">
+              <button class="bento-btn primary" :disabled="backupLoading" @click="handleBackup">
+                {{ backupLoading ? '备份生成中...' : '创建备份并下载' }}
+              </button>
+            </div>
+            <transition name="fade-slide">
+              <p v-if="backupError" class="feedback-msg error">{{ backupError }}</p>
+            </transition>
           </div>
-          <p v-else-if="consistencyResult.length === 0 && !consistencyRunning" class="consistency-clean">
-            未发现问题，数据一致性良好。
-          </p>
-        </div>
 
+          <!-- Database Restore Card (SUPER_ADMIN only) -->
+          <div v-if="isSuperAdmin()" class="settings-card">
+            <h3>数据库还原</h3>
+            <p class="settings-card__desc">
+              从备份文件还原数据库。此操作<strong>不可逆</strong>，将覆盖当前全部数据。
+            </p>
+            <div class="restore-controls">
+              <input
+                ref="restoreFileInputRef"
+                type="file"
+                accept=".sql"
+                @change="onFileSelected"
+              />
+              <button
+                class="btn btn--danger"
+                :disabled="!restoreFile || restorePending"
+                @click="showRestoreConfirm = true"
+              >
+                {{ restorePending ? '还原中...' : '还原数据库' }}
+              </button>
+            </div>
+          </div>
+
+          <ConfirmDialog
+            :modelValue="showRestoreConfirm"
+            title="确认还原数据库"
+            message="此操作不可逆，将覆盖当前全部数据。请确保已备份。"
+            confirmLabel="确认还原"
+            tone="danger"
+            @confirm="showRestoreConfirm = false; handleRestore()"
+            @cancel="showRestoreConfirm = false"
+            @update:model-value="(v: boolean) => { if (!v) showRestoreConfirm = false }"
+          />
+
+          <!-- Data Consistency Card (SUPER_ADMIN only) -->
+          <div v-if="isSuperAdmin()" class="bento-card">
+            <div class="card-header">
+              <h3 class="card-title">数据一致性检查</h3>
+              <p class="card-subtitle">扫描全库数据，检测孤立人物、日期矛盾、状态不一致等问题。</p>
+            </div>
+            <div class="glass-form-row">
+              <button
+                class="bento-btn primary"
+                :disabled="consistencyRunning"
+                @click="handleConsistencyCheck"
+              >
+                {{ consistencyRunning ? '检查中...' : '开始检查' }}
+              </button>
+            </div>
+
+            <div v-if="consistencyResult.length > 0" class="consistency-report">
+              <p class="consistency-summary">发现 {{ consistencyResult.length }} 个问题：</p>
+              <details v-for="(group, type) in groupedIssues" :key="type" class="consistency-group">
+                <summary>{{ typeLabels[type] || type }} ({{ group.length }})</summary>
+                <ul>
+                  <li v-for="issue in group" :key="issue.personId + issue.detail">
+                    <strong>{{ issue.personName || issue.personId }}</strong>
+                    — {{ issue.detail }}
+                  </li>
+                </ul>
+              </details>
+            </div>
+            <p v-else-if="consistencyResult.length === 0 && !consistencyRunning" class="consistency-clean">
+              未发现问题，数据一致性良好。
+            </p>
+          </div>
         </div>
       </div>
     </div>

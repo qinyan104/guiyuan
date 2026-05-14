@@ -109,7 +109,7 @@ async function saveToServer() {
       conflictMessage.value = conflict.message
       feedback.errorMessage.value = conflict.message
       clearScheduledSave()
-      throw new Error(conflict.message)
+      throw new Error(conflict.message, { cause: conflict })
     }
 
     syncStatus.value = 'error'
@@ -171,7 +171,7 @@ async function load() {
     syncStatus.value = 'saved'
     lastSyncedSignature.value = persistedSignature.value
     history.initializeHistoryBaseline()
-  } catch (err) {
+  } catch {
     feedback.setError('加载族谱失败')
   } finally {
     loading.value = false

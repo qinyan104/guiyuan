@@ -91,7 +91,6 @@ function buildTreeNode(
   nextVisited.add(familyId)
 
   const children = family.children.map((childId) => {
-    const child = data.people[childId]
     const childFamilyId = adultFamilyMap.get(childId)
     if (childFamilyId && !nextVisited.has(childFamilyId)) {
       const branchMode = resolveFamilyBranchMode(data, childFamilyId)
@@ -403,12 +402,6 @@ function placeNodeSu(
 }
 
 // ─── Ou Style Layout (Grid / Traditional Matrix) ─────────────────
-
-function measureNodeOu(node: TreeNode, settings: PublicationSettings): { generations: number } {
-  // Ou style traditionally aligns everyone in the same generation to same row
-  // We use modern measurement but might enforce more padding
-  return measureNodeModern(node, settings)
-}
 
 function placeNodeOu(
   node: TreeNode,

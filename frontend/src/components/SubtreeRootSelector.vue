@@ -88,7 +88,7 @@ onMounted(() => {
         <header class="selector-header">
           <div class="header-main">
             <h3>选择子树起点</h3>
-            <span class="pub-title" v-if="publicationTitle">{{ publicationTitle }}</span>
+            <span v-if="publicationTitle" class="pub-title">{{ publicationTitle }}</span>
           </div>
           <p class="header-hint">
             请在下方预览图中选择一个人物作为合并或查看的起点。选定后，将仅包含该人物及其后代。
@@ -102,16 +102,16 @@ onMounted(() => {
           </div>
           <div v-else-if="error" class="state-placeholder error">
             <p>{{ error }}</p>
-            <button @click="loadData" class="retry-btn">重试</button>
+            <button class="retry-btn" @click="loadData">重试</button>
           </div>
           <div v-else-if="publicationData && previewLayout" class="canvas-container">
             <PublicationCanvas
               :publication="publicationData"
               :settings="previewSettings"
               :layout="previewLayout"
-              :selected-person-id="selectedPersonIdForCanvas"
-              :pan-x="0"
-              :pan-y="0"
+              :selectedPersonId="selectedPersonIdForCanvas"
+              :panX="0"
+              :panY="0"
               @select-person="onSelectPerson"
             />
           </div>

@@ -71,15 +71,6 @@ const routes: RouteRecordRaw[] = [
         props: (route) => ({ publicationId: Number(route.params.id) }),
       },
       {
-        path: 'person/:personId',
-        name: 'person-detail',
-        component: () => import('../views/PersonDetailView.vue'),
-        props: (route) => ({
-          publicationId: Number(route.params.id),
-          personId: route.params.personId as string,
-        }),
-      },
-      {
         path: 'stats',
         name: 'publication-stats',
         component: () => import('../views/PublicationStatsView.vue'),
@@ -90,11 +81,6 @@ const routes: RouteRecordRaw[] = [
         name: 'publication-timeline',
         component: () => import('../views/TimelineView.vue'),
         props: (route) => ({ publicationId: Number(route.params.id) }),
-      },
-      {
-        path: 'print-preview',
-        name: 'print-preview',
-        component: () => import('../views/PrintPreviewView.vue'),
       },
     ],
   },

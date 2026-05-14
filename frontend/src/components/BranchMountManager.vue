@@ -349,14 +349,14 @@ onUnmounted(() => {
     tone="danger"
     @confirm="executeMerge"
     @cancel="showMergeConfirm = false"
-    @update:modelValue="(v: boolean) => { if (!v) showMergeConfirm = false }"
+    @update:model-value="(v: boolean) => { if (!v) showMergeConfirm = false }"
   />
 
   <SubtreeRootSelector
     v-if="showRootSelector"
     v-model="showRootSelector"
-    :publication-id="Number(selectedTargetId)"
-    :publication-title="selectedTarget?.title"
+    :publicationId="Number(selectedTargetId)"
+    :publicationTitle="selectedTarget?.title"
     @selected="handleRootSelected"
   />
 </template>

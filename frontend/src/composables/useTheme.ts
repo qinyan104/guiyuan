@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 
 export type ThemeId = 'parchment' | 'su-style' | 'ou-style' | 'ink-wash' | 'celadon' | 'rosewood' | 'frosted-glass' | 'star-sea' | 'aurora' | 'eggshell'
 

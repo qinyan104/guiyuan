@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getSharePublication, getShareMeta, getSharePhotoUrl } from '../api/share'
 import { usePublicationState } from '../composables/usePublicationState'
-import { layoutPublication } from '../lib/layout'
 import PublicationCanvas from '../components/PublicationCanvas.vue'
 import type { PublicationData, PublicationSettings } from '../types/family'
 
@@ -136,8 +135,8 @@ function handleSelectPerson(personId: string) {
           :panX="panX"
           :panY="panY"
           @select-person="handleSelectPerson"
-          @update:panX="panX = $event"
-          @update:panY="panY = $event"
+          @update:pan-x="panX = $event"
+          @update:pan-y="panY = $event"
         />
       </div>
 

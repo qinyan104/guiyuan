@@ -98,7 +98,7 @@ const DEFAULT_PROFILE = {
 function parseProfile(profileStr?: string) {
   try {
     return profileStr ? JSON.parse(profileStr) : { ...DEFAULT_PROFILE }
-  } catch (e) {
+  } catch {
     return { ...DEFAULT_PROFILE }
   }
 }
@@ -143,18 +143,6 @@ async function confirmRoleChange() {
 
 function cancelRoleChange() {
   pendingRoleChange.value = null
-}
-
-async function handleRoleChange(userId: number, role: 'EDITOR' | 'VIEWER') {
-  error.value = null
-  try {
-    const profile = role === 'VIEWER' ? JSON.stringify(DEFAULT_PROFILE) : undefined
-    await updateAccessRole(props.publicationId, userId, role, profile)
-    await load(true)
-  } catch (err: any) {
-    error.value = err.message || '修改失败'
-    await load(true) // reset
-  }
 }
 
 async function handleProfileChange(record: AccessRecord, field: string, value: string) {
@@ -222,13 +210,13 @@ onUnmounted(() => {
           <span>浏览者只能查看，并会应用脱敏规则。</span>
         </div>
       </div>
-      <div class="search-container" ref="searchContainer">
+      <div ref="searchContainer" class="search-container">
         <div class="search-box" :class="{ 'is-searching': searching }">
           <input 
+            v-model="searchQuery" 
             type="text" 
             class="form-input" 
             placeholder="输入用户名或昵称搜索..." 
-            v-model="searchQuery" 
             @input="handleSearchInput" 
           />
           <div v-if="searching" class="search-spinner"></div>
@@ -254,7 +242,7 @@ onUnmounted(() => {
             <option value="EDITOR">编辑者 (可修改)</option>
             <option value="VIEWER">浏览者 (仅查看)</option>
           </select>
-          <button class="btn btn--primary pill" @click="handleAdd" :disabled="!selectedUserId || adding">
+          <button class="btn btn--primary pill" :disabled="!selectedUserId || adding" @click="handleAdd">
             {{ adding ? '添加中...' : '添加' }}
           </button>
         </div>
@@ -292,7 +280,7 @@ onUnmounted(() => {
                   <option value="EDITOR">编辑者</option>
                   <option value="VIEWER">浏览者</option>
                 </select>
-                <button class="btn btn--ghost icon-btn remove-btn" @click="handleRemove(record.userId)" title="移除协作者">
+                <button class="btn btn--ghost icon-btn remove-btn" title="移除协作者" @click="handleRemove(record.userId)">
                   &times;
                 </button>
               </template>
@@ -357,7 +345,7 @@ onUnmounted(() => {
       tone="warning"
       @confirm="confirmRemove"
       @cancel="cancelRemove"
-      @update:modelValue="(v: boolean) => { if (!v) cancelRemove() }"
+      @update:model-value="(v: boolean) => { if (!v) cancelRemove() }"
     />
     <ConfirmDialog
       :modelValue="pendingRoleChange !== null"
@@ -367,7 +355,7 @@ onUnmounted(() => {
       tone="warning"
       @confirm="confirmRoleChange"
       @cancel="cancelRoleChange"
-      @update:modelValue="(v: boolean) => { if (!v) cancelRoleChange() }"
+      @update:model-value="(v: boolean) => { if (!v) cancelRoleChange() }"
     />
   </div>
 </template>

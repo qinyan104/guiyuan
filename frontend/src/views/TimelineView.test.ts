@@ -9,6 +9,9 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: routerPush,
   }),
+  useRoute: () => ({
+    params: { id: 15 },
+  }),
 }))
 
 import TimelineView from './TimelineView.vue'

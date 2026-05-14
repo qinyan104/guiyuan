@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useTheme } from './composables/useTheme'
 import { getAccessToken } from './api/tokenStore'
 import { bootstrapAuthSession } from './api/authSession'
 
-const theme = useTheme()
 const router = useRouter()
 const route = useRoute()
 

@@ -17,7 +17,6 @@ export function usePersonEditor(pub: PublicationStateReturn) {
     branchActionLabel,
     getPersonStatus,
     getGenderLabel,
-    selectedParents,
   } = pub
 
   const selectedPersonSuggestion = computed(() => {

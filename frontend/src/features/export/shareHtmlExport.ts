@@ -212,7 +212,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     // Relationships
     var relHtml = '';
     if (rels.parents.length > 0) {
-      relHtml += '<div class="rel-group"><span class=\"rel-label\">父母</span>';
+      relHtml += '<div class="rel-group"><span class="rel-label">父母</span>';
       for (var j = 0; j < rels.parents.length; j++) {
         var pp = data.publication.people[rels.parents[j]];
         if (pp) relHtml += '<span class="rel-item" data-pid="' + rels.parents[j] + '">' + escapeHtml(pp.name) + '</span>';
@@ -220,7 +220,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
       relHtml += '</div>';
     }
     if (rels.spouses.length > 0) {
-      relHtml += '<div class="rel-group"><span class=\"rel-label\">父母</span>';
+      relHtml += '<div class="rel-group"><span class="rel-label">父母</span>';
       for (var k = 0; k < rels.spouses.length; k++) {
         var sp = data.publication.people[rels.spouses[k]];
         if (sp) relHtml += '<span class="rel-item" data-pid="' + rels.spouses[k] + '">' + escapeHtml(sp.name) + '</span>';
@@ -228,7 +228,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
       relHtml += '</div>';
     }
     if (rels.children.length > 0) {
-      relHtml += '<div class="rel-group"><span class=\"rel-label\">父母</span>';
+      relHtml += '<div class="rel-group"><span class="rel-label">父母</span>';
       for (var m = 0; m < rels.children.length; m++) {
         var cp = data.publication.people[rels.children[m]];
         if (cp) relHtml += '<span class="rel-item" data-pid="' + rels.children[m] + '">' + escapeHtml(cp.name) + '</span>';

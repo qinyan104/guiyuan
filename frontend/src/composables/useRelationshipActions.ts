@@ -56,8 +56,6 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     selectedPerson,
     selectedSpouse,
     selectedParents,
-    selectedChildren,
-    isSelectedBranchFocused,
     rootFamilyId,
     isPersonId,
     replaceReactiveObject,

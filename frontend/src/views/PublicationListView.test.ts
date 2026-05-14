@@ -59,9 +59,9 @@ describe('PublicationListView', () => {
     await wrapper.get('.icon-btn.danger').trigger('click')
 
     expect(deletePublication).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('确认删除族谱')
+    expect(wrapper.text()).toContain('确认焚毁')
 
-    await wrapper.get('button[data-role="confirm"]').trigger('click')
+    await wrapper.get('.delete-overlay button.danger').trigger('click')
 
     expect(deletePublication).toHaveBeenCalledWith(7)
   })
@@ -81,7 +81,7 @@ describe('PublicationListView', () => {
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('alice')
-    expect(wrapper.text()).toContain('查看活动记录')
+    expect(wrapper.text()).toContain('陈氏宗谱测试卷')
+    expect(wrapper.text()).toContain('2026/05/10')
   })
 })

@@ -82,8 +82,9 @@ function navigateToPublication(hit: PublicationHit) {
 function navigateToPerson(hit: PersonHit) {
   isOpen.value = false
   router.push({
-    name: 'person-detail',
-    params: { id: hit.publicationId, personId: hit.personId },
+    name: 'workbench',
+    params: { id: hit.publicationId },
+    query: { personId: hit.personId },
   })
 }
 
@@ -100,11 +101,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="global-search-root" ref="rootRef">
+  <div ref="rootRef" class="global-search-root">
     <div class="search-input-wrapper">
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
       <input
         ref="inputRef"
@@ -143,8 +144,8 @@ onBeforeUnmount(() => {
             >
               <div class="result-item-icon">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
               </div>
               <div class="result-item-content">
@@ -164,8 +165,8 @@ onBeforeUnmount(() => {
             >
               <div class="result-item-icon">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
                 </svg>
               </div>
               <div class="result-item-content">

@@ -5,7 +5,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { getBuiltinSampleById } from '../data/builtinDynastySamples'
 import { defaultSettings } from '../data/sampleFamily'
 import { usePublicationState } from '../composables/usePublicationState'
-import { useTheme } from '../composables/useTheme'
 import { createPublication } from '../api/publication'
 
 import PublicationCanvas from '../components/PublicationCanvas.vue'
@@ -23,8 +22,6 @@ const cloneError = ref('')
 
 const feedbackMessage = ref('')
 const feedbackError = ref('')
-
-const theme = useTheme()
 
 const viewportPan = ref({ x: 0, y: 0 })
 
@@ -124,8 +121,8 @@ function handleUpdateZoom(zoom: number) {
     <!-- Top bar -->
     <header class="preview-header">
       <div class="header-left">
-        <button class="back-btn" @click="goBack" title="返回谱系陈列馆">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <button class="back-btn" title="返回谱系陈列馆" @click="goBack">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
           <span>返回</span>
         </button>
         <div class="header-divider"></div>
@@ -137,8 +134,8 @@ function handleUpdateZoom(zoom: number) {
       </div>
       <div class="header-right">
         <button class="clone-btn" :disabled="cloning || !!clonedId" @click="handleClone">
-          <svg v-if="cloning" class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/></svg>
-          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <svg v-if="cloning" class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" /></svg>
+          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
           <span>{{ cloning ? '拓印中...' : clonedId ? '已拓印 ✓' : '拓印至我的典藏' }}</span>
         </button>
       </div>
@@ -146,8 +143,8 @@ function handleUpdateZoom(zoom: number) {
 
     <!-- Feedback -->
     <FeedbackStrip
-      :status-message="feedbackMessage"
-      :error-message="feedbackError"
+      :statusMessage="feedbackMessage"
+      :errorMessage="feedbackError"
       @dismiss="feedbackMessage = ''; feedbackError = ''"
     />
 
@@ -158,19 +155,19 @@ function handleUpdateZoom(zoom: number) {
         :publication="pub.publication"
         :settings="pub.settings"
         :layout="publicationLayout"
-        :selected-person-id="pub.selectedPersonId.value"
-        :pan-x="viewportPan.x"
-        :pan-y="viewportPan.y"
+        :selectedPersonId="pub.selectedPersonId.value"
+        :panX="viewportPan.x"
+        :panY="viewportPan.y"
         @select-person="handleSelectPerson"
         @update-zoom="handleUpdateZoom"
-        @update:panX="viewportPan.x = $event"
-        @update:panY="viewportPan.y = $event"
+        @update:pan-x="viewportPan.x = $event"
+        @update:pan-y="viewportPan.y = $event"
       />
     </div>
 
     <!-- Bottom hint -->
     <div class="preview-hint">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
       <span>预览模式 — 拖拽平移 · 滚轮缩放 · 点击人物查看详情 · 按 <kbd>ESC</kbd> 返回</span>
     </div>
   </div>

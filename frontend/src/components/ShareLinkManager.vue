@@ -142,14 +142,14 @@ onMounted(load)
     <!-- Create form -->
     <div v-if="showCreateForm" class="create-form">
       <label class="form-field">
-        <input type="checkbox" v-model="allowExport" />
+        <input v-model="allowExport" type="checkbox" />
         <span>允许导出</span>
       </label>
       <label class="form-field">
         <span>有效期（天）</span>
-        <input type="number" v-model.number="expiresInDays" min="1" max="365" />
+        <input v-model.number="expiresInDays" type="number" min="1" max="365" />
       </label>
-      <button class="btn btn--sm btn--primary" @click="handleCreate" :disabled="creating">
+      <button class="btn btn--sm btn--primary" :disabled="creating" @click="handleCreate">
         {{ creating ? '创建中...' : '确认创建' }}
       </button>
     </div>
@@ -184,7 +184,7 @@ onMounted(load)
       tone="danger"
       @confirm="confirmRevoke"
       @cancel="cancelRevoke"
-      @update:modelValue="(v: boolean) => { if (!v) cancelRevoke() }"
+      @update:model-value="(v: boolean) => { if (!v) cancelRevoke() }"
     />
   </div>
 </template>

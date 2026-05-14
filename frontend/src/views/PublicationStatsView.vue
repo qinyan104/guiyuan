@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { getPublicationHistory, getPublicationActivity, type ParsedActivity } from '../api/publication'
-import type { Person, FamilyUnit, PublicationData } from '../types/family'
+import { getPublicationActivity, type ParsedActivity } from '../api/publication'
+import type { Person, PublicationData } from '../types/family'
 import { parseYear } from '../lib/dateUtils'
 
-const props = defineProps<{ publicationId: number }>()
+defineProps<{ publicationId: number }>()
 const router = useRouter()
 
 // ─── Shared Context ─────────────────────────────────────────────
@@ -33,7 +33,6 @@ async function loadHistory() {
 onMounted(loadHistory)
 
 const people = computed<Person[]>(() => Object.values(pubData.value.people))
-const families = computed<FamilyUnit[]>(() => Object.values(pubData.value.families))
 
 // ── Data Cleaning & Accuracy ──
 const totalCount = computed(() => people.value.length)
@@ -167,11 +166,6 @@ const maxLifespan = computed(() => {
   return lifespans.value.reduce((a, b) => a.years > b.years ? a : b)
 })
 
-const minLifespan = computed(() => {
-  if (lifespans.value.length === 0) return null
-  return lifespans.value.reduce((a, b) => a.years < b.years ? a : b)
-})
-
 const lifespanBuckets = computed(() => {
   const buckets = new Map<string, number>()
   for (const l of lifespans.value) {
@@ -216,34 +210,6 @@ function goBack() {
   router.push({ name: 'workbench' })
 }
 
-function historyActionLabel(action: string): string {
-  const map: Record<string, string> = {
-    CREATE_PUB: '创建族谱',
-    UPDATE_PUB: '保存修改',
-    DELETE_PUB: '删除族谱',
-    BACKUP: '数据库备份',
-    UPDATE_PUB_META: '修改信息',
-    UPDATE_PERSON: '编辑人物',
-  }
-  return map[action] || action
-}
-
-function historyActionClass(action: string): string {
-  if (action.includes('DELETE')) return 'history-tag history-tag--danger'
-  if (action.includes('CREATE')) return 'history-tag history-tag--success'
-  if (action === 'UPDATE_PUB_META') return 'history-tag history-tag--purple'
-  if (action === 'UPDATE_PERSON') return 'history-tag history-tag--indigo'
-  if (action.includes('UPDATE')) return 'history-tag history-tag--info'
-  return 'history-tag'
-}
-
-function formatHistoryDate(dateStr: string) {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('zh-CN', {
-    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
-  })
-}
-
 function actionLabel(action: string): string {
   const labels: Record<string, string> = {
     CREATE_PUB: '创建族谱',
@@ -281,7 +247,7 @@ function formatRelativeTime(dateStr: string): string {
   <div class="stats-view">
     <div class="bento-header">
       <div class="header-left">
-        <button class="action-btn back-btn" @click="goBack" title="返回工作台">
+        <button class="action-btn back-btn" title="返回工作台" @click="goBack">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
@@ -296,216 +262,216 @@ function formatRelativeTime(dateStr: string): string {
     <main class="stats-content">
       <div v-if="totalCount === 0" class="stats-empty">
         <div class="empty-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" /></svg>
         </div>
         <h3 class="empty-title">数据面板尚待充实</h3>
         <p class="empty-desc">在画布中添加更多人物后，统计数据将自动呈现。</p>
         <button class="bento-btn primary" @click="router.push({ name: 'workbench', params: { id: publicationId } })">前往画布</button>
       </div>
       <div v-else class="stats-content-inner">
-      <!-- Family Profile Hero Card -->
-      <div v-if="pubData" class="bento-card hero-card">
-        <div class="hero-bg-accent"></div>
-        <div class="hero-main">
-          <h2 class="family-title">{{ pubData.title }}</h2>
-          <p v-if="pubData.subtitle" class="family-subtitle">{{ pubData.subtitle }}</p>
-          <div class="family-seals" v-if="pubData.info?.ancestralOrigin || pubData.info?.hallName || pubData.info?.familyMotto">
-            <div class="seal" v-if="pubData.info.ancestralOrigin">
-              <span class="label">祖籍</span>
-              <span class="value">{{ pubData.info.ancestralOrigin }}</span>
-            </div>
-            <div class="seal" v-if="pubData.info.hallName">
-              <span class="label">堂号</span>
-              <span class="value">{{ pubData.info.hallName }}</span>
-            </div>
-            <div class="seal motto" v-if="pubData.info.familyMotto">
-              <span class="label">家训</span>
-              <span class="value">{{ pubData.info.familyMotto }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Metrics Grid -->
-      <div class="metrics-grid">
-        <div class="bento-card metric-card">
-          <div class="metric-bg-icon">族</div>
-          <div class="metric-value">{{ totalCount }}</div>
-          <div class="metric-label">档案总人数</div>
-        </div>
-        <div class="bento-card metric-card male">
-          <div class="metric-bg-icon">♂</div>
-          <div class="metric-value">{{ maleCount }}</div>
-          <div class="metric-label">男性编委</div>
-        </div>
-        <div class="bento-card metric-card female">
-          <div class="metric-bg-icon">♀</div>
-          <div class="metric-value">{{ femaleCount }}</div>
-          <div class="metric-label">女性编委</div>
-        </div>
-        <div class="bento-card metric-card generation">
-          <div class="metric-bg-icon">代</div>
-          <div class="metric-value">{{ generationCount || '-' }}</div>
-          <div class="metric-label">延续世代数</div>
-        </div>
-        <div class="bento-card metric-card alive">
-          <div class="metric-bg-icon">世</div>
-          <div class="metric-value">{{ aliveCount }}</div>
-          <div class="metric-label">在世成员</div>
-        </div>
-        <div class="bento-card metric-card deceased">
-          <div class="metric-bg-icon">卒</div>
-          <div class="metric-value">{{ deceasedCount }}</div>
-          <div class="metric-label">已故先祖</div>
-        </div>
-      </div>
-
-      <!-- Detailed Analysis Grid -->
-      <div class="analysis-grid">
-        <!-- Gender Ratio Chart -->
-        <div class="bento-card chart-card">
-          <h3 class="card-title">人口性别比例</h3>
-          <div class="gender-viz">
-            <div class="ratio-bar">
-              <div class="bar male" :style="{ width: malePercent + '%' }">
-                <span v-if="malePercent > 15">{{ malePercent }}%</span>
+        <!-- Family Profile Hero Card -->
+        <div v-if="pubData" class="bento-card hero-card">
+          <div class="hero-bg-accent"></div>
+          <div class="hero-main">
+            <h2 class="family-title">{{ pubData.title }}</h2>
+            <p v-if="pubData.subtitle" class="family-subtitle">{{ pubData.subtitle }}</p>
+            <div v-if="pubData.info?.ancestralOrigin || pubData.info?.hallName || pubData.info?.familyMotto" class="family-seals">
+              <div v-if="pubData.info.ancestralOrigin" class="seal">
+                <span class="label">祖籍</span>
+                <span class="value">{{ pubData.info.ancestralOrigin }}</span>
               </div>
-              <div class="bar female" :style="{ width: femalePercent + '%' }">
-                <span v-if="femalePercent > 15">{{ femalePercent }}%</span>
+              <div v-if="pubData.info.hallName" class="seal">
+                <span class="label">堂号</span>
+                <span class="value">{{ pubData.info.hallName }}</span>
               </div>
-            </div>
-            <div class="viz-legend">
-              <div class="legend-item"><span class="dot male"></span>男性 {{ maleCount }}</div>
-              <div class="legend-item"><span class="dot female"></span>女性 {{ femaleCount }}</div>
+              <div v-if="pubData.info.familyMotto" class="seal motto">
+                <span class="label">家训</span>
+                <span class="value">{{ pubData.info.familyMotto }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Generation Distribution -->
-        <div class="bento-card chart-card">
-          <h3 class="card-title">世代人口分布</h3>
-          <div v-if="generationDist.length === 0" class="empty-hint">暂无数据</div>
-          <div v-else class="glass-bar-chart">
-            <div v-for="[gen, count] in generationDist" :key="gen" class="chart-row">
-              <span class="row-label">{{ gen === 0 ? '未知' : '第 ' + gen + ' 代' }}</span>
-              <div class="row-track">
-                <div class="row-fill" :style="{ width: (count / maxGenCount * 100) + '%' }"></div>
-              </div>
-              <span class="row-value">{{ count }}</span>
-            </div>
+        <!-- Quick Metrics Grid -->
+        <div class="metrics-grid">
+          <div class="bento-card metric-card">
+            <div class="metric-bg-icon">族</div>
+            <div class="metric-value">{{ totalCount }}</div>
+            <div class="metric-label">档案总人数</div>
+          </div>
+          <div class="bento-card metric-card male">
+            <div class="metric-bg-icon">♂</div>
+            <div class="metric-value">{{ maleCount }}</div>
+            <div class="metric-label">男性编委</div>
+          </div>
+          <div class="bento-card metric-card female">
+            <div class="metric-bg-icon">♀</div>
+            <div class="metric-value">{{ femaleCount }}</div>
+            <div class="metric-label">女性编委</div>
+          </div>
+          <div class="bento-card metric-card generation">
+            <div class="metric-bg-icon">代</div>
+            <div class="metric-value">{{ generationCount || '-' }}</div>
+            <div class="metric-label">延续世代数</div>
+          </div>
+          <div class="bento-card metric-card alive">
+            <div class="metric-bg-icon">世</div>
+            <div class="metric-value">{{ aliveCount }}</div>
+            <div class="metric-label">在世成员</div>
+          </div>
+          <div class="bento-card metric-card deceased">
+            <div class="metric-bg-icon">卒</div>
+            <div class="metric-value">{{ deceasedCount }}</div>
+            <div class="metric-label">已故先祖</div>
           </div>
         </div>
 
-        <!-- Lifespan Insights -->
-        <div class="bento-card chart-card">
-          <h3 class="card-title">家族寿命概况</h3>
-          <div v-if="lifespans.length === 0" class="empty-hint">需完善生卒年数据</div>
-          <template v-else>
-            <div class="stat-summary">
-              <div class="stat-item">
-                <div class="val">{{ avgLifespan }}<small>岁</small></div>
-                <div class="lbl">平均寿命</div>
+        <!-- Detailed Analysis Grid -->
+        <div class="analysis-grid">
+          <!-- Gender Ratio Chart -->
+          <div class="bento-card chart-card">
+            <h3 class="card-title">人口性别比例</h3>
+            <div class="gender-viz">
+              <div class="ratio-bar">
+                <div class="bar male" :style="{ width: malePercent + '%' }">
+                  <span v-if="malePercent > 15">{{ malePercent }}%</span>
+                </div>
+                <div class="bar female" :style="{ width: femalePercent + '%' }">
+                  <span v-if="femalePercent > 15">{{ femalePercent }}%</span>
+                </div>
               </div>
-              <div class="stat-item prominent" v-if="maxLifespan">
-                <div class="val">{{ maxLifespan.years }}<small>岁</small></div>
-                <div class="lbl">最高寿 · {{ maxLifespan.name }}</div>
+              <div class="viz-legend">
+                <div class="legend-item"><span class="dot male"></span>男性 {{ maleCount }}</div>
+                <div class="legend-item"><span class="dot female"></span>女性 {{ femaleCount }}</div>
               </div>
             </div>
-            <div class="glass-bar-chart compact">
-              <div v-for="[label, count] in lifespanBuckets" :key="label" class="chart-row">
-                <span class="row-label">{{ label }}岁</span>
+          </div>
+
+          <!-- Generation Distribution -->
+          <div class="bento-card chart-card">
+            <h3 class="card-title">世代人口分布</h3>
+            <div v-if="generationDist.length === 0" class="empty-hint">暂无数据</div>
+            <div v-else class="glass-bar-chart">
+              <div v-for="[gen, count] in generationDist" :key="gen" class="chart-row">
+                <span class="row-label">{{ gen === 0 ? '未知' : '第 ' + gen + ' 代' }}</span>
                 <div class="row-track">
-                  <div class="row-fill lifespan" :style="{ width: (count / maxBucketCount * 100) + '%' }"></div>
+                  <div class="row-fill" :style="{ width: (count / maxGenCount * 100) + '%' }"></div>
                 </div>
                 <span class="row-value">{{ count }}</span>
               </div>
             </div>
-          </template>
-        </div>
-
-        <!-- Century Distribution -->
-        <div class="bento-card chart-card">
-          <h3 class="card-title">历史跨度（出生/逝世）</h3>
-          <div v-if="centuryData.length === 0" class="empty-hint">暂无数据</div>
-          <div v-else class="glass-timeline-chart">
-            <div v-for="c in centuryData" :key="c.century" class="chart-row dual">
-              <span class="row-label">{{ c.label }}</span>
-              <div class="row-bars">
-                <div class="bar birth" :style="{ width: (c.births / maxCenturyCount * 100) + '%' }">
-                  <span v-if="c.births > 0">{{ c.births }}</span>
-                </div>
-                <div class="bar death" :style="{ width: (c.deaths / maxCenturyCount * 100) + '%' }">
-                  <span v-if="c.deaths > 0">{{ c.deaths }}</span>
-                </div>
-              </div>
-            </div>
-            <div class="viz-legend">
-              <div class="legend-item"><span class="dot birth"></span>出生</div>
-              <div class="legend-item"><span class="dot death"></span>逝世</div>
-            </div>
           </div>
-        </div>
 
-        <!-- Surname Rankings -->
-        <div class="bento-card chart-card wide">
-          <h3 class="card-title">家族姓氏分布 (TOP 10)</h3>
-          <div v-if="surnameDist.length === 0" class="empty-hint">暂无数据</div>
-          <div v-else class="glass-bar-chart horizontal">
-            <div v-for="[surname, count] in surnameDist" :key="surname" class="chart-row">
-              <span class="row-label surname">{{ surname }}</span>
-              <div class="row-track">
-                <div class="row-fill surname" :style="{ width: (count / maxSurnameCount * 100) + '%' }"></div>
-              </div>
-              <span class="row-value">{{ count }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Revision History -->
-        <div class="bento-card chart-card wide">
-          <h3 class="card-title">族谱修订志</h3>
-          <div v-if="loadingHistory" class="empty-hint">调取档案中...</div>
-          <div v-else-if="history.length === 0" class="empty-hint">尚无修订记录</div>
-          <div v-else class="glass-history">
-            <article
-              v-for="entry in history"
-              :key="entry.id"
-              class="audit-entry"
-            >
-              <div class="node-line">
-                <div class="node-dot"></div>
-              </div>
-              <div class="node-card">
-                <div class="audit-entry__meta">
-                  <span class="audit-entry__username">{{ entry.username }}</span>
-                  <time class="audit-entry__time" :datetime="entry.createdAt">
-                    {{ formatRelativeTime(entry.createdAt) }}
-                  </time>
-                  <span class="audit-entry__action-tag" :class="actionTagClass(entry.action)">
-                    {{ actionLabel(entry.action) }}
-                  </span>
+          <!-- Lifespan Insights -->
+          <div class="bento-card chart-card">
+            <h3 class="card-title">家族寿命概况</h3>
+            <div v-if="lifespans.length === 0" class="empty-hint">需完善生卒年数据</div>
+            <template v-else>
+              <div class="stat-summary">
+                <div class="stat-item">
+                  <div class="val">{{ avgLifespan }}<small>岁</small></div>
+                  <div class="lbl">平均寿命</div>
                 </div>
+                <div v-if="maxLifespan" class="stat-item prominent">
+                  <div class="val">{{ maxLifespan.years }}<small>岁</small></div>
+                  <div class="lbl">最高寿 · {{ maxLifespan.name }}</div>
+                </div>
+              </div>
+              <div class="glass-bar-chart compact">
+                <div v-for="[label, count] in lifespanBuckets" :key="label" class="chart-row">
+                  <span class="row-label">{{ label }}岁</span>
+                  <div class="row-track">
+                    <div class="row-fill lifespan" :style="{ width: (count / maxBucketCount * 100) + '%' }"></div>
+                  </div>
+                  <span class="row-value">{{ count }}</span>
+                </div>
+              </div>
+            </template>
+          </div>
 
-                <!-- Field-level diff (only when parsedDetail exists) -->
-                <div v-if="entry.parsedDetail" class="audit-entry__diff">
-                  <div v-for="person in entry.parsedDetail" :key="person.personId" class="diff-person">
-                    <strong class="diff-person__name">{{ person.personName }}</strong>
-                    <div v-for="change in person.changes" :key="change.field" class="diff-field">
-                      <span class="diff-field__label">{{ change.fieldLabel }}</span>
-                      <span class="diff-field__old">{{ change.old || '（空）' }}</span>
-                      <span class="diff-field__arrow">→</span>
-                      <span class="diff-field__new">{{ change.new || '（空）' }}</span>
-                    </div>
+          <!-- Century Distribution -->
+          <div class="bento-card chart-card">
+            <h3 class="card-title">历史跨度（出生/逝世）</h3>
+            <div v-if="centuryData.length === 0" class="empty-hint">暂无数据</div>
+            <div v-else class="glass-timeline-chart">
+              <div v-for="c in centuryData" :key="c.century" class="chart-row dual">
+                <span class="row-label">{{ c.label }}</span>
+                <div class="row-bars">
+                  <div class="bar birth" :style="{ width: (c.births / maxCenturyCount * 100) + '%' }">
+                    <span v-if="c.births > 0">{{ c.births }}</span>
+                  </div>
+                  <div class="bar death" :style="{ width: (c.deaths / maxCenturyCount * 100) + '%' }">
+                    <span v-if="c.deaths > 0">{{ c.deaths }}</span>
                   </div>
                 </div>
-
-                <!-- Fallback for legacy entries without parsed diff -->
-                <p v-else class="audit-entry__detail">{{ entry.detail }}</p>
               </div>
-            </article>
+              <div class="viz-legend">
+                <div class="legend-item"><span class="dot birth"></span>出生</div>
+                <div class="legend-item"><span class="dot death"></span>逝世</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Surname Rankings -->
+          <div class="bento-card chart-card wide">
+            <h3 class="card-title">家族姓氏分布 (TOP 10)</h3>
+            <div v-if="surnameDist.length === 0" class="empty-hint">暂无数据</div>
+            <div v-else class="glass-bar-chart horizontal">
+              <div v-for="[surname, count] in surnameDist" :key="surname" class="chart-row">
+                <span class="row-label surname">{{ surname }}</span>
+                <div class="row-track">
+                  <div class="row-fill surname" :style="{ width: (count / maxSurnameCount * 100) + '%' }"></div>
+                </div>
+                <span class="row-value">{{ count }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Revision History -->
+          <div class="bento-card chart-card wide">
+            <h3 class="card-title">族谱修订志</h3>
+            <div v-if="loadingHistory" class="empty-hint">调取档案中...</div>
+            <div v-else-if="history.length === 0" class="empty-hint">尚无修订记录</div>
+            <div v-else class="glass-history">
+              <article
+                v-for="entry in history"
+                :key="entry.id"
+                class="audit-entry"
+              >
+                <div class="node-line">
+                  <div class="node-dot"></div>
+                </div>
+                <div class="node-card">
+                  <div class="audit-entry__meta">
+                    <span class="audit-entry__username">{{ entry.username }}</span>
+                    <time class="audit-entry__time" :datetime="entry.createdAt">
+                      {{ formatRelativeTime(entry.createdAt) }}
+                    </time>
+                    <span class="audit-entry__action-tag" :class="actionTagClass(entry.action)">
+                      {{ actionLabel(entry.action) }}
+                    </span>
+                  </div>
+
+                  <!-- Field-level diff (only when parsedDetail exists) -->
+                  <div v-if="entry.parsedDetail" class="audit-entry__diff">
+                    <div v-for="person in entry.parsedDetail" :key="person.personId" class="diff-person">
+                      <strong class="diff-person__name">{{ person.personName }}</strong>
+                      <div v-for="change in person.changes" :key="change.field" class="diff-field">
+                        <span class="diff-field__label">{{ change.fieldLabel }}</span>
+                        <span class="diff-field__old">{{ change.old || '（空）' }}</span>
+                        <span class="diff-field__arrow">→</span>
+                        <span class="diff-field__new">{{ change.new || '（空）' }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Fallback for legacy entries without parsed diff -->
+                  <p v-else class="audit-entry__detail">{{ entry.detail }}</p>
+                </div>
+              </article>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </main>
   </div>

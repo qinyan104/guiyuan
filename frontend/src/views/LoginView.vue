@@ -14,7 +14,7 @@ function onLoginSuccess() {
 <template>
   <div class="auth-page">
     <div class="auth-top-bar">
-      <ThemeSwitcher :current-theme="theme.currentTheme.value" @change-theme="theme.setTheme" />
+      <ThemeSwitcher :currentTheme="theme.currentTheme.value" @change-theme="theme.setTheme" />
     </div>
     <transition name="page-fade" mode="out-in">
       <LoginForm key="login" @success="onLoginSuccess" />

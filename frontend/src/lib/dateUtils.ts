@@ -14,13 +14,13 @@ export function parseExactDate(s?: string): number {
   let day = 0
 
   const afterYear = s.substring(yearMatch.index! + yearMatch[0].length)
-  const monthMatch = afterYear.match(/[年\-\/\. ]\s*(\d{1,2})/)
+  const monthMatch = afterYear.match(/[年\-/. ]\s*(\d{1,2})/)
   if (monthMatch) {
     const m = parseInt(monthMatch[1])
     if (m >= 1 && m <= 12) {
       month = m
       const afterMonth = afterYear.substring(monthMatch.index! + monthMatch[0].length)
-      const dayMatch = afterMonth.match(/[月\-\/\. ]\s*(\d{1,2})/)
+      const dayMatch = afterMonth.match(/[月\-/. ]\s*(\d{1,2})/)
       if (dayMatch) {
         const d = parseInt(dayMatch[1])
         if (d >= 1 && d <= 31) {

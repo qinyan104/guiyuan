@@ -61,44 +61,44 @@ function actionToNarrative(action: string): string {
         </div>
         <div class="poetic-header__extra" style="display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
           <p class="poetic-quote" v-html="lexicon.logs.quote.replace(/\\n/g, '<br/>')"></p>
-          <button class="bento-btn ghost" @click="loadLogs" title="刷新日志">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <button class="bento-btn ghost" title="刷新日志" @click="loadLogs">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
             刷新记录
           </button>
         </div>
       </header>
 
-    <div v-if="errorMsg" class="audit-notice bento-card">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      {{ errorMsg }}
-    </div>
+      <div v-if="errorMsg" class="audit-notice bento-card">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+        {{ errorMsg }}
+      </div>
 
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <span>追溯纪事中...</span>
-    </div>
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <span>追溯纪事中...</span>
+      </div>
 
-    <div v-else-if="logs.length === 0 && !errorMsg" class="bento-card empty-state">
-      <div class="empty-icon">⚬</div>
-      <span>暂无操作记录</span>
-    </div>
+      <div v-else-if="logs.length === 0 && !errorMsg" class="bento-card empty-state">
+        <div class="empty-icon">⚬</div>
+        <span>暂无操作记录</span>
+      </div>
 
-    <div v-else-if="logs.length > 0" class="bento-card chronicle-card">
-      <div class="chronicle-body">
-        <div v-for="log in logs" :key="log.id" class="chronicle-row">
-          <div class="chronicle-time">
-            <div class="c-date">{{ formatChronicleDate(log.createdAt) }}</div>
-            <div class="c-hour">{{ formatChronicleTime(log.createdAt) }}</div>
-          </div>
-          <div class="chronicle-node"></div>
-          <div class="chronicle-content">
-            <span class="c-user">{{ log.username }}</span>
-            <span class="c-action">{{ actionToNarrative(log.action) }}</span>
-            <span v-if="log.detail" class="c-detail">《{{ log.detail }}》</span>
+      <div v-else-if="logs.length > 0" class="bento-card chronicle-card">
+        <div class="chronicle-body">
+          <div v-for="log in logs" :key="log.id" class="chronicle-row">
+            <div class="chronicle-time">
+              <div class="c-date">{{ formatChronicleDate(log.createdAt) }}</div>
+              <div class="c-hour">{{ formatChronicleTime(log.createdAt) }}</div>
+            </div>
+            <div class="chronicle-node"></div>
+            <div class="chronicle-content">
+              <span class="c-user">{{ log.username }}</span>
+              <span class="c-action">{{ actionToNarrative(log.action) }}</span>
+              <span v-if="log.detail" class="c-detail">《{{ log.detail }}》</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   </div>
 </template>

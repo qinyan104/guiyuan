@@ -161,208 +161,207 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
         <div class="poetic-header__extra" style="display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
           <p class="poetic-quote" v-html="lexicon.publications.quote.replace(/\\n/g, '<br/>')"></p>
           <button class="glass-pill-btn primary-action" @click="showCreateDialog = true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             新建宗谱存档
           </button>
         </div>
       </header>
 
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>正在开启藏经阁...</p>
-    </div>
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>正在开启藏经阁...</p>
+      </div>
 
-    <div v-else>
-      <div class="publication-grid">
-        <!-- Template Section (Built-in) - Moved outside of the empty-state conditional for better discovery -->
-        <section class="gallery-section">
-          <div class="section-eyebrow">
-            <span class="dot-ember"></span> 经典王朝世系模板
-          </div>
-          <div class="template-grid">
-            <div v-for="sample in builtinSamples" :key="sample.id" class="glass-card template-card" @click="handleViewSample(sample)">
-              <div class="template-bg"></div>
-              <div class="template-content">
-                <h3 class="template-title">{{ sample.publication.title }}</h3>
-                <p class="template-subtitle">{{ sample.publication.subtitle }}</p>
-              </div>
-              <div class="template-action">
-                预览示例 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      <div v-else>
+        <div class="publication-grid">
+          <!-- Template Section (Built-in) - Moved outside of the empty-state conditional for better discovery -->
+          <section class="gallery-section">
+            <div class="section-eyebrow">
+              <span class="dot-ember"></span> 经典王朝世系模板
+            </div>
+            <div class="template-grid">
+              <div v-for="sample in builtinSamples" :key="sample.id" class="glass-card template-card" @click="handleViewSample(sample)">
+                <div class="template-bg"></div>
+                <div class="template-content">
+                  <h3 class="template-title">{{ sample.publication.title }}</h3>
+                  <p class="template-subtitle">{{ sample.publication.subtitle }}</p>
+                </div>
+                <div class="template-action">
+                  预览示例 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <div v-if="publications.length === 0" class="empty-state">
-          <div class="empty-seal">空</div>
-          <h3 class="empty-title">书卷空余，待君挥墨</h3>
-          <p class="empty-desc">尚未收录任何宗族典藏，您可以开宗立派，或从上方经典模板中演化。</p>
-          <div class="empty-actions">
-            <button class="bento-btn primary" @click="showCreateDialog = true">新建宗谱存档</button>
+          <div v-if="publications.length === 0" class="empty-state">
+            <div class="empty-seal">空</div>
+            <h3 class="empty-title">书卷空余，待君挥墨</h3>
+            <p class="empty-desc">尚未收录任何宗族典藏，您可以开宗立派，或从上方经典模板中演化。</p>
+            <div class="empty-actions">
+              <button class="bento-btn primary" @click="showCreateDialog = true">新建宗谱存档</button>
+            </div>
           </div>
+
+          <!-- Archive Section -->
+          <section v-else class="gallery-section">
+            <div class="section-eyebrow">
+              <span class="dot-ink"></span> 私人研究档案
+            </div>
+
+            <div class="archive-grid">
+              <article v-for="pub in publications" :key="pub.id" class="glass-card archive-card" @click="openPublication(pub.id)">
+                <!-- Visual Left Pane -->
+                <div class="archive-visual">
+                  <div class="visual-meta">第{{ pub.id }}卷</div>
+                  <div class="visual-title-vertical">{{ pub.title?.substring(0, 6) || '未命名' }}</div>
+                  <div class="visual-spine-line"></div>
+                </div>
+
+                <!-- Content Right Pane -->
+                <div class="archive-details">
+                  <div class="archive-main">
+                    <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
+                    <p class="archive-subtitle">{{ pub.subtitle || '暂无副标题' }}</p>
+                    <div class="archive-tags">
+                      <span v-if="pub.info?.hallName" class="meta-tag">{{ pub.info.hallName }}</span>
+                      <span v-if="pub.info?.ancestralOrigin" class="meta-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg> {{ pub.info.ancestralOrigin }}</span>
+                    </div>
+                  </div>
+
+                  <div class="archive-footer">
+                    <span class="archive-date">{{ formatDate(pub.updatedAt) }} 更新</span>
+                    <div class="archive-actions" @click.stop>
+                      <button class="icon-btn" title="编辑属性" @click="openEditDialog(pub)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                      </button>
+                      <button class="icon-btn" title="协作者管理" @click="openCollabDialog(pub.id)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                      </button>
+                      <button class="icon-btn" title="分享链接" @click="openShareDialog(pub.id)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                      </button>
+                      <button class="icon-btn danger" title="焚毁档案" @click="deleteConfirmId = pub.id">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Delete Confirm Overlay -->
+                <transition name="fade">
+                  <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
+                    <p>焚毁此宗谱将彻底抹除数据，是否确认？</p>
+                    <div class="delete-btns">
+                      <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认焚毁</button>
+                      <button class="glass-pill-btn" @click="deleteConfirmId = null">暂且保留</button>
+                    </div>
+                  </div>
+                </transition>
+              </article>
+            </div>
+          </section>
         </div>
-
-        <!-- Archive Section -->
-        <section v-else class="gallery-section">
-          <div class="section-eyebrow">
-            <span class="dot-ink"></span> 私人研究档案
-          </div>
-
-          <div class="archive-grid">
-            <article v-for="pub in publications" :key="pub.id" class="glass-card archive-card" @click="openPublication(pub.id)">
-              <!-- Visual Left Pane -->
-              <div class="archive-visual">
-                <div class="visual-meta">第{{ pub.id }}卷</div>
-                <div class="visual-title-vertical">{{ pub.title?.substring(0, 6) || '未命名' }}</div>
-                <div class="visual-spine-line"></div>
-              </div>
-
-              <!-- Content Right Pane -->
-              <div class="archive-details">
-                <div class="archive-main">
-                  <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
-                  <p class="archive-subtitle">{{ pub.subtitle || '暂无副标题' }}</p>
-                  <div class="archive-tags">
-                    <span v-if="pub.info?.hallName" class="meta-tag">{{ pub.info.hallName }}</span>
-                    <span v-if="pub.info?.ancestralOrigin" class="meta-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> {{ pub.info.ancestralOrigin }}</span>
-                  </div>
-                </div>
-
-                <div class="archive-footer">
-                  <span class="archive-date">{{ formatDate(pub.updatedAt) }} 更新</span>
-                  <div class="archive-actions" @click.stop>
-                    <button class="icon-btn" title="编辑属性" @click="openEditDialog(pub)">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button class="icon-btn" title="协作者管理" @click="openCollabDialog(pub.id)">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </button>
-                    <button class="icon-btn" title="分享链接" @click="openShareDialog(pub.id)">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    </button>
-                    <button class="icon-btn danger" title="焚毁档案" @click="deleteConfirmId = pub.id">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Delete Confirm Overlay -->
-              <transition name="fade">
-                <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
-                  <p>焚毁此宗谱将彻底抹除数据，是否确认？</p>
-                  <div class="delete-btns">
-                    <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认焚毁</button>
-                    <button class="glass-pill-btn" @click="deleteConfirmId = null">暂且保留</button>
-                  </div>
-                </div>
-              </transition>
-            </article>
-          </div>
-        </section>
       </div>
-    </div>
 
       <!-- Modals: Glass Sheets -->
       <Teleport to="body">
-      <!-- Create Archive Sheet -->
-      <transition name="sheet-slide">
-        <div v-if="showCreateDialog" class="glass-modal-overlay" @click.self="showCreateDialog = false">
-          <div class="glass-sheet">
-            <header class="sheet-header">
-              <h2 class="sheet-title">开宗立派</h2>
-              <button class="sheet-close" @click="showCreateDialog = false">&times;</button>
-            </header>
-            <div class="sheet-body">
-              <div class="glass-input-group">
-                <label>宗谱名称 TITLE</label>
-                <input v-model="newTitle" type="text" placeholder="例: 陇西李氏世系图" @keyup.enter="handleCreate" />
+        <!-- Create Archive Sheet -->
+        <transition name="sheet-slide">
+          <div v-if="showCreateDialog" class="glass-modal-overlay" @click.self="showCreateDialog = false">
+            <div class="glass-sheet">
+              <header class="sheet-header">
+                <h2 class="sheet-title">开宗立派</h2>
+                <button class="sheet-close" @click="showCreateDialog = false">&times;</button>
+              </header>
+              <div class="sheet-body">
+                <div class="glass-input-group">
+                  <label>宗谱名称 TITLE</label>
+                  <input v-model="newTitle" type="text" placeholder="例: 陇西李氏世系图" @keyup.enter="handleCreate" />
+                </div>
+                <div class="glass-input-group">
+                  <label>修谱卷号 SUBTITLE</label>
+                  <input v-model="newSubtitle" type="text" placeholder="例: 丙午年重修版" @keyup.enter="handleCreate" />
+                </div>
               </div>
-              <div class="glass-input-group">
-                <label>修谱卷号 SUBTITLE</label>
-                <input v-model="newSubtitle" type="text" placeholder="例: 丙午年重修版" @keyup.enter="handleCreate" />
-              </div>
-            </div>
-            <footer class="sheet-footer">
-              <button class="glass-pill-btn" @click="showCreateDialog = false">取消</button>
-              <button class="glass-pill-btn primary" @click="handleCreate">建档立案</button>
-            </footer>
-          </div>
-        </div>
-      </transition>
-
-      <!-- Edit Metadata Sheet -->
-      <transition name="sheet-slide">
-        <div v-if="showEditDialog" class="glass-modal-overlay" @click.self="showEditDialog = false">
-          <div class="glass-sheet large">
-            <header class="sheet-header">
-              <h2 class="sheet-title">修缮档案属性</h2>
-              <button class="sheet-close" @click="showEditDialog = false">&times;</button>
-            </header>
-            <div class="sheet-body grid-form">
-              <div class="glass-input-group">
-                <label>宗谱名称 TITLE</label>
-                <input v-model="editForm.title" type="text" />
-              </div>
-              <div class="glass-input-group">
-                <label>修谱卷号 SUBTITLE</label>
-                <input v-model="editForm.subtitle" type="text" />
-              </div>
-              <div class="glass-input-group">
-                <label>郡望/祖籍 ORIGIN</label>
-                <input v-model="editForm.ancestralOrigin" type="text" placeholder="例: 陇西/颍川" />
-              </div>
-              <div class="glass-input-group">
-                <label>家族堂号 HALL NAME</label>
-                <input v-model="editForm.hallName" type="text" placeholder="例: 三槐堂" />
-              </div>
-              <div class="glass-input-group full">
-                <label>传世家训 FAMILY MOTTO</label>
-                <textarea v-model="editForm.familyMotto" rows="2" placeholder="例: 诗书传家，忠厚继世"></textarea>
-              </div>
-              <div class="glass-input-group full">
-                <label>宗谱总序 DESCRIPTION</label>
-                <textarea v-model="editForm.description" rows="3" placeholder="记述家族源流与修谱历程..."></textarea>
-              </div>
-            </div>
-            <footer class="sheet-footer">
-              <button class="glass-pill-btn" @click="showEditDialog = false">放弃修改</button>
-              <button class="glass-pill-btn primary" @click="handleEditSave">封装保存</button>
-            </footer>
-          </div>
-        </div>
-      </transition>
-
-      <!-- Collaborator Manager Sheet -->
-      <transition name="sheet-slide">
-        <div v-if="showCollabDialog && collabDialogPubId" class="glass-modal-overlay" @click.self="showCollabDialog = false">
-          <div class="glass-sheet large">
-            <header class="sheet-header">
-              <h2 class="sheet-title">协作者管理</h2>
-              <button class="sheet-close" @click="showCollabDialog = false">&times;</button>
-            </header>
-            <div class="sheet-body">
-              <CollaboratorManager :publication-id="collabDialogPubId" />
+              <footer class="sheet-footer">
+                <button class="glass-pill-btn" @click="showCreateDialog = false">取消</button>
+                <button class="glass-pill-btn primary" @click="handleCreate">建档立案</button>
+              </footer>
             </div>
           </div>
-        </div>
-      </transition>
+        </transition>
 
-      <!-- Share Link Manager Sheet -->
-      <transition name="sheet-slide">
-        <div v-if="showShareDialog && shareDialogPubId" class="glass-modal-overlay" @click.self="showShareDialog = false">
-          <div class="glass-sheet">
-            <header class="sheet-header">
-              <h2 class="sheet-title">分享链接管理</h2>
-              <button class="sheet-close" @click="showShareDialog = false">&times;</button>
-            </header>
-            <div class="sheet-body">
-              <ShareLinkManager :publicationId="shareDialogPubId" />
+        <!-- Edit Metadata Sheet -->
+        <transition name="sheet-slide">
+          <div v-if="showEditDialog" class="glass-modal-overlay" @click.self="showEditDialog = false">
+            <div class="glass-sheet large">
+              <header class="sheet-header">
+                <h2 class="sheet-title">修缮档案属性</h2>
+                <button class="sheet-close" @click="showEditDialog = false">&times;</button>
+              </header>
+              <div class="sheet-body grid-form">
+                <div class="glass-input-group">
+                  <label>宗谱名称 TITLE</label>
+                  <input v-model="editForm.title" type="text" />
+                </div>
+                <div class="glass-input-group">
+                  <label>修谱卷号 SUBTITLE</label>
+                  <input v-model="editForm.subtitle" type="text" />
+                </div>
+                <div class="glass-input-group">
+                  <label>郡望/祖籍 ORIGIN</label>
+                  <input v-model="editForm.ancestralOrigin" type="text" placeholder="例: 陇西/颍川" />
+                </div>
+                <div class="glass-input-group">
+                  <label>家族堂号 HALL NAME</label>
+                  <input v-model="editForm.hallName" type="text" placeholder="例: 三槐堂" />
+                </div>
+                <div class="glass-input-group full">
+                  <label>传世家训 FAMILY MOTTO</label>
+                  <textarea v-model="editForm.familyMotto" rows="2" placeholder="例: 诗书传家，忠厚继世"></textarea>
+                </div>
+                <div class="glass-input-group full">
+                  <label>宗谱总序 DESCRIPTION</label>
+                  <textarea v-model="editForm.description" rows="3" placeholder="记述家族源流与修谱历程..."></textarea>
+                </div>
+              </div>
+              <footer class="sheet-footer">
+                <button class="glass-pill-btn" @click="showEditDialog = false">放弃修改</button>
+                <button class="glass-pill-btn primary" @click="handleEditSave">封装保存</button>
+              </footer>
             </div>
           </div>
-        </div>
-      </transition>
+        </transition>
 
+        <!-- Collaborator Manager Sheet -->
+        <transition name="sheet-slide">
+          <div v-if="showCollabDialog && collabDialogPubId" class="glass-modal-overlay" @click.self="showCollabDialog = false">
+            <div class="glass-sheet large">
+              <header class="sheet-header">
+                <h2 class="sheet-title">协作者管理</h2>
+                <button class="sheet-close" @click="showCollabDialog = false">&times;</button>
+              </header>
+              <div class="sheet-body">
+                <CollaboratorManager :publicationId="collabDialogPubId" />
+              </div>
+            </div>
+          </div>
+        </transition>
+
+        <!-- Share Link Manager Sheet -->
+        <transition name="sheet-slide">
+          <div v-if="showShareDialog && shareDialogPubId" class="glass-modal-overlay" @click.self="showShareDialog = false">
+            <div class="glass-sheet">
+              <header class="sheet-header">
+                <h2 class="sheet-title">分享链接管理</h2>
+                <button class="sheet-close" @click="showShareDialog = false">&times;</button>
+              </header>
+              <div class="sheet-body">
+                <ShareLinkManager :publicationId="shareDialogPubId" />
+              </div>
+            </div>
+          </div>
+        </transition>
       </Teleport>
     </div>
   </div>

@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useLexicon, type LexiconId } from '../composables/useLexicon'
 
-const { lexicon, currentLexiconId, lexicons, setLexicon } = useLexicon()
+const { currentLexiconId, lexicons, setLexicon } = useLexicon()
 
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
@@ -33,9 +33,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="root" class="theme-switcher">
-    <button class="action-btn" type="button" @click="toggle" title="切换语境风格">
+    <button class="action-btn" type="button" title="切换语境风格" @click="toggle">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
       </svg>
     </button>
 

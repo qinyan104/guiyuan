@@ -102,7 +102,7 @@ async function handleCreateFromDashboard() {
       <div v-else-if="pageError" class="error-stage">
         <div class="error-card">
           <div class="error-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
           </div>
           <h2 class="error-title">加载失败</h2>
           <p class="error-desc">{{ pageError }}</p>
@@ -113,83 +113,81 @@ async function handleCreateFromDashboard() {
       </div>
 
       <div v-else-if="pubCount > 0" class="bento-grid">
-      
-      <!-- Box A: Latest Publication (Hero) -->
-      <div v-if="latestPub" class="bento-card card-hero" @click="openPublication(latestPub.id)">
-        <div class="hero-bg-layer"></div>
-        <div class="card-glass-panel">
-          <span class="card-eyebrow">最新修撰</span>
-          <h2 class="hero-pub-title">{{ latestPub.title || '未命名族谱' }}</h2>
-          <p class="hero-pub-subtitle">{{ latestPub.subtitle || '暂无副标题' }}</p>
-          <div class="hero-footer">
-            <span class="hero-date">{{ formatDate(latestPub.updatedAt) }} 更新</span>
-            <button class="ghost-pill" @click.stop="openPublication(latestPub.id)">
-              继续编撰 
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Box B: Total Stats -->
-      <div class="bento-card card-stat card-dark" @click="router.push({ name: 'publications' })">
-        <div class="stat-content">
-          <span class="stat-value">{{ pubCount }}</span>
-          <span class="stat-label">馆藏总卷数</span>
-        </div>
-        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      </div>
-
-      <!-- Box C: Action (Quick Create) -->
-      <div class="bento-card card-action" @click="router.push({ name: 'publications' })">
-        <div class="action-shimmer"></div>
-        <div class="action-content">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          <span class="action-title">起草新谱</span>
-        </div>
-      </div>
-
-      <!-- Box D: Recent History -->
-      <div class="bento-card card-history">
-        <div class="history-header">
-          <span class="card-eyebrow">近期活跃</span>
-          <button class="link-btn" @click="router.push({ name: 'publications' })">查看全部</button>
-        </div>
-        
-        <div class="history-list">
-          <div v-for="pub in otherRecentPubs" :key="pub.id" class="history-item" @click="openPublication(pub.id)">
-            <div class="history-thread"></div>
-            <div class="history-time">{{ formatDate(pub.updatedAt) }}</div>
-            <div class="history-detail">
-              <div class="history-title">{{ pub.title || '未命名' }}</div>
+        <!-- Box A: Latest Publication (Hero) -->
+        <div v-if="latestPub" class="bento-card card-hero" @click="openPublication(latestPub.id)">
+          <div class="hero-bg-layer"></div>
+          <div class="card-glass-panel">
+            <span class="card-eyebrow">最新修撰</span>
+            <h2 class="hero-pub-title">{{ latestPub.title || '未命名族谱' }}</h2>
+            <p class="hero-pub-subtitle">{{ latestPub.subtitle || '暂无副标题' }}</p>
+            <div class="hero-footer">
+              <span class="hero-date">{{ formatDate(latestPub.updatedAt) }} 更新</span>
+              <button class="ghost-pill" @click.stop="openPublication(latestPub.id)">
+                继续编撰 
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              </button>
             </div>
           </div>
-          <div v-if="otherRecentPubs.length === 0" class="empty-hint">暂无更多记录</div>
         </div>
-      </div>
 
-      <!-- Box E: Users (If Admin) -->
-      <div v-if="isAdmin()" class="bento-card card-users" @click="router.push({ name: 'admin-users' })">
-        <div class="stat-content">
-          <span class="stat-value small">{{ userCount }}</span>
-          <span class="stat-label">编委人数</span>
+        <!-- Box B: Total Stats -->
+        <div class="bento-card card-stat card-dark" @click="router.push({ name: 'publications' })">
+          <div class="stat-content">
+            <span class="stat-value">{{ pubCount }}</span>
+            <span class="stat-label">馆藏总卷数</span>
+          </div>
+          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
         </div>
-        <div class="users-avatars">
-          <div class="avatar-circle"></div>
-          <div class="avatar-circle"></div>
-          <div class="avatar-circle"></div>
-          <div class="avatar-circle more">+</div>
-        </div>
-      </div>
 
-      <!-- Box F: Backup (If SuperAdmin) -->
-      <div v-if="isSuperAdmin()" class="bento-card card-backup" @click="handleBackup">
-        <div class="action-content">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span class="action-title">{{ backupLoading ? '正在归档...' : '数据归档' }}</span>
+        <!-- Box C: Action (Quick Create) -->
+        <div class="bento-card card-action" @click="router.push({ name: 'publications' })">
+          <div class="action-shimmer"></div>
+          <div class="action-content">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+            <span class="action-title">起草新谱</span>
+          </div>
         </div>
-      </div>
 
+        <!-- Box D: Recent History -->
+        <div class="bento-card card-history">
+          <div class="history-header">
+            <span class="card-eyebrow">近期活跃</span>
+            <button class="link-btn" @click="router.push({ name: 'publications' })">查看全部</button>
+          </div>
+        
+          <div class="history-list">
+            <div v-for="pub in otherRecentPubs" :key="pub.id" class="history-item" @click="openPublication(pub.id)">
+              <div class="history-thread"></div>
+              <div class="history-time">{{ formatDate(pub.updatedAt) }}</div>
+              <div class="history-detail">
+                <div class="history-title">{{ pub.title || '未命名' }}</div>
+              </div>
+            </div>
+            <div v-if="otherRecentPubs.length === 0" class="empty-hint">暂无更多记录</div>
+          </div>
+        </div>
+
+        <!-- Box E: Users (If Admin) -->
+        <div v-if="isAdmin()" class="bento-card card-users" @click="router.push({ name: 'admin-users' })">
+          <div class="stat-content">
+            <span class="stat-value small">{{ userCount }}</span>
+            <span class="stat-label">编委人数</span>
+          </div>
+          <div class="users-avatars">
+            <div class="avatar-circle"></div>
+            <div class="avatar-circle"></div>
+            <div class="avatar-circle"></div>
+            <div class="avatar-circle more">+</div>
+          </div>
+        </div>
+
+        <!-- Box F: Backup (If SuperAdmin) -->
+        <div v-if="isSuperAdmin()" class="bento-card card-backup" @click="handleBackup">
+          <div class="action-content">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            <span class="action-title">{{ backupLoading ? '正在归档...' : '数据归档' }}</span>
+          </div>
+        </div>
       </div>
 
       <!-- Welcome empty state -->
@@ -202,14 +200,14 @@ async function handleCreateFromDashboard() {
             <p class="welcome-desc">创建您的第一个族谱，开启家族编修之旅。</p>
             <div class="welcome-actions">
               <button class="welcome-btn primary" @click="showCreateDialog = true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                 创建第一个族谱
               </button>
               <button class="welcome-btn secondary" @click="router.push({ name: 'publications' })">
                 浏览示例模板
               </button>
               <button class="welcome-btn ghost" @click="router.push({ name: 'publications' })">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                 导入族谱数据
               </button>
             </div>
