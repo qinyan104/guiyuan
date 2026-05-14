@@ -54,7 +54,6 @@ const emit = defineEmits<{
   (event: 'update-person-gender', gender: Gender): void
   (event: 'apply-note-suggestion', value: string): void
   (event: 'delete-person'): void
-  (event: 'view-detail'): void
 }>()
 
 function updatePersonField(field: EditablePersonField, event: Event) {
@@ -305,13 +304,6 @@ async function uploadAvatar(event: Event) {
             </button>
           </div>
         </div>
-
-        <section class="detail-link-zone">
-          <button class="relation-btn relation-btn--secondary" type="button" @click="$emit('view-detail')">
-            查看详情页
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </section>
 
         <section class="danger-zone">
           <div>

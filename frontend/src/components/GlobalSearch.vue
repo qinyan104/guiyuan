@@ -82,8 +82,9 @@ function navigateToPublication(hit: PublicationHit) {
 function navigateToPerson(hit: PersonHit) {
   isOpen.value = false
   router.push({
-    name: 'person-detail',
-    params: { id: hit.publicationId, personId: hit.personId },
+    name: 'workbench',
+    params: { id: hit.publicationId },
+    query: { personId: hit.personId },
   })
 }
 

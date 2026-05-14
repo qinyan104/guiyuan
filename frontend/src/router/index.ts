@@ -71,15 +71,6 @@ const routes: RouteRecordRaw[] = [
         props: (route) => ({ publicationId: Number(route.params.id) }),
       },
       {
-        path: 'person/:personId',
-        name: 'person-detail',
-        component: () => import('../views/PersonDetailView.vue'),
-        props: (route) => ({
-          publicationId: Number(route.params.id),
-          personId: route.params.personId as string,
-        }),
-      },
-      {
         path: 'stats',
         name: 'publication-stats',
         component: () => import('../views/PublicationStatsView.vue'),

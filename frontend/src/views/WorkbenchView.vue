@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { inject, nextTick, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import PersonEditorDrawer from '../components/PersonEditorDrawer.vue'
@@ -13,6 +13,7 @@ import { useFeedback } from '../composables/useFeedback'
 import { usePersonEditor } from '../composables/usePersonEditor'
 import { useFileOperations } from '../composables/useFileOperations'
 import { useRelationshipActions } from '../composables/useRelationshipActions'
+import { useWorkbenchRouteFocus } from '../composables/useWorkbenchRouteFocus'
 import { useTheme } from '../composables/useTheme'
 import { getUsername } from '../api/auth'
 
@@ -22,6 +23,7 @@ const props = defineProps<{
   publicationId: number
 }>()
 
+const route = useRoute()
 const router = useRouter()
 
 const currentUsername = ref(getUsername() ?? '')
@@ -128,6 +130,15 @@ function revealSelectedPerson() {
 function goBackToList() {
   router.push({ name: 'publications' })
 }
+
+useWorkbenchRouteFocus({
+  route,
+  router,
+  publication: context.pub.publication,
+  selectedPersonId: context.pub.selectedPersonId,
+  editorOpen: panels.editorOpen,
+  revealPersonInCanvas,
+})
 
 // ─── Theme & Layout Sync ──────────────────────────────────────
 watch(
@@ -275,7 +286,6 @@ watch(
           @update-person-gender="personEditor.updateSelectedPersonGender"
           @apply-note-suggestion="personEditor.updateSelectedPersonField({ field: 'note', value: $event })"
           @delete-person="relActions.deleteSelectedPerson"
-          @view-detail="router.push({ name: 'person-detail', params: { personId: context.pub.selectedPersonId.value } })"
         />
       </section>
     </main>

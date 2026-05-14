@@ -82,11 +82,15 @@ function personGenderClass(p: Person): string {
 }
 
 function goToPerson(personId: string) {
-  router.push({ name: 'person-detail', params: { personId } })
+  router.push({
+    name: 'workbench',
+    params: { id: props.publicationId },
+    query: { personId },
+  })
 }
 
 const goBack = () => {
-  router.push({ name: 'workbench' })
+  router.push({ name: 'workbench', params: { id: props.publicationId } })
 }
 
 const showBackToTop = ref(false)
