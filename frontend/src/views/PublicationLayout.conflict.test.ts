@@ -1,5 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
+import type { PublicationLoadResult } from '../api/publication'
+import { defaultSettings } from '../data/sampleFamily'
 
 // Mock vue-router
 vi.mock('vue-router', () => ({
@@ -17,7 +19,7 @@ vi.mock('../api/publication', () => ({
 import { getPublication, updatePublication } from '../api/publication'
 import PublicationLayout from './PublicationLayout.vue'
 
-const mockPublicationData = {
+const mockPublicationData: PublicationLoadResult = {
   id: 7,
   revision: 5,
   publication: {
@@ -27,20 +29,18 @@ const mockPublicationData = {
     people: {},
     families: {},
     info: {},
+    revision: 5,
   },
   settings: {
+    ...defaultSettings,
     paper: 'A4',
-    layoutMode: 'modern',
     cardWidth: 142,
     generationGap: 20,
     siblingGap: 10,
     partnerGap: 10,
-    fontScale: 1,
     zoom: 1,
-    showDeath: true,
     showAge: false,
     showNote: false,
-    showPhoto: true,
     paddingX: 10,
     paddingY: 10,
   },
@@ -68,6 +68,10 @@ describe('PublicationLayout conflict handling', () => {
     // Wait for load to complete (the watcher will fire and schedule delayed autosave)
     await flushPromises()
 
+    const publicationContext = (wrapper.vm as any).pub
+    publicationContext.publication.title = 'Changed title'
+    await wrapper.vm.$nextTick()
+
     // Call saveToServer directly to test conflict handling
     // (avoids waiting for the 3000ms autosave debounce timer)
     // The throw is expected — direct callers (e.g. PersonDetailView)
@@ -83,5 +87,32 @@ describe('PublicationLayout conflict handling', () => {
     vi.mocked(updatePublication).mockClear()
     await (wrapper.vm as any).saveToServer().catch(() => {})
     expect(vi.mocked(updatePublication)).not.toHaveBeenCalled()
+  })
+
+  it('does not schedule another autosave after only the server revision changes', async () => {
+    vi.useFakeTimers()
+    vi.mocked(updatePublication).mockResolvedValue(6)
+
+    const wrapper = mount(PublicationLayout, {
+      global: { stubs: { RouterView: true } },
+    })
+
+    await flushPromises()
+
+    const publicationContext = (wrapper.vm as any).pub
+    publicationContext.publication.title = 'Changed title'
+
+    await wrapper.vm.$nextTick()
+    await vi.advanceTimersByTimeAsync(3000)
+    await flushPromises()
+
+    expect(vi.mocked(updatePublication)).toHaveBeenCalledTimes(1)
+
+    await vi.advanceTimersByTimeAsync(3000)
+    await flushPromises()
+
+    expect(vi.mocked(updatePublication)).toHaveBeenCalledTimes(1)
+
+    vi.useRealTimers()
   })
 })

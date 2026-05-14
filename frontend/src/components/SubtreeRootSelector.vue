@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getPublication } from '../api/publication'
+import { defaultSettings } from '../data/sampleFamily'
+import { layoutPublication } from '../lib/layout'
+import type { Person, PublicationData } from '../types/family'
 import PublicationCanvas from './PublicationCanvas.vue'
-import type { PublicationData, Person } from '../types/family'
 
 const props = defineProps<{
   modelValue: boolean
@@ -21,15 +23,22 @@ const error = ref<string | null>(null)
 const publicationData = ref<PublicationData | null>(null)
 const selectedPersonId = ref<string | null>(null)
 const selectedPersonName = ref<string | null>(null)
-// The selectedPersonDbId is hidden in the person object's metadata or derived from the person ID
-// Actually, our API returns the person entities with their "id" being the personId (string).
-// We need to find the database ID (Long) for Task 2/4.
-// Let's check how the backend sends it. The backend currently doesn't include the DB ID in the JSON people objects.
-// Wait, I might need to update the PublicationTreeLoader to include the DB ID in a hidden field.
+type PublicationPersonWithDbId = Person & { dbId?: number }
 
-function onNodeClick(person: Person) {
-  selectedPersonId.ref = person.id
-  selectedPersonName.value = person.name
+const selectedPersonIdForCanvas = computed(() => selectedPersonId.value || '')
+const previewLayout = computed(() => {
+  if (!publicationData.value) return null
+  return layoutPublication(publicationData.value, defaultSettings)
+})
+
+function onSelectPerson(personId: string) {
+  selectedPersonId.value = personId
+  if (publicationData.value) {
+    const person = publicationData.value.people[personId]
+    if (person) {
+      selectedPersonName.value = person.name
+    }
+  }
 }
 
 async function loadData() {
@@ -47,17 +56,12 @@ async function loadData() {
 
 function onConfirm() {
   if (selectedPersonId.value && publicationData.value) {
-    // We need the DB ID. We'll have to get it from the person object if we add it, 
-    // or the backend needs to provide a way to map personId -> dbId.
-    // Let's assume for now we'll add 'dbId' to the person JSON in PublicationTreeLoader.
-    const person = publicationData.value.people[selectedPersonId.value]
-    const dbId = (person as any).dbId 
+    const person = publicationData.value.people[selectedPersonId.value] as PublicationPersonWithDbId
+    const dbId = person.dbId
     if (dbId) {
       emit('selected', dbId, person.name)
       emit('update:modelValue', false)
     } else {
-      // Fallback: If dbId is missing (legacy/not yet updated), we might have an issue.
-      // But we just updated the backend to support selective loading, let's update TreeLoader too.
       console.error('Missing dbId for person', selectedPersonId.value)
     }
   }
@@ -98,12 +102,15 @@ onMounted(() => {
             <p>{{ error }}</p>
             <button @click="loadData" class="retry-btn">重试</button>
           </div>
-          <div v-else-if="publicationData" class="canvas-container">
-            <PublicationCanvas 
-              :publication="publicationData" 
-              read-only
-              :highlight-person-id="selectedPersonId"
-              @node-click="onNodeClick"
+          <div v-else-if="publicationData && previewLayout" class="canvas-container">
+            <PublicationCanvas
+              :publication="publicationData"
+              :settings="defaultSettings"
+              :layout="previewLayout"
+              :selected-person-id="selectedPersonIdForCanvas"
+              :pan-x="0"
+              :pan-y="0"
+              @select-person="onSelectPerson"
             />
           </div>
         </main>
@@ -146,7 +153,7 @@ onMounted(() => {
 }
 
 .selector-dialog {
-  background: #fdfaf6; /* Ancient paper color */
+  background: var(--bg-panel-strong, #fdfaf6);
   width: 90vw;
   height: 90vh;
   border-radius: 16px;
@@ -154,13 +161,13 @@ onMounted(() => {
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
-  border: 1px solid #e0d5c1;
+  border: 1px solid var(--line-soft, #e0d5c1);
 }
 
 .selector-header {
   padding: 20px 24px;
-  background: #fff;
-  border-bottom: 1px solid #eee;
+  background: var(--bg-panel, #fff);
+  border-bottom: 1px solid var(--line-soft, #eee);
 }
 
 .header-main {
@@ -173,13 +180,13 @@ onMounted(() => {
 .header-main h3 {
   margin: 0;
   font-size: 1.25rem;
-  color: #333;
+  color: var(--text-main, #333);
 }
 
 .pub-title {
   font-size: 0.9rem;
-  color: #888;
-  background: #f5f5f5;
+  color: var(--text-soft, #888);
+  background: var(--bg-paper, #f5f5f5);
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -187,14 +194,14 @@ onMounted(() => {
 .header-hint {
   margin: 0;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-sub, #666);
 }
 
 .selector-content {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #fcf9f2;
+  background: var(--bg-shell, #fcf9f2);
 }
 
 .state-placeholder {
@@ -204,14 +211,14 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #888;
+  color: var(--text-soft, #888);
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #8b4513;
+  border: 3px solid var(--line-soft, #f3f3f3);
+  border-top: 3px solid var(--accent-amber, #8b4513);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 12px;
@@ -229,8 +236,8 @@ onMounted(() => {
 
 .selector-footer {
   padding: 16px 24px;
-  background: #fff;
-  border-top: 1px solid #eee;
+  background: var(--bg-panel, #fff);
+  border-top: 1px solid var(--line-soft, #eee);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -238,11 +245,11 @@ onMounted(() => {
 
 .selection-status {
   font-size: 0.95rem;
-  color: #555;
+  color: var(--text-sub, #555);
 }
 
 .selected-name {
-  color: #8b4513;
+  color: var(--accent-amber, #8b4513);
   font-weight: 700;
 }
 
@@ -257,36 +264,36 @@ onMounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid transparent;
+  border: 1px solid var(--line-soft, transparent);
 }
 
 .action-btn.cancel {
-  background: #f5f5f5;
-  color: #666;
+  background: var(--bg-paper, #f5f5f5);
+  color: var(--text-main, #666);
 }
 
 .action-btn.cancel:hover {
-  background: #eee;
+  background: var(--bg-panel, #eee);
 }
 
 .action-btn.confirm {
-  background: #8b4513;
-  color: #fff;
+  background: var(--btn-primary-bg, #8b4513);
+  color: var(--btn-primary-color, #fff);
 }
 
 .action-btn.confirm:hover:not(:disabled) {
-  background: #6f3710;
+  opacity: 0.9;
 }
 
 .action-btn.confirm:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .retry-btn {
   margin-top: 12px;
   padding: 6px 16px;
-  background: #8b4513;
+  background: var(--accent-amber, #8b4513);
   color: #fff;
   border: none;
   border-radius: 4px;
