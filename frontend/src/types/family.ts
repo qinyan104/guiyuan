@@ -20,6 +20,7 @@ export interface Person {
     publicationId: number
     publicationTitle?: string
     rootPersonId?: number
+    rootPersonName?: string
   }
 }
 

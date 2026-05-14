@@ -16,6 +16,10 @@ const conflictMessage = ref<string | null>(null)
 
 provide('show-onboarding', () => onboardingRef.value?.show())
 
+function reloadAfterConflict() {
+  window.location.reload()
+}
+
 onMounted(async () => {
   window.addEventListener('concurrency-conflict', (e: any) => {
     conflictMessage.value = e.detail?.message || '数据已被他人修改。'
@@ -50,7 +54,7 @@ onMounted(async () => {
       <h3>数据版本冲突</h3>
       <p>{{ conflictMessage }}</p>
       <div class="conflict-actions">
-        <button class="reload-btn" @click="() => window.location.reload()">立即刷新</button>
+        <button class="reload-btn" @click="reloadAfterConflict">立即刷新</button>
       </div>
     </div>
   </div>

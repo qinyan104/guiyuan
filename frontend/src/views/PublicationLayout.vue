@@ -57,7 +57,6 @@ async function saveToServer() {
     pub.publication.revision = serverRevision.value!
     const newRevision = await updatePublication(serverPublicationId.value, pub.publication, pub.settings)
     serverRevision.value = newRevision
-    pub.publication.revision = newRevision
     syncStatus.value = 'saved'
     feedback.errorMessage.value = ''
   } catch (err) {
@@ -83,7 +82,12 @@ watch(
   () => [pub.publication, pub.settings, pub.selectedPersonId.value],
   () => {
     // Only trigger sync if we actually have a loaded publication
-    if (!serverPublicationId.value || loading.value || syncStatus.value === 'conflict') return
+    if (
+      !serverPublicationId.value ||
+      loading.value ||
+      syncStatus.value === 'conflict' ||
+      syncStatus.value === 'syncing'
+    ) return
 
     syncStatus.value = 'pending'
     if (serverSaveTimeout) clearTimeout(serverSaveTimeout)
