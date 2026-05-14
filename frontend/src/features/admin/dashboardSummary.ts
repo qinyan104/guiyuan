@@ -1,66 +1,55 @@
-export interface DashboardCard {
-  id: 'publications' | 'users' | 'create' | 'backup'
-  label: string
-  value: string
-  detail: string
-  tone: 'ink' | 'amber' | 'olive' | 'danger'
-}
-
-export interface DashboardOverview {
-  heroEyebrow: string
-  heroTitle: string
-  heroDetail: string
-  cards: DashboardCard[]
-}
-
-export function buildDashboardOverview(input: {
+export interface DashboardOverviewOptions {
   publicationCount: number
   userCount: number
   isAdmin: boolean
   isSuperAdmin: boolean
   backupLoading: boolean
-}): DashboardOverview {
-  const cards: DashboardCard[] = [
+}
+
+export interface DashboardOverviewCard {
+  id: 'publications' | 'create' | 'users' | 'backup'
+  title: string
+  value: string
+  adminOnly?: boolean
+  superAdminOnly?: boolean
+}
+
+export interface DashboardOverview {
+  cards: DashboardOverviewCard[]
+}
+
+export function buildDashboardOverview(options: DashboardOverviewOptions): DashboardOverview {
+  const cards: DashboardOverviewCard[] = [
     {
       id: 'publications',
-      label: '馆藏族谱',
-      value: String(input.publicationCount),
-      detail: '当前可继续编研的卷册总数',
-      tone: 'ink',
+      title: '馆藏总卷数',
+      value: String(options.publicationCount),
     },
     {
       id: 'create',
-      label: '快捷动作',
-      value: '新建卷册',
-      detail: '从空白卷或模板开始新的编研工作',
-      tone: 'amber',
+      title: '起草新谱',
+      value: '立即创建',
     },
   ]
 
-  if (input.isAdmin) {
-    cards.splice(1, 0, {
+  if (options.isAdmin) {
+    cards.push({
       id: 'users',
-      label: '后台用户',
-      value: String(input.userCount),
-      detail: '当前拥有后台访问权限的账号总数',
-      tone: 'olive',
+      title: '编委人数',
+      value: String(options.userCount),
+      adminOnly: true,
     })
   }
 
-  if (input.isSuperAdmin) {
+  if (options.isSuperAdmin) {
     cards.push({
       id: 'backup',
-      label: '系统维护',
-      value: input.backupLoading ? '备份中…' : '立即备份',
-      detail: '执行数据库备份并保留最近一次系统快照',
-      tone: 'danger',
+      title: '数据归档',
+      value: options.backupLoading ? '备份中…' : '数据归档',
+      adminOnly: true,
+      superAdminOnly: true,
     })
   }
 
-  return {
-    heroEyebrow: '馆藏总览',
-    heroTitle: '今日可从最近编研卷册继续工作',
-    heroDetail: '保留现有数据流，只重构摘要信息的组织方式与视觉层级。',
-    cards,
-  }
+  return { cards }
 }

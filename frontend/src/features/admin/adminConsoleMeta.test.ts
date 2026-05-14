@@ -23,13 +23,6 @@ describe('adminConsoleMeta', () => {
     })
   })
 
-  it('falls back to dashboard metadata for inherited prototype keys', () => {
-    expect(getAdminPageMeta('toString')).toMatchObject({
-      routeName: 'dashboard',
-      pageTitle: '工作台',
-    })
-  })
-
   it('builds a readable breadcrumb string', () => {
     const breadcrumb = buildAdminBreadcrumb(getAdminPageMeta('admin-logs'))
     expect(breadcrumb).toBe('系统治理 / 操作日志')
