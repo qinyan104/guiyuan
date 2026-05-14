@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { getPublication } from '../api/publication'
 import { defaultSettings } from '../data/sampleFamily'
 import { layoutPublication } from '../lib/layout'
-import type { Person, PublicationData } from '../types/family'
+import type { Person, PublicationData, PublicationSettings } from '../types/family'
 import PublicationCanvas from './PublicationCanvas.vue'
 
 const props = defineProps<{
@@ -21,6 +21,7 @@ const emit = defineEmits<{
 const loading = ref(true)
 const error = ref<string | null>(null)
 const publicationData = ref<PublicationData | null>(null)
+const previewSettings = ref<PublicationSettings>(structuredClone(defaultSettings))
 const selectedPersonId = ref<string | null>(null)
 const selectedPersonName = ref<string | null>(null)
 type PublicationPersonWithDbId = Person & { dbId?: number }
@@ -28,7 +29,7 @@ type PublicationPersonWithDbId = Person & { dbId?: number }
 const selectedPersonIdForCanvas = computed(() => selectedPersonId.value || '')
 const previewLayout = computed(() => {
   if (!publicationData.value) return null
-  return layoutPublication(publicationData.value, defaultSettings)
+  return layoutPublication(publicationData.value, previewSettings.value)
 })
 
 function onSelectPerson(personId: string) {
@@ -47,6 +48,7 @@ async function loadData() {
   try {
     const result = await getPublication(props.publicationId)
     publicationData.value = result.publication
+    previewSettings.value = structuredClone(result.settings)
   } catch (e: any) {
     error.value = e.message || '加载族谱失败'
   } finally {
@@ -105,7 +107,7 @@ onMounted(() => {
           <div v-else-if="publicationData && previewLayout" class="canvas-container">
             <PublicationCanvas
               :publication="publicationData"
-              :settings="defaultSettings"
+              :settings="previewSettings"
               :layout="previewLayout"
               :selected-person-id="selectedPersonIdForCanvas"
               :pan-x="0"

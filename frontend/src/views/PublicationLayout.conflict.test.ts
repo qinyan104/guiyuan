@@ -115,4 +115,50 @@ describe('PublicationLayout conflict handling', () => {
 
     vi.useRealTimers()
   })
+
+  it('queues another autosave when real edits happen during an in-flight save', async () => {
+    vi.useFakeTimers()
+
+    let resolveFirstSave!: (revision: number) => void
+    vi.mocked(updatePublication)
+      .mockImplementationOnce(
+        () =>
+          new Promise<number>((resolve) => {
+            resolveFirstSave = resolve
+          }),
+      )
+      .mockResolvedValueOnce(7)
+
+    const wrapper = mount(PublicationLayout, {
+      global: { stubs: { RouterView: true } },
+    })
+
+    await flushPromises()
+
+    const publicationContext = (wrapper.vm as any).pub
+    publicationContext.publication.title = 'Changed title'
+
+    await wrapper.vm.$nextTick()
+    await vi.advanceTimersByTimeAsync(3000)
+    await flushPromises()
+
+    expect(vi.mocked(updatePublication)).toHaveBeenCalledTimes(1)
+
+    publicationContext.publication.subtitle = 'Changed subtitle during sync'
+    await wrapper.vm.$nextTick()
+
+    expect(vi.mocked(updatePublication)).toHaveBeenCalledTimes(1)
+
+    resolveFirstSave(6)
+    await flushPromises()
+    await vi.runOnlyPendingTimersAsync()
+    await flushPromises()
+
+    expect(vi.mocked(updatePublication)).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(updatePublication).mock.calls[1]?.[1].subtitle).toBe(
+      'Changed subtitle during sync',
+    )
+
+    vi.useRealTimers()
+  })
 })

@@ -20,4 +20,8 @@ describe('router legacy person-detail compatibility', () => {
     expect(router.currentRoute.value.params).toMatchObject({ id: '7' })
     expect(router.currentRoute.value.query).toMatchObject({ personId: 'p2' })
   })
+
+  it('does not register the removed print-preview route', () => {
+    expect(router.getRoutes().some((route) => route.name === 'print-preview')).toBe(false)
+  })
 })

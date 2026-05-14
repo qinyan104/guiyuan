@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, provide, ref, watch, onMounted, onBeforeUnmount, toRaw } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePublicationState } from '../composables/usePublicationState'
 import { useEditorHistory } from '../features/history/useEditorHistory'
@@ -49,49 +49,73 @@ const history = useEditorHistory({
   restoreSnapshot: restoreEditorSnapshot,
 })
 
+let serverSaveTimeout: any = null
+let saveRequestedWhileSyncing = false
+
+function clearServerSaveTimeout() {
+  if (serverSaveTimeout) {
+    clearTimeout(serverSaveTimeout)
+    serverSaveTimeout = null
+  }
+}
+
+function scheduleServerSave(delay = 3000) {
+  clearServerSaveTimeout()
+  syncStatus.value = 'pending'
+  serverSaveTimeout = setTimeout(() => {
+    serverSaveTimeout = null
+    saveToServer().catch(() => {})
+  }, delay)
+}
+
 // Sync logic
 async function saveToServer() {
   if (syncStatus.value === 'syncing' || syncStatus.value === 'conflict' || !serverPublicationId.value) return
   syncStatus.value = 'syncing'
   try {
-    pub.publication.revision = serverRevision.value!
-    const newRevision = await updatePublication(serverPublicationId.value, pub.publication, pub.settings)
+    const publicationToSave = structuredClone(toRaw(pub.publication)) as PublicationData
+    publicationToSave.revision = serverRevision.value!
+    const newRevision = await updatePublication(serverPublicationId.value, publicationToSave, pub.settings)
     serverRevision.value = newRevision
     syncStatus.value = 'saved'
     feedback.errorMessage.value = ''
+    if (saveRequestedWhileSyncing) {
+      saveRequestedWhileSyncing = false
+      scheduleServerSave(0)
+    }
   } catch (err) {
     // Check for 409 conflict
     const { asPublicationConflict } = await import('../api/conflict')
     const conflict = asPublicationConflict(err)
     if (conflict) {
+      saveRequestedWhileSyncing = false
       syncStatus.value = 'conflict'
       conflictMessage.value = conflict.message
       feedback.errorMessage.value = conflict.message
-      if (serverSaveTimeout) clearTimeout(serverSaveTimeout)
+      clearServerSaveTimeout()
       throw new Error(conflict.message)
       // Throw so direct callers can react;
       // the autosave timer's .catch(()) silences this for background sync
     }
+    saveRequestedWhileSyncing = false
     syncStatus.value = 'error'
     feedback.setError('同步到服务器失败')
   }
 }
 
-let serverSaveTimeout: any = null
 watch(
   () => [pub.publication, pub.settings, pub.selectedPersonId.value],
   () => {
     // Only trigger sync if we actually have a loaded publication
-    if (
-      !serverPublicationId.value ||
-      loading.value ||
-      syncStatus.value === 'conflict' ||
-      syncStatus.value === 'syncing'
-    ) return
+    if (!serverPublicationId.value || loading.value || syncStatus.value === 'conflict') return
 
-    syncStatus.value = 'pending'
-    if (serverSaveTimeout) clearTimeout(serverSaveTimeout)
-    serverSaveTimeout = setTimeout(() => { saveToServer().catch(() => {}); }, 3000)
+    if (syncStatus.value === 'syncing') {
+      saveRequestedWhileSyncing = true
+      history.scheduleHistoryCommit()
+      return
+    }
+
+    scheduleServerSave()
     history.scheduleHistoryCommit()
   },
   { deep: true }
@@ -177,7 +201,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleHistoryShortcut)
   history.disposeHistory()
-  if (serverSaveTimeout) clearTimeout(serverSaveTimeout)
+  clearServerSaveTimeout()
 })
 
 defineExpose({ saveToServer, reloadFromServerAfterConflict })
