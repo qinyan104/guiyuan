@@ -3,6 +3,12 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { useWorkbenchRouteFocus } from './useWorkbenchRouteFocus'
 
+type TestPerson = {
+  id: string
+  name: string
+  gender: 'male' | 'female'
+}
+
 describe('useWorkbenchRouteFocus', () => {
   it('selects the queried person, opens the editor, reveals the person, and clears the query', async () => {
     const route = reactive({
@@ -16,12 +22,12 @@ describe('useWorkbenchRouteFocus', () => {
     const router = {
       replace: vi.fn(),
     }
-    const publication = reactive({
+    const publication = reactive<{ people: Record<string, TestPerson> }>({
       people: {
         p2: {
           id: 'p2',
           name: 'Bob',
-          gender: 'male' as const,
+          gender: 'male',
         },
       },
     })
@@ -64,12 +70,12 @@ describe('useWorkbenchRouteFocus', () => {
     const router = {
       replace: vi.fn(),
     }
-    const publication = reactive({
+    const publication = reactive<{ people: Record<string, TestPerson> }>({
       people: {
         p9: {
           id: 'p9',
           name: 'Stale Person',
-          gender: 'male' as const,
+          gender: 'male',
         },
       },
     })
@@ -101,7 +107,7 @@ describe('useWorkbenchRouteFocus', () => {
     publication.people.p9 = {
       id: 'p9',
       name: 'New Person',
-      gender: 'female' as const,
+      gender: 'female',
     }
     loadedPublicationId.value = 9
 
