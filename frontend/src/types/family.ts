@@ -2,6 +2,13 @@ export type Gender = 'male' | 'female' | 'unknown'
 export type PublicationPaper = 'A4' | 'A3'
 export type FamilyBranchMode = 'married-out' | 'uxorilocal'
 
+export interface MountPointTarget {
+  publicationId: number
+  publicationTitle?: string
+  rootPersonId?: number
+  rootPersonName?: string
+}
+
 export interface Person {
   id: string
   name: string
@@ -16,11 +23,7 @@ export interface Person {
   avatarUrl?: string
   highlightRole?: 'emperor' | 'heir'
   isMountPoint?: boolean
-  mountPointTarget?: {
-    publicationId: number
-    publicationTitle?: string
-    rootPersonId?: number
-  }
+  mountPointTarget?: MountPointTarget
 }
 
 export interface FamilyUnit {

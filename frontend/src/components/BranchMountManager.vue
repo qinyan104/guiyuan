@@ -3,7 +3,7 @@ import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import { mergeBranch } from '../api/accessManage'
 import { getPublication, listPublications, type PublicationSummary } from '../api/publication'
-import type { Person } from '../types/family'
+import type { MountPointTarget, Person } from '../types/family'
 import ConfirmDialog from './ConfirmDialog.vue'
 import SubtreeRootSelector from './SubtreeRootSelector.vue'
 
@@ -48,8 +48,8 @@ const groupedPublications = computed(() => {
     if (groups[pub.accessRole]) {
       groups[pub.accessRole].push(pub)
     } else {
-      if (!groups['OTHER']) groups['OTHER'] = []
-      groups['OTHER'].push(pub)
+      if (!groups.OTHER) groups.OTHER = []
+      groups.OTHER.push(pub)
     }
   })
   return groups
@@ -58,6 +58,8 @@ const groupedPublications = computed(() => {
 const selectedTarget = computed(() =>
   availablePublications.value.find((item) => String(item.id) === selectedTargetId.value) ?? null,
 )
+const mountPointTarget = computed<MountPointTarget | null>(() => props.person.mountPointTarget ?? null)
+const rootPersonName = computed(() => mountPointTarget.value?.rootPersonName ?? '')
 
 function selectPublication(pub: PublicationSummary) {
   selectedTargetId.value = String(pub.id)
@@ -91,6 +93,8 @@ async function loadAccessiblePublications() {
 }
 
 function applyTargetPublication(publication: PublicationSummary | null) {
+  const currentMountPointTarget = mountPointTarget.value
+
   if (!publication) {
     props.person.isMountPoint = false
     props.person.mountPointTarget = undefined
@@ -102,8 +106,8 @@ function applyTargetPublication(publication: PublicationSummary | null) {
   props.person.mountPointTarget = {
     publicationId: publication.id,
     publicationTitle: publication.title,
-    rootPersonId: props.person.mountPointTarget?.rootPersonId,
-    rootPersonName: props.person.mountPointTarget?.rootPersonName,
+    rootPersonId: currentMountPointTarget?.rootPersonId,
+    rootPersonName: currentMountPointTarget?.rootPersonName,
   }
   feedbackMessage.value = `已选择目标族谱：${publication.title}`
 }
@@ -120,7 +124,7 @@ function clearRootSelection() {
   if (props.person.mountPointTarget) {
     props.person.mountPointTarget.rootPersonId = undefined
     props.person.mountPointTarget.rootPersonName = undefined
-    feedbackMessage.value = '已清除子树起点，将全量合并。'
+    feedbackMessage.value = '已清除子树起点，将执行全量合并。'
   }
 }
 
@@ -201,7 +205,6 @@ onUnmounted(() => {
 })
 </script>
 
-
 <template>
   <section class="branch-mount-panel">
     <div class="branch-mount-panel__header">
@@ -256,7 +259,7 @@ onUnmounted(() => {
               </button>
             </div>
             <div v-if="groupedPublications.EDITOR.length" class="custom-select__group">
-              <label>共享·编辑</label>
+              <label>共享 - 编辑</label>
               <button
                 v-for="pub in groupedPublications.EDITOR"
                 :key="pub.id"
@@ -275,13 +278,13 @@ onUnmounted(() => {
           <div class="subtree-info">
             <span class="label">子树起点</span>
             <div class="root-display">
-              <strong v-if="person.mountPointTarget?.rootPersonName" class="root-name">
-                {{ person.mountPointTarget.rootPersonName }}
+              <strong v-if="rootPersonName" class="root-name">
+                {{ rootPersonName }}
               </strong>
               <em v-else class="root-none">未指定（全量）</em>
-              <button 
-                v-if="person.mountPointTarget?.rootPersonName" 
-                class="clear-root-btn" 
+              <button
+                v-if="rootPersonName"
+                class="clear-root-btn"
                 title="清除起点"
                 @click="clearRootSelection"
               >
@@ -289,12 +292,12 @@ onUnmounted(() => {
               </button>
             </div>
           </div>
-          <button 
-            class="select-root-btn" 
-            type="button" 
+          <button
+            class="select-root-btn"
+            type="button"
             @click="showRootSelector = true"
           >
-            {{ person.mountPointTarget?.rootPersonName ? '更换起点' : '视觉化指定起点' }}
+            {{ rootPersonName ? '更换起点' : '视觉化指定起点' }}
           </button>
         </div>
       </div>
@@ -338,24 +341,24 @@ onUnmounted(() => {
     </button>
   </section>
 
-    <ConfirmDialog
-      :modelValue="showMergeConfirm"
-      title="物理合并确认"
-      message="物理合并会把目标族谱当前快照复制进当前族谱，并清除这个挂载点。确定继续吗？"
-      confirmLabel="确认合并"
-      tone="danger"
-      @confirm="executeMerge"
-      @cancel="showMergeConfirm = false"
-      @update:modelValue="(v: boolean) => { if (!v) showMergeConfirm = false }"
-    />
+  <ConfirmDialog
+    :modelValue="showMergeConfirm"
+    title="物理合并确认"
+    message="物理合并会把目标族谱当前快照复制进当前族谱，并清除这个挂载点。确定继续吗？"
+    confirmLabel="确认合并"
+    tone="danger"
+    @confirm="executeMerge"
+    @cancel="showMergeConfirm = false"
+    @update:modelValue="(v: boolean) => { if (!v) showMergeConfirm = false }"
+  />
 
-    <SubtreeRootSelector
-      v-if="showRootSelector"
-      v-model="showRootSelector"
-      :publication-id="Number(selectedTargetId)"
-      :publication-title="selectedTarget?.title"
-      @selected="handleRootSelected"
-    />
+  <SubtreeRootSelector
+    v-if="showRootSelector"
+    v-model="showRootSelector"
+    :publication-id="Number(selectedTargetId)"
+    :publication-title="selectedTarget?.title"
+    @selected="handleRootSelected"
+  />
 </template>
 
 <style scoped>
@@ -412,7 +415,6 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.68);
   border: 1px solid rgba(91, 70, 42, 0.08);
 }
-
 
 .branch-mount-field span,
 .branch-mount-meta span {

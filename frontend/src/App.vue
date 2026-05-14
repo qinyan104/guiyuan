@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, provide } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTheme } from './composables/useTheme'
-import OnboardingGuide from './components/OnboardingGuide.vue'
 import { getAccessToken } from './api/tokenStore'
 import { bootstrapAuthSession } from './api/authSession'
 
@@ -10,14 +9,16 @@ const theme = useTheme()
 const router = useRouter()
 const route = useRoute()
 
-const onboardingRef = ref<InstanceType<typeof OnboardingGuide> | null>(null)
 const authReady = ref(false)
 const conflictMessage = ref<string | null>(null)
+const browserWindow = globalThis.window
 
-provide('show-onboarding', () => onboardingRef.value?.show())
+function handleReload() {
+  browserWindow.location.reload()
+}
 
 onMounted(async () => {
-  window.addEventListener('concurrency-conflict', (e: any) => {
+  browserWindow.addEventListener('concurrency-conflict', (e: any) => {
     conflictMessage.value = e.detail?.message || '数据已被他人修改。'
   })
 
@@ -41,8 +42,6 @@ onMounted(async () => {
   </div>
   <router-view v-else />
 
-  <OnboardingGuide ref="onboardingRef" />
-
   <!-- Concurrency Conflict Modal -->
   <div v-if="conflictMessage" class="conflict-overlay">
     <div class="conflict-modal">
@@ -50,7 +49,7 @@ onMounted(async () => {
       <h3>数据版本冲突</h3>
       <p>{{ conflictMessage }}</p>
       <div class="conflict-actions">
-        <button class="reload-btn" @click="() => window.location.reload()">立即刷新</button>
+        <button class="reload-btn" @click="handleReload">立即刷新</button>
       </div>
     </div>
   </div>
