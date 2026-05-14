@@ -9,6 +9,7 @@ import {
   type AdminUser,
 } from '../api/admin'
 import { isSuperAdmin } from '../api/auth'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const users = ref<AdminUser[]>([])
 const loading = ref(true)
@@ -25,6 +26,7 @@ const resetUserId = ref<number | null>(null)
 const resetNewPassword = ref('')
 
 const deleteUserId = ref<number | null>(null)
+const pendingRoleChange = ref<{ userId: number; role: string } | null>(null)
 
 const canManageRoles = computed(() => isSuperAdmin())
 
@@ -84,6 +86,10 @@ async function handleDelete(id: number) {
   }
 }
 
+function requestRoleChange(userId: number, newRoleVal: string) {
+  pendingRoleChange.value = { userId, role: newRoleVal }
+}
+
 async function handleResetPassword() {
   if (resetUserId.value === null || !resetNewPassword.value.trim()) return
   try {
@@ -102,6 +108,17 @@ async function handleRoleChange(userId: number, newRoleVal: string) {
   } catch {
     // error
   }
+}
+
+async function confirmRoleChange() {
+  if (!pendingRoleChange.value) return
+  const { userId, role } = pendingRoleChange.value
+  pendingRoleChange.value = null
+  await handleRoleChange(userId, role)
+}
+
+function cancelRoleChange() {
+  pendingRoleChange.value = null
 }
 
 function isProtected(user: AdminUser): boolean {
@@ -216,7 +233,7 @@ function formatDate(dateStr: string) {
               v-if="canManageRoles && !isProtected(user)"
               :value="user.role"
               class="glass-select"
-              @change="handleRoleChange(user.id, ($event.target as HTMLSelectElement).value)"
+              @change="requestRoleChange(user.id, ($event.target as HTMLSelectElement).value)"
             >
               <option value="USER">普通编委</option>
               <option value="ADMIN">管理员</option>
@@ -266,21 +283,27 @@ function formatDate(dateStr: string) {
       </transition>
       </Teleport>
 
-      <!-- Delete Confirm Dialog -->
-      <Teleport to="body">
-      <transition name="glass-pop">
-        <div v-if="deleteUserId !== null" class="glass-dialog-overlay" @click.self="deleteUserId = null">
-          <div class="glass-dialog danger-mode">
-            <h2 class="dialog-title">确认删除编委</h2>
-            <p class="dialog-desc">此操作将永久移除该编委的系统访问权限，该操作不可撤销。</p>
-            <div class="dialog-actions">
-              <button class="bento-btn ghost" @click="deleteUserId = null">保留</button>
-              <button class="bento-btn danger" @click="handleDelete(deleteUserId!)">确认删除</button>
-            </div>
-          </div>
-        </div>
-      </transition>
-      </Teleport>
+      <ConfirmDialog
+        :modelValue="deleteUserId !== null"
+        title="确认删除编委"
+        message="此操作将永久移除该编委的系统访问权限，该操作不可撤销。"
+        confirmLabel="确认删除"
+        tone="danger"
+        @confirm="deleteUserId !== null && handleDelete(deleteUserId)"
+        @cancel="deleteUserId = null"
+        @update:modelValue="(v: boolean) => { if (!v) deleteUserId = null }"
+      />
+
+      <ConfirmDialog
+        :modelValue="pendingRoleChange !== null"
+        title="确认调整系统角色"
+        message="此操作会立即改变该账号的后台权限范围。请确认这是预期的角色变更。"
+        confirmLabel="确认调整"
+        tone="warning"
+        @confirm="confirmRoleChange"
+        @cancel="cancelRoleChange"
+        @update:modelValue="(v: boolean) => { if (!v) cancelRoleChange() }"
+      />
     </div>
   </div>
 </template>

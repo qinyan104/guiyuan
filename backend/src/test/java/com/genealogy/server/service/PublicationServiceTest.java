@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.genealogy.server.model.Person;
 import com.genealogy.server.model.Photo;
 import com.genealogy.server.model.Publication;
+import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.Family;
+import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.FamilyMemberRepository;
 import com.genealogy.server.repository.FamilyRepository;
 import com.genealogy.server.repository.PersonRepository;
@@ -67,6 +69,9 @@ class PublicationServiceTest {
     private PublicationShareLinkRepository shareLinkRepository;
 
     @Mock
+    private AuditLogRepository auditLogRepository;
+
+    @Mock
     private PublicationAuthorizationService authorizationService;
 
     @Mock
@@ -88,6 +93,7 @@ class PublicationServiceTest {
                 new ObjectMapper(),
                 publicationAccessRepository,
                 shareLinkRepository,
+                auditLogRepository,
                 authorizationService,
                 treeLoader,
                 photoService
@@ -190,6 +196,39 @@ class PublicationServiceTest {
         verify(personRepository, atLeast(2)).save(personCaptor.capture());
         Person recreatedPerson = personCaptor.getAllValues().get(personCaptor.getAllValues().size() - 1);
         assertThat(recreatedPerson.getPhotoId()).isEqualTo(7L);
+    }
+
+    @Test
+    void listPublicationsIncludesLastUpdatedByFromLatestPublicationAuditLog() {
+        Publication publication = new Publication();
+        publication.setId(7L);
+        publication.setUserId(1L);
+        publication.setTitle("陈氏宗谱");
+        publication.setSubtitle("协作卷");
+        publication.setUpdatedAt(java.time.LocalDateTime.of(2026, 5, 10, 12, 0));
+
+        AuditLog latestLog = new AuditLog();
+        latestLog.setUsername("alice");
+        latestLog.setAction("UPDATE_PUB");
+        latestLog.setTargetType("publication");
+        latestLog.setTargetId(7L);
+
+        when(publicationAccessRepository.findByUserId(1L)).thenReturn(List.of());
+        when(publicationRepository.findByUserIdOrderByUpdatedAtDesc(1L)).thenReturn(List.of(publication));
+        when(publicationRepository.findAllById(any())).thenReturn(List.of(publication));
+        when(auditLogRepository.findTopByTargetTypeAndTargetIdAndActionInOrderByCreatedAtDesc(
+                eq("publication"),
+                eq(7L),
+                any()
+        ))
+                .thenReturn(Optional.of(latestLog));
+
+        List<Map<String, Object>> result = publicationService.listPublications(1L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0))
+                .containsEntry("lastUpdatedBy", "alice")
+                .containsEntry("lastActivityAction", "UPDATE_PUB");
     }
 
     @Test

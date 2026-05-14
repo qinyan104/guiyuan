@@ -10,9 +10,11 @@ import {
 } from '../api/publication'
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { builtinSamples } from '../data/builtinDynastySamples'
+import { getPublicationActivityLabel } from '../lib/publicationActivity'
 import type { PublicationInfo } from '../types/family'
 import ShareLinkManager from '../components/ShareLinkManager.vue'
 import CollaboratorManager from '../components/CollaboratorManager.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const router = useRouter()
 
@@ -55,6 +57,10 @@ onMounted(loadPublications)
 
 function openPublication(id: number) {
   router.push({ name: 'workbench', params: { id } })
+}
+
+function viewActivity(id: number) {
+  router.push({ name: 'publication-stats', params: { id } })
 }
 
 function openEditDialog(pub: PublicationSummary) {
@@ -118,6 +124,14 @@ function openShareDialog(pubId: number) {
 function openCollabDialog(pubId: number) {
   collabDialogPubId.value = pubId
   showCollabDialog.value = true
+}
+
+function requestDelete(id: number) {
+  deleteConfirmId.value = id
+}
+
+function cancelDelete() {
+  deleteConfirmId.value = null
 }
 
 async function handleDelete(id: number) {
@@ -227,7 +241,11 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
                 </div>
 
                 <div class="archive-footer">
-                  <span class="archive-date">{{ formatDate(pub.updatedAt) }} 更新</span>
+                  <div class="archive-meta">
+                    <span class="archive-date">{{ formatDate(pub.updatedAt) }} 更新</span>
+                    <span v-if="pub.lastUpdatedBy" class="archive-updater">最近更新：{{ pub.lastUpdatedBy }}</span>
+                    <button v-if="pub.lastActivityAction" class="archive-activity-link" @click.stop="viewActivity(pub.id)">查看活动记录</button>
+                  </div>
                   <div class="archive-actions" @click.stop>
                     <button class="icon-btn" title="编辑属性" @click="openEditDialog(pub)">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -238,23 +256,13 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
                     <button class="icon-btn" title="分享链接" @click="openShareDialog(pub.id)">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                     </button>
-                    <button class="icon-btn danger" title="焚毁档案" @click="deleteConfirmId = pub.id">
+                    <button class="icon-btn danger" title="焚毁档案" @click="requestDelete(pub.id)">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
                   </div>
                 </div>
               </div>
 
-              <!-- Delete Confirm Overlay -->
-              <transition name="fade">
-                <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
-                  <p>焚毁此宗谱将彻底抹除数据，是否确认？</p>
-                  <div class="delete-btns">
-                    <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认焚毁</button>
-                    <button class="glass-pill-btn" @click="deleteConfirmId = null">暂且保留</button>
-                  </div>
-                </div>
-              </transition>
             </article>
           </div>
         </section>
@@ -360,6 +368,17 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
           </div>
         </div>
       </transition>
+
+      <ConfirmDialog
+        :modelValue="deleteConfirmId !== null"
+        title="确认删除族谱"
+        message="删除后将彻底移除当前族谱及其相关数据，且无法恢复。"
+        confirmLabel="确认删除"
+        tone="danger"
+        @confirm="deleteConfirmId !== null && handleDelete(deleteConfirmId)"
+        @cancel="cancelDelete"
+        @update:modelValue="(v: boolean) => { if (!v) cancelDelete() }"
+      />
 
       </Teleport>
     </div>
@@ -656,10 +675,31 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   padding-top: 1rem;
   border-top: 1px dashed var(--border-color, rgba(0,0,0,0.1));
 }
+.archive-meta {
+  display: grid;
+  gap: 0.12rem;
+}
 .archive-date {
   font-family: monospace;
   font-size: 0.75rem;
   color: var(--text-soft);
+}
+.archive-updater {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  opacity: 0.88;
+}
+.archive-activity-link {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.72rem;
+  color: var(--accent-blue, #6d8fb0);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.archive-activity-link:hover {
+  color: var(--accent-blue-hover, #5080a8);
+  text-decoration: none;
 }
 .archive-actions {
   display: flex;

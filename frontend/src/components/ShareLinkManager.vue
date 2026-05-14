@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import ConfirmDialog from './ConfirmDialog.vue'
 import {
   createShareLink,
   listShareLinks,
@@ -20,6 +21,7 @@ const error = ref<string | null>(null)
 const showCreateForm = ref(false)
 const allowExport = ref(false)
 const expiresInDays = ref(30)
+const pendingRevokeLinkId = ref<number | null>(null)
 
 // Newly created token (shown once)
 const newToken = ref<string | null>(null)
@@ -57,14 +59,25 @@ async function handleCreate() {
 }
 
 async function handleRevoke(linkId: number) {
-  if (!confirm('确定要撤销此分享链接吗？撤销后将无法恢复。')) return
+  pendingRevokeLinkId.value = linkId
+}
+
+async function confirmRevoke() {
+  const linkId = pendingRevokeLinkId.value
+  if (linkId === null) return
   error.value = null
   try {
     await revokeShareLink(props.publicationId, linkId)
     await load()
   } catch (err: any) {
     error.value = err.message || '撤销失败'
+  } finally {
+    pendingRevokeLinkId.value = null
   }
+}
+
+function cancelRevoke() {
+  pendingRevokeLinkId.value = null
 }
 
 function copyShareUrl() {
@@ -163,6 +176,16 @@ onMounted(load)
         </button>
       </div>
     </div>
+    <ConfirmDialog
+      :modelValue="pendingRevokeLinkId !== null"
+      title="确定要撤销此分享链接吗"
+      message="撤销后将无法恢复，原链接会立即失效。"
+      confirmLabel="确认撤销"
+      tone="danger"
+      @confirm="confirmRevoke"
+      @cancel="cancelRevoke"
+      @update:modelValue="(v: boolean) => { if (!v) cancelRevoke() }"
+    />
   </div>
 </template>
 

@@ -33,7 +33,7 @@ class SubtreeCollectorTest {
         // We only need the repositories used by collectSubtreeIds
         publicationService = new PublicationService(
                 null, personRepository, familyRepository, familyMemberRepository,
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
     }
 

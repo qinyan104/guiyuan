@@ -16,6 +16,7 @@ import { useRelationshipActions } from '../composables/useRelationshipActions'
 import { useWorkbenchRouteFocus } from '../composables/useWorkbenchRouteFocus'
 import { useTheme } from '../composables/useTheme'
 import { getUsername } from '../api/auth'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 import type { PublicationSettings } from '../types/family'
 
@@ -27,6 +28,25 @@ const route = useRoute()
 const router = useRouter()
 
 const currentUsername = ref(getUsername() ?? '')
+
+// ─── Confirm Dialog State ─────────────────────────────────────
+const confirmMessage = ref<string | null>(null)
+let confirmResolve: ((value: boolean) => void) | null = null
+
+async function confirmAsync(message: string): Promise<boolean> {
+  confirmMessage.value = message
+  return new Promise((resolve) => {
+    confirmResolve = resolve
+  })
+}
+
+function onConfirmDialogResult(result: boolean) {
+  confirmMessage.value = null
+  if (confirmResolve) {
+    confirmResolve(result)
+    confirmResolve = null
+  }
+}
 
 // ─── Shared Context ─────────────────────────────────────────────
 const context = inject('publication-context') as any
@@ -95,6 +115,7 @@ const relActions = useRelationshipActions({
   draftFileHandle: fileOps.draftFileHandle,
   draftFileName: fileOps.draftFileName,
   hasUnsavedFileChanges: fileOps.hasUnsavedFileChanges,
+  confirmFn: confirmAsync,
 })
 
 // ─── UI Action Handlers ─────────────────────────────────────────
@@ -291,5 +312,16 @@ watch(
         />
       </section>
     </main>
+
+    <ConfirmDialog
+      :model-value="confirmMessage !== null"
+      title="确认操作"
+      :message="confirmMessage || ''"
+      confirm-label="确认"
+      tone="danger"
+      @confirm="onConfirmDialogResult(true)"
+      @cancel="onConfirmDialogResult(false)"
+      @update:model-value="(v: boolean) => { if (!v) onConfirmDialogResult(false) }"
+    />
   </div>
 </template>

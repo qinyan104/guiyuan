@@ -12,6 +12,7 @@ import com.genealogy.server.repository.FamilyMemberRepository;
 import com.genealogy.server.repository.FamilyRepository;
 import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PhotoRepository;
+import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.PublicationRepository;
 import com.genealogy.server.repository.PublicationShareLinkRepository;
@@ -66,6 +67,9 @@ class BranchMergeTest {
     private PublicationShareLinkRepository shareLinkRepository;
 
     @Mock
+    private AuditLogRepository auditLogRepository;
+
+    @Mock
     private PublicationAuthorizationService authorizationService;
 
     @Mock
@@ -87,6 +91,7 @@ class BranchMergeTest {
                 new ObjectMapper(),
                 publicationAccessRepository,
                 shareLinkRepository,
+                auditLogRepository,
                 authorizationService,
                 treeLoader,
                 photoService

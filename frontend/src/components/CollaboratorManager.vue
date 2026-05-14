@@ -27,6 +27,7 @@ const newRole = ref<'EDITOR' | 'VIEWER'>('EDITOR')
 const searching = ref(false)
 const adding = ref(false)
 const pendingRemovalUserId = ref<number | null>(null)
+const pendingRoleChange = ref<{ userId: number; role: 'EDITOR' | 'VIEWER' } | null>(null)
 
 let searchAbortController: AbortController | null = null
 
@@ -120,6 +121,30 @@ async function handleAdd() {
   }
 }
 
+function requestRoleChange(userId: number, role: 'EDITOR' | 'VIEWER') {
+  pendingRoleChange.value = { userId, role }
+}
+
+async function confirmRoleChange() {
+  const pending = pendingRoleChange.value
+  if (!pending) return
+  error.value = null
+  try {
+    const profile = pending.role === 'VIEWER' ? JSON.stringify(DEFAULT_PROFILE) : undefined
+    await updateAccessRole(props.publicationId, pending.userId, pending.role, profile)
+    await load(true)
+  } catch (err: any) {
+    error.value = err.message || '权限修改失败'
+    await load(true)
+  } finally {
+    pendingRoleChange.value = null
+  }
+}
+
+function cancelRoleChange() {
+  pendingRoleChange.value = null
+}
+
 async function handleRoleChange(userId: number, role: 'EDITOR' | 'VIEWER') {
   error.value = null
   try {
@@ -187,6 +212,16 @@ onUnmounted(() => {
     </div>
 
     <div class="invite-section">
+      <div class="role-guidance">
+        <div class="role-guidance__item">
+          <strong>编辑者</strong>
+          <span>编辑者可修改族谱内容，但不能删除所有者或越权管理高风险操作。</span>
+        </div>
+        <div class="role-guidance__item">
+          <strong>浏览者</strong>
+          <span>浏览者只能查看，并会应用脱敏规则。</span>
+        </div>
+      </div>
       <div class="search-container" ref="searchContainer">
         <div class="search-box" :class="{ 'is-searching': searching }">
           <input 
@@ -252,7 +287,7 @@ onUnmounted(() => {
                 <select 
                   class="form-select inline" 
                   :value="record.role" 
-                  @change="e => handleRoleChange(record.userId, (e.target as HTMLSelectElement).value as any)"
+                  @change="e => requestRoleChange(record.userId, (e.target as HTMLSelectElement).value as any)"
                 >
                   <option value="EDITOR">编辑者</option>
                   <option value="VIEWER">浏览者</option>
@@ -324,6 +359,16 @@ onUnmounted(() => {
       @cancel="cancelRemove"
       @update:modelValue="(v: boolean) => { if (!v) cancelRemove() }"
     />
+    <ConfirmDialog
+      :modelValue="pendingRoleChange !== null"
+      title="确认调整协作者权限"
+      message="此操作会立即改变协作者的可操作范围。调整为浏览者时，系统会同步应用默认脱敏规则。"
+      confirmLabel="确认调整"
+      tone="warning"
+      @confirm="confirmRoleChange"
+      @cancel="cancelRoleChange"
+      @update:modelValue="(v: boolean) => { if (!v) cancelRoleChange() }"
+    />
   </div>
 </template>
 
@@ -357,6 +402,27 @@ onUnmounted(() => {
   background: var(--bg-panel, rgba(255, 250, 242, 0.4));
   border: 1px solid var(--line-soft);
   border-radius: 18px;
+}
+
+.role-guidance {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.role-guidance__item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.role-guidance__item strong {
+  color: var(--text-main);
 }
 
 .search-container {

@@ -14,6 +14,7 @@ import com.genealogy.server.model.Person;
 import com.genealogy.server.model.Photo;
 import com.genealogy.server.model.Publication;
 import com.genealogy.server.model.PublicationAccess;
+import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.FamilyMemberRepository;
 import com.genealogy.server.repository.FamilyRepository;
 import com.genealogy.server.repository.PersonRepository;
@@ -41,6 +42,13 @@ import java.util.Set;
 public class PublicationService {
 
     private static final Logger log = LoggerFactory.getLogger(PublicationService.class);
+    private static final List<String> PUBLICATION_MUTATION_ACTIONS = List.of(
+            "CREATE_PUB",
+            "UPDATE_PUB",
+            "UPDATE_PUB_META",
+            "UPDATE_PERSON",
+            "DELETE_PUB"
+    );
 
     private final PublicationRepository publicationRepository;
     private final PersonRepository personRepository;
@@ -49,6 +57,7 @@ public class PublicationService {
     private final PhotoRepository photoRepository;
     private final PublicationAccessRepository publicationAccessRepository;
     private final PublicationShareLinkRepository shareLinkRepository;
+    private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
     private final PublicationAuthorizationService authorizationService;
     private final PublicationTreeLoader treeLoader;
@@ -61,6 +70,7 @@ public class PublicationService {
                               PhotoRepository photoRepository, ObjectMapper objectMapper,
                               PublicationAccessRepository publicationAccessRepository,
                               PublicationShareLinkRepository shareLinkRepository,
+                              AuditLogRepository auditLogRepository,
                               PublicationAuthorizationService authorizationService,
                               PublicationTreeLoader treeLoader,
                               PhotoService photoService) {
@@ -72,6 +82,7 @@ public class PublicationService {
         this.objectMapper = objectMapper;
         this.publicationAccessRepository = publicationAccessRepository;
         this.shareLinkRepository = shareLinkRepository;
+        this.auditLogRepository = auditLogRepository;
         this.authorizationService = authorizationService;
         this.treeLoader = treeLoader;
         this.photoService = photoService;
@@ -104,7 +115,7 @@ public class PublicationService {
             roleMap.putIfAbsent(pub.getId(), "OWNER");
         }
 
-        List<Publication> publications = publicationRepository.findAllById(accessibleIds);
+        List<Publication> publications = new ArrayList<>(publicationRepository.findAllById(accessibleIds));
         publications.sort(Comparator.comparing(Publication::getUpdatedAt,
                 Comparator.nullsLast(Comparator.reverseOrder())));
 
@@ -117,6 +128,16 @@ public class PublicationService {
             result.put("createdAt", publication.getCreatedAt());
             result.put("updatedAt", publication.getUpdatedAt());
             result.put("accessRole", roleMap.getOrDefault(publication.getId(), "OWNER"));
+            auditLogRepository
+                    .findTopByTargetTypeAndTargetIdAndActionInOrderByCreatedAtDesc(
+                            "publication",
+                            publication.getId(),
+                            PUBLICATION_MUTATION_ACTIONS
+                    )
+                    .ifPresent(auditLog -> {
+                        result.put("lastUpdatedBy", auditLog.getUsername());
+                        result.put("lastActivityAction", auditLog.getAction());
+                    });
 
             if (publication.getPublicationInfoJson() != null) {
                 try {
