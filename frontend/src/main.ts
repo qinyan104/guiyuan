@@ -5,4 +5,10 @@ import router from './router'
 import './style.css'
 import './themes.css'
 
-createApp(App).use(router).mount('#app')
+const app = createApp(App)
+
+app.config.errorHandler = (err, _instance, info) => {
+  console.error('[全局错误]', err, info)
+}
+
+app.use(router).mount('#app')

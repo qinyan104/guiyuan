@@ -57,6 +57,7 @@ public class AuditLogController {
 
     @PostMapping
     public ApiResponse<Void> addLog(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        requireAdmin(request);
         String username = (String) request.getAttribute("currentUsername");
         AuditLog log = new AuditLog();
         log.setUsername(username);

@@ -121,7 +121,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 
 ## 已知限制
 
-- JWT 密钥（`app.jwt.secret`）无默认值，必须通过 `JWT_SECRET` 环境变量配置（开发环境也需要）
+- JWT 密钥（`app.jwt.secret`）无默认值，必须通过 `JWT_SECRET` 环境变量配置。`JwtService` 启动时会校验，未设置则直接报错退出，不再静默失败。
 
 ## Skill routing
 

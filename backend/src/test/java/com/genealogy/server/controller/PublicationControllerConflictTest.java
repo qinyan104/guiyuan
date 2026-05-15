@@ -6,6 +6,7 @@ import com.genealogy.server.model.User;
 import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.security.JwtService;
+import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
 import com.genealogy.server.service.PublicationViewProjector;
@@ -53,6 +54,9 @@ class PublicationControllerConflictTest {
 
     @MockBean
     private AuditLogRepository auditLogRepository;
+
+    @MockBean
+    private AuditLogService auditLogService;
 
     @MockBean
     private PublicationAuthorizationService authorizationService;

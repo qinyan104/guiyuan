@@ -5,9 +5,8 @@ import com.genealogy.server.dto.ConsistencyReport;
 import com.genealogy.server.dto.CreateUserRequest;
 import com.genealogy.server.dto.ResetPasswordRequest;
 import com.genealogy.server.exception.BadRequestException;
-import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.User;
-import com.genealogy.server.repository.AuditLogRepository;
+import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.BackupService;
 import com.genealogy.server.service.ConsistencyService;
 import com.genealogy.server.service.UserService;
@@ -30,14 +29,14 @@ import java.util.Map;
 public class AdminController {
 
     private final UserService userService;
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogService auditLogService;
     private final BackupService backupService;
     private final ConsistencyService consistencyService;
 
-    public AdminController(UserService userService, AuditLogRepository auditLogRepository,
+    public AdminController(UserService userService, AuditLogService auditLogService,
                            BackupService backupService, ConsistencyService consistencyService) {
         this.userService = userService;
-        this.auditLogRepository = auditLogRepository;
+        this.auditLogService = auditLogService;
         this.backupService = backupService;
         this.consistencyService = consistencyService;
     }
@@ -69,7 +68,7 @@ public class AdminController {
         User user = userService.createUser(body.getUsername(), body.getPassword(), body.getNickname(), role);
         user.setPassword(null);
 
-        saveAuditLog(username, "ADMIN_CREATE_USER",
+        auditLogService.record(username, "ADMIN_CREATE_USER",
                 "创建用户「" + user.getUsername() + "」角色=" + role,
                 "user", user.getId());
 
@@ -82,7 +81,7 @@ public class AdminController {
         String username = (String) request.getAttribute("currentUsername");
 
         User user = userService.findById(id).orElse(null);
-        saveAuditLog(username, "ADMIN_DELETE_USER",
+        auditLogService.record(username, "ADMIN_DELETE_USER",
                 "删除用户 #" + id + (user != null ? "「" + user.getUsername() + "」" : ""),
                 "user", id);
 
@@ -96,7 +95,7 @@ public class AdminController {
         String username = (String) request.getAttribute("currentUsername");
 
         userService.resetPassword(id, body.getNewPassword());
-        saveAuditLog(username, "ADMIN_RESET_PASSWORD",
+        auditLogService.record(username, "ADMIN_RESET_PASSWORD",
                 "重置用户 #" + id + " 的密码",
                 "user", id);
 
@@ -112,7 +111,7 @@ public class AdminController {
             return ApiResponse.error(400, "角色不能为空");
         }
         userService.changeUserRole(id, newRole);
-        saveAuditLog(username, "ADMIN_CHANGE_ROLE",
+        auditLogService.record(username, "ADMIN_CHANGE_ROLE",
                 "修改用户 #" + id + " 角色为 " + newRole,
                 "user", id);
 
@@ -135,7 +134,7 @@ public class AdminController {
             }
             response.getOutputStream().flush();
 
-            saveAuditLog(username, "BACKUP",
+            auditLogService.record(username, "BACKUP",
                     "数据库备份 " + (result.exitCode() == 0 ? "成功" : "失败(exit=" + result.exitCode() + ")"),
                     null, null);
         } catch (InterruptedException e) {
@@ -166,7 +165,7 @@ public class AdminController {
         String username = (String) request.getAttribute("currentUsername");
         try {
             backupService.restoreDatabase(file.getInputStream());
-            saveAuditLog(username, "RESTORE_DB", "从文件 " + filename + " 还原数据库", null, null);
+            auditLogService.record(username, "RESTORE_DB", "从文件 " + filename + " 还原数据库", null, null);
             return ApiResponse.success("数据库已还原", Map.of("filename", filename));
         } catch (Exception e) {
             logger.error("数据库还原失败", e);
@@ -174,13 +173,4 @@ public class AdminController {
         }
     }
 
-    private void saveAuditLog(String username, String action, String detail, String targetType, Long targetId) {
-        AuditLog log = new AuditLog();
-        log.setUsername(username);
-        log.setAction(action);
-        log.setDetail(detail);
-        log.setTargetType(targetType);
-        log.setTargetId(targetId);
-        auditLogRepository.save(log);
-    }
 }

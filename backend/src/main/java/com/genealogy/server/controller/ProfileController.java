@@ -16,6 +16,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/user")
@@ -78,15 +80,23 @@ public class ProfileController {
         }
 
         // Ensure upload directory exists
-        Path uploadPath = Path.of(avatarUploadDir);
+        Path uploadPath = Path.of(avatarUploadDir).normalize();
         Files.createDirectories(uploadPath);
 
-        // Save file with unique name
+        // Use UUID filename to avoid path traversal and username exposure
         String extension = Optional.ofNullable(file.getOriginalFilename())
                 .map(f -> f.contains(".") ? f.substring(f.lastIndexOf(".")) : ".jpg")
                 .orElse(".jpg");
-        String filename = username + "_" + System.currentTimeMillis() + extension;
-        Path targetPath = uploadPath.resolve(filename);
+        // Only allow common image extensions
+        if (!Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp").contains(extension.toLowerCase())) {
+            extension = ".jpg";
+        }
+        String filename = UUID.randomUUID() + extension;
+        Path targetPath = uploadPath.resolve(filename).normalize();
+        // Ensure target is still within the upload directory
+        if (!targetPath.startsWith(uploadPath)) {
+            return ApiResponse.error(400, "无效的文件名");
+        }
         Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
         String avatarUrl = "/api/photos/avatars/" + filename;

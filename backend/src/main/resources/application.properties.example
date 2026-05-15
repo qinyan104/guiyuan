@@ -32,5 +32,8 @@ app.jwt.refresh-token-ttl=2592000000
 # CORS Configuration
 app.cors.allowed-origins=http://localhost:5173
 
+# Cookie Security (set true in production with HTTPS)
+app.secure-cookie=false
+
 # Upload Directory
 app.upload.dir=uploads

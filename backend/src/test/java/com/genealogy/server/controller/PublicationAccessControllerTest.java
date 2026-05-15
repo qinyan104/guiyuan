@@ -5,8 +5,8 @@ import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.model.User;
-import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
+import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.security.JwtService;
 import com.genealogy.server.service.PublicationAuthorizationService;
@@ -63,7 +63,7 @@ class PublicationAccessControllerTest {
     private UserRepository userRepository;
 
     @MockBean
-    private AuditLogRepository auditLogRepository;
+    private AuditLogService auditLogService;
 
     @MockBean
     private JwtService jwtService;

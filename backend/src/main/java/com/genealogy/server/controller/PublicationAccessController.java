@@ -6,12 +6,11 @@ import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
-import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.model.User;
-import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.UserRepository;
+import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,18 +30,18 @@ public class PublicationAccessController {
     private final PublicationAuthorizationService authorizationService;
     private final PublicationAccessRepository accessRepository;
     private final UserRepository userRepository;
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogService auditLogService;
     private final PublicationService publicationService;
 
     public PublicationAccessController(PublicationAuthorizationService authorizationService,
                                        PublicationAccessRepository accessRepository,
                                        UserRepository userRepository,
-                                       AuditLogRepository auditLogRepository,
+                                       AuditLogService auditLogService,
                                        PublicationService publicationService) {
         this.authorizationService = authorizationService;
         this.accessRepository = accessRepository;
         this.userRepository = userRepository;
-        this.auditLogRepository = auditLogRepository;
+        this.auditLogService = auditLogService;
         this.publicationService = publicationService;
     }
 
@@ -118,7 +117,7 @@ public class PublicationAccessController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("id", access.getId());
 
-        logAction(username, "ADD_COLLABORATOR",
+        auditLogService.record(username, "ADD_COLLABORATOR",
                 "添加协作者「" + targetUser.getUsername() + "」角色为 " + role, id);
         return ApiResponse.success("协作者已添加", result);
     }
@@ -148,7 +147,7 @@ public class PublicationAccessController {
         }
         accessRepository.save(access);
 
-        logAction(username, "UPDATE_COLLABORATOR_ROLE",
+        auditLogService.record(username, "UPDATE_COLLABORATOR_ROLE",
                 "修改协作者角色为 " + newRole + (body.containsKey("redactionProfile") ? ", 脱敏配置: " + body.get("redactionProfile") : ""), id);
         return ApiResponse.success("角色及配置已更新", null);
     }
@@ -172,19 +171,9 @@ public class PublicationAccessController {
 
         accessRepository.delete(access);
 
-        logAction(username, "REMOVE_COLLABORATOR",
+        auditLogService.record(username, "REMOVE_COLLABORATOR",
                 "移除协作者「" + targetUsername + "」", id);
         return ApiResponse.success("协作者已移除", null);
-    }
-
-    private void logAction(String username, String action, String detail, Long targetId) {
-        AuditLog log = new AuditLog();
-        log.setUsername(username);
-        log.setAction(action);
-        log.setDetail(detail);
-        log.setTargetType("publication");
-        log.setTargetId(targetId);
-        auditLogRepository.save(log);
     }
 
     @PostMapping("/{personId}/merge")

@@ -63,7 +63,7 @@ public class PublicationService {
     private final PublicationTreeLoader treeLoader;
     private final PhotoService photoService;
 
-    private String lastPersonDiff;
+    public record SaveResult(Long newRevision, String personDiff) {}
 
     public PublicationService(PublicationRepository publicationRepository, PersonRepository personRepository,
                               FamilyRepository familyRepository, FamilyMemberRepository familyMemberRepository,
@@ -88,9 +88,9 @@ public class PublicationService {
         this.photoService = photoService;
     }
 
-    public String getLastPersonDiff() {
-        return lastPersonDiff;
-    }
+    /** @deprecated use {@link SaveResult#personDiff()} from updatePublication/updatePerson instead */
+    @Deprecated
+    public String getLastPersonDiff() { return null; }
 
     public List<Map<String, Object>> listPublications(Long userId) {
         List<PublicationAccess> accessRecords = publicationAccessRepository.findByUserId(userId);
@@ -226,7 +226,7 @@ public class PublicationService {
     }
 
     @Transactional
-    public Long updatePublication(Long publicationId, Long expectedRevision, String title, String subtitle,
+    public SaveResult updatePublication(Long publicationId, Long expectedRevision, String title, String subtitle,
                                   Map<String, Object> publicationData, String settingsJson,
                                   String infoJson) {
         Publication publication = publicationRepository.findById(publicationId)
@@ -272,9 +272,9 @@ public class PublicationService {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> people = (Map<String, Object>) publicationData.get("people");
-        this.lastPersonDiff = computePersonDiff(people, dbPersonCache);
+        String diff = computePersonDiff(people, dbPersonCache);
 
-        return nextRevision;
+        return new SaveResult(nextRevision, diff);
     }
 
     @Transactional
@@ -291,7 +291,7 @@ public class PublicationService {
     }
 
     @Transactional
-    public Long updatePerson(Long publicationId, Long expectedRevision, String personId, Map<String, Object> data) {
+    public SaveResult updatePerson(Long publicationId, Long expectedRevision, String personId, Map<String, Object> data) {
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new NotFoundException("Publication not found"));
 
@@ -304,7 +304,7 @@ public class PublicationService {
         Person person = personRepository.findByPublicationIdAndPersonId(publicationId, personId)
                 .orElseThrow(() -> new NotFoundException("Person not found"));
 
-        this.lastPersonDiff = computeSinglePersonDiff(person, data, personId);
+        String diff = computeSinglePersonDiff(person, data, personId);
 
         if (data.containsKey("name")) {
             person.setName((String) data.get("name"));
@@ -366,7 +366,7 @@ public class PublicationService {
         publication.setRevision(nextRevision);
         publication.setUpdatedAt(java.time.LocalDateTime.now());
         publicationRepository.save(publication);
-        return nextRevision;
+        return new SaveResult(nextRevision, diff);
     }
 
     @Transactional

@@ -13,6 +13,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -33,15 +34,18 @@ public class AuthController {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final AuditLogRepository auditLogRepository;
+    private final boolean secureCookie;
 
     public AuthController(UserService userService,
                           JwtService jwtService,
                           RefreshTokenService refreshTokenService,
-                          AuditLogRepository auditLogRepository) {
+                          AuditLogRepository auditLogRepository,
+                          @Value("${app.secure-cookie:false}") boolean secureCookie) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.auditLogRepository = auditLogRepository;
+        this.secureCookie = secureCookie;
     }
 
     @PostMapping("/register")
@@ -60,13 +64,7 @@ public class AuthController {
         String accessToken = jwtService.generateAccessToken(user.getUsername(), user.getRole());
         String refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-        ResponseCookie cookie = ResponseCookie.from(REFRESH_COOKIE_NAME, refreshToken)
-                .httpOnly(true)
-                .secure(false) // set true in production with HTTPS
-                .sameSite("Strict")
-                .path(REFRESH_COOKIE_PATH)
-                .maxAge(REFRESH_COOKIE_MAX_AGE)
-                .build();
+        ResponseCookie cookie = buildRefreshCookie(refreshToken);
         clearRefreshCookie(response, LEGACY_REFRESH_COOKIE_PATH);
         response.addHeader("Set-Cookie", cookie.toString());
 
@@ -116,13 +114,7 @@ public class AuthController {
         String newRefreshToken = refreshTokenService.createRefreshToken(user.getId());
         String newAccessToken = jwtService.generateAccessToken(user.getUsername(), user.getRole());
 
-        ResponseCookie cookie = ResponseCookie.from(REFRESH_COOKIE_NAME, newRefreshToken)
-                .httpOnly(true)
-                .secure(false)
-                .sameSite("Strict")
-                .path(REFRESH_COOKIE_PATH)
-                .maxAge(REFRESH_COOKIE_MAX_AGE)
-                .build();
+        ResponseCookie cookie = buildRefreshCookie(newRefreshToken);
         clearRefreshCookie(response, LEGACY_REFRESH_COOKIE_PATH);
         response.addHeader("Set-Cookie", cookie.toString());
 
@@ -175,11 +167,21 @@ public class AuthController {
     private void clearRefreshCookie(HttpServletResponse response, String path) {
         ResponseCookie cookie = ResponseCookie.from(REFRESH_COOKIE_NAME, "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(secureCookie)
                 .sameSite("Strict")
                 .path(path)
                 .maxAge(0)
                 .build();
         response.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    private ResponseCookie buildRefreshCookie(String token) {
+        return ResponseCookie.from(REFRESH_COOKIE_NAME, token)
+                .httpOnly(true)
+                .secure(secureCookie)
+                .sameSite("Strict")
+                .path(REFRESH_COOKIE_PATH)
+                .maxAge(REFRESH_COOKIE_MAX_AGE)
+                .build();
     }
 }

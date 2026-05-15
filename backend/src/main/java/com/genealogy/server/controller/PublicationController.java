@@ -5,10 +5,10 @@ import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.dto.PublicationSnapshot;
-import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.repository.UserRepository;
+import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
 import com.genealogy.server.service.ShareLinkService;
@@ -27,19 +27,22 @@ public class PublicationController {
     private final PublicationService publicationService;
     private final UserRepository userRepository;
     private final AuditLogRepository auditLogRepository;
+    private final AuditLogService auditLogService;
     private final ObjectMapper objectMapper;
     private final PublicationAuthorizationService authorizationService;
     private final ShareLinkService shareLinkService;
     private final com.genealogy.server.service.PublicationViewProjector viewProjector;
 
     public PublicationController(PublicationService publicationService, UserRepository userRepository,
-                                 AuditLogRepository auditLogRepository, ObjectMapper objectMapper,
+                                 AuditLogRepository auditLogRepository,
+                                 AuditLogService auditLogService, ObjectMapper objectMapper,
                                  PublicationAuthorizationService authorizationService,
                                  ShareLinkService shareLinkService,
                                  com.genealogy.server.service.PublicationViewProjector viewProjector) {
         this.publicationService = publicationService;
         this.userRepository = userRepository;
         this.auditLogRepository = auditLogRepository;
+        this.auditLogService = auditLogService;
         this.objectMapper = objectMapper;
         this.authorizationService = authorizationService;
         this.shareLinkService = shareLinkService;
@@ -101,7 +104,7 @@ public class PublicationController {
         String infoJson = serializeSettings(body.getInfo());
         Long pubId = publicationService.createPublication(userId, body.getTitle(), body.getSubtitle(),
                 body.getPublication(), settingsJson, infoJson);
-        logAction(username, "CREATE_PUB", "创建族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」", pubId);
+        auditLogService.record(username, "CREATE_PUB", "创建族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」", pubId);
         return ApiResponse.success("族谱已创建", Map.of("id", pubId));
     }
 
@@ -112,13 +115,14 @@ public class PublicationController {
         authorizationService.require(subject, id, AccessPermission.EDIT);
         String settingsJson = serializeSettings(body.getSettings());
         String infoJson = serializeSettings(body.getInfo());
-        Long newRevision = publicationService.updatePublication(id, body.getRevision(), body.getTitle(), body.getSubtitle(),
+        var result = publicationService.updatePublication(id, body.getRevision(), body.getTitle(), body.getSubtitle(),
                 body.getPublication(), settingsJson, infoJson);
-        String personDiff = publicationService.getLastPersonDiff();
+        Long newRevision = result.newRevision();
+        String personDiff = result.personDiff();
         String detail = (personDiff != null && !personDiff.equals("[]"))
                 ? personDiff
                 : "保存族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」";
-        logAction(username, "UPDATE_PUB", detail, id);
+        auditLogService.record(username, "UPDATE_PUB", detail, id);
         return ApiResponse.success("族谱已保存", Map.of("newRevision", newRevision));
     }
 
@@ -129,7 +133,7 @@ public class PublicationController {
         authorizationService.require(subject, id, AccessPermission.EDIT);
         String infoJson = serializeSettings(body.getInfo());
         Long newRevision = publicationService.updatePublicationMetadata(id, body.getRevision(), body.getTitle(), body.getSubtitle(), infoJson);
-        logAction(username, "UPDATE_PUB_META", "更新族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」的信息", id);
+        auditLogService.record(username, "UPDATE_PUB_META", "更新族谱「" + (body.getTitle() != null ? body.getTitle() : "未命名") + "」的信息", id);
         return ApiResponse.success("族谱信息已更新", Map.of("newRevision", newRevision));
     }
 
@@ -153,12 +157,13 @@ public class PublicationController {
             } catch (NumberFormatException ignored) {}
         }
 
-        Long newRevision = publicationService.updatePerson(pubId, expectedRevision, personId, body);
-        String personDiff = publicationService.getLastPersonDiff();
+        var result = publicationService.updatePerson(pubId, expectedRevision, personId, body);
+        Long newRevision = result.newRevision();
+        String personDiff = result.personDiff();
         String detail = (personDiff != null && !personDiff.equals("[]"))
                 ? personDiff
                 : "更新人物「" + body.getOrDefault("name", personId) + "」的详细信息";
-        logAction(username, "UPDATE_PERSON", detail, pubId);
+        auditLogService.record(username, "UPDATE_PERSON", detail, pubId);
         return ApiResponse.success("个人信息已更新", Map.of("newRevision", newRevision));
     }
 
@@ -168,7 +173,7 @@ public class PublicationController {
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.DELETE);
         publicationService.deletePublication(id);
-        logAction(username, "DELETE_PUB", "删除族谱 #" + id, id);
+        auditLogService.record(username, "DELETE_PUB", "删除族谱 #" + id, id);
         return ApiResponse.success("族谱已删除", null);
     }
 
@@ -208,7 +213,7 @@ public class PublicationController {
 
         Map<String, Object> result = shareLinkService.createShareLink(
                 id, subject.getUserId(), allowExport, redactionProfile, Duration.ofDays(expiresInDays));
-        logAction(username, "CREATE_SHARE_LINK", "创建分享链接", id);
+        auditLogService.record(username, "CREATE_SHARE_LINK", "创建分享链接", id);
         return ApiResponse.success("分享链接已创建", result);
     }
 
@@ -230,18 +235,8 @@ public class PublicationController {
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_SHARES);
         shareLinkService.revokeShareLink(shareId, id);
-        logAction(username, "REVOKE_SHARE_LINK", "撤销分享链接 #" + shareId, id);
+        auditLogService.record(username, "REVOKE_SHARE_LINK", "撤销分享链接 #" + shareId, id);
         return ApiResponse.success("分享链接已撤销", null);
-    }
-
-    private void logAction(String username, String action, String detail, Long targetId) {
-        AuditLog log = new AuditLog();
-        log.setUsername(username);
-        log.setAction(action);
-        log.setDetail(detail);
-        log.setTargetType("publication");
-        log.setTargetId(targetId);
-        auditLogRepository.save(log);
     }
 
     private String serializeSettings(Object settings) {

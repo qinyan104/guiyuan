@@ -20,6 +20,11 @@ public class JwtService {
     public JwtService(
             @Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.access-token-ttl}") long accessTokenTtl) {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalArgumentException(
+                    "JWT_SECRET 环境变量未设置。请在启动前设置 JWT_SECRET 环境变量。" +
+                    "可使用 openssl rand -base64 64 生成密钥。");
+        }
         this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(
                 java.util.Base64.getEncoder().encodeToString(secret.getBytes())));
         this.accessTokenTtl = accessTokenTtl;
