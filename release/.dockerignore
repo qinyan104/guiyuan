@@ -1,0 +1,44 @@
+﻿# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Docs (not needed for runtime)
+docs
+*.md
+!release/README.md
+
+# Source code (not needed when pre-built artifacts exist)
+backend/src
+frontend/src
+backend/pom.xml
+frontend/package.json
+frontend/package-lock.json
+frontend/vite.config.ts
+frontend/tsconfig.json
+
+# Test files
+**/test
+**/tests
+**/*.test.*
+**/*.spec.*
+
+# Node modules
+node_modules
+
+# Build artifacts we don't need
+backend/target
+frontend/node_modules
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment (keep only the template)
+.env

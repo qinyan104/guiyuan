@@ -41,6 +41,7 @@
   --btn-primary-bg: linear-gradient(135deg, #3e2a18 0%, #7f5631 100%);
   --btn-primary-color: #fff8ee;
   --btn-secondary-bg: rgba(255,251,244,0.84);
+  --btn-secondary-color: var(--accent-earth);
   --btn-secondary-border: rgba(123,97,68,0.18);
   --danger-title: #7d3f2e;
   --danger-text: rgba(96,53,40,0.88);
@@ -471,7 +472,7 @@ textarea {
 
 .btn--secondary {
   background: var(--btn-secondary-bg);
-  color: var(--accent-earth);
+  color: var(--btn-secondary-color, var(--accent-earth));
   border: 1px solid var(--btn-secondary-border);
   box-shadow: 0 10px 24px rgba(62, 41, 22, 0.08);
 }

@@ -59,7 +59,31 @@
       "Bash(./mvnv test *)",
       "Bash(npx eslint *)",
       "Bash(grep -v \"^$\")",
-      "Bash(grep \"no-unused-vars\\\\|no-empty$\")"
+      "Bash(grep \"no-unused-vars\\\\|no-empty$\")",
+      "Bash(rm -rf release/frontend/dist/*)",
+      "Bash(cp -r frontend/dist/* release/frontend/dist/)",
+      "Bash(\"C:/Program Files/Docker/Docker/Docker Desktop.exe\" --stop)",
+      "Bash(\"C:/Program Files/Docker/Docker/Docker Desktop.exe\")",
+      "Bash(docker info *)",
+      "Skill(gstack)",
+      "Skill(systematic-debugging)",
+      "Bash(npm *)",
+      "Bash(Get-ChildItem *)",
+      "Bash(Select-Object -First 200)",
+      "Bash(git commit *)",
+      "Read(//c/Users/HX/.claude/projects/**)",
+      "Skill(office-hours)",
+      "Bash(git *)",
+      "Bash(echo '<!doctype html><html><head><meta charset=\"utf-8\"><style>@page { size: A4; margin: 0; } body { margin: 0; padding: 20mm; font-family: serif; } h1 { color: #3e2a18; }</style></head><body><h1>测试族谱</h1><p>中文渲染测试</p></body></html>')",
+      "Bash(rm -f test-input.html test-output.pdf)",
+      "Bash(echo '<!doctype html><html><head><meta charset=\"utf-8\"><style>@page { size: A4; margin: 0; } body { margin: 0; padding: 20mm; font-family: \"SimSun\", serif; } h1 { color: #3e2a18; }</style></head><body><h1>测试族谱</h1><p>中文渲染测试 — ABC abc 123</p></body></html>')",
+      "Bash(echo '<!doctype html><html><head><meta charset=\"utf-8\"><style>@page { size: A4; margin: 0; } body { margin: 0; padding: 20mm; font-family: \"SimSun\", serif; } h1 { color: #3e2a18; }</style></head><body><h1>测试族谱</h1><p>中文渲染测试</p></body></html>')",
+      "Bash(ls node_modules/playwright-core/package.json)",
+      "Bash(node -e \"const p = require\\('playwright-core/lib/server/registry'\\); console.log\\('ok'\\)\")",
+      "Bash(del \"C:\\\\Users\\\\HX\\\\Desktop\\\\族谱管理系统\\\\tools\\\\pdf-export\\\\test-output.pdf\")",
+      "Bash(.\\\\mvnw compile *)",
+      "Bash(echo '<html><body><h1>test</h1></body></html>')",
+      "Bash(rm -f _test.html _test.pdf)"
     ]
   }
 }

@@ -74,10 +74,12 @@
   --bg-panel-strong: rgba(32, 36, 48, 0.94);
   --bg-paper: #1e2230;
   --card-dark-bg: #1e2230;
+  --card-dark-color: rgba(255, 255, 255, 0.88);
   --line-soft: rgba(140, 160, 190, 0.14);
   --text-main: #fdfcf8;
   --text-sub: #d8d0c2;
   --text-soft: #a8a090;
+  --text-secondary: rgba(255, 255, 255, 0.6);
   --accent-amber: #7eb8da;
   --accent-earth: #c4a882;
   --accent-olive: #5c8a6e;
@@ -108,8 +110,9 @@
   --editor-panel-bg: linear-gradient(180deg, rgba(26,30,40,0.98), rgba(22,26,36,0.96));
   --btn-primary-bg: linear-gradient(135deg, #2a4a6a 0%, #4a7a9a 100%);
   --btn-primary-color: #e8f0f6;
-  --btn-secondary-bg: rgba(30,36,50,0.84);
-  --btn-secondary-border: rgba(100,120,150,0.22);
+  --btn-secondary-bg: rgba(255, 255, 255, 0.08);
+  --btn-secondary-color: #ffffff;
+  --btn-secondary-border: rgba(255, 255, 255, 0.18);
   --danger-title: #d4847a;
   --danger-text: rgba(210,160,150,0.88);
   --danger-bg: linear-gradient(180deg, rgba(60,30,30,0.6), rgba(40,20,20,0.4));
@@ -218,6 +221,7 @@
   --text-main: #fcf6f0;
   --text-sub: #decbc0;
   --text-soft: #baa28c;
+  --text-secondary: rgba(255, 255, 255, 0.6);
   --accent-amber: #c89b6e;
   --accent-earth: #c4a882;
   --accent-olive: #6b8f7a;
@@ -248,8 +252,9 @@
   --editor-panel-bg: linear-gradient(180deg, rgba(38,28,22,0.98), rgba(32,24,18,0.96));
   --btn-primary-bg: linear-gradient(135deg, #5a3a20 0%, #8a6040 100%);
   --btn-primary-color: #f8f0e4;
-  --btn-secondary-bg: rgba(42,32,26,0.84);
-  --btn-secondary-border: rgba(140,100,60,0.22);
+  --btn-secondary-bg: rgba(255, 255, 255, 0.08);
+  --btn-secondary-color: #ffffff;
+  --btn-secondary-border: rgba(255, 255, 255, 0.18);
   --danger-title: #d0806a;
   --danger-text: rgba(200,140,120,0.88);
   --danger-bg: linear-gradient(180deg, rgba(60,28,22,0.6), rgba(44,22,18,0.4));
@@ -616,6 +621,7 @@
   --text-main: #ffffff;
   --text-sub: #e2e8f0;
   --text-soft: #94a3b8;
+  --text-secondary: rgba(255, 255, 255, 0.6);
   --accent-amber: #38bdf8;
   --accent-earth: #818cf8;
   --accent-olive: #34d399;
@@ -646,8 +652,9 @@
   --editor-panel-bg: linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.96));
   --btn-primary-bg: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
   --btn-primary-color: #f8fafc;
-  --btn-secondary-bg: rgba(30, 41, 59, 0.84);
-  --btn-secondary-border: rgba(56, 189, 248, 0.22);
+  --btn-secondary-bg: rgba(255, 255, 255, 0.08);
+  --btn-secondary-color: #ffffff;
+  --btn-secondary-border: rgba(255, 255, 255, 0.18);
   --danger-title: #f87171;
   --danger-text: rgba(254, 202, 202, 0.88);
   --danger-bg: linear-gradient(180deg, rgba(69, 10, 10, 0.6), rgba(69, 10, 10, 0.4));
@@ -1279,49 +1286,4 @@
   font-size: 12px;
   letter-spacing: 0.1em;
   font-weight: 700;
-}
-
-/* --- Dark Theme Text Legibility Fix --- */
-[data-theme="ink-wash"],
-[data-theme="rosewood"],
-[data-theme="star-sea"] {
-  /* Ensure all text variations are explicitly light and high-contrast in dark themes */
-  --text-main: #ffffff;
-  --text-sub: rgba(255, 255, 255, 0.88);
-  --text-soft: rgba(255, 255, 255, 0.65);
-  --text-secondary: rgba(255, 255, 255, 0.6);
-  /* Stat/dark card backgrounds: prevent --text-main from being used as bg */
-  --card-dark-bg: #1e2230;
-  --card-dark-color: rgba(255, 255, 255, 0.88);
-}
-
-/* Force functional UI buttons that previously relied on muddy accents or dark fallbacks to be pure white */
-[data-theme="ink-wash"] .btn--secondary,
-[data-theme="rosewood"] .btn--secondary,
-[data-theme="star-sea"] .btn--secondary,
-[data-theme="ink-wash"] .tool-btn,
-[data-theme="rosewood"] .tool-btn,
-[data-theme="star-sea"] .tool-btn,
-[data-theme="ink-wash"] .selection-chip__btn,
-[data-theme="rosewood"] .selection-chip__btn,
-[data-theme="star-sea"] .selection-chip__btn,
-[data-theme="ink-wash"] .sync-status,
-[data-theme="rosewood"] .sync-status,
-[data-theme="star-sea"] .sync-status {
-  color: #ffffff;
-}
-
-/* Ensure button hover states in dark themes don't invert or become muddy */
-[data-theme="ink-wash"] .tool-btn:hover,
-[data-theme="rosewood"] .tool-btn:hover,
-[data-theme="star-sea"] .tool-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-}
-
-[data-theme="ink-wash"] .btn--secondary:hover,
-[data-theme="rosewood"] .btn--secondary:hover,
-[data-theme="star-sea"] .btn--secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
 }

@@ -1,6 +1,9 @@
 package com.genealogy.server.config;
 
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -39,5 +42,16 @@ public class WebConfig implements WebMvcConfigurer {
         String avatarUploadPath = "file:" + Paths.get(uploadDir, "avatars").toAbsolutePath() + "/";
         registry.addResourceHandler("/api/photos/avatars/**")
                 .addResourceLocations(avatarUploadPath);
+    }
+
+    @Bean
+    public Jackson2ObjectMapperBuilderCustomizer streamReadConstraintsCustomizer() {
+        return builder -> builder.postConfigurer(objectMapper ->
+                objectMapper.getFactory().setStreamReadConstraints(
+                        StreamReadConstraints.builder()
+                                .maxStringLength(500_000_000)
+                                .build()
+                )
+        );
     }
 }

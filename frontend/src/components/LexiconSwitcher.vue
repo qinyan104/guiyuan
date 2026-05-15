@@ -143,8 +143,8 @@ onBeforeUnmount(() => {
 }
 
 .theme-item.is-active {
-  background: var(--text-main);
-  color: var(--bg-panel, #fff);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
@@ -160,7 +160,7 @@ onBeforeUnmount(() => {
   color: var(--text-main);
 }
 .theme-item.is-active .theme-name {
-  color: var(--bg-panel, #fff);
+  color: inherit;
 }
 
 .theme-desc {
@@ -170,7 +170,7 @@ onBeforeUnmount(() => {
   margin-top: 2px;
 }
 .theme-item.is-active .theme-desc {
-  color: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,0.82);
 }
 
 .check-icon {
@@ -178,7 +178,7 @@ onBeforeUnmount(() => {
   top: 10px;
   right: 12px;
   font-size: 12px;
-  color: var(--bg-panel, #fff);
+  color: inherit;
   font-weight: 800;
 }
 

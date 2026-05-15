@@ -8,7 +8,11 @@ cd backend
 ./mvnw spring-boot:run
 ```
 - **端口**: 8080
-- **关键配置**: `src/main/resources/application.properties` (MySQL 连接, JWT Secret)
+- **关键配置**: `src/main/resources/application.properties`
+  - `JWT_SECRET` — **必需**。生成：`openssl rand -base64 64`。缺省时应用启动直接报错退出。
+  - `DB_USERNAME` / `DB_PASSWORD` — MySQL 连接凭据
+  - `app.cors.allowed-origins` — 允许的跨域域名逗号分隔（默认 `http://localhost:5173`）。**注意**：不再使用通配符，生产环境必须填写具体域名。
+  - `app.secure-cookie` — 生产 HTTPS 环境设为 `true`（默认 `false` 本地开发）
 - **数据库**: MySQL 8.0, 库名 `genealogy`
 - **数据库迁移**: Flyway (`ddl-auto=validate`, `baseline-on-migrate=true`)，迁移脚本在 `db/migration/`
 
