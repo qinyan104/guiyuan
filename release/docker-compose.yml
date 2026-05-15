@@ -38,8 +38,8 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: backend.Dockerfile
+      context: ..
+      dockerfile: release/backend.Dockerfile
     container_name: guiyuan-backend
     restart: unless-stopped
     depends_on:
@@ -78,8 +78,8 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend.Dockerfile
+      context: ..
+      dockerfile: release/frontend.Dockerfile
     container_name: guiyuan-frontend
     restart: unless-stopped
     depends_on:

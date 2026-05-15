@@ -1,4 +1,4 @@
-﻿# Git
+# Git
 .git
 .gitignore
 .gitattributes
@@ -14,27 +14,20 @@ docs
 *.md
 !release/README.md
 
-# Source code (not needed when pre-built artifacts exist)
-backend/src
-frontend/src
-backend/pom.xml
-frontend/package.json
-frontend/package-lock.json
-frontend/vite.config.ts
-frontend/tsconfig.json
-
 # Test files
 **/test
 **/tests
 **/*.test.*
 **/*.spec.*
 
-# Node modules
+# Node modules (will be installed inside build stage)
 node_modules
-
-# Build artifacts we don't need
-backend/target
 frontend/node_modules
+
+# Build artifacts (will be generated inside build stage)
+backend/target
+backend/app.jar
+frontend/dist
 
 # OS
 .DS_Store

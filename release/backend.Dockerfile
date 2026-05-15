@@ -1,4 +1,17 @@
-﻿FROM eclipse-temurin:17-jre-alpine
+﻿# ─── Stage 1: Build with Maven ───
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /build
+
+# Cache dependencies layer (pom.xml changes less often than sources)
+COPY backend/pom.xml .
+RUN mvn dependency:go-offline -q
+
+COPY backend/src src/
+RUN mvn package -DskipTests -DskipITs -q && \
+    cp target/*.jar app.jar
+
+# ─── Stage 2: Runtime ───
+FROM eclipse-temurin:17-jre-alpine
 
 RUN apk add --no-cache curl
 
@@ -6,7 +19,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
-COPY backend/app.jar app.jar
+COPY --from=build /build/app.jar app.jar
 
 RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app
 
