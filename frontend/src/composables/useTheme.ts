@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-export type ThemeId = 'parchment' | 'su-style' | 'ou-style' | 'ink-wash' | 'celadon' | 'rosewood' | 'frosted-glass' | 'star-sea' | 'aurora' | 'eggshell'
+export type ThemeId = 'parchment' | 'su-style' | 'ou-style' | 'celadon' | 'frosted-glass' | 'aurora' | 'eggshell'
 
 export interface ThemeOption {
   id: ThemeId
@@ -33,13 +33,6 @@ export const THEME_OPTIONS: ThemeOption[] = [
     preview: ['#e8d5b5', '#fcf8f0', '#1a1a1a', '#b22222'],
   },
   {
-    id: 'ink-wash',
-    name: '水墨',
-    nameEn: 'Ink Wash',
-    description: '深色水墨风格，夜间友好',
-    preview: ['#1a1d23', '#7eb8da', '#c4a882', '#5c8a6e'],
-  },
-  {
     id: 'celadon',
     name: '青瓷',
     nameEn: 'Celadon',
@@ -47,25 +40,11 @@ export const THEME_OPTIONS: ThemeOption[] = [
     preview: ['#f0f5f2', '#5a9e7c', '#3d7a6b', '#8b6e4e'],
   },
   {
-    id: 'rosewood',
-    name: '檀木',
-    nameEn: 'Rosewood',
-    description: '深沉檀木色调，庄重典雅',
-    preview: ['#2a1f1a', '#c89b6e', '#8b5e3c', '#6b8f7a'],
-  },
-  {
     id: 'frosted-glass',
     name: '琉璃',
     nameEn: 'Frosted Glass',
     description: '毛玻璃透明质感，现代通透',
     preview: ['#e8edf5', '#6c7baa', '#8b6db0', '#4a9a8a'],
-  },
-  {
-    id: 'star-sea',
-    name: '星海',
-    nameEn: 'Star Sea',
-    description: '深邃暗蓝极客风，现代高对比度',
-    preview: ['#0b1120', '#38bdf8', '#818cf8', '#34d399'],
   },
   {
     id: 'aurora',

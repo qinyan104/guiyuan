@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#1C1917"/>
+  <rect x="60" y="60" width="1080" height="510" rx="12" fill="none" stroke="#8B5E3C" stroke-width="2"/>
+  <rect x="80" y="80" width="1040" height="470" rx="8" fill="none" stroke="#5C4A3A" stroke-width="1" stroke-dasharray="8,4"/>
+  <text x="600" y="280" text-anchor="middle" font-family="serif" font-size="72" fill="#D4A96A" letter-spacing="12">家族族譜</text>
+  <text x="600" y="340" text-anchor="middle" font-family="sans-serif" font-size="24" fill="#8B7355" letter-spacing="4">GENEALOGY · 世代傳承</text>
+  <line x1="400" y1="380" x2="800" y2="380" stroke="#5C4A3A" stroke-width="1"/>
+  <text x="600" y="420" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#6B5B4A">追溯先祖源流 · 記録家族記憶</text>
+</svg>

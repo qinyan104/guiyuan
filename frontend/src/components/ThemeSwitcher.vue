@@ -122,13 +122,7 @@ onBeforeUnmount(() => {
   transform-origin: top right;
 }
 
-:global([data-theme="ink-wash"]) .theme-dropdown,
-:global([data-theme="rosewood"]) .theme-dropdown,
-:global([data-theme="star-sea"]) .theme-dropdown {
-  background: rgba(20, 20, 20, 0.85);
-  border-color: rgba(255,255,255,0.1);
-  box-shadow: 0 16px 32px rgba(0,0,0,0.4);
-}
+
 
 .dropdown-header {
   padding: 6px 8px 4px;
@@ -166,11 +160,7 @@ onBeforeUnmount(() => {
 .theme-item:hover {
   background: rgba(0,0,0,0.04);
 }
-:global([data-theme="ink-wash"]) .theme-item:hover,
-:global([data-theme="rosewood"]) .theme-item:hover,
-:global([data-theme="star-sea"]) .theme-item:hover {
-  background: rgba(255,255,255,0.06);
-}
+
 
 .theme-item.is-active {
   background: var(--btn-primary-bg);

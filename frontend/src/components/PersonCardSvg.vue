@@ -174,6 +174,10 @@ function handleSelect() {
       :ry="isOu ? 4 : 22"
     />
 
+    <foreignObject x="0" y="0" :width="card.width" :height="card.height">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="person-card__glass-backdrop" :style="{ width: '100%', height: '100%', borderRadius: isOu ? '4px' : (isSu ? '0' : '22px') }"></div>
+    </foreignObject>
+
     <rect class="person-card__inner" x="8" y="8" :width="card.width - 16" :height="card.height - 16" :rx="isOu ? 2 : (isSu ? 14 : 18)" :ry="isOu ? 2 : (isSu ? 14 : 18)" />
 
     <!-- Branch Mount Point Icon -->
