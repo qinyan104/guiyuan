@@ -550,7 +550,7 @@ function toggleUserDropdown() {
 }
 
 .sync-status--saved {
-  color: #16a34a;
+  color: var(--task-calm, #16a34a);
   background: rgba(22, 163, 74, 0.08);
 }
 
@@ -560,12 +560,12 @@ function toggleUserDropdown() {
 }
 
 .sync-status--error {
-  color: #ef4444;
+  color: var(--danger-text, #ef4444);
   background: rgba(239, 68, 68, 0.08);
 }
 
 .sync-status--conflict {
-  color: #b7791f;
+  color: var(--task-warm, #b7791f);
   background: rgba(245, 158, 11, 0.14);
 }
 
