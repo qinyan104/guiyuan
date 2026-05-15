@@ -47,12 +47,12 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 ```
 
 **测试现状：**
-- 后端 124 个测试（全通过，使用 H2 内存数据库无需 MySQL），`@WebMvcTest` + `@SpringBootTest` + `@ActiveProfiles("test")` 均可在无外部数据库环境运行
-- 前端 85 个单元测试（vitest + jsdom + @vue/test-utils），0 失败
+- 后端 122 个测试（全通过，使用 H2 内存数据库无需 MySQL），`@WebMvcTest` + `@SpringBootTest` + `@ActiveProfiles("test")` 均可在无外部数据库环境运行
+- 前端 115 个单元测试（vitest + jsdom + @vue/test-utils），0 失败
 - 前端 **11 个 E2E 测试**（Playwright + Chromium）：登录/登出、谱书 CRUD、全局搜索、分享链接创建与访问
 - 后端测试默认使用 `application-test.properties`（H2 内存数据库 + Flyway 禁用 + Hibernate `create-drop`），无需外部 MySQL
 - E2E 测试默认使用测试用户 `e2e_test` / `test1234`（自动注册/创建），可通过 `E2E_USERNAME` / `E2E_PASSWORD` 环境变量覆盖
-- 前端 ESLint 已配置（`eslint.config.js` — flat config + TS + Vue），当前 0 errors
+- 前端 ESLint 已配置（`eslint.config.js` — flat config + TS + Vue），当前 0 errors, 68 warnings（均为有意保留：no-explicit-any / no-mutating-props / no-v-html）
 
 ## 前端架构
 
@@ -62,7 +62,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 - **认证恢复**：`App.vue` 启动时先调用 `/api/auth/refresh` 恢复 access token，再渲染受保护路由；若旧 token 无法刷新，会清理本地会话并跳回登录页。`AdminLayout` 退出登录必须等待 `/api/auth/logout` 完成后再跳转登录页。
 - **状态管理**：无全局 store，状态分布在 composables 中（usePublicationState、usePanelState 等）
 - **核心管理**：`views/PublicationListView.vue` 负责族谱列表 CRUD、元数据管理及**王朝示例模板**（唐/明）的置顶展示与克隆。
-- **详情编辑**：`views/PersonDetailView.vue` **纪传体个人志**。移除冗余关系，采用 860px 居中单列布局，提供宣纸纹理、八角头像及**原图不裁剪**渲染。
+- **详情编辑**：（`PersonDetailView.vue` 已于 2026-05-15 删除，人物详情现在通过 Workbench 内的 `PersonEditorDrawer` 侧边抽屉编辑。）
 - **数据分析**：`views/PublicationStatsView.vue` (琥珀看板) 与 `TimelineView.vue` (双轨时间线) 提供深度家族洞察，支持月级精确排序。
 - **空状态引导**：Dashboard、族谱列表、时间线、统计视图在无数据时展示引导卡片/提示文字和操作入口，降低首次使用门槛。
 - **核心编辑器**：`views/WorkbenchView.vue` 专注排版。支持跨页面视角记忆，取消点击自动跳屏。
@@ -76,7 +76,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 - **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置 and 连线
 - **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）。另含**跨家庭重复校验**：一个人不能同时是多个家庭的 parents 或 children（但可同时是 parent 和 child，多代际正常）。`publicationOperations.ts` 中的关系操作自动调用 `deduplicateCrossFamily()` 清理。
 - 草稿持久化：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化，并在便携式导出时将 `/api/photos/...` 与旧版 `/uploads/...` 头像尽量内联为 Base64
-- **导出**：`features/export/publicationExport.ts` — SVG 导出和打印排版；`features/export/shareHtmlExport.ts` — 自包含 HTML 快照分享（AES-256-GCM 可选密码保护）；`features/export/ExportDialog.vue` 现在提供**单页矢量 PDF**（由后端生成）、多页谱书实验室与**分享网页**导出。
+- **导出**：`features/export/publicationExport.ts` — SVG 导出和打印排版；`features/export/shareHtmlExport.ts` — 自包含 HTML 快照分享（AES-256-GCM 可选密码保护）；`features/export/ExportDialog.vue` 提供 SVG 拓印和**分享网页**导出。（PDF 导出相关后端代码 `PdfExportService` / `ExportController` 已于 2026-05-15 删除。）
 - **移动端浏览**：`ShareView.vue`（`/share/:token` 路由）适配 640px 以下手机屏幕。`PublicationCanvas` 支持触屏双指缩放（pinch-to-zoom）。HTML 导出在手机上自动切换为底部弹出面板（bottom sheet），支持双击人物卡片放大。`index.html` 包含静态 OG 标签（og:title/og:description/og:image）用于微信分享预览卡片，默认通用文案以保护隐私。
 - **活动时间线**：`PublicationStatsView.vue` 族谱修订志展示字段级变更 diff（旧值→新值），红色删除线 + 绿色高亮，支持相对时间（刚刚 / N 分钟前 / N 天前）。
 
@@ -96,9 +96,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 
 - **字段级脱敏**：`PublicationViewProjector` 提供三态（NONE/LIVING/ALL）脱敏引擎。`PublicationController.get()` 为 `VIEWER` 角色应用该引擎，确保敏感数据（生卒、笔记、照片）在离开后端前被抹除。
 - **传输限制**：已提升至 **100MB** (Servlet, Tomcat Post/Swallow size) 以支持带 Base64 图片的族谱导入
-- **PDF 生成**：集成 **iText 7** (kernel, io, layout, svg)。
-    - `POST /api/publications/{id}/export/pdf`: 生成多页谱书 PDF（含标题、前言、成员志、切片图）。
-    - `POST /api/publications/{id}/export/pdf/single-page`: 接收 `svgMarkup` 与宽高，生成**全尺寸、单页、无边框矢量 PDF**。
+- **PDF 生成**：已移除（2026-05-15），原集成 iText 7 生成单页/多页 PDF，相关后端代码 `PdfExportService` / `ExportController` / `PdfExportRequest` 已删除。
 - **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载。集成 `PublicationTreeLoader` 递归加载分支挂载数据。
 - **照片服务**：`PhotoService` 统一管理 Base64 头像解析、`/api/photos/` 克隆、旧版 `/uploads/` 路径迁移。`PublicationService` 通过 `photoService` 委托照片操作。
 - **合并引擎**：`PublicationService.mergeBranch` 实现物理数据迁入。使用 `collectSubtreeIds` 进行 BFS 遍历。若指定了子树起点，则仅克隆该分支及其后代；否则执行全量克隆。使用 UUID 前缀 (`merged_{targetPubId}_*`) 进行 ID 重映射防冲突，递归克隆人物、家庭及照片记录。合并后自动清空挂载点。
@@ -124,3 +122,21 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 ## 已知限制
 
 - JWT 密钥（`app.jwt.secret`）无默认值，必须通过 `JWT_SECRET` 环境变量配置（开发环境也需要）
+
+## Skill routing
+
+When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
+
+Key routing rules:
+- Product ideas/brainstorming → invoke /office-hours
+- Strategy/scope → invoke /plan-ceo-review
+- Architecture → invoke /plan-eng-review
+- Design system/plan review → invoke /design-consultation or /plan-design-review
+- Full review pipeline → invoke /autoplan
+- Bugs/errors → invoke /investigate
+- QA/testing site behavior → invoke /qa or /qa-only
+- Code review/diff check → invoke /review
+- Visual polish → invoke /design-review
+- Ship/deploy/PR → invoke /ship or /land-and-deploy
+- Save progress → invoke /context-save
+- Resume context → invoke /context-restore
