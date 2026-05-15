@@ -272,7 +272,7 @@ export function normalizeSettings(settings: PublicationSettings): PublicationSet
     siblingGap: clampNumber(settings.siblingGap, 56, 140),
     partnerGap: clampNumber(settings.partnerGap, 72, 128),
     fontScale: clampNumber(settings.fontScale, 0.88, 1.18),
-    zoom: clampNumber(settings.zoom, 0.55, 1.35),
+    zoom: clampNumber(settings.zoom, 0.10, 1.35),
     paddingX: clampNumber(settings.paddingX, 72, 220),
     paddingY: clampNumber(settings.paddingY, 48, 180),
   }
@@ -296,7 +296,7 @@ export function validateSettings(input: unknown): ValidationIssue[] {
     ['siblingGap', 56, 140],
     ['partnerGap', 72, 128],
     ['fontScale', 0.88, 1.18],
-    ['zoom', 0.55, 1.35],
+    ['zoom', 0.10, 1.35],
     ['paddingX', 72, 220],
     ['paddingY', 48, 180],
   ] as const).forEach(([field, min, max]) => {

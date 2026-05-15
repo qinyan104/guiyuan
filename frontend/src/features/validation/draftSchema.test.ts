@@ -98,7 +98,7 @@ describe('validateSettings', () => {
   })
 
   it('rejects a zoom below minimum', () => {
-    const bad = { ...defaultSettings, zoom: 0.1 }
+    const bad = { ...defaultSettings, zoom: 0.05 }
     expect(validateSettings(bad)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: 'invalid-settings', path: 'settings.zoom' }),
@@ -130,7 +130,7 @@ describe('normalizeSettings', () => {
     const raw = { ...defaultSettings, zoom: 0.01, cardWidth: 999, paddingY: -50 }
     const result = normalizeSettings(raw)
 
-    expect(result.zoom).toBe(0.55)
+    expect(result.zoom).toBe(0.10)
     expect(result.cardWidth).toBe(176)
     expect(result.paddingY).toBe(48)
   })

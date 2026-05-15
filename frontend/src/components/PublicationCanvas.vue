@@ -274,7 +274,7 @@ function handleWheel(event: WheelEvent) {
   }
 
   const currentZoom = props.settings.zoom
-  const nextZoom = clamp(Number((currentZoom * Math.exp(-event.deltaY * 0.0016)).toFixed(2)), 0.55, 1.35)
+  const nextZoom = clamp(Number((currentZoom * Math.exp(-event.deltaY * 0.0016)).toFixed(2)), 0.10, 1.35)
 
   if (nextZoom === currentZoom) {
     return
@@ -313,7 +313,7 @@ function handleTouchMove(event: TouchEvent) {
     const dy = event.touches[0].clientY - event.touches[1].clientY
     const dist = Math.hypot(dx, dy)
     const scale = dist / pinchStartDist
-    const nextZoom = clamp(Number((pinchStartZoom * scale).toFixed(2)), 0.55, 1.35)
+    const nextZoom = clamp(Number((pinchStartZoom * scale).toFixed(2)), 0.10, 1.35)
 
     if (nextZoom === props.settings.zoom || !viewportRef.value) return
 

@@ -81,7 +81,7 @@ function resetCanvasView() {
 
 function adjustZoom(delta: number) {
   const nextValue = Number((context.pub.settings.zoom + delta).toFixed(2))
-  context.pub.settings.zoom = Math.min(1.35, Math.max(0.55, nextValue))
+  context.pub.settings.zoom = Math.min(1.35, Math.max(0.10, nextValue))
 }
 
 // ─── File Operations ────────────────────────────────────────────

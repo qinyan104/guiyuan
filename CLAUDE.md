@@ -56,7 +56,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 
 ## 前端架构
 
-- **路由**：`src/router/index.ts` — 12 条命名路由，含登录守卫和管理员权限守卫。后台壳层及后台四个主页面采用同步组件加载，避免登录后和后台页切换时出现异步子路由空白。
+- **路由**：`src/router/index.ts` — 12 条命名路由，含登录守卫和管理员权限守卫。后台壳层及后台主页面采用同步组件加载。
 - **路由页结构约束**：直接挂在 `router-view` 下的页面组件若包含 `Teleport`，必须保持**单一根节点**；`AdminLayout` 不再对这类路由页套额外 `<transition>`。否则可能出现“接口成功、路由正常、但内容区空白”的渲染假象，尤其容易被误判为登录认证问题。
 - **API 层**：`src/api/` — axios 封装，共享 `ApiResponse<T>` 类型（`types/api.ts`），使用 Vite Proxy (`/api` -> `8080`）
 - **认证恢复**：`App.vue` 启动时先调用 `/api/auth/refresh` 恢复 access token，再渲染受保护路由；若旧 token 无法刷新，会清理本地会话并跳回登录页。`AdminLayout` 退出登录必须等待 `/api/auth/logout` 完成后再跳转登录页。
@@ -83,7 +83,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 ## 后端架构
 
 - 12 个 Controller（含 `SearchController`、`SharePublicationController`、`PublicationAccessController`、`UserController`），全部 `/api/*` 前缀，依赖注入统一使用构造器注入
-- Spring Security 完整 filter chain：`JwtAuthenticationFilter`（JWT 验签 + SecurityContext）、`LoginRateLimitFilter`（IP 限流 10次/5分钟）。`/api/auth/login`、`/api/auth/register`、`/api/auth/refresh`、`/api/auth/logout`、`GET /api/photos/**`、`/api/shares/**`、`/api/health` 明确放行；其余 `/api/**` 需认证。未认证访问受保护 API 返回 HTTP 401，供前端触发 refresh/retry。CSRF 启用（`CookieCsrfTokenRepository`，auth 登录/注册/刷新/退出豁免）。安全头：X-Frame-Options DENY、X-Content-Type-Options、Referrer-Policy、Permissions-Policy
+- Spring Security 完整 filter chain：`JwtAuthenticationFilter`（JWT 验签 + SecurityContext）、`LoginRateLimitFilter`（IP 限流 10次/5分钟）。`/api/auth/login`、`/api/auth/register`、`/api/auth/refresh`、`/api/auth/logout`、`GET /api/photos/**`、`/api/shares/**`、`/api/health` 明确放行；其余 `/api/**` 需认证。未认证访问受保护 API 返回 HTTP 401，供前端触发 refresh/retry。CSRF 禁用（无 session cookie + Bearer token 下无需 CSRF 防护）。安全头：X-Frame-Options DENY、X-Content-Type-Options、Referrer-Policy、Permissions-Policy
 - **资源级授权**：`PublicationAuthorizationService` 基于 `publication_access` 表实现对象级权限控制。每个 publication 端点在执行前调用 `require(subject, pubId, permission)`，无权限均返回 403（IDOR 防护）。**性能优化 (2026-05-09)**：实现了请求级缓存，单次请求内重复鉴权不再查询数据库。`auth` 包提供 `AccessSubject`（`UserSubject`/`ShareSubject`）、`AccessPermission`（9 个动作枚举）。创建族谱时自动写入 OWNER 记录，`AccessControlMigrationRunner` 启动时回填历史数据。
 - 自定义异常体系：`NotFoundException`(404)、`ForbiddenException`(403)、`BadRequestException`(400)、`GoneException`(410)、`ConflictException`(409)，`GlobalExceptionHandler` 统一映射；未捕获 RuntimeException 返回 500
 - **JWT + Refresh Token 双 Token 体系**：Access Token (JWT, HS256, 15分钟) 通过 `Authorization: Bearer` 请求头传输；Refresh Token (SecureRandom 32字节, 30天) 存 `refresh_tokens` 表（仅存 SHA-256 哈希），通过 HttpOnly Cookie 传输。Refresh Token 单次使用（用后轮换）。`JwtService` 负责签发/验证，`RefreshTokenService` 负责生命周期管理
@@ -96,7 +96,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 
 - **字段级脱敏**：`PublicationViewProjector` 提供三态（NONE/LIVING/ALL）脱敏引擎。`PublicationController.get()` 为 `VIEWER` 角色应用该引擎，确保敏感数据（生卒、笔记、照片）在离开后端前被抹除。
 - **传输限制**：已提升至 **100MB** (Servlet, Tomcat Post/Swallow size) 以支持带 Base64 图片的族谱导入
-- **PDF 生成**：已移除（2026-05-15），原集成 iText 7 生成单页/多页 PDF，相关后端代码 `PdfExportService` / `ExportController` / `PdfExportRequest` 已删除。
+- **PDF 生成**：已从 iText 7 切换为 **Playwright CDP** 方案。前端生成自包含 HTML 上传后端 → `tools/pdf-export/pdf-worker.js`（Node.js + Playwright 子进程）→ `page.pdf()`。支持 A4/A3、横竖排、封面/目录。（已于 2026-05-15 移除吊线图编辑器及传统印刷版式。）
 - **性能核心**：`PublicationService.loadPublication` 采用 Map 映射实现 **O(1)** 人物查找，支持海量数据极速加载。集成 `PublicationTreeLoader` 递归加载分支挂载数据。
 - **照片服务**：`PhotoService` 统一管理 Base64 头像解析、`/api/photos/` 克隆、旧版 `/uploads/` 路径迁移。`PublicationService` 通过 `photoService` 委托照片操作。
 - **合并引擎**：`PublicationService.mergeBranch` 实现物理数据迁入。使用 `collectSubtreeIds` 进行 BFS 遍历。若指定了子树起点，则仅克隆该分支及其后代；否则执行全量克隆。使用 UUID 前缀 (`merged_{targetPubId}_*`) 进行 ID 重映射防冲突，递归克隆人物、家庭及照片记录。合并后自动清空挂载点。
@@ -110,7 +110,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 
 ## 关键约定
 
-- 草稿设置值有范围限制，导入时自动 clamp：cardWidth [142,176]、zoom [0.55,1.35]、fontScale [0.88,1.18] ···
+- 草稿设置值有范围限制，导入时自动 clamp：cardWidth [142,176]、zoom [0.10,1.35]、fontScale [0.88,1.18] ···
 - localStorage 操作必须包 try/catch（隐私模式可能不可用）
 - 撤销/重做历史：使用 `structuredClone()` 进行状态深拷贝以确保性能，严禁使用 `JSON.parse(JSON.stringify())` 以防大型族谱卡顿。
 - 撤销/重做历史不记录 zoom 变化（zoom 被视为视图状态，非编辑历史）
