@@ -1,0 +1,1 @@
+import{k as a}from"./index-BWa1Mhk5.js";function f(){const s=a(""),t=a("");function u(e){s.value=e,t.value=""}function n(e){t.value=e,s.value=""}function r(){s.value="",t.value=""}function o(e,c){return e instanceof Error&&e.message?e.message:c}return{statusMessage:s,errorMessage:t,setStatus:u,setError:n,dismiss:r,getErrorMessage:o}}export{f as u};

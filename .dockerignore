@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Docs
+docs
+*.md
+!release/README.md
+
+# Tests
+**/test
+**/tests
+**/*.test.*
+**/*.spec.*
+
+# Node (rebuilt inside container)
+node_modules
+frontend/node_modules
+
+# Build artifacts (rebuilt inside container)
+backend/target
+frontend/dist
+
+# Env secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude
+
+# Playwright / E2E
+frontend/playwright-report
+frontend/test-results
+frontend/e2e
+
+# Static assets that aren't needed for build
+backend/src/main/resources/static/assets

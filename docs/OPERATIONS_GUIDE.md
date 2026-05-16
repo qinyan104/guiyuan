@@ -128,15 +128,15 @@ npm run dev
 - **修复步骤**：
   ```bash
   # 1. 查看当前 flyway_schema_history 记录
-  docker compose exec db mysql -u root -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE \
+  docker compose --env-file release/.env -f release/docker-compose.yml exec db mysql -u root -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE \
     -e "SELECT version, checksum, script FROM flyway_schema_history;"
 
   # 2. 删除对应版本记录（以 version=1 为例）
-  docker compose exec db mysql -u root -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE \
+  docker compose --env-file release/.env -f release/docker-compose.yml exec db mysql -u root -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE \
     -e "DELETE FROM flyway_schema_history WHERE version='1';"
 
   # 3. 重启后端，Flyway 将重新执行该迁移并记录新 checksum
-  docker compose up -d --build backend
+  docker compose --env-file release/.env -f release/docker-compose.yml up -d --build backend
   ```
 - **预防**：已执行过的迁移脚本不要直接修改，应创建新版本号的迁移文件（如 `V1.1__add_index.sql`）。若必须修改旧脚本，需同步修复数据库 `flyway_schema_history`。
 
