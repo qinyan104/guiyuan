@@ -184,7 +184,7 @@ describe('layoutPublication', () => {
     // Verify compact card dimensions
     compactLayout.cards.forEach((card) => {
       expect(card.width).toBe(32)
-      expect(card.height).toBe(100)
+      expect(card.height).toBe(110)
     })
 
     // Verify overall height is reduced

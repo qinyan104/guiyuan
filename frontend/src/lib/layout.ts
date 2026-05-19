@@ -40,7 +40,7 @@ function getCardDimensions(settings: PublicationSettings): { width: number; heig
     const height = Math.round(width * 1.84)
     return { width, height, partnerGap: settings.partnerGap }
   }
-  return { width: 32, height: 100, partnerGap: 16 }
+  return { width: 32, height: 110, partnerGap: 16 }
 }
 
 function isPersonId(value: string | undefined): value is string {
