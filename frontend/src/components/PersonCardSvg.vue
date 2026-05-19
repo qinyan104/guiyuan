@@ -253,26 +253,53 @@ function handleSelect() {
 
     <line v-if="settings.showCard" class="person-card__divider" x1="18" y1="58" :x2="card.width - 18" y2="58" />
 
+    <!-- Bloodline Knot (Compact Mode) -->
+    <circle
+      v-if="!settings.showCard"
+      class="person-card__knot"
+      :cx="card.width / 2"
+      cy="0"
+      r="2.2"
+      fill="#b33939"
+    />
+
     <text
+      v-if="settings.showCard"
       class="person-card__name"
       :x="card.width / 2"
-      :y="settings.showCard ? 96 : (card.height - (person.name.length * 20 * settings.fontScale)) / 2 + (18 * settings.fontScale)"
+      y="96"
       text-anchor="middle"
-      :style="{ fontSize: settings.showCard ? `${nameFontSize}px` : `${18 * settings.fontScale}px` }"
+      :style="{ fontSize: `${nameFontSize}px` }"
     >
-      <template v-if="settings.showCard">
-        {{ person.name }}
-      </template>
-      <template v-else>
-        <tspan
-          v-for="(char, index) in person.name"
-          :key="index"
-          :x="card.width / 2"
-          :dy="index === 0 ? 0 : 20 * settings.fontScale"
-        >
-          {{ char }}
-        </tspan>
-      </template>
+      {{ person.name }}
+    </text>
+
+    <!-- Refined Compact Name -->
+    <text
+      v-else
+      class="person-card__name--compact"
+      :x="card.width / 2"
+      :y="18 * settings.fontScale"
+      text-anchor="middle"
+      :style="{
+        fontSize: `${18 * settings.fontScale}px`,
+        fontWeight: 700,
+        fontFamily: '\'Noto Serif SC\', serif',
+        fill: '#2f2318'
+      }"
+    >
+      <tspan
+        v-for="(char, index) in person.name"
+        :key="index"
+        :x="card.width / 2"
+        :dy="index === 0 ? 0 : (
+          person.name.length === 2 ? 28 * settings.fontScale :
+          person.name.length === 3 ? 22 * settings.fontScale :
+          18 * settings.fontScale
+        )"
+      >
+        {{ char }}
+      </tspan>
     </text>
 
     <!-- Su Style Name Seal -->
