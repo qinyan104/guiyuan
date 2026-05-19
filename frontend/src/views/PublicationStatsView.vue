@@ -3,7 +3,14 @@ import { computed, onMounted, ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPublicationActivity, type ParsedActivity } from '../api/publication'
 import { PUBLICATION_CONTEXT_KEY, type Person, type PublicationData } from '../types/family'
-import { parseYear } from '../lib/dateUtils'
+import { parseYear } from '../lib/dateUtils'
+import {
+  filterPublicationActivity,
+  getPublicationActivityMeta,
+  PUBLICATION_ACTIVITY_FILTERS,
+  summarizePublicationActivity,
+  type ActivityCategory,
+} from '../lib/publicationActivity'
 
 defineProps<{ publicationId: number }>()
 const router = useRouter()
@@ -14,6 +21,7 @@ const pubData = computed<PublicationData>(() => pub.publication)
 
 const loadingHistory = ref(true)
 const history = ref<ParsedActivity[]>([])
+const activeActivityFilter = ref<ActivityCategory>('all')
 
 async function loadHistory() {
   if (!serverPublicationId.value) {
@@ -30,6 +38,12 @@ async function loadHistory() {
 onMounted(loadHistory)
 
 const people = computed<Person[]>(() => Object.values(pubData.value.people))
+const activitySummary = computed(() => summarizePublicationActivity(history.value))
+const filteredHistory = computed(() => filterPublicationActivity(history.value, activeActivityFilter.value))
+const activityFilterOptions = computed(() => PUBLICATION_ACTIVITY_FILTERS.map((filter) => ({
+  ...filter,
+  count: filterPublicationActivity(history.value, filter.key).length,
+})))
 
 // ── Data Cleaning & Accuracy ──
 const totalCount = computed(() => people.value.length)
@@ -208,21 +222,11 @@ function goBack() {
 }
 
 function actionLabel(action: string): string {
-  const labels: Record<string, string> = {
-    CREATE_PUB: '创建族谱',
-    UPDATE_PUB: '保存修改',
-    DELETE_PUB: '删除族谱',
-    UPDATE_PUB_META: '修改信息',
-    UPDATE_PERSON: '编辑人物',
-    BACKUP: '数据库备份',
-  }
-  return labels[action] || action
+  return getPublicationActivityMeta(action).label
 }
 
 function actionTagClass(action: string): string {
-  if (action === 'DELETE_PUB') return 'tag--danger'
-  if (action === 'CREATE_PUB') return 'tag--success'
-  return 'tag--info'
+  return `tag--${getPublicationActivityMeta(action).tone}`
 }
 
 function formatRelativeTime(dateStr: string): string {
@@ -426,12 +430,42 @@ function formatRelativeTime(dateStr: string): string {
 
           <!-- Revision History -->
           <div class="bento-card chart-card wide">
-            <h3 class="card-title">族谱修订志</h3>
+            <div class="activity-card-header">
+              <h3 class="card-title">族谱修订志</h3>
+              <div v-if="!loadingHistory && history.length > 0" class="activity-summary">
+                <div class="activity-summary__item">
+                  <span class="activity-summary__label">最近编辑</span>
+                  <strong>{{ activitySummary.latestUsername }}</strong>
+                </div>
+                <div class="activity-summary__item">
+                  <span class="activity-summary__label">最近动作</span>
+                  <strong>{{ activitySummary.latestActionLabel }}</strong>
+                </div>
+                <div class="activity-summary__item">
+                  <span class="activity-summary__label">今日 / 全部</span>
+                  <strong>{{ activitySummary.todayCount }} / {{ activitySummary.totalCount }}</strong>
+                </div>
+              </div>
+            </div>
             <div v-if="loadingHistory" class="empty-hint">调取档案中...</div>
             <div v-else-if="history.length === 0" class="empty-hint">尚无修订记录</div>
             <div v-else class="glass-history">
+              <div class="activity-filters" role="tablist" aria-label="活动筛选">
+                <button
+                  v-for="filter in activityFilterOptions"
+                  :key="filter.key"
+                  type="button"
+                  class="activity-filter"
+                  :class="{ 'activity-filter--active': activeActivityFilter === filter.key }"
+                  @click="activeActivityFilter = filter.key"
+                >
+                  <span>{{ filter.label }}</span>
+                  <small>{{ filter.count }}</small>
+                </button>
+              </div>
+              <div v-if="filteredHistory.length === 0" class="empty-hint">该分类下暂无记录</div>
               <article
-                v-for="entry in history"
+                v-for="entry in filteredHistory"
                 :key="entry.id"
                 class="audit-entry"
               >
@@ -727,6 +761,74 @@ function formatRelativeTime(dateStr: string): string {
 .row-bars .bar.death { background: linear-gradient(90deg, #5a5e66, #9ca3af); }
 
 /* ── History Nodes ── */
+.activity-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.activity-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 10px;
+  min-width: min(520px, 100%);
+}
+
+.activity-summary__item {
+  padding: 10px 12px;
+  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.08));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.activity-summary__label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.activity-summary__item strong {
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.activity-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.activity-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.08));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.activity-filter small {
+  color: var(--accent-amber);
+  font-size: 0.72rem;
+}
+
+.activity-filter--active,
+.activity-filter:hover {
+  border-color: var(--accent-amber);
+  background: rgba(169, 110, 53, 0.12);
+  color: var(--text-main);
+}
+
 .glass-history { display: flex; flex-direction: column; }
 .history-node { display: flex; gap: 20px; }
 .node-line { width: 2px; background: var(--glass-border-shadow, rgba(0,0,0,0.1)); position: relative; margin-left: 8px; }
@@ -750,6 +852,8 @@ function formatRelativeTime(dateStr: string): string {
   .analysis-grid { grid-template-columns: 1fr; }
   .family-title { font-size: 1.8rem; }
   .metrics-grid { grid-template-columns: repeat(3, 1fr); }
+  .activity-card-header { flex-direction: column; }
+  .activity-summary { grid-template-columns: 1fr; min-width: 100%; }
 }
 @media (max-width: 600px) {
   .metrics-grid { grid-template-columns: repeat(2, 1fr); }
@@ -845,6 +949,7 @@ function formatRelativeTime(dateStr: string): string {
 
 .tag--info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
 .tag--success { background: rgba(39, 174, 96, 0.1); color: #27ae60; }
+.tag--warning { background: rgba(217, 119, 6, 0.12); color: #b45309; }
 .tag--danger { background: rgba(192, 57, 43, 0.1); color: #c0392b; }
 
 .audit-entry__diff {
