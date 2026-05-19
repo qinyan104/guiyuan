@@ -153,7 +153,6 @@ function actionToNarrative(action: string): string {
   background: var(--bg-panel, #fff);
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-:global([data-theme="ink-wash"]) .bento-btn.ghost:hover,
 :global([data-theme="rosewood"]) .bento-btn.ghost:hover,
 :global([data-theme="star-sea"]) .bento-btn.ghost:hover {
   background: rgba(255,255,255,0.15);
@@ -169,7 +168,6 @@ function actionToNarrative(action: string): string {
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
   padding: 24px;
 }
-:global([data-theme="ink-wash"]) .bento-card,
 :global([data-theme="rosewood"]) .bento-card,
 :global([data-theme="star-sea"]) .bento-card {
   background: rgba(20, 20, 20, 0.5);
@@ -187,7 +185,6 @@ function actionToNarrative(action: string): string {
   font-weight: 600;
   padding: 16px 24px;
 }
-:global([data-theme="ink-wash"]) .audit-notice,
 :global([data-theme="rosewood"]) .audit-notice,
 :global([data-theme="star-sea"]) .audit-notice {
   background: rgba(234, 179, 8, 0.15);
@@ -237,7 +234,6 @@ function actionToNarrative(action: string): string {
   width: 1px;
   background: var(--glass-border-shadow, rgba(0,0,0,0.1));
 }
-:global([data-theme="ink-wash"]) .chronicle-body::before,
 :global([data-theme="rosewood"]) .chronicle-body::before,
 :global([data-theme="star-sea"]) .chronicle-body::before {
   background: rgba(255,255,255,0.1);
@@ -290,7 +286,6 @@ function actionToNarrative(action: string): string {
   box-shadow: 0 0 0 4px var(--glass-panel-bg, #fff);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-:global([data-theme="ink-wash"]) .chronicle-node,
 :global([data-theme="rosewood"]) .chronicle-node,
 :global([data-theme="star-sea"]) .chronicle-node {
   box-shadow: 0 0 0 4px rgba(0,0,0,0.5);
@@ -309,7 +304,6 @@ function actionToNarrative(action: string): string {
   color: var(--accent-ink, #1a1a1a);
   margin-right: 6px;
 }
-:global([data-theme="ink-wash"]) .c-user,
 :global([data-theme="rosewood"]) .c-user,
 :global([data-theme="star-sea"]) .c-user {
   color: #fff;

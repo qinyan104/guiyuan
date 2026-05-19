@@ -1,0 +1,58 @@
+{"ts":"2026-05-16T05:46:02.766Z","cmd":"goto","args":"http://localhost:5173","origin":"http://localhost:5173/","durationMs":1317,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:03.182Z","cmd":"snapshot","args":"-i -a -o .gstack/qa-reports/screenshots/initial.png","origin":"http://localhost:5173/login","durationMs":202,"status":"error","hasCookies":false,"mode":"launched","error":"locator.boundingBox: Error: strict mode violation: getByRole('button') resolved to 3 elements:\n    1) <button type=\"button\" title=\"切换视觉主题\" data-v-1fec082c=\"\" class=\"action-btn\">…</button> aka getByRole('button', { name: '切换视觉主题' })\n    2) <button type=\"button\" data-v-6946a08b=\"\" class=\"password-togg…"}
+{"ts":"2026-05-16T05:46:12.806Z","cmd":"snapshot","args":"-a -o .gstack/qa-reports/screenshots/initial.png","origin":"http://localhost:5173/login","durationMs":4125,"status":"error","hasCookies":false,"mode":"launched","error":"locator.boundingBox: Error: strict mode violation: getByRole('button') resolved to 3 elements:\n    1) <button type=\"button\" title=\"切换视觉主题\" data-v-1fec082c=\"\" class=\"action-btn\">…</button> aka getByRole('button', { name: '切换视觉主题' })\n    2) <button type=\"button\" data-v-6946a08b=\"\" class=\"password-togg…"}
+{"ts":"2026-05-16T05:46:18.243Z","cmd":"text","args":"","origin":"http://localhost:5173/login","durationMs":5,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:21.962Z","cmd":"console","args":"--errors","origin":"http://localhost:5173/login","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:30.904Z","cmd":"snapshot","args":"-i","origin":"http://localhost:5173/login","durationMs":18,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:40.106Z","cmd":"fill","args":"@e2 e2e_test","origin":"http://localhost:5173/login","durationMs":24,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:40.298Z","cmd":"fill","args":"@e3 test1234","origin":"http://localhost:5173/login","durationMs":29,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:40.641Z","cmd":"click","args":"@e7","origin":"http://localhost:5173/login","durationMs":157,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:40.817Z","cmd":"wait","args":"--networkidle","origin":"http://localhost:5173/login","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:40.979Z","cmd":"url","args":"","origin":"http://localhost:5173/login","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:41.141Z","cmd":"console","args":"--errors","origin":"http://localhost:5173/login","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:51.387Z","cmd":"text","args":"","origin":"http://localhost:5173/login","durationMs":2,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:54.840Z","cmd":"network","args":"","origin":"http://localhost:5173/login","durationMs":1,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:46:58.446Z","cmd":"console","args":"","origin":"http://localhost:5173/login","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:48:43.185Z","cmd":"fill","args":"@e2 root","origin":"http://localhost:5173/login","durationMs":13,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:48:43.361Z","cmd":"fill","args":"@e3 123456","origin":"http://localhost:5173/login","durationMs":13,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:48:43.667Z","cmd":"click","args":"@e7","origin":"http://localhost:5173/login","durationMs":130,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:48:45.844Z","cmd":"wait","args":"--networkidle","origin":"http://localhost:5173/","durationMs":1855,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:48:46.017Z","cmd":"url","args":"","origin":"http://localhost:5173/","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:48:46.181Z","cmd":"console","args":"--errors","origin":"http://localhost:5173/","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:48:54.015Z","cmd":"text","args":"","origin":"http://localhost:5173/","durationMs":3,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:48:57.478Z","cmd":"console","args":"--clear","origin":"http://localhost:5173/","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:48:57.640Z","cmd":"console","args":"--errors","origin":"http://localhost:5173/","durationMs":1,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:02.323Z","cmd":"snapshot","args":"-i -a -o .gstack/qa-reports/screenshots/dashboard.png","origin":"http://localhost:5173/","durationMs":1209,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:24.467Z","cmd":"click","args":"@e10","origin":"http://localhost:5173/publications","durationMs":175,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:24.643Z","cmd":"wait","args":"--networkidle","origin":"http://localhost:5173/publications","durationMs":1,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:24.810Z","cmd":"url","args":"","origin":"http://localhost:5173/publications","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:24.964Z","cmd":"console","args":"--errors","origin":"http://localhost:5173/publications","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:28.355Z","cmd":"click","args":"@e5","origin":"http://localhost:5173/publications","durationMs":0,"status":"error","hasCookies":false,"mode":"launched","error":"Ref @e5 not found. Run 'snapshot' to get fresh refs."}
+{"ts":"2026-05-16T05:49:35.369Z","cmd":"snapshot","args":"-i -a -o .gstack/qa-reports/screenshots/publications.png","origin":"http://localhost:5173/publications","durationMs":1011,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:38.848Z","cmd":"text","args":"","origin":"http://localhost:5173/publications","durationMs":2,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:42.457Z","cmd":"console","args":"--errors","origin":"http://localhost:5173/publications","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:51.632Z","cmd":"click","args":"@c25","origin":"http://localhost:5173/publications","durationMs":109,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:51.823Z","cmd":"wait","args":"--networkidle","origin":"http://localhost:5173/publication/2","durationMs":1,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:52.068Z","cmd":"url","args":"","origin":"http://localhost:5173/publication/2","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:53.136Z","cmd":"snapshot","args":"-i -a -o .gstack/qa-reports/screenshots/publication-detail.png","origin":"http://localhost:5173/publication/2","durationMs":883,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:49:53.310Z","cmd":"console","args":"--errors","origin":"http://localhost:5173/publication/2","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:04.351Z","cmd":"click","args":"@e2","origin":"http://localhost:5173/publication/2","durationMs":31,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:04.540Z","cmd":"snapshot","args":"-i","origin":"http://localhost:5173/publication/2","durationMs":37,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:08.045Z","cmd":"viewport","args":"375x812","origin":"http://localhost:5173/publication/2","durationMs":65,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:08.249Z","cmd":"reload","args":"","origin":"http://localhost:5173/publication/2","durationMs":51,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:09.374Z","cmd":"wait","args":"--networkidle","origin":"http://localhost:5173/publication/2","durationMs":895,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:09.987Z","cmd":"snapshot","args":"-i -a -o .gstack/qa-reports/screenshots/mobile-detail.png","origin":"http://localhost:5173/publication/2","durationMs":434,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:10.224Z","cmd":"console","args":"--errors","origin":"http://localhost:5173/publication/2","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:13.552Z","cmd":"viewport","args":"1280x720","origin":"http://localhost:5173/publication/2","durationMs":59,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:13.762Z","cmd":"reload","args":"","origin":"http://localhost:5173/publication/2","durationMs":44,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:15.100Z","cmd":"wait","args":"--networkidle","origin":"http://localhost:5173/publication/2","durationMs":871,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:26.041Z","cmd":"back","args":"","origin":"http://localhost:5173/publications","durationMs":3,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:26.218Z","cmd":"wait","args":"--networkidle","origin":"http://localhost:5173/publications","durationMs":1,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:26.386Z","cmd":"url","args":"","origin":"http://localhost:5173/publications","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:30.130Z","cmd":"click","args":"@e5","origin":"http://localhost:5173/publications","durationMs":0,"status":"error","hasCookies":false,"mode":"launched","error":"Ref @e5 not found. Run 'snapshot' to get fresh refs."}
+{"ts":"2026-05-16T05:50:36.943Z","cmd":"snapshot","args":"-i","origin":"http://localhost:5173/publications","durationMs":41,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:40.437Z","cmd":"console","args":"--errors","origin":"http://localhost:5173/publications","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:50.552Z","cmd":"fill","args":"@e5 史氏","origin":"http://localhost:5173/publications","durationMs":17,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:50.727Z","cmd":"wait","args":"--networkidle","origin":"http://localhost:5173/publications","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:50.932Z","cmd":"snapshot","args":"-i","origin":"http://localhost:5173/publications","durationMs":34,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-05-16T05:50:51.094Z","cmd":"console","args":"--errors","origin":"http://localhost:5173/publications","durationMs":0,"status":"ok","hasCookies":false,"mode":"launched"}

@@ -214,15 +214,14 @@ onBeforeUnmount(() => {
   gap: 24px;
 }
 
-:global([data-theme="ink-wash"]) .spatial-workspace,
 :global([data-theme="rosewood"]) .spatial-workspace,
 :global([data-theme="star-sea"]) .spatial-workspace {
-  --glass-bg: rgba(0, 0, 0, 0.4);
-  --glass-border-highlight: rgba(255, 255, 255, 0.08);
-  --glass-border-shadow: rgba(0, 0, 0, 0.6);
-  --glass-seal-bg: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4));
-  --glass-pill-bg: rgba(0, 0, 0, 0.5);
-  --glow-opacity: 0.03;
+  --glass-bg: rgba(40, 36, 31, 0.7);
+  --glass-border-highlight: rgba(255, 248, 235, 0.16);
+  --glass-border-shadow: rgba(0, 0, 0, 0.32);
+  --glass-seal-bg: linear-gradient(135deg, rgba(76, 68, 57, 0.92), rgba(38, 34, 29, 0.82));
+  --glass-pill-bg: rgba(255, 248, 235, 0.08);
+  --glow-opacity: 0.05;
 }
 
 /* ── Ambient Background ── */
@@ -275,12 +274,12 @@ onBeforeUnmount(() => {
     inset 0 -1px 0 var(--glass-border-shadow);
   display: flex;
   flex-direction: column;
-  padding: 24px 16px;
+  padding: 20px 12px;
   flex-shrink: 0;
 }
 
 .dock-header {
-  margin-bottom: 40px;
+  margin-bottom: 32px;
   padding: 0 8px;
 }
 
@@ -359,8 +358,8 @@ onBeforeUnmount(() => {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 12px 14px;
   border: none;
   background: transparent;
   border-radius: 16px;
@@ -492,10 +491,8 @@ onBeforeUnmount(() => {
 .user-profile-pill.is-open {
   background: rgba(0,0,0,0.04);
 }
-:global([data-theme="ink-wash"]) .user-profile-pill:hover,
 :global([data-theme="rosewood"]) .user-profile-pill:hover,
 :global([data-theme="star-sea"]) .user-profile-pill:hover,
-:global([data-theme="ink-wash"]) .user-profile-pill.is-open,
 :global([data-theme="rosewood"]) .user-profile-pill.is-open,
 :global([data-theme="star-sea"]) .user-profile-pill.is-open {
   background: rgba(255,255,255,0.08);
@@ -525,7 +522,6 @@ onBeforeUnmount(() => {
   font-family: 'Noto Serif SC', serif;
   color: var(--text-main);
 }
-:global([data-theme="ink-wash"]) .avatar-text,
 :global([data-theme="rosewood"]) .avatar-text,
 :global([data-theme="star-sea"]) .avatar-text {
   background: rgba(40,40,40,1);
@@ -563,7 +559,6 @@ onBeforeUnmount(() => {
   transform-origin: top right;
 }
 
-:global([data-theme="ink-wash"]) .user-popover,
 :global([data-theme="rosewood"]) .user-popover,
 :global([data-theme="star-sea"]) .user-popover {
   background: rgba(20, 20, 20, 0.85);
@@ -620,12 +615,10 @@ onBeforeUnmount(() => {
   background: rgba(239, 68, 68, 0.1);
 }
 
-:global([data-theme="ink-wash"]) .menu-item:hover,
 :global([data-theme="rosewood"]) .menu-item:hover,
 :global([data-theme="star-sea"]) .menu-item:hover {
   background: rgba(255,255,255,0.06);
 }
-:global([data-theme="ink-wash"]) .menu-item.danger:hover,
 :global([data-theme="rosewood"]) .menu-item.danger:hover,
 :global([data-theme="star-sea"]) .menu-item.danger:hover {
   background: rgba(239, 68, 68, 0.15);

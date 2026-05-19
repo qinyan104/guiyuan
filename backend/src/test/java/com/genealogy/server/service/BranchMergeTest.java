@@ -80,22 +80,33 @@ class BranchMergeTest {
 
     private PublicationService publicationService;
 
-    @BeforeEach
-    void setUp() {
-        publicationService = new PublicationService(
-                publicationRepository,
-                personRepository,
-                familyRepository,
-                familyMemberRepository,
-                photoRepository,
-                new ObjectMapper(),
-                publicationAccessRepository,
-                shareLinkRepository,
-                auditLogRepository,
-                authorizationService,
-                treeLoader,
-                photoService
-        );
+    private PersonDiffService personDiffService;
+    private BranchMergeService branchMergeService;
+
+    @BeforeEach
+    void setUp() {
+        personDiffService = new PersonDiffService(new ObjectMapper());
+        branchMergeService = new BranchMergeService(
+                personRepository, familyRepository, familyMemberRepository,
+                photoService, authorizationService
+        );
+
+        publicationService = new PublicationService(
+                publicationRepository,
+                personRepository,
+                familyRepository,
+                familyMemberRepository,
+                photoRepository,
+                new ObjectMapper(),
+                publicationAccessRepository,
+                shareLinkRepository,
+                auditLogRepository,
+                authorizationService,
+                treeLoader,
+                photoService,
+                personDiffService,
+                branchMergeService
+        );
     }
 
     @Test

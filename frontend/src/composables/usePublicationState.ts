@@ -287,8 +287,10 @@ export function usePublicationState(
     // Focus family
     focusFamily,
     focusFamilyLabel,
-    focusLineageCrumbs,
-  }
-}
+    focusLineageCrumbs,
+  }
+}
+
+export type PublicationState = ReturnType<typeof usePublicationState>
 
 export type PublicationStateReturn = ReturnType<typeof usePublicationState>

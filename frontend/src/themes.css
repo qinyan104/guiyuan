@@ -450,86 +450,73 @@
 }
 
 /* ─── Theme: Aurora (macOS Aqua Style) ─── */
+/* ─── Theme: Aurora (Apple Aqua) ─── */
 [data-theme="aurora"] {
   --bg-shell: #f5f5f7;
-  --bg-panel: rgba(255, 255, 255, 0.25);
-  --bg-panel-strong: rgba(255, 255, 255, 0.35);
-  --bg-paper: rgba(255, 255, 255, 0.15);
+  --bg-panel: rgba(255, 255, 255, 0.65);
+  --bg-panel-strong: rgba(255, 255, 255, 0.85);
+  --bg-paper: rgba(255, 255, 255, 0.9);
   --line-soft: rgba(0, 0, 0, 0.08);
   --text-main: #1d1d1f;
   --text-sub: #515154;
   --text-soft: #86868b;
   --accent-amber: #0071e3;
-  --accent-earth: #ff9f0a;
-  --accent-olive: #34c759;
-  --accent-ink: #5e5ce6;
+  --accent-earth: #86868b;
+  --accent-olive: #515154;
+  --accent-ink: #1d1d1f;
   --shell-bg-image: #f5f5f7;
   --workspace-glow: transparent;
   --workspace-border: rgba(0, 0, 0, 0.04);
   --workspace-bg: transparent;
-  --card-panel-fill: rgba(255, 255, 255, 0.15);
-  --card-panel-stroke: rgba(255, 255, 255, 0.6);
+  --card-panel-fill: rgba(255, 255, 255, 0.65);
+  --card-panel-stroke: rgba(0, 0, 0, 0.12);
   --card-name-fill: #1d1d1f;
   --card-status-fill: rgba(0, 0, 0, 0.45);
   --card-detail-fill: rgba(0, 0, 0, 0.7);
-  --card-inner-stroke: rgba(255, 255, 255, 0.6);
-  --card-header-fill: rgba(0, 0, 0, 0.03);
-  --card-male-header: rgba(0, 113, 227, 0.06);
-  --card-female-header: rgba(255, 45, 85, 0.06);
+  --card-inner-stroke: rgba(0, 0, 0, 0.08);
+  --card-header-fill: rgba(0, 0, 0, 0.04);
+  --card-male-header: rgba(0, 113, 227, 0.08);
+  --card-female-header: rgba(255, 45, 85, 0.08);
   --card-selected-stroke: #0071e3;
-  --card-hover-fill: rgba(255, 255, 255, 0.3);
+  --card-hover-fill: rgba(255, 255, 255, 0.8);
   --card-hover-stroke: #0071e3;
-  --tree-line-color: rgba(0, 0, 0, 0.15);
+  --tree-line-color: rgba(0, 0, 0, 0.12);
   --canvas-grid-color: transparent;
-  --canvas-bg: radial-gradient(circle at 10% 0%, rgba(255, 105, 180, 0.25) 0%, transparent 40%), radial-gradient(circle at 90% 20%, rgba(138, 43, 226, 0.2) 0%, transparent 50%), radial-gradient(circle at 80% 100%, rgba(0, 191, 255, 0.25) 0%, transparent 50%), radial-gradient(circle at 20% 100%, rgba(0, 250, 154, 0.15) 0%, transparent 50%), transparent;
-  --minimap-bg: rgba(255, 255, 255, 0.25);
-  --minimap-node: rgba(0, 0, 0, 0.2);
-  --minimap-node-selected: #0071e3;
+  --canvas-bg: linear-gradient(180deg, #f5f5f7 0%, #efeff2 100%);
+  --minimap-bg: rgba(255, 255, 255, 0.6);
+  --minimap-node: rgba(0, 0, 0, 0.15);
+  --minimap-node-selected: #1d1d1f;
   --scrim-bg: rgba(255, 255, 255, 0.3);
-  --editor-panel-bg: rgba(255, 255, 255, 0.2);
-  --btn-primary-bg: rgba(0, 113, 227, 0.75);
+  --editor-panel-bg: rgba(255, 255, 255, 0.65);
+  --btn-primary-bg: #1d1d1f;
   --btn-primary-color: #ffffff;
-  --btn-secondary-bg: rgba(255, 255, 255, 0.25);
+  --btn-secondary-bg: rgba(255, 255, 255, 0.6);
   --btn-secondary-border: rgba(0, 0, 0, 0.08);
   --danger-title: #ff3b30;
   --danger-text: rgba(255, 59, 48, 0.9);
   --danger-bg: rgba(255, 59, 48, 0.1);
   --danger-border: rgba(255, 59, 48, 0.2);
-  --danger-btn-color: #ff3b30;
+  --danger-btn-color: #ffffff;
   --task-urgent: #ff3b30;
   --task-warm: #ff9f0a;
-  --task-calm: #34c759;
-  --metric-amber: linear-gradient(90deg, rgba(0, 113, 227, 0.8), rgba(94, 92, 230, 0.8));
-  --metric-ink: linear-gradient(90deg, rgba(50, 173, 230, 0.8), rgba(0, 113, 227, 0.8));
-  --metric-olive: linear-gradient(90deg, rgba(52, 199, 89, 0.8), rgba(48, 209, 88, 0.8));
-  --metric-earth: linear-gradient(90deg, rgba(255, 159, 10, 0.8), rgba(255, 214, 10, 0.8));
-  --feedback-bg: rgba(255, 255, 255, 0.4);
-  --feedback-border: rgba(0, 113, 227, 0.2);
+  --task-calm: #1d1d1f;
+  --metric-amber: linear-gradient(135deg, #0071e3, #515154);
+  --metric-ink: linear-gradient(135deg, #1d1d1f, #515154);
+  --metric-olive: linear-gradient(135deg, #86868b, #a1a1a6);
+  --metric-earth: linear-gradient(135deg, #d2d2d7, #f5f5f7);
+  --feedback-bg: rgba(255, 255, 255, 0.5);
+  --feedback-border: rgba(0, 0, 0, 0.08);
   --feedback-color: #1d1d1f;
   --feedback-error-bg: rgba(255, 59, 48, 0.15);
   --feedback-error-border: rgba(255, 59, 48, 0.2);
   --feedback-error-color: #ff3b30;
-  --accent-btn-bg: rgba(0, 113, 227, 0.75);
+  --accent-btn-bg: #1d1d1f;
   --accent-btn-color: #ffffff;
-  --glass-panel-bg: rgba(255, 255, 255, 0.5);
-  --glass-border-highlight: rgba(255, 255, 255, 0.8);
-  --glass-border-shadow: rgba(0, 0, 0, 0.05);
-  --glass-pill-bg: rgba(0, 0, 0, 0.03);
+  --glass-panel-bg: rgba(255, 255, 255, 0.6);
+  --glass-border-highlight: rgba(255, 255, 255, 0.9);
+  --glass-border-shadow: rgba(0, 0, 0, 0.06);
+  --glass-pill-bg: rgba(0, 0, 0, 0.04);
   color-scheme: light;
-}
-
-[data-theme="aurora"] .topbar__action-strip,
-[data-theme="aurora"] .topbar__status-card,
-[data-theme="aurora"] .floating-panel,
-[data-theme="aurora"] .editor-sheet-panel,
-[data-theme="aurora"] .canvas-minimap,
-[data-theme="aurora"] .history-panel__summary,
-[data-theme="aurora"] .history-empty,
-[data-theme="aurora"] .feedback-strip,
-[data-theme="aurora"] .theme-switcher__dropdown {
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
 }
 
 [data-theme="aurora"] .tool-switcher,
@@ -734,47 +721,42 @@
 
 /* ─── Theme: Aurora (macOS Aqua Style) ─── */
 [data-theme="aurora"] {
-  --bg-shell: #fdfcfb;
-  --bg-panel: rgba(255, 255, 255, 0.35);
-  --bg-panel-strong: rgba(255, 255, 255, 0.5);
-  --bg-paper: rgba(255, 255, 255, 0.4);
-  --line-soft: rgba(0, 0, 0, 0.05);
+  --bg-shell: #f5f5f7;
+  --bg-panel: rgba(255, 255, 255, 0.65);
+  --bg-panel-strong: rgba(255, 255, 255, 0.85);
+  --bg-paper: rgba(255, 255, 255, 0.9);
+  --line-soft: rgba(0, 0, 0, 0.08);
   --text-main: #1d1d1f;
-  --text-sub: #434344;
+  --text-sub: #515154;
   --text-soft: #86868b;
-  --accent-amber: #1d1d1f;
-  --accent-earth: #434344;
-  --accent-olive: #86868b;
+  --accent-amber: #0071e3;
+  --accent-earth: #86868b;
+  --accent-olive: #515154;
   --accent-ink: #1d1d1f;
-  /* Warm macOS Monterey-style abstract background (No Blue) */
-  --shell-bg-image: radial-gradient(circle at 10% 20%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
-                    radial-gradient(circle at 90% 10%, rgba(254, 207, 239, 0.5) 0%, transparent 40%),
-                    radial-gradient(circle at 80% 80%, rgba(253, 191, 105, 0.3) 0%, transparent 50%),
-                    radial-gradient(circle at 20% 90%, rgba(255, 208, 196, 0.4) 0%, transparent 50%),
-                    #fdfcfb;
+  --shell-bg-image: #f5f5f7;
   --workspace-glow: transparent;
-  --workspace-border: transparent;
+  --workspace-border: rgba(0, 0, 0, 0.04);
   --workspace-bg: transparent;
-  --card-panel-fill: transparent;
-  --card-panel-stroke: transparent;
+  --card-panel-fill: rgba(255, 255, 255, 0.65);
+  --card-panel-stroke: rgba(0, 0, 0, 0.12);
   --card-name-fill: #1d1d1f;
-  --card-status-fill: rgba(0, 0, 0, 0.5);
+  --card-status-fill: rgba(0, 0, 0, 0.45);
   --card-detail-fill: rgba(0, 0, 0, 0.7);
-  --card-inner-stroke: transparent;
+  --card-inner-stroke: rgba(0, 0, 0, 0.08);
   --card-header-fill: rgba(0, 0, 0, 0.04);
-  --card-male-header: transparent;
-  --card-female-header: transparent;
-  --card-selected-stroke: transparent;
-  --card-hover-fill: transparent;
-  --card-hover-stroke: transparent;
-  --tree-line-color: rgba(0, 0, 0, 0.25);
+  --card-male-header: rgba(0, 113, 227, 0.08);
+  --card-female-header: rgba(255, 45, 85, 0.08);
+  --card-selected-stroke: #0071e3;
+  --card-hover-fill: rgba(255, 255, 255, 0.8);
+  --card-hover-stroke: #0071e3;
+  --tree-line-color: rgba(0, 0, 0, 0.12);
   --canvas-grid-color: transparent;
-  --canvas-bg: transparent;
-  --minimap-bg: rgba(255, 255, 255, 0.3);
+  --canvas-bg: linear-gradient(180deg, #f5f5f7 0%, #efeff2 100%);
+  --minimap-bg: rgba(255, 255, 255, 0.6);
   --minimap-node: rgba(0, 0, 0, 0.15);
   --minimap-node-selected: #1d1d1f;
-  --scrim-bg: rgba(255, 255, 255, 0.2);
-  --editor-panel-bg: rgba(255, 255, 255, 0.4);
+  --scrim-bg: rgba(255, 255, 255, 0.3);
+  --editor-panel-bg: rgba(255, 255, 255, 0.65);
   --btn-primary-bg: #1d1d1f;
   --btn-primary-color: #ffffff;
   --btn-secondary-bg: rgba(255, 255, 255, 0.6);
@@ -787,7 +769,7 @@
   --task-urgent: #ff3b30;
   --task-warm: #ff9f0a;
   --task-calm: #1d1d1f;
-  --metric-amber: linear-gradient(135deg, #515154, #86868b);
+  --metric-amber: linear-gradient(135deg, #0071e3, #515154);
   --metric-ink: linear-gradient(135deg, #1d1d1f, #515154);
   --metric-olive: linear-gradient(135deg, #86868b, #a1a1a6);
   --metric-earth: linear-gradient(135deg, #d2d2d7, #f5f5f7);
@@ -799,9 +781,12 @@
   --feedback-error-color: #ff3b30;
   --accent-btn-bg: #1d1d1f;
   --accent-btn-color: #ffffff;
+  --glass-panel-bg: rgba(255, 255, 255, 0.6);
+  --glass-border-highlight: rgba(255, 255, 255, 0.9);
+  --glass-border-shadow: rgba(0, 0, 0, 0.06);
+  --glass-pill-bg: rgba(0, 0, 0, 0.04);
   color-scheme: light;
 }
-
 [data-theme="aurora"] .topbar__action-strip,
 [data-theme="aurora"] .topbar__status-card,
 [data-theme="aurora"] .floating-panel,
@@ -811,7 +796,7 @@
 [data-theme="aurora"] .history-empty,
 [data-theme="aurora"] .feedback-strip,
 [data-theme="aurora"] .theme-switcher__dropdown {
-  background: rgba(255, 255, 255, 0.35) !important;
+  background: rgba(255, 255, 255, 0.55) !important;
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
   border: 0.5px solid rgba(255, 255, 255, 0.6);
@@ -842,7 +827,7 @@
 [data-theme="aurora"] .editor-overlay__scrim {
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  background: rgba(245, 245, 247, 0.2);
+  background: rgba(245, 245, 247, 0.4);
 }
 
 [data-theme="aurora"] .canvas-viewport {
@@ -855,7 +840,7 @@
 
 [data-theme="aurora"] .person-card__glass-backdrop {
   display: block;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
   border: 1px solid rgba(255, 255, 255, 0.7);
@@ -866,7 +851,7 @@
 }
 
 [data-theme="aurora"] .person-card:hover .person-card__glass-backdrop {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.82);
   box-shadow: 
     inset 0 1px 1px rgba(255, 255, 255, 1),
     0 8px 24px rgba(0, 0, 0, 0.08);
@@ -923,18 +908,15 @@
 }
 
 /* ─── Theme Switcher Component ─── */
-[data-theme="ink-wash"] .auth-page,
 [data-theme="rosewood"] .auth-page,
 [data-theme="star-sea"] .auth-page {
   background: var(--shell-bg-image, var(--bg-shell));
 }
 
-[data-theme="ink-wash"] .auth-ambient-bg,
 [data-theme="rosewood"] .auth-ambient-bg,
 [data-theme="star-sea"] .auth-ambient-bg,
 [data-theme="su-style"] .auth-ambient-bg,
 [data-theme="ou-style"] .auth-ambient-bg,
-[data-theme="ink-wash"] .auth-ambient-bg::before,
 [data-theme="rosewood"] .auth-ambient-bg::before,
 [data-theme="star-sea"] .auth-ambient-bg::before,
 [data-theme="su-style"] .auth-ambient-bg::before,
@@ -942,12 +924,10 @@
   background: transparent;
 }
 
-[data-theme="ink-wash"] .ambient-plane,
 [data-theme="rosewood"] .ambient-plane,
 [data-theme="star-sea"] .ambient-plane,
 [data-theme="su-style"] .ambient-plane,
 [data-theme="ou-style"] .ambient-plane,
-[data-theme="ink-wash"] .ambient-grid,
 [data-theme="rosewood"] .ambient-grid,
 [data-theme="star-sea"] .ambient-grid,
 [data-theme="su-style"] .ambient-grid,
@@ -955,14 +935,12 @@
   display: none;
 }
 
-[data-theme="ink-wash"] .editor-workspace,
 [data-theme="rosewood"] .editor-workspace,
 [data-theme="star-sea"] .editor-workspace {
   border-color: transparent;
   box-shadow: none;
 }
 
-[data-theme="ink-wash"] .canvas-minimap,
 [data-theme="rosewood"] .canvas-minimap,
 [data-theme="star-sea"] .canvas-minimap {
   box-shadow: none;
@@ -1102,6 +1080,7 @@
   font-size: 14px;
   font-weight: 800;
 }
+
 
 /* ─── Theme: Eggshell (ElevenLabs Minimalist) ─── */
 [data-theme="eggshell"] {

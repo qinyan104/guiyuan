@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { getBuiltinSampleById } from '../data/builtinDynastySamples'
 import { defaultSettings } from '../data/sampleFamily'
+import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import { usePublicationState } from '../composables/usePublicationState'
 import { createPublication } from '../api/publication'
 
@@ -26,23 +27,28 @@ const feedbackError = ref('')
 const viewportPan = ref({ x: 0, y: 0 })
 
 const pub = usePublicationState(
-  sample.value?.publication ?? { title: '', subtitle: '', focusFamilyId: '', people: {}, families: {} } as any,
+  sample.value?.publication ?? { title: '', subtitle: '', focusFamilyId: '', people: {}, families: {} },
   defaultSettings,
 )
 
 // Stub history (no undo/redo for read-only preview)
 const history = {
+  historyPast: ref([]),
+  historyFuture: ref([]),
+  canUndo: computed(() => false),
+  canRedo: computed(() => false),
+  visibleHistoryEntries: computed(() => []),
+  initializeHistoryBaseline: () => {},
+  scheduleHistoryCommit: () => {},
+  markHistory: () => {},
   undoChange: () => {},
   redoChange: () => {},
-  scheduleHistoryCommit: () => {},
-  initializeHistoryBaseline: () => {},
   disposeHistory: () => {},
-  pushHistoryState: () => {},
 }
 
 const syncStatus = ref<'saved'>('saved')
 
-provide('publication-context', {
+provide(PUBLICATION_CONTEXT_KEY, {
   pub,
   history,
   syncStatus,
@@ -338,30 +344,25 @@ function handleUpdateZoom(zoom: number) {
 }
 
 /* ── Dark theme overrides ── */
-:global([data-theme="ink-wash"]) .preview-header,
 :global([data-theme="rosewood"]) .preview-header,
 :global([data-theme="star-sea"]) .preview-header {
   background: rgba(0, 0, 0, 0.4);
   border-color: rgba(255,255,255,0.06);
 }
-:global([data-theme="ink-wash"]) .back-btn,
 :global([data-theme="rosewood"]) .back-btn,
 :global([data-theme="star-sea"]) .back-btn {
   border-color: rgba(255,255,255,0.15);
   color: rgba(255,255,255,0.7);
 }
-:global([data-theme="ink-wash"]) .back-btn:hover,
 :global([data-theme="rosewood"]) .back-btn:hover,
 :global([data-theme="star-sea"]) .back-btn:hover {
   background: #fff;
   color: #000;
 }
-:global([data-theme="ink-wash"]) .preview-hint,
 :global([data-theme="rosewood"]) .preview-hint,
 :global([data-theme="star-sea"]) .preview-hint {
   background: rgba(0, 0, 0, 0.3);
 }
-:global([data-theme="ink-wash"]) .preview-hint kbd,
 :global([data-theme="rosewood"]) .preview-hint kbd,
 :global([data-theme="star-sea"]) .preview-hint kbd {
   background: rgba(0,0,0,0.4);

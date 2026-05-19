@@ -354,7 +354,6 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
 }
 
-:global([data-theme="ink-wash"]) .result-item-title,
 :global([data-theme="rosewood"]) .result-item-title,
 :global([data-theme="star-sea"]) .result-item-title {
   color: #fff;

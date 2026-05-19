@@ -3,7 +3,6 @@ package com.genealogy.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ConflictException;
@@ -11,7 +10,6 @@ import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.Family;
 import com.genealogy.server.model.FamilyMember;
 import com.genealogy.server.model.Person;
-import com.genealogy.server.model.Photo;
 import com.genealogy.server.model.Publication;
 import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.repository.AuditLogRepository;
@@ -22,7 +20,6 @@ import com.genealogy.server.repository.PhotoRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.PublicationRepository;
 import com.genealogy.server.repository.PublicationShareLinkRepository;
-import com.genealogy.server.util.DateTextParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -31,9 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +57,8 @@ public class PublicationService {
     private final PublicationAuthorizationService authorizationService;
     private final PublicationTreeLoader treeLoader;
     private final PhotoService photoService;
+    private final PersonDiffService personDiffService;
+    private final BranchMergeService branchMergeService;
 
     public record SaveResult(Long newRevision, String personDiff) {}
 
@@ -73,7 +70,9 @@ public class PublicationService {
                               AuditLogRepository auditLogRepository,
                               PublicationAuthorizationService authorizationService,
                               PublicationTreeLoader treeLoader,
-                              PhotoService photoService) {
+                              PhotoService photoService,
+                              PersonDiffService personDiffService,
+                              BranchMergeService branchMergeService) {
         this.publicationRepository = publicationRepository;
         this.personRepository = personRepository;
         this.familyRepository = familyRepository;
@@ -86,11 +85,13 @@ public class PublicationService {
         this.authorizationService = authorizationService;
         this.treeLoader = treeLoader;
         this.photoService = photoService;
+        this.personDiffService = personDiffService;
+        this.branchMergeService = branchMergeService;
     }
 
     /** @deprecated use {@link SaveResult#personDiff()} from updatePublication/updatePerson instead */
     @Deprecated
-    public String getLastPersonDiff() { return null; }
+    public String getLastPersonDiff() { return personDiffService.getLastPersonDiff(); }
 
     public List<Map<String, Object>> listPublications(Long userId) {
         List<PublicationAccess> accessRecords = publicationAccessRepository.findByUserId(userId);
@@ -272,7 +273,7 @@ public class PublicationService {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> people = (Map<String, Object>) publicationData.get("people");
-        String diff = computePersonDiff(people, dbPersonCache);
+        String diff = personDiffService.computePersonDiff(people, dbPersonCache);
 
         return new SaveResult(nextRevision, diff);
     }
@@ -304,7 +305,7 @@ public class PublicationService {
         Person person = personRepository.findByPublicationIdAndPersonId(publicationId, personId)
                 .orElseThrow(() -> new NotFoundException("Person not found"));
 
-        String diff = computeSinglePersonDiff(person, data, personId);
+        String diff = personDiffService.computeSinglePersonDiff(person, data, personId);
 
         if (data.containsKey("name")) {
             person.setName((String) data.get("name"));
@@ -371,108 +372,7 @@ public class PublicationService {
 
     @Transactional
     public void mergeBranch(Long masterPubId, String mountPointPersonId, UserSubject subject) {
-        Person mountPoint = personRepository.findByPublicationIdAndPersonId(masterPubId, mountPointPersonId)
-                .orElseThrow(() -> new NotFoundException("Person not found"));
-
-        if (!Boolean.TRUE.equals(mountPoint.getIsMountPoint()) || mountPoint.getTargetPublicationId() == null) {
-            throw new BadRequestException("Invalid branch mount point");
-        }
-
-        Long targetPubId = mountPoint.getTargetPublicationId();
-        authorizationService.require(subject, targetPubId, AccessPermission.READ_FULL);
-
-        String idPrefix = "merged_" + targetPubId + "_";
-
-        // Resolve the root person in the target publication (for subtree pruning)
-        Person rootPerson = null;
-        if (mountPoint.getTargetRootPersonId() != null) {
-            rootPerson = personRepository.findById(mountPoint.getTargetRootPersonId()).orElse(null);
-        }
-        if (rootPerson == null) {
-            // Fallback: use the mount point person's own personId to look up in the target publication
-            rootPerson = personRepository.findByPublicationIdAndPersonId(
-                    targetPubId, mountPointPersonId).orElse(null);
-        }
-
-        // Collect the people and families to clone (subtree or full)
-        List<Person> targetPeople;
-        List<Family> targetFamilies;
-
-        if (rootPerson != null) {
-            SubtreeResult result = collectSubtreeIds(rootPerson.getId());
-            targetPeople = personRepository.findAllById(result.getPersonDbIds());
-            targetFamilies = familyRepository.findAllById(result.getFamilyDbIds());
-        } else {
-            // Fallback: no root person found, clone everything (original behavior)
-            targetPeople = personRepository.findByPublicationId(targetPubId);
-            targetFamilies = familyRepository.findByPublicationId(targetPubId);
-        }
-        Map<String, Long> mergedPersonDbIds = new HashMap<>();
-
-        for (Person sourcePerson : targetPeople) {
-            Person mergedPerson = new Person();
-            mergedPerson.setPublicationId(masterPubId);
-            mergedPerson.setPersonId(idPrefix + sourcePerson.getPersonId());
-            mergedPerson.setName(sourcePerson.getName());
-            mergedPerson.setGender(sourcePerson.getGender());
-            mergedPerson.setBirth(sourcePerson.getBirth());
-            mergedPerson.setDeath(sourcePerson.getDeath());
-            mergedPerson.setDeceased(sourcePerson.getDeceased());
-            mergedPerson.setAge(sourcePerson.getAge());
-            mergedPerson.setTitleName(sourcePerson.getTitleName());
-            mergedPerson.setClan(sourcePerson.getClan());
-            mergedPerson.setNote(sourcePerson.getNote());
-            mergedPerson.setHighlightRole(sourcePerson.getHighlightRole());
-            mergedPerson.setIsMountPoint(Boolean.TRUE.equals(sourcePerson.getIsMountPoint()));
-            mergedPerson.setTargetPublicationId(sourcePerson.getTargetPublicationId());
-            mergedPerson.setTargetRootPersonId(sourcePerson.getTargetRootPersonId());
-
-            mergedPerson = personRepository.save(mergedPerson);
-
-            if (sourcePerson.getPhotoId() != null) {
-                Photo clonedPhoto = photoService.clonePhotoForPerson(sourcePerson.getPhotoId(), mergedPerson.getId());
-                if (clonedPhoto != null) {
-                    mergedPerson.setPhotoId(clonedPhoto.getId());
-                    mergedPerson = personRepository.save(mergedPerson);
-                }
-            }
-
-            mergedPersonDbIds.put(sourcePerson.getPersonId(), mergedPerson.getId());
-        }
-
-        // Clone collected families
-        for (Family sourceFamily : targetFamilies) {
-            Family mergedFamily = new Family();
-            mergedFamily.setPublicationId(masterPubId);
-            mergedFamily.setFamilyId(idPrefix + sourceFamily.getFamilyId());
-            mergedFamily.setBranchMode(sourceFamily.getBranchMode());
-            mergedFamily = familyRepository.save(mergedFamily);
-
-            List<FamilyMember> members = familyMemberRepository.findByFamilyDbIdOrderBySortOrder(sourceFamily.getId());
-            for (FamilyMember sourceMember : members) {
-                Person sourceMemberPerson = personRepository.findById(sourceMember.getPersonDbId()).orElse(null);
-                if (sourceMemberPerson == null) {
-                    continue;
-                }
-
-                Long mergedPersonDbId = mergedPersonDbIds.get(sourceMemberPerson.getPersonId());
-                if (mergedPersonDbId == null) {
-                    continue;
-                }
-
-                FamilyMember mergedMember = new FamilyMember();
-                mergedMember.setFamilyDbId(mergedFamily.getId());
-                mergedMember.setPersonDbId(mergedPersonDbId);
-                mergedMember.setRole(sourceMember.getRole());
-                mergedMember.setSortOrder(sourceMember.getSortOrder());
-                familyMemberRepository.save(mergedMember);
-            }
-        }
-
-        mountPoint.setIsMountPoint(false);
-        mountPoint.setTargetPublicationId(null);
-        mountPoint.setTargetRootPersonId(null);
-        personRepository.save(mountPoint);
+        branchMergeService.mergeBranch(masterPubId, mountPointPersonId, subject);
     }
 
     @Transactional
@@ -555,8 +455,8 @@ public class PublicationService {
             for (Map.Entry<String, Object> entry : people.entrySet()) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> person = (Map<String, Object>) entry.getValue();
-                validatePersonDates(person);
-                validatePersonLifeStatus(person);
+                DataValidationService.validatePersonDates(person);
+                DataValidationService.validatePersonLifeStatus(person);
             }
         }
 
@@ -615,7 +515,7 @@ public class PublicationService {
                     }
                 }
             }
-            checkCircularAncestry(childToParent);
+            DataValidationService.checkCircularAncestry(childToParent);
 
             for (Map.Entry<String, Object> entry : families.entrySet()) {
                 String familyId = entry.getKey();
@@ -732,217 +632,7 @@ public class PublicationService {
         return null;
     }
 
-    public SubtreeResult collectSubtreeIds(Long rootPersonDbId) {
-        Set<Long> collectedPersonDbIds = new HashSet<>();
-        Set<Long> collectedFamilyDbIds = new HashSet<>();
-        LinkedList<Long> queue = new LinkedList<>();
-        
-        queue.add(rootPersonDbId);
-        collectedPersonDbIds.add(rootPersonDbId);
-
-        while (!queue.isEmpty()) {
-            Long currentPersonDbId = queue.poll();
-            List<FamilyMember> memberships = familyMemberRepository.findByPersonDbId(currentPersonDbId);
-
-            for (FamilyMember membership : memberships) {
-                if (collectedFamilyDbIds.add(membership.getFamilyDbId())) {
-                    // Collect all members of this family and enqueue them
-                    List<FamilyMember> allFamilyMembers = familyMemberRepository
-                            .findByFamilyDbIdOrderBySortOrder(membership.getFamilyDbId());
-                    for (FamilyMember fm : allFamilyMembers) {
-                        if (collectedPersonDbIds.add(fm.getPersonDbId())) {
-                            queue.add(fm.getPersonDbId());
-                        }
-                    }
-                }
-            }
-        }
-        return new SubtreeResult(collectedPersonDbIds, collectedFamilyDbIds);
-    }
-
-    static void validatePersonDates(Map<String, Object> person) {
-        String birth = (String) person.get("birth");
-        String death = (String) person.get("death");
-        if (birth == null || birth.isBlank() || death == null || death.isBlank()) {
-            return;
-        }
-        var birthYear = DateTextParser.extractYear(birth);
-        var deathYear = DateTextParser.extractYear(death);
-        if (birthYear.isPresent() && deathYear.isPresent()
-                && birthYear.get() > deathYear.get()) {
-            throw new BadRequestException("出生年份不能晚于去世年份");
-        }
-    }
-
-    static void validatePersonLifeStatus(Map<String, Object> person) {
-        Boolean deceased = (Boolean) person.get("deceased");
-        String death = (String) person.get("death");
-        if (Boolean.TRUE.equals(deceased) && (death == null || death.isBlank())) {
-            throw new BadRequestException("已故人物必须填写去世日期");
-        }
-    }
-
-    static void checkCircularAncestry(Map<String, String> childToParent) {
-        for (String childId : childToParent.keySet()) {
-            Set<String> visited = new HashSet<>();
-            String current = childToParent.get(childId);
-            while (current != null && visited.size() < 50) {
-                if (!visited.add(current)) {
-                    break;
-                }
-                if (current.equals(childId)) {
-                    throw new BadRequestException(
-                        "检测到循环祖先引用：人物 " + childId + " 的祖先链中包含自身");
-                }
-                current = childToParent.get(current);
-            }
-        }
-    }
-
-    public static class SubtreeResult {
-        private final Set<Long> personDbIds;
-        private final Set<Long> familyDbIds;
-
-        public SubtreeResult(Set<Long> personDbIds, Set<Long> familyDbIds) {
-            this.personDbIds = personDbIds;
-            this.familyDbIds = familyDbIds;
-        }
-
-        public Set<Long> getPersonDbIds() {
-            return personDbIds;
-        }
-
-        public Set<Long> getFamilyDbIds() {
-            return familyDbIds;
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private String computePersonDiff(Map<String, Object> people, Map<String, Person> dbPersonCache) {
-        if (people == null || people.isEmpty()) return "[]";
-        if (dbPersonCache == null || dbPersonCache.isEmpty()) return "[]";
-
-        List<Map<String, Object>> personChanges = new ArrayList<>();
-
-        for (Map.Entry<String, Object> entry : people.entrySet()) {
-            if (personChanges.size() >= 50) break;
-
-            String personId = entry.getKey();
-            Map<String, Object> incoming = (Map<String, Object>) entry.getValue();
-            Person existing = dbPersonCache.get(personId);
-            if (existing == null) continue;
-
-            List<Map<String, String>> fieldChanges = new ArrayList<>();
-
-            diffField(fieldChanges, "name", "姓名", existing.getName(), (String) incoming.get("name"));
-            diffField(fieldChanges, "gender", "性别", existing.getGender(), (String) incoming.get("gender"));
-            diffField(fieldChanges, "birth", "出生", existing.getBirth(), (String) incoming.get("birth"));
-            diffField(fieldChanges, "death", "去世", existing.getDeath(), (String) incoming.get("death"));
-            diffField(fieldChanges, "deceased", "在世",
-                    existing.getDeceased() != null ? String.valueOf(existing.getDeceased()) : null,
-                    incoming.get("deceased") != null ? String.valueOf(incoming.get("deceased")) : null);
-            diffField(fieldChanges, "age", "年龄", existing.getAge(), (String) incoming.get("age"));
-            diffField(fieldChanges, "titleName", "字/号", existing.getTitleName(), (String) incoming.get("titleName"));
-            diffField(fieldChanges, "clan", "氏族", existing.getClan(), (String) incoming.get("clan"));
-            diffField(fieldChanges, "note", "备注", existing.getNote(), (String) incoming.get("note"));
-            diffAvatarField(fieldChanges, existing.getPhotoId(), (String) incoming.get("avatarUrl"));
-
-            if (!fieldChanges.isEmpty()) {
-                Map<String, Object> changeEntry = new LinkedHashMap<>();
-                changeEntry.put("personName", existing.getName() != null ? existing.getName() : personId);
-                changeEntry.put("personId", personId);
-                int limit = Math.min(fieldChanges.size(), 10);
-                changeEntry.put("changes", new ArrayList<>(fieldChanges.subList(0, limit)));
-                personChanges.add(changeEntry);
-            }
-        }
-
-        try {
-            String json = objectMapper.writeValueAsString(personChanges);
-            if (json.length() > 500) {
-                personChanges.remove(personChanges.size() - 1);
-                json = objectMapper.writeValueAsString(personChanges);
-                if (json.length() > 500) return "[]";
-            }
-            return json;
-        } catch (Exception e) {
-            return "[]";
-        }
-    }
-
-    private String computeSinglePersonDiff(Person existing, Map<String, Object> body, String personId) {
-        List<Map<String, String>> changes = new ArrayList<>();
-        if (body.containsKey("name")) {
-            diffField(changes, "name", "姓名", existing.getName(), (String) body.get("name"));
-        }
-        if (body.containsKey("gender")) {
-            diffField(changes, "gender", "性别", existing.getGender(), (String) body.get("gender"));
-        }
-        if (body.containsKey("birth")) {
-            diffField(changes, "birth", "出生", existing.getBirth(), (String) body.get("birth"));
-        }
-        if (body.containsKey("death")) {
-            diffField(changes, "death", "去世", existing.getDeath(), (String) body.get("death"));
-        }
-        if (body.containsKey("deceased")) {
-            diffField(changes, "deceased", "在世",
-                    existing.getDeceased() != null ? String.valueOf(existing.getDeceased()) : null,
-                    body.get("deceased") != null ? String.valueOf(body.get("deceased")) : null);
-        }
-        if (body.containsKey("age")) {
-            diffField(changes, "age", "年龄", existing.getAge(), (String) body.get("age"));
-        }
-        if (body.containsKey("titleName")) {
-            diffField(changes, "titleName", "字/号", existing.getTitleName(), (String) body.get("titleName"));
-        }
-        if (body.containsKey("clan")) {
-            diffField(changes, "clan", "氏族", existing.getClan(), (String) body.get("clan"));
-        }
-        if (body.containsKey("note")) {
-            diffField(changes, "note", "备注", existing.getNote(), (String) body.get("note"));
-        }
-        if (body.containsKey("avatarUrl")) {
-            diffAvatarField(changes, existing.getPhotoId(), (String) body.get("avatarUrl"));
-        }
-
-        if (changes.isEmpty()) return "[]";
-
-        Map<String, Object> entry = new LinkedHashMap<>();
-        entry.put("personName", existing.getName() != null ? existing.getName() : personId);
-        entry.put("personId", personId);
-        entry.put("changes", changes);
-
-        try {
-            return objectMapper.writeValueAsString(List.of(entry));
-        } catch (Exception e) {
-            return "[]";
-        }
-    }
-
-    private void diffField(List<Map<String, String>> changes, String field, String label,
-            String oldVal, String newVal) {
-        String o = oldVal != null ? oldVal : "";
-        String n = newVal != null ? newVal : "";
-        if (!o.equals(n)) {
-            Map<String, String> c = new LinkedHashMap<>();
-            c.put("field", field);
-            c.put("fieldLabel", label);
-            c.put("old", o);
-            c.put("new", n);
-            changes.add(c);
-        }
-    }
-
-    private void diffAvatarField(List<Map<String, String>> changes, Long oldPhotoId, String newAvatarUrl) {
-        String o = oldPhotoId != null ? "已有头像" : "";
-        String n = (newAvatarUrl != null && !newAvatarUrl.isEmpty()) ? "已更新" : "";
-        if (!o.equals(n)) {
-            Map<String, String> c = new LinkedHashMap<>();
-            c.put("field", "avatarUrl");
-            c.put("fieldLabel", "头像");
-            c.put("old", o);
-            c.put("new", n.isEmpty() ? "已移除" : "已更新");
-            changes.add(c);
-        }
+    public BranchMergeService.SubtreeResult collectSubtreeIds(Long rootPersonDbId) {
+        return branchMergeService.collectSubtreeIds(rootPersonDbId);
     }
 }

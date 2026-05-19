@@ -7,7 +7,7 @@ import { usePublicationState } from '../composables/usePublicationState'
 import { defaultSettings } from '../data/sampleFamily'
 import { useEditorHistory } from '../features/history/useEditorHistory'
 import type { EditorSnapshot } from '../features/history/historyCore'
-import type { PublicationData, PublicationSettings } from '../types/family'
+import { PUBLICATION_CONTEXT_KEY, type PublicationContext, type PublicationData, type PublicationSettings } from '../types/family'
 
 const route = useRoute()
 const publicationId = computed(() => Number(route.params.id))
@@ -25,7 +25,7 @@ const viewportPan = ref({ x: 0, y: 0 })
 const feedback = useFeedback()
 
 // NOTE: Start empty so the UI does not flash sample data before the real payload loads.
-const pub = usePublicationState({ title: '', people: {}, families: {}, focusFamilyId: '' } as any, defaultSettings)
+const pub = usePublicationState({ title: '', subtitle: '', people: {}, families: {}, focusFamilyId: '' }, defaultSettings)
 
 function createEditorSnapshot(): EditorSnapshot {
   return {
@@ -184,7 +184,7 @@ watch(publicationId, (newId) => {
   }
 })
 
-provide('publication-context', {
+provide(PUBLICATION_CONTEXT_KEY, {
   pub,
   history,
   syncStatus,

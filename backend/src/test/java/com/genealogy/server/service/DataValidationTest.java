@@ -18,7 +18,7 @@ class DataValidationTest {
         person.put("birth", "2024");
         person.put("death", "2020");
         assertThatThrownBy(() ->
-            PublicationService.validatePersonDates(person)
+            DataValidationService.validatePersonDates(person)
         ).isInstanceOf(BadRequestException.class)
          .hasMessageContaining("出生年份不能晚于去世年份");
     }
@@ -30,7 +30,7 @@ class DataValidationTest {
         person.put("birth", "2024");
         person.put("death", "2024");
         assertThatCode(() ->
-            PublicationService.validatePersonDates(person)
+            DataValidationService.validatePersonDates(person)
         ).doesNotThrowAnyException();
     }
 
@@ -41,7 +41,7 @@ class DataValidationTest {
         person.put("birth", "2020");
         person.put("death", "2024");
         assertThatCode(() ->
-            PublicationService.validatePersonDates(person)
+            DataValidationService.validatePersonDates(person)
         ).doesNotThrowAnyException();
     }
 
@@ -50,7 +50,7 @@ class DataValidationTest {
     void testMissingDates_Ok() {
         Map<String, Object> person = new HashMap<>();
         assertThatCode(() ->
-            PublicationService.validatePersonDates(person)
+            DataValidationService.validatePersonDates(person)
         ).doesNotThrowAnyException();
     }
 
@@ -60,7 +60,7 @@ class DataValidationTest {
         Map<String, Object> person = new HashMap<>();
         person.put("deceased", true);
         assertThatThrownBy(() ->
-            PublicationService.validatePersonLifeStatus(person)
+            DataValidationService.validatePersonLifeStatus(person)
         ).isInstanceOf(BadRequestException.class)
          .hasMessageContaining("已故人物必须填写去世日期");
     }
@@ -72,7 +72,7 @@ class DataValidationTest {
         person.put("deceased", false);
         person.put("death", "2024");
         assertThatCode(() ->
-            PublicationService.validatePersonLifeStatus(person)
+            DataValidationService.validatePersonLifeStatus(person)
         ).doesNotThrowAnyException();
     }
 
@@ -83,7 +83,7 @@ class DataValidationTest {
         childToParent.put("A", "B");
         childToParent.put("B", "A"); // cycle: A -> B -> A
         assertThatThrownBy(() ->
-            PublicationService.checkCircularAncestry(childToParent)
+            DataValidationService.checkCircularAncestry(childToParent)
         ).isInstanceOf(BadRequestException.class)
          .hasMessageContaining("循环祖先引用");
     }
@@ -96,7 +96,7 @@ class DataValidationTest {
         childToParent.put("B", "C");
         childToParent.put("C", "D");
         assertThatCode(() ->
-            PublicationService.checkCircularAncestry(childToParent)
+            DataValidationService.checkCircularAncestry(childToParent)
         ).doesNotThrowAnyException();
     }
 }

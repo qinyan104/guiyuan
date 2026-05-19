@@ -397,7 +397,6 @@ async function handleChangeNickname() {
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
   padding: 32px;
 }
-:global([data-theme="ink-wash"]) .bento-card,
 :global([data-theme="rosewood"]) .bento-card,
 :global([data-theme="star-sea"]) .bento-card {
   background: rgba(20, 20, 20, 0.5);
@@ -480,7 +479,6 @@ async function handleChangeNickname() {
   color: var(--text-main);
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
-:global([data-theme="ink-wash"]) .large-avatar,
 :global([data-theme="rosewood"]) .large-avatar,
 :global([data-theme="star-sea"]) .large-avatar {
   background: rgba(30,30,30,1);
@@ -506,7 +504,6 @@ async function handleChangeNickname() {
   padding: 4px 10px;
   border-radius: 999px;
 }
-:global([data-theme="ink-wash"]) .profile-status,
 :global([data-theme="rosewood"]) .profile-status,
 :global([data-theme="star-sea"]) .profile-status {
   background: rgba(255,255,255,0.06);
@@ -594,7 +591,6 @@ async function handleChangeNickname() {
   transition: all 0.2s ease;
   box-sizing: border-box;
 }
-:global([data-theme="ink-wash"]) .glass-input,
 :global([data-theme="rosewood"]) .glass-input,
 :global([data-theme="star-sea"]) .glass-input {
   background: rgba(0,0,0,0.3);

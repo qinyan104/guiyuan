@@ -446,20 +446,17 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   border-color: transparent;
 }
 
-:global([data-theme="ink-wash"]) .glass-pill-btn,
 :global([data-theme="rosewood"]) .glass-pill-btn,
 :global([data-theme="star-sea"]) .glass-pill-btn {
   background: rgba(0,0,0,0.4);
   border-color: rgba(255,255,255,0.1);
   color: #fff;
 }
-:global([data-theme="ink-wash"]) .glass-pill-btn:hover,
 :global([data-theme="rosewood"]) .glass-pill-btn:hover,
 :global([data-theme="star-sea"]) .glass-pill-btn:hover {
   background: #fff;
   color: #000;
 }
-:global([data-theme="ink-wash"]) .glass-pill-btn.primary,
 :global([data-theme="rosewood"]) .glass-pill-btn.primary,
 :global([data-theme="star-sea"]) .glass-pill-btn.primary {
   background: linear-gradient(135deg, var(--accent-ink), var(--accent-amber));
@@ -503,7 +500,6 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   transform: translateY(-4px);
   box-shadow: 0 24px 48px -12px rgba(0,0,0,0.1);
 }
-:global([data-theme="ink-wash"]) .glass-card,
 :global([data-theme="rosewood"]) .glass-card,
 :global([data-theme="star-sea"]) .glass-card {
   background: rgba(0, 0, 0, 0.2);
@@ -651,7 +647,6 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   border-radius: 6px;
   color: var(--text-sub);
 }
-:global([data-theme="ink-wash"]) .meta-tag,
 :global([data-theme="rosewood"]) .meta-tag,
 :global([data-theme="star-sea"]) .meta-tag {
   background: rgba(255,255,255,0.08);
@@ -708,7 +703,6 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   gap: 16px;
   z-index: 10;
 }
-:global([data-theme="ink-wash"]) .delete-overlay,
 :global([data-theme="rosewood"]) .delete-overlay,
 :global([data-theme="star-sea"]) .delete-overlay {
   background: rgba(0, 0, 0, 0.95);
@@ -806,7 +800,6 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   z-index: 2000;
   padding: 24px;
 }
-:global([data-theme="ink-wash"]) .glass-modal-overlay,
 :global([data-theme="rosewood"]) .glass-modal-overlay,
 :global([data-theme="star-sea"]) .glass-modal-overlay {
   background: rgba(0, 0, 0, 0.5);
@@ -826,7 +819,6 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
 .glass-sheet.large {
   max-width: 680px;
 }
-:global([data-theme="ink-wash"]) .glass-sheet,
 :global([data-theme="rosewood"]) .glass-sheet,
 :global([data-theme="star-sea"]) .glass-sheet {
   background: rgba(20, 20, 20, 0.85);
@@ -886,13 +878,11 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   border-color: var(--text-main);
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-:global([data-theme="ink-wash"]) .glass-input-group input,
 :global([data-theme="rosewood"]) .glass-input-group input,
 :global([data-theme="star-sea"]) .glass-input-group input {
   background: rgba(0,0,0,0.4);
   border-color: rgba(255,255,255,0.1);
 }
-:global([data-theme="ink-wash"]) .glass-input-group input:focus,
 :global([data-theme="rosewood"]) .glass-input-group input:focus,
 :global([data-theme="star-sea"]) .glass-input-group input:focus {
   background: rgba(0,0,0,0.6);
@@ -923,7 +913,6 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   border-radius: 50%;
   animation: spin 1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
-:global([data-theme="ink-wash"]) .spinner,
 :global([data-theme="rosewood"]) .spinner,
 :global([data-theme="star-sea"]) .spinner {
   border-color: rgba(255,255,255,0.1);

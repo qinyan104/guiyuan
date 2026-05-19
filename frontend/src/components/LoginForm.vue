@@ -164,22 +164,21 @@ async function onSubmit() {
   perspective: 1000px;
 }
 
-:global([data-theme="ink-wash"]) .auth-stage,
 :global([data-theme="rosewood"]) .auth-stage,
 :global([data-theme="star-sea"]) .auth-stage {
-  --glass-bg: rgba(0, 0, 0, 0.75);
-  --glass-border-highlight: rgba(255, 255, 255, 0.06);
-  --glass-border-shadow: rgba(0, 0, 0, 0.6);
-  --glass-brand-bg: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.2));
-  --glass-form-bg: rgba(0, 0, 0, 0.4);
-  --glass-seal-bg: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4));
-  --glass-feature-bg: rgba(0, 0, 0, 0.5);
-  --glass-pill-bg: rgba(0, 0, 0, 0.6);
-  --glass-pill-active: rgba(255, 255, 255, 0.1);
-  --glass-input-bg: rgba(0, 0, 0, 0.5);
-  --glass-input-border: rgba(255, 255, 255, 0.08);
-  --glass-input-focus: rgba(0, 0, 0, 0.8);
-  --glow-opacity: 0.02;
+  --glass-bg: rgba(30, 27, 23, 0.85);
+  --glass-border-highlight: rgba(255, 248, 235, 0.16);
+  --glass-border-shadow: rgba(0, 0, 0, 0.4);
+  --glass-brand-bg: linear-gradient(135deg, rgba(42, 38, 33, 0.92), rgba(24, 22, 19, 0.72));
+  --glass-form-bg: rgba(32, 28, 24, 0.76);
+  --glass-seal-bg: linear-gradient(135deg, rgba(72, 64, 54, 0.92), rgba(36, 32, 27, 0.78));
+  --glass-feature-bg: rgba(46, 42, 36, 0.76);
+  --glass-pill-bg: rgba(255, 248, 235, 0.08);
+  --glass-pill-active: rgba(255, 248, 235, 0.16);
+  --glass-input-bg: rgba(44, 40, 35, 0.82);
+  --glass-input-border: rgba(255, 248, 235, 0.18);
+  --glass-input-focus: rgba(58, 53, 46, 0.92);
+  --glow-opacity: 0.05;
 }
 
 .glass-container {

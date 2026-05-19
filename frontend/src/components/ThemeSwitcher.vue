@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { THEME_OPTIONS, type ThemeId } from '../composables/useTheme'
 
 defineProps<{
@@ -23,8 +23,8 @@ function toggle() {
   open.value = !open.value
 }
 
-function onClickOutside(e: MouseEvent) {
-  if (open.value && root.value && !root.value.contains(e.target as Node)) {
+function onClickOutside(event: MouseEvent) {
+  if (open.value && root.value && !root.value.contains(event.target as Node)) {
     open.value = false
   }
 }
@@ -40,7 +40,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="root" class="theme-switcher">
-    <button class="action-btn" type="button" title="切换视觉主题" @click="toggle">
+    <button class="action-btn" type="button" title="切换主题" @click="toggle">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 3a6.364 6.364 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
       </svg>
@@ -49,8 +49,9 @@ onBeforeUnmount(() => {
     <Transition name="glass-pop">
       <div v-if="open" class="theme-dropdown">
         <div class="dropdown-header">
-          <span class="dropdown-title">选择主题 / THEME</span>
+          <span class="dropdown-title">界面主题 / THEME</span>
         </div>
+
         <div class="theme-list">
           <button
             v-for="theme in themes"
@@ -68,6 +69,7 @@ onBeforeUnmount(() => {
                 :style="{ background: color }"
               />
             </div>
+
             <div class="theme-info">
               <div class="theme-title-group">
                 <strong class="theme-name">{{ theme.name }}</strong>
@@ -75,6 +77,7 @@ onBeforeUnmount(() => {
               </div>
               <span class="theme-desc">{{ theme.description }}</span>
             </div>
+
             <span v-if="currentTheme === theme.id" class="check-icon">✓</span>
           </button>
         </div>
@@ -101,8 +104,9 @@ onBeforeUnmount(() => {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .action-btn:hover {
-  background: var(--glass-panel-bg, rgba(255,255,255,0.4));
+  background: var(--glass-pill-bg, rgba(255, 255, 255, 0.12));
   color: var(--text-main, #000);
 }
 
@@ -110,36 +114,34 @@ onBeforeUnmount(() => {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 220px; /* Extremely compact */
-  border-radius: 16px; /* Slightly smaller radius for smaller box */
+  width: 252px;
+  border-radius: 18px;
   background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--glass-border-shadow, rgba(0,0,0,0.05));
-  padding: 6px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--glass-border-shadow, rgba(0, 0, 0, 0.05));
+  padding: 8px;
   z-index: 9999;
   transform-origin: top right;
 }
 
-
-
 .dropdown-header {
-  padding: 6px 8px 4px;
-  margin-bottom: 2px;
+  padding: 6px 8px 6px;
 }
+
 .dropdown-title {
   font-family: monospace;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--text-soft);
+  letter-spacing: 0.12em;
+  color: var(--text-sub, #666);
   text-transform: uppercase;
 }
 
 .theme-list {
   display: grid;
-  gap: 2px; /* Tighter gap */
+  gap: 4px;
 }
 
 .theme-item {
@@ -147,9 +149,9 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
-  gap: 2px 8px; /* Tighter grid gaps */
-  padding: 8px; /* Less padding */
-  border-radius: 10px;
+  gap: 3px 10px;
+  padding: 10px;
+  border-radius: 12px;
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
@@ -158,33 +160,34 @@ onBeforeUnmount(() => {
 }
 
 .theme-item:hover {
-  background: rgba(0,0,0,0.04);
+  background: var(--bg-hover, rgba(0, 0, 0, 0.04));
+  border-color: var(--border-color, rgba(0, 0, 0, 0.08));
 }
-
 
 .theme-item.is-active {
   background: var(--btn-primary-bg);
   color: var(--btn-primary-color);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .theme-option__preview {
   grid-row: 1 / 3;
   grid-column: 1;
   display: flex;
-  gap: 2px; /* Tighter swatches */
+  gap: 3px;
   align-items: center;
-  padding: 2px 0;
+  padding: 3px 0;
 }
 
 .theme-option__swatch {
-  width: 12px; /* Smaller swatches */
+  width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 1px solid rgba(128,128,128,0.2);
+  border: 1px solid rgba(128, 128, 128, 0.2);
 }
+
 .theme-item.is-active .theme-option__swatch {
-  border-color: rgba(255,255,255,0.3);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .theme-info {
@@ -200,49 +203,52 @@ onBeforeUnmount(() => {
 }
 
 .theme-name {
-  font-size: 12px; /* Smaller title */
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-main);
 }
+
 .theme-item.is-active .theme-name {
   color: inherit;
 }
 
 .theme-name-en {
-  font-size: 10px; /* Smaller english name */
+  font-size: 10px;
   color: var(--text-soft);
   font-style: normal;
   font-family: monospace;
 }
+
 .theme-item.is-active .theme-name-en {
-  color: rgba(255,255,255,0.78);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .theme-desc {
   grid-row: 2;
   grid-column: 2;
-  color: var(--text-soft);
-  font-size: 10px; /* Smaller description */
-  line-height: 1.2;
+  color: var(--text-sub, #666);
+  font-size: 10px;
+  line-height: 1.35;
 }
+
 .theme-item.is-active .theme-desc {
-  color: rgba(255,255,255,0.82);
+  color: rgba(255, 255, 255, 0.84);
 }
 
 .check-icon {
   position: absolute;
-  top: 8px;
+  top: 10px;
   right: 10px;
   font-size: 11px;
   color: inherit;
   font-weight: 800;
 }
 
-/* Animations */
 .glass-pop-enter-active,
 .glass-pop-leave-active {
   transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .glass-pop-enter-from,
 .glass-pop-leave-to {
   opacity: 0;

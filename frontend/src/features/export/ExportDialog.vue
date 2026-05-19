@@ -131,7 +131,6 @@ function emitExportShareHtml() {
   animation: slideUp 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-:global([data-theme="ink-wash"]) .export-dialog,
 :global([data-theme="rosewood"]) .export-dialog,
 :global([data-theme="star-sea"]) .export-dialog {
   background: rgba(20, 20, 20, 0.6);
@@ -183,7 +182,6 @@ function emitExportShareHtml() {
   line-height: 1;
 }
 
-:global([data-theme="ink-wash"]) .close-btn,
 :global([data-theme="rosewood"]) .close-btn,
 :global([data-theme="star-sea"]) .close-btn {
   background: rgba(255, 255, 255, 0.06);
@@ -203,7 +201,6 @@ function emitExportShareHtml() {
   padding: 4px;
 }
 
-:global([data-theme="ink-wash"]) .tabs,
 :global([data-theme="rosewood"]) .tabs,
 :global([data-theme="star-sea"]) .tabs {
   background: rgba(255, 255, 255, 0.04);
@@ -232,7 +229,6 @@ function emitExportShareHtml() {
   font-weight: 700;
 }
 
-:global([data-theme="ink-wash"]) .tab-btn.active,
 :global([data-theme="rosewood"]) .tab-btn.active,
 :global([data-theme="star-sea"]) .tab-btn.active {
   background: rgba(255, 255, 255, 0.08);
@@ -313,7 +309,6 @@ function emitExportShareHtml() {
   overflow: hidden;
 }
 
-:global([data-theme="ink-wash"]) .strength-bar,
 :global([data-theme="rosewood"]) .strength-bar,
 :global([data-theme="star-sea"]) .strength-bar {
   background: rgba(255, 255, 255, 0.08);

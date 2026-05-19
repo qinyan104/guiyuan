@@ -376,7 +376,6 @@ function formatDate(dateStr: string) {
 .bento-btn.ghost:hover {
   background: rgba(0,0,0,0.05);
 }
-:global([data-theme="ink-wash"]) .bento-btn.ghost:hover,
 :global([data-theme="rosewood"]) .bento-btn.ghost:hover,
 :global([data-theme="star-sea"]) .bento-btn.ghost:hover {
   background: rgba(255,255,255,0.1);
@@ -425,7 +424,6 @@ function formatDate(dateStr: string) {
   color: var(--text-main);
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-:global([data-theme="ink-wash"]) .glass-tab.is-active,
 :global([data-theme="rosewood"]) .glass-tab.is-active,
 :global([data-theme="star-sea"]) .glass-tab.is-active {
   background: rgba(255,255,255,0.1);
@@ -453,7 +451,6 @@ function formatDate(dateStr: string) {
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
   padding: 24px;
 }
-:global([data-theme="ink-wash"]) .bento-card,
 :global([data-theme="rosewood"]) .bento-card,
 :global([data-theme="star-sea"]) .bento-card {
   background: rgba(20, 20, 20, 0.5);
@@ -500,7 +497,6 @@ function formatDate(dateStr: string) {
   outline: none;
   transition: all 0.2s ease;
 }
-:global([data-theme="ink-wash"]) .field input,
 :global([data-theme="rosewood"]) .field input,
 :global([data-theme="star-sea"]) .field input {
   background: rgba(0,0,0,0.3);
@@ -579,7 +575,6 @@ function formatDate(dateStr: string) {
   text-transform: none;
   letter-spacing: 0.2em;
 }
-:global([data-theme="ink-wash"]) .table-header,
 :global([data-theme="rosewood"]) .table-header,
 :global([data-theme="star-sea"]) .table-header {
   border-color: rgba(255,255,255,0.1);
@@ -600,7 +595,6 @@ function formatDate(dateStr: string) {
 .table-row:hover {
   background: linear-gradient(90deg, transparent, rgba(0,0,0,0.02), transparent);
 }
-:global([data-theme="ink-wash"]) .table-row:hover,
 :global([data-theme="rosewood"]) .table-row:hover,
 :global([data-theme="star-sea"]) .table-row:hover {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
@@ -686,7 +680,6 @@ function formatDate(dateStr: string) {
   background: rgba(59, 130, 246, 0.1);
   color: #2563eb;
 }
-:global([data-theme="ink-wash"]) .role-badge.super_admin,
 :global([data-theme="rosewood"]) .role-badge.super_admin,
 :global([data-theme="star-sea"]) .role-badge.super_admin {
   background: rgba(251, 146, 60, 0.2);
@@ -712,7 +705,6 @@ function formatDate(dateStr: string) {
   background-color: var(--bg-panel, #fff);
   box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
 }
-:global([data-theme="ink-wash"]) .glass-select,
 :global([data-theme="rosewood"]) .glass-select,
 :global([data-theme="star-sea"]) .glass-select {
   background-color: rgba(255,255,255,0.05);
@@ -720,7 +712,6 @@ function formatDate(dateStr: string) {
   color: #fff;
   background-image: url('data:image/svg+xml;utf8,<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><polyline points="6 9 12 15 18 9"></polyline></svg>');
 }
-:global([data-theme="ink-wash"]) .glass-select:focus,
 :global([data-theme="rosewood"]) .glass-select:focus,
 :global([data-theme="star-sea"]) .glass-select:focus {
   background-color: rgba(255,255,255,0.15);
@@ -787,7 +778,6 @@ function formatDate(dateStr: string) {
   padding: 32px;
   box-shadow: 0 24px 48px rgba(0,0,0,0.1);
 }
-:global([data-theme="ink-wash"]) .glass-dialog,
 :global([data-theme="rosewood"]) .glass-dialog,
 :global([data-theme="star-sea"]) .glass-dialog {
   background: rgba(20, 20, 20, 0.85);
@@ -827,7 +817,6 @@ function formatDate(dateStr: string) {
   font-size: 1rem;
   outline: none;
 }
-:global([data-theme="ink-wash"]) .dialog-field input,
 :global([data-theme="rosewood"]) .dialog-field input,
 :global([data-theme="star-sea"]) .dialog-field input {
   background: rgba(0,0,0,0.3);

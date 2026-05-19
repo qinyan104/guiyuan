@@ -287,7 +287,6 @@ async function handleCreateFromDashboard() {
   flex-direction: column;
 }
 
-:global([data-theme="ink-wash"]) .bento-card,
 :global([data-theme="rosewood"]) .bento-card,
 :global([data-theme="star-sea"]) .bento-card {
   background: rgba(0, 0, 0, 0.2);
@@ -299,6 +298,7 @@ async function handleCreateFromDashboard() {
   transform: translateY(-4px);
   box-shadow: 0 24px 48px -12px rgba(0,0,0,0.1);
 }
+
 
 /* Grid Spanning */
 .card-hero {
@@ -348,7 +348,6 @@ async function handleCreateFromDashboard() {
     url('data:image/svg+xml;utf8,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="rgba(0,0,0,0.05)"/></pattern></defs><rect width="100%" height="100%" fill="url(#dots)"/></svg>');
   z-index: 0;
 }
-:global([data-theme="ink-wash"]) .hero-bg-layer,
 :global([data-theme="rosewood"]) .hero-bg-layer,
 :global([data-theme="star-sea"]) .hero-bg-layer {
   background: 
@@ -414,14 +413,12 @@ async function handleCreateFromDashboard() {
   color: var(--bg-panel, #fff);
   border-color: transparent;
 }
-:global([data-theme="ink-wash"]) .ghost-pill,
 :global([data-theme="rosewood"]) .ghost-pill,
 :global([data-theme="star-sea"]) .ghost-pill {
   background: rgba(0,0,0,0.4);
   border-color: rgba(255,255,255,0.1);
   color: #fff;
 }
-:global([data-theme="ink-wash"]) .ghost-pill:hover,
 :global([data-theme="rosewood"]) .ghost-pill:hover,
 :global([data-theme="star-sea"]) .ghost-pill:hover {
   background: #fff;
@@ -456,7 +453,6 @@ async function handleCreateFromDashboard() {
   -webkit-text-fill-color: transparent;
   text-shadow: none;
 }
-:global([data-theme="ink-wash"]) .card-users .stat-value,
 :global([data-theme="rosewood"]) .card-users .stat-value,
 :global([data-theme="star-sea"]) .card-users .stat-value {
   background: linear-gradient(135deg, #fff, #aaa);
@@ -556,7 +552,6 @@ async function handleCreateFromDashboard() {
   background: var(--border-color, rgba(0,0,0,0.1));
   z-index: 0;
 }
-:global([data-theme="ink-wash"]) .history-list::before,
 :global([data-theme="rosewood"]) .history-list::before,
 :global([data-theme="star-sea"]) .history-list::before {
   background: rgba(255,255,255,0.1);
@@ -585,7 +580,6 @@ async function handleCreateFromDashboard() {
   box-shadow: 0 0 0 4px var(--glass-panel-bg, #fff);
   transition: transform 0.2s;
 }
-:global([data-theme="ink-wash"]) .history-thread,
 :global([data-theme="rosewood"]) .history-thread,
 :global([data-theme="star-sea"]) .history-thread {
   box-shadow: 0 0 0 4px rgba(0,0,0,0.5);
@@ -598,7 +592,6 @@ async function handleCreateFromDashboard() {
 .history-item:hover .history-thread {
   transform: translateY(-50%) scale(1.5);
 }
-:global([data-theme="ink-wash"]) .history-item:hover,
 :global([data-theme="rosewood"]) .history-item:hover,
 :global([data-theme="star-sea"]) .history-item:hover {
   background: rgba(255,255,255,0.06);
@@ -606,7 +599,8 @@ async function handleCreateFromDashboard() {
 
 .history-time {
   font-family: monospace;
-  font-size: 0.75rem;
+  color: var(--text-soft);
+  font-weight: 400;
   color: var(--text-soft);
   width: 45px;
   flex-shrink: 0;
@@ -617,7 +611,7 @@ async function handleCreateFromDashboard() {
   min-width: 0;
 }
 .history-title {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.95rem;
   color: var(--text-main);
   white-space: nowrap;
@@ -673,12 +667,10 @@ async function handleCreateFromDashboard() {
   background: rgba(0,0,0,0.02);
   border-style: solid;
 }
-:global([data-theme="ink-wash"]) .card-backup,
 :global([data-theme="rosewood"]) .card-backup,
 :global([data-theme="star-sea"]) .card-backup {
   border-color: rgba(255,255,255,0.2);
 }
-:global([data-theme="ink-wash"]) .card-backup:hover,
 :global([data-theme="rosewood"]) .card-backup:hover,
 :global([data-theme="star-sea"]) .card-backup:hover {
   background: rgba(255,255,255,0.05);
@@ -702,7 +694,6 @@ async function handleCreateFromDashboard() {
   border-radius: 50%;
   animation: spin 1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
-:global([data-theme="ink-wash"]) .spinner,
 :global([data-theme="rosewood"]) .spinner,
 :global([data-theme="star-sea"]) .spinner {
   border-color: rgba(255,255,255,0.1);
@@ -749,7 +740,6 @@ async function handleCreateFromDashboard() {
   padding: 48px 40px;
   text-align: center;
 }
-:global([data-theme="ink-wash"]) .error-card,
 :global([data-theme="rosewood"]) .error-card,
 :global([data-theme="star-sea"]) .error-card {
   background: rgba(0,0,0,0.5);

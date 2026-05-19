@@ -327,10 +327,8 @@ function toggleUserDropdown() {
 .user-profile-pill.is-open {
   background: rgba(0,0,0,0.04);
 }
-:global([data-theme="ink-wash"]) .user-profile-pill:hover,
 :global([data-theme="rosewood"]) .user-profile-pill:hover,
 :global([data-theme="star-sea"]) .user-profile-pill:hover,
-:global([data-theme="ink-wash"]) .user-profile-pill.is-open,
 :global([data-theme="rosewood"]) .user-profile-pill.is-open,
 :global([data-theme="star-sea"]) .user-profile-pill.is-open {
   background: rgba(255,255,255,0.08);
@@ -360,7 +358,6 @@ function toggleUserDropdown() {
   font-family: 'Noto Serif SC', serif;
   color: var(--text-main);
 }
-:global([data-theme="ink-wash"]) .avatar-text,
 :global([data-theme="rosewood"]) .avatar-text,
 :global([data-theme="star-sea"]) .avatar-text {
   background: rgba(40,40,40,1);
@@ -398,7 +395,6 @@ function toggleUserDropdown() {
   transform-origin: top right;
 }
 
-:global([data-theme="ink-wash"]) .user-popover,
 :global([data-theme="rosewood"]) .user-popover,
 :global([data-theme="star-sea"]) .user-popover {
   background: rgba(20, 20, 20, 0.85);
@@ -456,7 +452,6 @@ function toggleUserDropdown() {
 .menu-item:hover {
   background: rgba(0,0,0,0.04);
 }
-:global([data-theme="ink-wash"]) .menu-item:hover,
 :global([data-theme="rosewood"]) .menu-item:hover,
 :global([data-theme="star-sea"]) .menu-item:hover {
   background: rgba(255,255,255,0.06);
@@ -591,7 +586,6 @@ function toggleUserDropdown() {
   z-index: 2000;
   padding: 24px;
 }
-:global([data-theme="ink-wash"]) .glass-modal-overlay,
 :global([data-theme="rosewood"]) .glass-modal-overlay,
 :global([data-theme="star-sea"]) .glass-modal-overlay {
   background: rgba(0, 0, 0, 0.5);
@@ -611,7 +605,6 @@ function toggleUserDropdown() {
 .glass-sheet.collab-sheet {
   max-width: 560px;
 }
-:global([data-theme="ink-wash"]) .glass-sheet,
 :global([data-theme="rosewood"]) .glass-sheet,
 :global([data-theme="star-sea"]) .glass-sheet {
   background: rgba(20, 20, 20, 0.85);

@@ -18,7 +18,7 @@ import { useTheme } from '../composables/useTheme'
 import { getUsername } from '../api/auth'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 
-import type { PublicationSettings } from '../types/family'
+import { PUBLICATION_CONTEXT_KEY, type PublicationSettings } from '../types/family'
 
 const props = defineProps<{
   publicationId: number
@@ -48,8 +48,8 @@ function onConfirmDialogResult(result: boolean) {
   }
 }
 
-// ─── Shared Context ─────────────────────────────────────────────
-const context = inject('publication-context') as any
+// ─── Shared Context ─────────────────────────────────────────────
+const context = inject(PUBLICATION_CONTEXT_KEY)!
 
 // ─── Core Composables ───────────────────────────────────────────
 const panels = usePanelState()

@@ -152,6 +152,8 @@ async function refreshPublicationFromServer() {
   if (!props.publicationId || !context) return
 
   const result = await getPublication(props.publicationId)
+  // replaceReactiveObject 内部用 Object.keys 操作，PublicationData/PublicationSettings 无 index signature
+  // TypeScript 不允许直接 cast 到 Record<string, unknown>，这里的 as any 是已知限制
   context.pub.replaceReactiveObject(context.pub.publication, result.publication as any)
   context.pub.replaceReactiveObject(context.pub.settings, result.settings as any)
   context.pub.selectedPersonId.value = result.publication.people[props.person.id]

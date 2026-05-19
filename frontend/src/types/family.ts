@@ -1,3 +1,7 @@
+import type { InjectionKey, Ref } from 'vue'
+import type { PublicationState } from '../composables/usePublicationState'
+import type { EditorHistory } from '../features/history/useEditorHistory'
+
 export type Gender = 'male' | 'female' | 'unknown'
 export type PublicationPaper = 'A4' | 'A3'
 export type FamilyBranchMode = 'married-out' | 'uxorilocal'
@@ -152,3 +156,32 @@ export interface PublicationOperationPayload {
 }
 
 export type PublicationOperationResult = ValidationResult<PublicationOperationPayload>
+
+
+
+// ─── Dependency Injection ─────────────────────────────────────
+
+
+
+export interface PublicationContext {
+
+  pub: PublicationState
+
+  history: EditorHistory
+
+  syncStatus: Ref<'saved' | 'pending' | 'syncing' | 'error' | 'conflict'>
+
+  saveToServer: () => Promise<void>
+
+  serverPublicationId: Ref<number | null>
+
+  viewportPan: Ref<{ x: number; y: number }>
+
+}
+
+
+
+export const PUBLICATION_CONTEXT_KEY: InjectionKey<PublicationContext> =
+
+  Symbol('publication-context')
+

@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import type { Person } from '../types/family'
-import { parseYear, parseExactDate } from '../lib/dateUtils'
-
-defineProps<{ publicationId: number }>()
-const router = useRouter()
-const route = useRoute()
-
-// ─── Shared Context ─────────────────────────────────────────────
-const { pub } = inject('publication-context') as any
+import { PUBLICATION_CONTEXT_KEY, type Person } from '../types/family'
+import { parseYear, parseExactDate } from '../lib/dateUtils'
+
+defineProps<{ publicationId: number }>()
+const router = useRouter()
+const route = useRoute()
+
+// ─── Shared Context ─────────────────────────────────────────────
+const { pub } = inject(PUBLICATION_CONTEXT_KEY)!
 const pubData = computed(() => pub.publication)
 
 interface TimelineEvent {
@@ -503,7 +503,6 @@ const scrollToTop = () => {
   position: relative;
   overflow: hidden;
 }
-:global([data-theme="ink-wash"]) .bento-card,
 :global([data-theme="rosewood"]) .bento-card,
 :global([data-theme="star-sea"]) .bento-card {
   background: rgba(20, 20, 20, 0.5);

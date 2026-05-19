@@ -26,14 +26,15 @@ class SubtreeCollectorTest {
     @Mock
     private FamilyMemberRepository familyMemberRepository;
 
-    private PublicationService publicationService;
+    private BranchMergeService branchMergeService;
 
     @BeforeEach
     void setUp() {
-        // We only need the repositories used by collectSubtreeIds
-        publicationService = new PublicationService(
-                null, personRepository, familyRepository, familyMemberRepository,
-                null, null, null, null, null, null, null, null
+        // BranchMergeService needs PersonRepository, FamilyRepository, FamilyMemberRepository, PhotoService, PublicationAuthorizationService
+        // Only personRepository, familyRepository, familyMemberRepository are used by collectSubtreeIds
+        branchMergeService = new BranchMergeService(
+                personRepository, familyRepository, familyMemberRepository,
+                null, null
         );
     }
 
@@ -65,9 +66,9 @@ class SubtreeCollectorTest {
         // P5 has no other families
         when(familyMemberRepository.findByPersonDbId(p5DbId)).thenReturn(Collections.singletonList(m5f2));
 
-        PublicationService.SubtreeResult result = publicationService.collectSubtreeIds(p3DbId);
+        BranchMergeService.SubtreeResult result = branchMergeService.collectSubtreeIds(p3DbId);
 
-        assertThat(result.getPersonDbIds()).containsExactlyInAnyOrder(p3DbId, p4DbId, p5DbId);
-        assertThat(result.getFamilyDbIds()).containsExactlyInAnyOrder(f2DbId);
+        assertThat(result.personDbIds()).containsExactlyInAnyOrder(p3DbId, p4DbId, p5DbId);
+        assertThat(result.familyDbIds()).containsExactlyInAnyOrder(f2DbId);
     }
 }

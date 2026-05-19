@@ -6,7 +6,6 @@ import com.genealogy.server.model.Person;
 import com.genealogy.server.repository.FamilyMemberRepository;
 import com.genealogy.server.repository.FamilyRepository;
 import com.genealogy.server.repository.PersonRepository;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,7 +13,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 public class PublicationTreeLoader {
@@ -23,18 +21,18 @@ public class PublicationTreeLoader {
     private final FamilyRepository familyRepository;
     private final FamilyMemberRepository familyMemberRepository;
     private final com.genealogy.server.repository.PublicationRepository publicationRepository;
-    private final PublicationService publicationService;
+    private final BranchMergeService branchMergeService;
 
     public PublicationTreeLoader(PersonRepository personRepository,
                                  FamilyRepository familyRepository,
                                  FamilyMemberRepository familyMemberRepository,
                                  com.genealogy.server.repository.PublicationRepository publicationRepository,
-                                 @Lazy PublicationService publicationService) {
+                                 BranchMergeService branchMergeService) {
         this.personRepository = personRepository;
         this.familyRepository = familyRepository;
         this.familyMemberRepository = familyMemberRepository;
         this.publicationRepository = publicationRepository;
-        this.publicationService = publicationService;
+        this.branchMergeService = branchMergeService;
     }
 
     public void loadFederatedData(Long publicationId, 
@@ -60,9 +58,9 @@ public class PublicationTreeLoader {
         List<Family> familyEntities;
         
         if (rootPersonDbId != null) {
-            PublicationService.SubtreeResult subtree = publicationService.collectSubtreeIds(rootPersonDbId);
-            personEntities = personRepository.findAllById(subtree.getPersonDbIds());
-            familyEntities = familyRepository.findAllById(subtree.getFamilyDbIds());
+            BranchMergeService.SubtreeResult subtree = branchMergeService.collectSubtreeIds(rootPersonDbId);
+            personEntities = personRepository.findAllById(subtree.personDbIds());
+            familyEntities = familyRepository.findAllById(subtree.familyDbIds());
         } else {
             personEntities = personRepository.findByPublicationId(publicationId);
             familyEntities = familyRepository.findByPublicationId(publicationId);

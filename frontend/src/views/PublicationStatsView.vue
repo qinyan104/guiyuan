@@ -2,17 +2,14 @@
 import { computed, onMounted, ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPublicationActivity, type ParsedActivity } from '../api/publication'
-import type { Person, PublicationData } from '../types/family'
-import { parseYear } from '../lib/dateUtils'
-
-defineProps<{ publicationId: number }>()
-const router = useRouter()
-
-// ─── Shared Context ─────────────────────────────────────────────
-const { pub, serverPublicationId } = inject('publication-context') as {
-  pub: { publication: PublicationData }
-  serverPublicationId: { value: number | null }
-}
+import { PUBLICATION_CONTEXT_KEY, type Person, type PublicationData } from '../types/family'
+import { parseYear } from '../lib/dateUtils'
+
+defineProps<{ publicationId: number }>()
+const router = useRouter()
+
+// ─── Shared Context ─────────────────────────────────────────────
+const { pub, serverPublicationId } = inject(PUBLICATION_CONTEXT_KEY)!
 const pubData = computed<PublicationData>(() => pub.publication)
 
 const loadingHistory = ref(true)
@@ -547,7 +544,6 @@ function formatRelativeTime(dateStr: string): string {
   position: relative;
   overflow: hidden;
 }
-:global([data-theme="ink-wash"]) .bento-card,
 :global([data-theme="rosewood"]) .bento-card,
 :global([data-theme="star-sea"]) .bento-card {
   background: rgba(20, 20, 20, 0.5);
