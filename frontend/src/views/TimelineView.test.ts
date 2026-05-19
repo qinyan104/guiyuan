@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 
 const { routerPush } = vi.hoisted(() => ({
   routerPush: vi.fn(),
@@ -24,7 +25,7 @@ describe('TimelineView', () => {
       },
       global: {
         provide: {
-          'publication-context': {
+          [PUBLICATION_CONTEXT_KEY as symbol]: {
             pub: {
               publication: {
                 people: {

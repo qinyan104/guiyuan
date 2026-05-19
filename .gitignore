@@ -20,8 +20,11 @@ backend/.idea/
 backend/tmp-run.out
 backend/tmp-run.err
 backend/uploads/
+backend/.env.local
+backend/.env.*
+!backend/.env.example
 backend/src/main/resources/application.properties
-.alma-snapshots
+.alma-snapshots
 .gstack/
 .codex/
 .superpowers/

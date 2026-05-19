@@ -46,14 +46,14 @@
 CREATE DATABASE genealogy CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-默认连接 `localhost:3306/genealogy`，用户名 `root`（均可通过环境变量覆盖）。**必须配置 `DB_PASSWORD` 环境变量**，无默认密码：
+默认连接 `localhost:3306/genealogy`，用户名 `root`（均可通过环境变量覆盖）。后端环境变量模板在 `backend/.env.example`，本机真实值放在 `backend/.env.local`（已被 Git 忽略，不要提交）。
 
 ```bash
-export DB_USERNAME=root
-export DB_PASSWORD=your_password
-# 开发和生产环境都必须配置，IDEA 启动配置中也要保持一致：
-export JWT_SECRET=your-256-bit-secret-key
+cd backend
+cp .env.example .env.local
 ```
+
+Spring Boot 不会自动读取 `.env.local`。使用 IDEA 启动时，请把 `backend/.env.local` 里的键值复制到 Run Configuration 的 Environment variables，或使用 EnvFile 插件加载该文件。命令行启动前也需要把这些变量注入当前 shell。
 
 ### 2. 启动后端
 

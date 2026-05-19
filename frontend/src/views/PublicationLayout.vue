@@ -5,6 +5,7 @@ import { getPublication, updatePublication } from '../api/publication'
 import { useFeedback } from '../composables/useFeedback'
 import { usePublicationState } from '../composables/usePublicationState'
 import { defaultSettings } from '../data/sampleFamily'
+import { clearConflictDraft, getConflictDraft, saveConflictDraft, type ConflictDraft } from '../features/conflict/conflictDraft'
 import { useEditorHistory } from '../features/history/useEditorHistory'
 import type { EditorSnapshot } from '../features/history/historyCore'
 import { PUBLICATION_CONTEXT_KEY, type PublicationContext, type PublicationData, type PublicationSettings } from '../types/family'
@@ -16,6 +17,8 @@ const loading = ref(true)
 const serverPublicationId = ref<number | null>(null)
 const syncStatus = ref<'saved' | 'pending' | 'syncing' | 'error' | 'conflict'>('saved')
 const conflictMessage = ref('')
+const conflictDraftSaved = ref(false)
+const conflictDraft = ref<ConflictDraft | null>(null)
 const serverRevision = ref<number | null>(null)
 const lastSyncedSignature = ref('')
 
@@ -41,6 +44,11 @@ function restoreEditorSnapshot(snapshot: EditorSnapshot) {
   if (pub.publication.people[snapshot.selectedPersonId]) {
     pub.selectedPersonId.value = snapshot.selectedPersonId
   }
+}
+
+function applyPublicationSnapshot(publication: PublicationData, settings: PublicationSettings) {
+  pub.replaceReactiveObject(pub.publication, publication)
+  pub.replaceReactiveObject(pub.settings, settings)
 }
 
 const history = useEditorHistory({
@@ -105,6 +113,16 @@ async function saveToServer() {
     const conflict = asPublicationConflict(err)
 
     if (conflict) {
+      const draftPublicationId = conflict.publicationId ?? serverPublicationId.value
+      if (draftPublicationId) {
+        conflictDraftSaved.value = saveConflictDraft({
+          publicationId: draftPublicationId,
+          serverRevision: serverRevision.value,
+          message: conflict.message,
+          publication: pub.publication,
+          settings: pub.settings,
+        }) !== null
+      }
       syncStatus.value = 'conflict'
       conflictMessage.value = conflict.message
       feedback.errorMessage.value = conflict.message
@@ -157,8 +175,7 @@ async function load() {
 
   try {
     const result = await getPublication(targetId)
-    pub.replaceReactiveObject(pub.publication, result.publication)
-    pub.replaceReactiveObject(pub.settings, result.settings)
+    applyPublicationSnapshot(result.publication, result.settings)
 
     if (!pub.selectedPersonId.value || !result.publication.people[pub.selectedPersonId.value]) {
       pub.selectedPersonId.value = Object.keys(result.publication.people)[0] ?? ''
@@ -168,6 +185,8 @@ async function load() {
     serverRevision.value = result.revision
     pub.publication.revision = result.revision
     conflictMessage.value = ''
+    conflictDraftSaved.value = false
+    conflictDraft.value = getConflictDraft(result.id)
     syncStatus.value = 'saved'
     lastSyncedSignature.value = persistedSignature.value
     history.initializeHistoryBaseline()
@@ -212,7 +231,25 @@ function handleHistoryShortcut(event: KeyboardEvent) {
 
 async function reloadFromServerAfterConflict() {
   conflictMessage.value = ''
+  conflictDraftSaved.value = false
   await load()
+}
+
+function restoreConflictDraft() {
+  if (!conflictDraft.value) return
+
+  applyPublicationSnapshot(conflictDraft.value.publication, conflictDraft.value.settings)
+  clearConflictDraft(conflictDraft.value.publicationId)
+  conflictDraft.value = null
+  syncStatus.value = 'pending'
+  scheduleAutosave(0)
+}
+
+function dismissConflictDraft() {
+  if (!conflictDraft.value) return
+
+  clearConflictDraft(conflictDraft.value.publicationId)
+  conflictDraft.value = null
 }
 
 onMounted(() => {
@@ -226,7 +263,7 @@ onBeforeUnmount(() => {
   clearScheduledSave()
 })
 
-defineExpose({ pub, saveToServer, reloadFromServerAfterConflict })
+defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflictDraft, dismissConflictDraft })
 </script>
 
 <template>
@@ -235,8 +272,21 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict })
     <span>正在加载族谱数据...</span>
   </div>
   <router-view v-else />
+  <div v-if="conflictDraft && syncStatus !== 'conflict'" class="conflict-draft-notice" data-testid="conflict-draft-notice">
+    <div class="conflict-draft-notice__text">
+      <span>检测到未恢复的本地草稿：{{ conflictDraft.publication.title || '未命名族谱' }}</span>
+      <small>保存于 {{ new Date(conflictDraft.savedAt).toLocaleString() }}</small>
+    </div>
+    <div class="conflict-draft-notice__actions">
+      <button type="button" data-testid="restore-conflict-draft" @click="restoreConflictDraft">恢复本地草稿</button>
+      <button type="button" class="ghost" @click="dismissConflictDraft">忽略</button>
+    </div>
+  </div>
   <div v-if="syncStatus === 'conflict'" class="sync-conflict-banner">
-    <span>{{ conflictMessage }}</span>
+    <div class="sync-conflict-banner__text">
+      <span>{{ conflictMessage }}</span>
+      <small v-if="conflictDraftSaved">本地未同步副本已保留，刷新后可作为手动恢复参考。</small>
+    </div>
     <button type="button" @click="reloadFromServerAfterConflict">Reload latest version</button>
   </div>
 </template>
@@ -282,6 +332,70 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict })
   border-bottom: 1px solid #ffc107;
   color: #856404;
   font-weight: 600;
+}
+
+.conflict-draft-notice {
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #eef7ff;
+  border-bottom: 1px solid #7db7e8;
+  color: #204d73;
+  font-weight: 600;
+}
+
+.conflict-draft-notice__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.conflict-draft-notice__text small {
+  color: #416983;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.conflict-draft-notice__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.conflict-draft-notice button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #2d6f9f;
+  border-radius: 4px;
+  background: #fff;
+  color: #204d73;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.conflict-draft-notice button:hover {
+  background: #204d73;
+  color: #fff;
+}
+
+.conflict-draft-notice button.ghost {
+  border-color: #9ab8cf;
+  color: #416983;
+}
+
+.sync-conflict-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sync-conflict-banner__text small {
+  color: #6f5700;
+  font-size: 0.78rem;
+  font-weight: 500;
 }
 
 .sync-conflict-banner button {

@@ -17,6 +17,7 @@ vi.mock('../api/publication', () => ({
 }))
 
 import { getPublication, updatePublication } from '../api/publication'
+import { getConflictDraft, saveConflictDraft } from '../features/conflict/conflictDraft'
 import PublicationLayout from './PublicationLayout.vue'
 
 const mockPublicationData: PublicationLoadResult = {
@@ -49,6 +50,7 @@ const mockPublicationData: PublicationLoadResult = {
 describe('PublicationLayout conflict handling', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
     vi.mocked(getPublication).mockResolvedValue(mockPublicationData)
   })
 
@@ -81,6 +83,11 @@ describe('PublicationLayout conflict handling', () => {
     // Check conflict banner is shown — this string comes from the
     // 409 response data.message rendered in the sync-conflict-banner
     expect(wrapper.text()).toContain('Reload before saving')
+    expect(wrapper.text()).toContain('本地未同步副本已保留')
+
+    const savedDraft = JSON.parse(localStorage.getItem('guiyuan:conflict-draft:7') || 'null')
+    expect(savedDraft.publication.title).toBe('Changed title')
+    expect(savedDraft.serverRevision).toBe(5)
 
     // Verify autosave is paused: calling saveToServer again should bail
     // due to syncStatus === 'conflict' guard (won't call updatePublication again)
@@ -160,5 +167,56 @@ describe('PublicationLayout conflict handling', () => {
     )
 
     vi.useRealTimers()
+  })
+
+  it('shows a local draft notice after loading a publication with a saved conflict draft', async () => {
+    saveConflictDraft({
+      publicationId: 7,
+      serverRevision: 4,
+      message: 'Previous save conflicted.',
+      publication: {
+        ...mockPublicationData.publication,
+        title: 'Unsynced local title',
+      },
+      settings: mockPublicationData.settings,
+    })
+
+    const wrapper = mount(PublicationLayout, {
+      global: { stubs: { RouterView: true } },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="conflict-draft-notice"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Unsynced local title')
+  })
+
+  it('restores and clears a saved local draft', async () => {
+    saveConflictDraft({
+      publicationId: 7,
+      serverRevision: 4,
+      message: 'Previous save conflicted.',
+      publication: {
+        ...mockPublicationData.publication,
+        title: 'Unsynced local title',
+      },
+      settings: {
+        ...mockPublicationData.settings,
+        showAge: true,
+      },
+    })
+
+    const wrapper = mount(PublicationLayout, {
+      global: { stubs: { RouterView: true } },
+    })
+
+    await flushPromises()
+    await wrapper.find('[data-testid="restore-conflict-draft"]').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const publicationContext = (wrapper.vm as any).pub
+    expect(publicationContext.publication.title).toBe('Unsynced local title')
+    expect(publicationContext.settings.showAge).toBe(true)
+    expect(getConflictDraft(7)).toBeNull()
   })
 })
