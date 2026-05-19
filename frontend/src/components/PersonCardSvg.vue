@@ -263,6 +263,19 @@ function handleSelect() {
       fill="#b33939"
     />
 
+    <!-- Seal Impression Selection State (Behind the name) -->
+    <rect
+      v-if="!settings.showCard && selected"
+      class="person-card__seal-impression"
+      :x="card.width / 2 - 12 * settings.fontScale"
+      :y="6"
+      :width="24 * settings.fontScale"
+      :height="card.height - 12"
+      fill="#b33939"
+      fill-opacity="0.08"
+      rx="2"
+    />
+
     <text
       v-if="settings.showCard"
       class="person-card__name"

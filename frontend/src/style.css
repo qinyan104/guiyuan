@@ -1889,6 +1889,32 @@ select {
   -webkit-user-select: none;
 }
 
+.person-card__knot {
+  fill: #b33939;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center top;
+}
+
+.person-card__name--compact {
+  transition: fill 0.3s ease;
+}
+
+.person-card:hover .person-card__name--compact {
+  fill: var(--accent-amber) !important;
+}
+
+.person-card:hover .person-card__knot {
+  transform: scale(1.4);
+}
+
+.person-card--selected .person-card__name--compact {
+  fill: #b33939 !important;
+}
+
+.person-card__seal-impression {
+  pointer-events: none;
+}
+
 .person-card text {
   pointer-events: none;
   user-select: none;
