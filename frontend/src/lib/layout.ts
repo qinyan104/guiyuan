@@ -34,8 +34,13 @@ export const PAPER_PRESETS: Record<PublicationPaper, { width: number; height: nu
   A3: { width: 1587, height: 1123 },
 }
 
-function getCardHeight(cardWidth: number): number {
-  return Math.round(cardWidth * 1.84)
+function getCardDimensions(settings: PublicationSettings): { width: number; height: number; partnerGap: number } {
+  if (settings.showCard) {
+    const width = settings.cardWidth
+    const height = Math.round(width * 1.84)
+    return { width, height, partnerGap: settings.partnerGap }
+  }
+  return { width: 32, height: 100, partnerGap: 16 }
 }
 
 function isPersonId(value: string | undefined): value is string {
@@ -147,13 +152,13 @@ function buildTreeNode(
 // ─── Modern Style Layout (Existing) ──────────────────────────────
 
 function measureNodeModern(node: TreeNode, settings: PublicationSettings): { generations: number } {
-  const cardHeight = getCardHeight(settings.cardWidth)
+  const { width: cardWidth, height: cardHeight, partnerGap } = getCardDimensions(settings)
   node.adultBlockWidth =
-    node.adults.length * settings.cardWidth + Math.max(0, node.adults.length - 1) * settings.partnerGap
+    node.adults.length * cardWidth + Math.max(0, node.adults.length - 1) * partnerGap
   const entryAdultIndex = node.entryPersonId ? node.adults.indexOf(node.entryPersonId) : -1
   node.adultAnchorOffset =
     entryAdultIndex >= 0
-      ? entryAdultIndex * (settings.cardWidth + settings.partnerGap) + settings.cardWidth / 2
+      ? entryAdultIndex * (cardWidth + partnerGap) + cardWidth / 2
       : node.adultBlockWidth / 2
 
   if (node.children.length === 0) {
@@ -208,7 +213,7 @@ function placeNodeModern(
   cards: PositionedCard[],
   lines: LineSegment[],
 ): number {
-  const cardHeight = getCardHeight(settings.cardWidth)
+  const { width: cardWidth, height: cardHeight, partnerGap } = getCardDimensions(settings)
   const adultStartX = anchorX - node.adultAnchorOffset
   const adultCenterX = adultStartX + node.adultBlockWidth / 2
 
@@ -227,9 +232,9 @@ function placeNodeModern(
 
     cards.push({
       personId: adultId,
-      x: adultStartX + index * (settings.cardWidth + settings.partnerGap),
+      x: adultStartX + index * (cardWidth + partnerGap),
       y: originY,
-      width: settings.cardWidth,
+      width: cardWidth,
       height: cardHeight,
       lineageRole,
     })
@@ -237,11 +242,11 @@ function placeNodeModern(
 
   if (node.adults.length > 1) {
     const leftCardX = adultStartX
-    const rightCardX = adultStartX + settings.cardWidth + settings.partnerGap
+    const rightCardX = adultStartX + cardWidth + partnerGap
     const partnerY = originY + cardHeight / 2
 
     lines.push({
-      x1: leftCardX + settings.cardWidth,
+      x1: leftCardX + cardWidth,
       y1: partnerY,
       x2: rightCardX,
       y2: partnerY,
@@ -307,9 +312,9 @@ function placeNodeModern(
 // ─── Su Style Layout (Vertical / Indented) ───────────────────────
 
 function measureNodeSu(node: TreeNode, settings: PublicationSettings): { generations: number } {
-  const cardHeight = getCardHeight(settings.cardWidth)
+  const { width: cardWidth, height: cardHeight, partnerGap } = getCardDimensions(settings)
   node.adultBlockWidth =
-    node.adults.length * settings.cardWidth + Math.max(0, node.adults.length - 1) * settings.partnerGap
+    node.adults.length * cardWidth + Math.max(0, node.adults.length - 1) * partnerGap
   node.adultAnchorOffset = 0 // Anchor top-left for Su style
 
   if (node.children.length === 0) {
@@ -324,7 +329,7 @@ function measureNodeSu(node: TreeNode, settings: PublicationSettings): { generat
 
   node.children.forEach((child) => {
     const { generations } = measureNodeSu(child, settings)
-    const indent = settings.cardWidth * 0.75
+    const indent = cardWidth * 0.75
     maxWidth = Math.max(maxWidth, indent + child.width)
     totalHeight += child.height + settings.siblingGap
     maxGenerations = Math.max(maxGenerations, generations)
@@ -343,18 +348,18 @@ function placeNodeSu(
   cards: PositionedCard[],
   lines: LineSegment[],
 ) {
-  const cardHeight = getCardHeight(settings.cardWidth)
-  const indent = settings.cardWidth * 0.75
-  const parentAnchorX = startX + settings.cardWidth / 2
+  const { width: cardWidth, height: cardHeight, partnerGap } = getCardDimensions(settings)
+  const indent = cardWidth * 0.75
+  const parentAnchorX = startX + cardWidth / 2
   const parentAnchorY = startY + cardHeight
 
   // Place adults
   node.adults.forEach((adultId, index) => {
     cards.push({
       personId: adultId,
-      x: startX + index * (settings.cardWidth + settings.partnerGap),
+      x: startX + index * (cardWidth + partnerGap),
       y: startY,
-      width: settings.cardWidth,
+      width: cardWidth,
       height: cardHeight,
     })
   })
@@ -363,9 +368,9 @@ function placeNodeSu(
   if (node.adults.length > 1) {
     const partnerY = startY + cardHeight / 2
     lines.push({
-      x1: startX + settings.cardWidth,
+      x1: startX + cardWidth,
       y1: partnerY,
-      x2: startX + settings.cardWidth + settings.partnerGap,
+      x2: startX + cardWidth + partnerGap,
       y2: partnerY,
     })
   }

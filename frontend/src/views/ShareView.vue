@@ -23,6 +23,7 @@ const DEFAULT_SETTINGS: PublicationSettings = {
   partnerGap: 20,
   fontScale: 1,
   zoom: 1,
+  showCard: true,
   showDeath: true,
   showAge: true,
   showNote: true,

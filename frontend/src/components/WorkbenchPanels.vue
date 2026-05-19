@@ -210,22 +210,27 @@ onBeforeUnmount(() => {
 
       <div class="toggle-row">
         <label class="toggle">
-          <input :checked="settings.showDeath" type="checkbox" @change="updateSetting('showDeath', readCheckedValue($event))" />
+          <input :checked="settings.showCard" type="checkbox" @change="updateSetting('showCard', readCheckedValue($event))" />
+          <span>显示卡片</span>
+        </label>
+
+        <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
+          <input :checked="settings.showDeath" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showDeath', readCheckedValue($event))" />
           <span>显示卒年</span>
         </label>
 
-        <label class="toggle">
-          <input :checked="settings.showAge" type="checkbox" @change="updateSetting('showAge', readCheckedValue($event))" />
+        <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
+          <input :checked="settings.showAge" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showAge', readCheckedValue($event))" />
           <span>显示年龄</span>
         </label>
 
-        <label class="toggle">
-          <input :checked="settings.showNote" type="checkbox" @change="updateSetting('showNote', readCheckedValue($event))" />
+        <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
+          <input :checked="settings.showNote" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showNote', readCheckedValue($event))" />
           <span>显示注记</span>
         </label>
 
-        <label class="toggle">
-          <input :checked="settings.showPhoto" type="checkbox" @change="updateSetting('showPhoto', readCheckedValue($event))" />
+        <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
+          <input :checked="settings.showPhoto" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showPhoto', readCheckedValue($event))" />
           <span>显示照片</span>
         </label>
       </div>

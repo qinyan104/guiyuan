@@ -64,6 +64,7 @@ export interface PublicationSettings {
   partnerGap: number
   fontScale: number
   zoom: number
+  showCard: boolean
   showDeath: boolean
   showAge: boolean
   showNote: boolean

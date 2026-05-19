@@ -162,6 +162,7 @@ export const defaultSettings: PublicationSettings = {
   partnerGap: 96,
   fontScale: 1,
   zoom: 0.8,
+  showCard: true,
   showDeath: true,
   showAge: true,
   showNote: true,

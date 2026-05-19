@@ -174,6 +174,23 @@ describe('layoutPublication', () => {
     expect(daughterBranchLayout.cards.find((card) => card.personId === outboundChildId)).toBeDefined()
   })
 
+  it('compresses the layout when showCard is false', () => {
+    const standardSettings = { ...defaultSettings, showCard: true }
+    const compactSettings = { ...defaultSettings, showCard: false }
+
+    const standardLayout = layoutPublication(samplePublication, standardSettings)
+    const compactLayout = layoutPublication(samplePublication, compactSettings)
+
+    // Verify compact card dimensions
+    compactLayout.cards.forEach((card) => {
+      expect(card.width).toBe(32)
+      expect(card.height).toBe(100)
+    })
+
+    // Verify overall height is reduced
+    expect(compactLayout.height).toBeLessThan(standardLayout.height)
+  })
+
   it('ships the sample with an out-married daughter branch ready to inspect', () => {
     const rootLayout = layoutPublication(clonePublication(), defaultSettings)
     const daughterCard = rootLayout.cards.find((card) => card.personId === 'p18')

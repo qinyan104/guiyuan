@@ -310,7 +310,7 @@ export function validateSettings(input: unknown): ValidationIssue[] {
     }
   })
 
-  ;(['showDeath', 'showAge', 'showNote'] as const).forEach((field) => {
+  ;(['showCard', 'showDeath', 'showAge', 'showNote', 'showPhoto'] as const).forEach((field) => {
     if (typeof settings[field] !== 'boolean') {
       issues.push(issue('invalid-settings', `settings.${field}`, `${field} 必须是布尔值。`))
     }

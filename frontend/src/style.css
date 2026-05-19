@@ -987,6 +987,15 @@ select {
   accent-color: var(--accent-earth);
 }
 
+.toggle--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle--disabled input {
+  pointer-events: none;
+}
+
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
