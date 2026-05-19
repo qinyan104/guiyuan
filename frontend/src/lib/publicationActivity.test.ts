@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   filterPublicationActivity,
+  getPublicationActivityCardSummary,
   getPublicationActivityMeta,
   summarizePublicationActivity,
   type ActivityLike,
@@ -48,5 +49,13 @@ describe('publicationActivity helpers', () => {
       latestActionLabel: '编辑人物',
       latestCreatedAt: '2026-05-19T08:00:00.000Z',
     })
+  })
+
+  it('formats a lightweight card summary for publication list cards', () => {
+    expect(getPublicationActivityCardSummary('alice', 'UPDATE_PUB')).toBe('alice 最近保存了这份族谱')
+    expect(getPublicationActivityCardSummary('alice', 'UPDATE_PUB_META')).toBe('alice 更新了族谱信息')
+    expect(getPublicationActivityCardSummary('alice', 'CREATE_SHARE_LINK')).toBe('alice 创建了分享链接')
+    expect(getPublicationActivityCardSummary('alice', 'REVOKE_SHARE_LINK')).toBe('alice 撤销了分享链接')
+    expect(getPublicationActivityCardSummary('alice', 'UPDATE_ACCESS')).toBe('alice 调整了协作者')
   })
 })

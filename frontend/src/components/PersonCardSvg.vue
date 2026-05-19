@@ -161,12 +161,12 @@ function handleSelect() {
     </defs>
 
     <path
-      v-if="isSu"
+      v-if="settings.showCard && isSu"
       class="person-card__panel"
       :d="octagonalPath"
     />
     <rect
-      v-else
+      v-if="settings.showCard && !isSu"
       class="person-card__panel"
       :width="card.width"
       :height="card.height"
@@ -174,19 +174,19 @@ function handleSelect() {
       :ry="isOu ? 4 : 22"
     />
 
-    <foreignObject x="0" y="0" :width="card.width" :height="card.height">
+    <foreignObject v-if="settings.showCard" x="0" y="0" :width="card.width" :height="card.height">
       <div xmlns="http://www.w3.org/1999/xhtml" class="person-card__glass-backdrop" :style="{ width: '100%', height: '100%', borderRadius: isOu ? '4px' : (isSu ? '0' : '22px') }"></div>
     </foreignObject>
 
-    <rect class="person-card__inner" x="8" y="8" :width="card.width - 16" :height="card.height - 16" :rx="isOu ? 2 : (isSu ? 14 : 18)" :ry="isOu ? 2 : (isSu ? 14 : 18)" />
+    <rect v-if="settings.showCard" class="person-card__inner" x="8" y="8" :width="card.width - 16" :height="card.height - 16" :rx="isOu ? 2 : (isSu ? 14 : 18)" :ry="isOu ? 2 : (isSu ? 14 : 18)" />
 
     <!-- Branch Mount Point Icon -->
-    <g v-if="person.isMountPoint" transform="translate(10, 10)">
+    <g v-if="settings.showCard && person.isMountPoint" transform="translate(10, 10)">
       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="#2d59a2" transform="scale(0.8)" />
     </g>
 
     <!-- Ou Style Corner Decorations -->
-    <g v-if="isOu" class="ou-decorations" stroke="var(--accent-amber)" stroke-width="1.2" fill="none">
+    <g v-if="settings.showCard && isOu" class="ou-decorations" stroke="var(--accent-amber)" stroke-width="1.2" fill="none">
       <path d="M 12 20 L 12 12 L 20 12" />
       <path :d="`M ${card.width - 20} 12 L ${card.width - 12} 12 L ${card.width - 12} 20`" />
       <path :d="`M 12 ${card.height - 20} L 12 ${card.height - 12} L 20 ${card.height - 12}`" />
@@ -195,14 +195,14 @@ function handleSelect() {
 
     <!-- Ou Style Folded Edge Effect -->
     <path
-      v-if="isOu"
+      v-if="settings.showCard && isOu"
       :d="`M ${card.width - 35} 8 L ${card.width - 8} 35 L ${card.width - 8} 8 Z`"
       fill="var(--accent-amber)"
       opacity="0.3"
     />
 
     <rect
-      v-if="imperialBadge"
+      v-if="settings.showCard && imperialBadge"
       class="person-card__accent-frame"
       :class="`person-card__accent-frame--${imperialBadge.kind}`"
       x="5"
@@ -212,12 +212,12 @@ function handleSelect() {
       rx="20"
       ry="20"
     />
-    <rect class="person-card__header" x="16" y="16" :width="card.width - 32" height="28" rx="14" ry="14" />
+    <rect v-if="settings.showCard" class="person-card__header" x="16" y="16" :width="card.width - 32" height="28" rx="14" ry="14" />
 
     <!-- Ou Header Line -->
-    <line v-if="isOu" x1="16" y1="16" :x2="card.width - 16" y2="16" stroke="var(--accent-amber)" stroke-width="3" />
+    <line v-if="settings.showCard && isOu" x1="16" y1="16" :x2="card.width - 16" y2="16" stroke="var(--accent-amber)" stroke-width="3" />
 
-    <g v-if="imperialBadge">
+    <g v-if="settings.showCard && imperialBadge">
       <rect
         class="person-card__imperial-ribbon"
         :class="`person-card__imperial-ribbon--${imperialBadge.kind}`"
@@ -241,6 +241,7 @@ function handleSelect() {
     </g>
 
     <text
+      v-if="settings.showCard"
       class="person-card__status"
       :x="card.width / 2"
       y="35"
@@ -250,27 +251,39 @@ function handleSelect() {
       {{ statusLabel }}
     </text>
 
-    <line class="person-card__divider" x1="18" y1="58" :x2="card.width - 18" y2="58" />
+    <line v-if="settings.showCard" class="person-card__divider" x1="18" y1="58" :x2="card.width - 18" y2="58" />
 
     <text
       class="person-card__name"
       :x="card.width / 2"
-      y="96"
+      :y="settings.showCard ? 96 : (card.height - (person.name.length * 20 * settings.fontScale)) / 2 + (18 * settings.fontScale)"
       text-anchor="middle"
-      :style="{ fontSize: `${nameFontSize}px` }"
+      :style="{ fontSize: settings.showCard ? `${nameFontSize}px` : `${18 * settings.fontScale}px` }"
     >
-      {{ person.name }}
+      <template v-if="settings.showCard">
+        {{ person.name }}
+      </template>
+      <template v-else>
+        <tspan
+          v-for="(char, index) in person.name"
+          :key="index"
+          :x="card.width / 2"
+          :dy="index === 0 ? 0 : 20 * settings.fontScale"
+        >
+          {{ char }}
+        </tspan>
+      </template>
     </text>
 
     <!-- Su Style Name Seal -->
-    <g v-if="isSu" class="card-seal">
+    <g v-if="settings.showCard && isSu" class="card-seal">
       <rect :x="card.width - 42" :y="85" width="24" height="24" fill="none" stroke="var(--accent-amber)" stroke-width="1.5" />
       <text :x="card.width - 30" :y="102" font-size="8" text-anchor="middle" fill="var(--accent-amber)" font-family="KaiTi, serif">
         {{ person.name.slice(0, 2) }}
       </text>
     </g>
 
-    <g v-if="lineageBadgeLines.length">
+    <g v-if="settings.showCard && lineageBadgeLines.length">
       <rect
         class="person-card__lineage-pill"
         x="18"
@@ -293,7 +306,7 @@ function handleSelect() {
       </text>
     </g>
 
-    <g v-if="settings.showPhoto && person.avatarUrl">
+    <g v-if="settings.showCard && settings.showPhoto && person.avatarUrl">
       <rect
         :x="card.width / 2 - photoWidth / 2"
         :y="photoY"
@@ -324,7 +337,7 @@ function handleSelect() {
         :ry="isOu ? 0 : (isSu ? photoWidth / 2 : 4)"
       />
     </g>
-    <g v-else>
+    <g v-else-if="settings.showCard">
       <circle class="person-card__seal" :cx="card.width / 2" :cy="card.height * 0.42" :r="card.width * 0.18" />
       <path
         class="person-card__seal-mark"
@@ -332,7 +345,7 @@ function handleSelect() {
       />
     </g>
 
-    <g v-if="settings.showNote && cardNote && !(settings.showPhoto && person.avatarUrl)">
+    <g v-if="settings.showCard && settings.showNote && cardNote && !(settings.showPhoto && person.avatarUrl)">
       <rect
         class="person-card__note-pill"
         x="24"
@@ -353,25 +366,27 @@ function handleSelect() {
       </text>
     </g>
 
-    <g v-for="(row, index) in detailRows" :key="`${person.id}-${row.label}`">
-      <rect
-        class="person-card__detail-band"
-        x="14"
-        :y="detailStartY + index * 28"
-        :width="card.width - 28"
-        height="22"
-        rx="11"
-        ry="11"
-      />
-      <text
-        class="person-card__detail"
-        :x="card.width / 2"
-        :y="detailStartY + index * 28 + 15"
-        text-anchor="middle"
-        :style="{ fontSize: `${detailFontSize}px` }"
-      >
-        {{ `${row.label}${row.value}` }}
-      </text>
+    <g v-if="settings.showCard">
+      <g v-for="(row, index) in detailRows" :key="`${person.id}-${row.label}`">
+        <rect
+          class="person-card__detail-band"
+          x="14"
+          :y="detailStartY + index * 28"
+          :width="card.width - 28"
+          height="22"
+          rx="11"
+          ry="11"
+        />
+        <text
+          class="person-card__detail"
+          :x="card.width / 2"
+          :y="detailStartY + index * 28 + 15"
+          text-anchor="middle"
+          :style="{ fontSize: `${detailFontSize}px` }"
+        >
+          {{ `${row.label}${row.value}` }}
+        </text>
+      </g>
     </g>
   </g>
 </template>

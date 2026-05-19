@@ -14,6 +14,7 @@ import type { PublicationInfo } from '../types/family'
 import ShareLinkManager from '../components/ShareLinkManager.vue'
 import CollaboratorManager from '../components/CollaboratorManager.vue'
 import { useLexicon } from '../composables/useLexicon'
+import { getPublicationActivityCardSummary } from '../lib/publicationActivity'
 
 const router = useRouter()
 const { lexicon } = useLexicon()
@@ -57,6 +58,10 @@ onMounted(loadPublications)
 
 function openPublication(id: number) {
   router.push({ name: 'workbench', params: { id } })
+}
+
+function openActivity(pubId: number) {
+  router.push({ name: 'publication-activity', params: { id: pubId } })
 }
 
 function openEditDialog(pub: PublicationSummary) {
@@ -226,6 +231,20 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
                       <span v-if="pub.info?.hallName" class="meta-tag">{{ pub.info.hallName }}</span>
                       <span v-if="pub.info?.ancestralOrigin" class="meta-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg> {{ pub.info.ancestralOrigin }}</span>
                     </div>
+                    <button
+                      v-if="pub.lastUpdatedBy || pub.lastActivityAction"
+                      class="latest-activity"
+                      type="button"
+                      data-testid="latest-activity-link"
+                      @click.stop="openActivity(pub.id)"
+                    >
+                      <span class="latest-activity__label">最近动态</span>
+                      <span class="latest-activity__body">
+                        <strong>协作动态</strong>
+                        <span>{{ getPublicationActivityCardSummary(pub.lastUpdatedBy, pub.lastActivityAction) }}</span>
+                        <small>查看修订志</small>
+                      </span>
+                    </button>
                   </div>
 
                   <div class="archive-footer">
@@ -636,6 +655,56 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+.latest-activity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.08));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--text-soft);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: all 0.2s ease;
+}
+
+.latest-activity:hover {
+  border-color: var(--accent-amber, #a96e35);
+  background: rgba(169, 110, 53, 0.1);
+  color: var(--text-main);
+}
+
+.latest-activity__label {
+  flex: 0 0 auto;
+  color: var(--accent-amber, #a96e35);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.latest-activity__body {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.latest-activity__body strong {
+  color: var(--text-main);
+}
+
+.latest-activity__body small {
+  color: var(--accent-amber, #a96e35);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .meta-tag {
   display: inline-flex;
   align-items: center;

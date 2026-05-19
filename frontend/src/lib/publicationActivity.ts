@@ -56,6 +56,26 @@ export function getPublicationActivityLabel(action?: string | null): string {
   return action ? getPublicationActivityMeta(action).label : ''
 }
 
+export function getPublicationActivityCardSummary(
+  username?: string | null,
+  action?: string | null,
+): string {
+  const actor = username || '有人'
+  const summaries: Record<string, string> = {
+    CREATE_PUB: `${actor} 创建了这份族谱`,
+    UPDATE_PUB: `${actor} 最近保存了这份族谱`,
+    UPDATE_PERSON: `${actor} 最近保存了这份族谱`,
+    UPDATE_PUB_META: `${actor} 更新了族谱信息`,
+    CREATE_SHARE_LINK: `${actor} 创建了分享链接`,
+    REVOKE_SHARE_LINK: `${actor} 撤销了分享链接`,
+    UPDATE_ACCESS: `${actor} 调整了协作者`,
+    REMOVE_ACCESS: `${actor} 调整了协作者`,
+    DELETE_PUB: `${actor} 删除了族谱`,
+  }
+
+  return action ? summaries[action] ?? `${actor} 更新了这份族谱` : `${actor} 更新了这份族谱`
+}
+
 export function filterPublicationActivity<T extends ActivityLike>(
   entries: T[],
   filter: ActivityCategory,

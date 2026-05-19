@@ -77,6 +77,12 @@ const routes: RouteRecordRaw[] = [
         props: (route) => ({ publicationId: Number(route.params.id) }),
       },
       {
+        path: 'activity',
+        name: 'publication-activity',
+        component: () => import('../views/PublicationActivityView.vue'),
+        props: (route) => ({ publicationId: Number(route.params.id) }),
+      },
+      {
         path: 'timeline',
         name: 'publication-timeline',
         component: () => import('../views/TimelineView.vue'),
