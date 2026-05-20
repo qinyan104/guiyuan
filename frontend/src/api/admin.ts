@@ -118,3 +118,9 @@ export async function adminCheckConsistency(): Promise<ConsistencyReport> {
   if (resp.data.code !== 200) throw new Error(resp.data.message || '一致性检查失败')
   return resp.data.data
 }
+
+export async function adminBatchDeleteUsers(ids: number[]): Promise<{ deleted: number; requested: number }> {
+  const resp = await http.post<ApiResponse<{ deleted: number; requested: number }>>('/admin/users/batch-delete', { ids })
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '批量删除失败')
+  return resp.data.data
+}

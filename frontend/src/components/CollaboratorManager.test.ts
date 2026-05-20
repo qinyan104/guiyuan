@@ -17,6 +17,14 @@ vi.mock('../api/accessManage', () => ({
   removeAccessRecord: vi.fn(),
 }))
 
+vi.mock('../api/account', () => ({
+  deriveAccounts: vi.fn(),
+  listAccounts: vi.fn().mockResolvedValue([]),
+  disableAccount: vi.fn(),
+  enableAccount: vi.fn(),
+  resetAccountPassword: vi.fn(),
+}))
+
 describe('CollaboratorManager', () => {
   beforeEach(() => {
     vi.mocked(searchUsers).mockReset()
@@ -47,7 +55,7 @@ describe('CollaboratorManager', () => {
     ])
   })
 
-  it('shows role guidance so collaborators understand permission boundaries', async () => {
+  it('shows role guidance when toggled', async () => {
     const wrapper = mount(CollaboratorManager, {
       props: { publicationId: 7 },
       global: {
@@ -61,8 +69,11 @@ describe('CollaboratorManager', () => {
 
     await flushPromises()
 
+    expect(wrapper.text()).not.toContain('编辑者可修改族谱内容')
+
+    await wrapper.get('button.role-guide-toggle').trigger('click')
     expect(wrapper.text()).toContain('编辑者可修改族谱内容')
-    expect(wrapper.text()).toContain('浏览者只能查看，并会应用脱敏规则')
+    expect(wrapper.text()).toContain('浏览者只能查看')
   })
 
   it('requires confirmation before changing a collaborator role', async () => {
@@ -79,11 +90,12 @@ describe('CollaboratorManager', () => {
 
     await flushPromises()
 
-    const selects = wrapper.findAll('select.form-select.inline')
+    const selects = wrapper.findAll('select.role-select-inline')
     await selects[0].setValue('VIEWER')
 
     expect(updateAccessRole).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('确认调整协作者权限')
+    expect(wrapper.text()).toContain('调整')
+    expect(wrapper.text()).toContain('Editor')
 
     await wrapper.get('button[data-role="confirm"]').trigger('click')
 

@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { inject, nextTick, ref, toRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -30,6 +30,7 @@ const router = useRouter()
 const currentUsername = ref(getUsername() ?? '')
 
 // ─── Confirm Dialog State ─────────────────────────────────────
+const showKinshipDialog = ref(false)
 const confirmMessage = ref<string | null>(null)
 let confirmResolve: ((value: boolean) => void) | null = null
 
@@ -293,10 +294,10 @@ watch(
 
         <button
           class="kinship-trigger"
-          title="??????"
+          title="推算两个成员之间的亲属称谓"
           @click="showKinshipDialog = true"
         >
-          ?? ????
+          关系推算
         </button>
 
         <PersonEditorDrawer

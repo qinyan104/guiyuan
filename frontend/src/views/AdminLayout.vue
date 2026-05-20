@@ -24,22 +24,27 @@ interface NavItem {
 }
 
 const navItems = computed<NavItem[]>(() => [
+
   { key: 'dashboard', label: lexicon.value.dashboard.label, routeName: 'dashboard', icon: 'home' },
+
   { key: 'publications', label: lexicon.value.publications.label, routeName: 'publications', icon: 'book' },
+
   { key: 'users', label: lexicon.value.users.label, routeName: 'admin-users', icon: 'users', adminOnly: true },
+
   { key: 'logs', label: lexicon.value.logs.label, routeName: 'admin-logs', icon: 'log', adminOnly: true },
+
 ])
 
 const visibleNavItems = computed(() => navItems.value.filter((item) => !item.adminOnly || isAdmin()))
 const activeRouteName = computed(() => route.name as string)
 
 // 灵魂水印逻辑
-const soulMap = computed<Record<string, string>>(() => ({
-  'dashboard': lexicon.value.dashboard.soul,
-  'publications': lexicon.value.publications.soul,
-  'admin-users': lexicon.value.users.soul,
-  'admin-logs': lexicon.value.logs.soul,
-  'settings': lexicon.value.settings.soul
+const soulMap = computed<Record<string, string>>(() => ({
+  'dashboard': lexicon.value.dashboard.soul,
+  'publications': lexicon.value.publications.soul,
+  'admin-users': lexicon.value.users.soul,
+  'admin-logs': lexicon.value.logs.soul,
+  'settings': lexicon.value.settings.soul
 }))
 const currentSoul = computed(() => soulMap.value[activeRouteName.value] || lexicon.value.dashboard.soul)
 

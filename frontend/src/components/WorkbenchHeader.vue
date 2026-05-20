@@ -1,8 +1,9 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, inject, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { ThemeId } from '../composables/useTheme'
 import ThemeSwitcher from './ThemeSwitcher.vue'
+import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import CollaboratorManager from './CollaboratorManager.vue'
 import ExportDialog from '../features/export/ExportDialog.vue'
 
@@ -12,7 +13,7 @@ const showCollabDialog = ref(false)
 const isExporting = ref(false)
 
 const route = useRoute()
-const context = inject<any>('publication-context')
+const context = inject(PUBLICATION_CONTEXT_KEY) as any
 
 const isOwner = computed(() => context?.currentAccessRole?.value === 'OWNER')
 
@@ -604,6 +605,12 @@ function toggleUserDropdown() {
 }
 .glass-sheet.collab-sheet {
   max-width: 560px;
+}
+
+.sheet-body {
+  overflow-y: auto;
+  max-height: 65vh;
+  scrollbar-width: thin;
 }
 :global([data-theme="rosewood"]) .glass-sheet,
 :global([data-theme="star-sea"]) .glass-sheet {

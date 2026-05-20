@@ -118,6 +118,22 @@ public class AdminController {
         return ApiResponse.success("角色已更新", null);
     }
 
+    @PostMapping("/users/batch-delete")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<Map<String, Object>> batchDeleteUsers(@RequestBody Map<String, List<Long>> body, HttpServletRequest request) {
+        String username = (String) request.getAttribute("currentUsername");
+        List<Long> ids = body.get("ids");
+        if (ids == null || ids.isEmpty()) {
+            return ApiResponse.error(400, "????????? IDs");
+        }
+        int deleted = userService.batchDeleteUsers(ids);
+        auditLogService.record(username, "ADMIN_BATCH_DELETE_USERS",
+                "???? " + deleted + " ?????? " + ids.size() + " ?",
+                null, null);
+        return ApiResponse.success("??? " + deleted + " ???",
+                Map.of("deleted", deleted, "requested", ids.size()));
+    }
+
     @GetMapping("/backup")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void backupDatabase(Authentication authentication, HttpServletResponse response) throws IOException {

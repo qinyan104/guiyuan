@@ -65,19 +65,20 @@ public class PublicationAccessController {
     public ApiResponse<List<Map<String, Object>>> listAccess(@PathVariable Long id, HttpServletRequest request) {
         authorizationService.require(resolveSubject(request), id, AccessPermission.MANAGE_ACCESS);
 
-        List<Map<String, Object>> result = accessRepository.findByPublicationId(id).stream().map(access -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("id", access.getId());
-            m.put("userId", access.getUserId());
-            m.put("role", access.getRole());
-            m.put("redactionProfile", access.getRedactionProfile());
-            m.put("createdAt", access.getCreatedAt());
-            userRepository.findById(access.getUserId()).ifPresent(u -> {
-                m.put("username", u.getUsername());
-                m.put("nickname", u.getNickname() != null ? u.getNickname() : u.getUsername());
-            });
-            return m;
-        }).toList();
+        List<Map<String, Object>> result = accessRepository.findByPublicationId(id).stream()
+                .filter(access -> userRepository.findById(access.getUserId()).isPresent())
+                .map(access -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", access.getId());
+                    m.put("userId", access.getUserId());
+                    m.put("role", access.getRole());
+                    m.put("redactionProfile", access.getRedactionProfile());
+                    m.put("createdAt", access.getCreatedAt());
+                    User user = userRepository.findById(access.getUserId()).orElseThrow();
+                    m.put("username", user.getUsername());
+                    m.put("nickname", user.getNickname() != null ? user.getNickname() : user.getUsername());
+                    return m;
+                }).toList();
 
         return ApiResponse.success(result);
     }

@@ -1,9 +1,9 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import { mergeBranch } from '../api/accessManage'
 import { getPublication, listPublications, type PublicationSummary } from '../api/publication'
-import type { MountPointTarget, Person } from '../types/family'
+import { PUBLICATION_CONTEXT_KEY, type MountPointTarget, type Person } from '../types/family'
 import ConfirmDialog from './ConfirmDialog.vue'
 import SubtreeRootSelector from './SubtreeRootSelector.vue'
 
@@ -12,7 +12,7 @@ const props = defineProps<{
   publicationId: number | null
 }>()
 
-const context = inject('publication-context') as
+const context = inject(PUBLICATION_CONTEXT_KEY) as
   | {
       pub: {
         publication: Record<string, unknown>

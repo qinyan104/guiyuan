@@ -888,6 +888,12 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
 .glass-sheet.large {
   max-width: 680px;
 }
+
+.sheet-body {
+  overflow-y: auto;
+  max-height: 65vh;
+  scrollbar-width: thin;
+}
 :global([data-theme="rosewood"]) .glass-sheet,
 :global([data-theme="star-sea"]) .glass-sheet {
   background: rgba(20, 20, 20, 0.85);

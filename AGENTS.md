@@ -7,7 +7,7 @@ Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery 
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (4,798t read) | 579,884t work | 99% savings
+Stats: 72 obs (4,798t read) | 579,884t work | 99% savings
 
 ### May 4, 2026
 1108 8:09p 🔵 用户发起问候
@@ -83,6 +83,48 @@ Stats: 50 obs (4,798t read) | 579,884t work | 99% savings
 1528 " ✅ 修复PrintPreviewView 2条英文改中文
 1529 " ✅ 修复shareHtmlExport.ts 25+处中文乱码（性别/字段/关系/按钮）
 1530 " ✅ 重新构建前端dist并同步到release目录
+
+### May 20, 2026
+1531 2:51p 🟣 协作者管理页面优化
+1532 " ✅ 重构 CollaboratorManager：折叠权限说明、搜索芯片选择、Toast反馈、avatar安全函数
+1533 " ✅ 弹窗添加纵向滚动
+1534 3:20p 🔴 修复已故族人被派生账号的bug
+1535 " ✅ PublicationService 保存时从 death 推断 deceased
+1536 " ✅ AccountDerivationService 增加 death 二次校验
+1537 3:32p 🔴 修复关联User删除后页面白屏
+1538 " ✅ listAccessRecords 过滤 User 已删除的空悬记录
+1539 " ✅ 前端 avatarLetter() 防御 nickname 为 undefined
+1540 3:42p 🟣 账号管理：空悬清理 + 批量删除 + 确认弹窗
+1541 " ✅ 后端: deleteAccount, batchDeleteAccounts, cleanupOrphanedAccounts
+1542 " ✅ 前端: 复选框全选、批量操作栏、删除按钮、确认弹窗
+1543 " ✅ AdminAccountsView 同步升级
+1544 4:27p 🟣 派生用户名改为拼音(pinyin4j)
+1545 5:14p 🔴 恢复误删的AdminAccountsView并补全功能
+1546 5:30p 🔄 列宽优化：操作栏1.5fr→2fr，按钮不换行
+
+### May 20, 2026 (续)
+1547 5:45p 🟣 AdminUsersView 账号管理全选批量删除
+1548 " ✅ 后端 AdminController 新增 POST /users/batch-delete 端点
+1549 " ✅ 后端 UserService 新增 batchDeleteUsers 方法（跳过 SUPER_ADMIN）
+1550 " ✅ 前端 admin.ts 新增 adminBatchDeleteUsers API
+1551 " ✅ AdminUsersView 表头全选复选框 + 行复选框 + 批量操作栏
+1552 6:10p 🔄 CollaboratorManager 账号表格操作列布局优化
+1553 " ✅ Grid 改为 minmax(60px,1fr)...auto，操作列自适应宽度
+1554 " ✅ ac-actions 加 white-space:nowrap + flex-shrink:0
+1555 " ✅ btn-text 字号12→11px，padding 6→4px
+1556 6:20p 🔄 AdminUsersView 批量操作栏配色统一为 amber 主题
+1557 " ✅ batch-bar 背景 amber 半透明 + dashed amber 边框
+1558 " ✅ is-selected 高亮、checkbox accent 改为 amber
+1559 6:50p 🔵 亲戚关系推算功能分析（kinship.ts ~850行）
+1560 " ⚖️ 诊断：堂/表分界不准确、伯父/叔叔区分脆弱、缺路径可视化
+1561 " ⚖️ 建议：关系路径可视化、修正堂表判断、出生年份比长幼
+1562 7:10p 🟣 以我为中心的亲属关系视图（Ego-centered kinship）
+1563 " ✅ usePublicationState 新增 _viewerPersonId 响应式 ref + setViewerPersonId()
+1564 " ✅ PublicationLayout 加载后自动匹配登录用户→族人ID（listAccounts）
+1565 " ✅ WorkbenchView 监听 viewerPersonId 首次非空后自动滚动定位
+1566 " ✅ PersonCardSvg 加 person-card--ego CSS 类（金色描边+发光阴影）
+1567 " ✅ style.css 新增 Ego 卡片样式：金色描边2.8px + drop-shadow
+1568 " 🎯 效果：族人登录后自动定位自己，每张卡片显示亲戚称谓
 
 
 Access 580k tokens of past work via get_observations([IDs]) or mem-search skill.

@@ -68,13 +68,22 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 - **核心编辑器**：`views/WorkbenchView.vue` 专注排版。支持跨页面视角记忆，取消点击自动跳屏。
 - **全局搜索**：`components/GlobalSearch.vue` 集成在 `AdminLayout` 顶栏，300ms debounce，搜索人物/族谱标题，结果分组展示，点击跳转对应视图。后端 `search/` 包（`SearchController` + `SearchService` + `SearchResult` DTO）提供 `GET /api/search?q=` 端点。**设计要点原则**：前缀匹配优先于子串匹配。
 - **画布渲染**：`components/PublicationCanvas.vue` — **GPU 加速核心**。采用 `translate3d` 硬件加速，并在拖拽时动态停用阴影滤镜（Filter Culling）。图片强制采用 `meet` 比例展示。
+- **亲属关系视图**：`lib/kinship.ts` 提供图算法亲戚称谓推算（建图→找LCA→查表），`usePublicationState` 内建 `kinshipNotes` 计算（基于 `viewerPersonId`），`PersonCardSvg` 直接渲染到卡片上。`PublicationLayout` 加载族谱后自动调用 `listAccounts` 匹配登录用户为 Ego。`WorkbenchView` 首次检测到 Ego 后自动滚动定位。
 - **数据上下文**：`views/PublicationLayout.vue` **单源事实提供者**。通过 Provide/Inject 共享内存数据与撤销历史，支持多视图秒开。支持**乐观并发**：保存时携带服务端 `revision` 版本号；后端 `PUT` 接口成功后返回 `newRevision` 以保持前端同步。
 - **冲突处理**：`http.ts` 拦截 409 冲突错误并抛出 `concurrency-conflict` 事件，由 `App.vue` 显示强制刷新模态框，防止过期数据覆盖。
 - **确认对话框**：`components/ConfirmDialog.vue` **共享确认对话框**。Teleport 到 body，支持 `danger`/`warning`/`default` 三种色调，替代 `window.confirm()`。用于协作者移除、物理合并等高危操作。
 - **联邦协作**：支持“分支挂载点”系统。`PersonCardSvg.vue` 识别 `isMountPoint` 渲染门户节点（蓝色虚线/图标）；`BranchMountManager.vue`（集成在 `PersonEditorDrawer.vue`）负责管理挂载与触发合并。**UI 优化 (2026-05-09)**：采用定制的分组下拉菜单选择目标，并将高风险的“物理合并”操作隔离在独立的“高级合并操作”区块。
 - **字段级隐私**：`components/CollaboratorManager.vue` 支持为 `VIEWER` 配置脱敏规则。后端强制置 `null` 方案，前端渲染逻辑天然适配。
-- **布局引擎**：`lib/layout.ts` — 树形布局算法，根据 settings 计算卡片位置 and 连线
-- **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）。另含**跨家庭重复校验**：一个人不能同时是多个家庭的 parents 或 children（但可同时是 parent 和 child，多代际正常）。`publicationOperations.ts` 中的关系操作自动调用 `deduplicateCrossFamily()` 清理。
+- **布局引擎**：`lib/layout.ts` — 树形布局算法。支持双模式占位：标准卡片模式与**紧凑吊线模式** (`showCard: false`)。紧凑模式下占位缩减至 `32x110px`，代际与兄弟间距自动优化，以在极小空间内展示高密度血脉。
+- **草稿校验**：`features/validation/draftSchema.ts` — 校验 + 归一化（含设置范围 clamp）。含 `showCard` 等 UI 开关状态持久化校验。另含**跨家庭重复校验**：一个人不能同时是多个家庭的 parents 或 children（但可同时是 parent 和 child，多代际正常）。`publicationOperations.ts` 中的关系操作自动调用 `deduplicateCrossFamily()` 清理。
+
+- **账号派生**：`AdminAccountController` / `AccountDerivationService` 支持为在世族人创建平台账号。用户名自动转拼音（pinyin4j），格式 `{拼音}_{族谱ID}`。支持单条删除、批量删除、清理空悬（关联 User 已删除的记录）。账号派生时自动创建 VIEWER 协作权限记录。
+- **已故自动检测**：`PublicationService` 保存人物时，如果 `death`（卒年）字段非空，自动推断 `deceased = true`。`AccountDerivationService.deriveAccounts()` 三重校验：`deceased` 布尔 + `death` 字段非空 + 已有账号。
+- **空悬账号清理**：`listAccounts` 接口返回 `accountStatus: "orphaned"` 标记关联 User 已删除的异常记录。`DELETE /orphans` 一键批量清理。前端显示红色"账号异常"标签。
+- **批量删除**：`POST /batch-delete` 接受 `{ personDbIds: [...] }`，逐条删除并跳过已不存在的记录。
+
+- **协作者管理弹窗**：`CollaboratorManager.vue` 在 `WorkbenchHeader` 和 `PublicationListView` 中通过 `.glass-sheet` 弹窗展示。内容区域已启用纵向滚动（`.sheet-body { overflow-y: auto; max-height: 65vh; }`），防止弹窗截断内容。
+
 - 草稿持久化：`features/persistence/draftPersistence.ts` — JSON 序列化/反序列化，并在便携式导出时将 `/api/photos/...` 与旧版 `/uploads/...` 头像尽量内联为 Base64
 - **导出**：`features/export/publicationExport.ts` — SVG 导出和打印排版；`features/export/shareHtmlExport.ts` — 自包含 HTML 快照分享（AES-256-GCM 可选密码保护）；`features/export/ExportDialog.vue` 提供 SVG 拓印和**分享网页**导出。（PDF 导出相关后端代码 `PdfExportService` / `ExportController` 已于 2026-05-15 删除。）
 - **移动端浏览**：`ShareView.vue`（`/share/:token` 路由）适配 640px 以下手机屏幕。`PublicationCanvas` 支持触屏双指缩放（pinch-to-zoom）。HTML 导出在手机上自动切换为底部弹出面板（bottom sheet），支持双击人物卡片放大。`index.html` 包含静态 OG 标签（og:title/og:description/og:image）用于微信分享预览卡片，默认通用文案以保护隐私。
@@ -89,10 +98,11 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 - **JWT + Refresh Token 双 Token 体系**：Access Token (JWT, HS256, 15分钟) 通过 `Authorization: Bearer` 请求头传输；Refresh Token (SecureRandom 32字节, 30天) 存 `refresh_tokens` 表（仅存 SHA-256 哈希），通过 HttpOnly Cookie 传输。Refresh Token 单次使用（用后轮换）。`JwtService` 负责签发/验证，`RefreshTokenService` 负责生命周期管理
 - **认证核心**：`CustomUserDetailsService` 实现 Spring Security 的 `UserDetailsService` 接口，负责从数据库加载用户。确保消除 `Using generated security password` 警告。
 - **CORS 统一配置**：跨域策略统一在 `SecurityConfig.java` 中通过 `CorsConfigurationSource` 管理。**严禁**在 `WebConfig.java` 中使用 `addCorsMappings` 或在 Controller 上使用 `@CrossOrigin`，以防过滤器冲突。
-- 数据库：MySQL `genealogy`，连接配置在 `application.properties`。由 **Flyway** 管理迁移（`ddl-auto=validate`，`baseline-on-migrate=true`）。表含 `publications`、`persons`、`families`、`family_members`、`photos`、`users`、`audit_logs`、`publication_access`、`publication_share_links`、`refresh_tokens`。迁移脚本在 `backend/src/main/resources/db/migration/`：
+- 数据库：MySQL `genealogy`，连接配置在 `application.properties`。由 **Flyway** 管理迁移（`ddl-auto=validate`，`baseline-on-migrate=true`）。表含 `publications`、`persons`、`families`、`family_members`、`photos`、`users`、`audit_logs`、`publication_access`、`publication_share_links`、`refresh_tokens`、`person_accounts`、`change_requests`。迁移脚本在 `backend/src/main/resources/db/migration/`：
   - `V1__init.sql` — 初始建表
   - `V2__add_redaction_profile_to_access.sql` — 字段级脱敏配置
   - `V3__add_publication_revision.sql` — 乐观并发 revision 计数器
+  - `V5__add_person_accounts_and_change_requests.sql` — 族人账号派生与变更请求表
 
 - **字段级脱敏**：`PublicationViewProjector` 提供三态（NONE/LIVING/ALL）脱敏引擎。`PublicationController.get()` 为 `VIEWER` 角色应用该引擎，确保敏感数据（生卒、笔记、照片）在离开后端前被抹除。
 - **传输限制**：已提升至 **100MB** (Servlet, Tomcat Post/Swallow size) 以支持带 Base64 图片的族谱导入

@@ -717,6 +717,32 @@ textarea {
   white-space: nowrap;
 }
 
+.selection-chip__kinship {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.selection-chip__kinship-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(169, 110, 53, 0.12);
+  border: 1px solid rgba(169, 110, 53, 0.18);
+  color: var(--accent-earth);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.selection-chip__kinship-desc {
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .selection-chip__actions {
   display: flex;
   gap: 6px;
@@ -1763,7 +1789,7 @@ select {
   min-height: calc(100vh - 164px);
   overflow: hidden;
   touch-action: none;
-  cursor: grab;
+  cursor: default;
   overscroll-behavior: contain;
   background:
     linear-gradient(var(--canvas-grid-color) 1px, transparent 1px),
@@ -1785,7 +1811,7 @@ select {
 }
 
 .canvas-viewport--dragging {
-  cursor: grabbing;
+  cursor: default;
   user-select: none;
 }
 
@@ -2094,6 +2120,42 @@ select {
 
 .person-card--selected .person-card__inner {
   stroke: rgba(171, 109, 48, 0.28);
+}
+
+/* Ego (viewer's own card) highlight */
+.person-card--ego .person-card__panel {
+  stroke: #f59e0b;
+  stroke-width: 2.8;
+  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.35));
+}
+.person-card--ego .person-card__header {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+.kinship-hover-overlay {
+  pointer-events: none;
+}
+
+.kinship-hover-overlay__panel {
+  fill: rgba(255, 249, 239, 0.94);
+  stroke: rgba(169, 110, 53, 0.34);
+  stroke-width: 1.2;
+  filter: drop-shadow(0 10px 20px rgba(74, 49, 24, 0.12));
+}
+
+.kinship-hover-overlay__term {
+  fill: var(--text-main);
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.kinship-hover-overlay__desc {
+  fill: var(--text-sub);
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .is-mount-point .person-card__panel {

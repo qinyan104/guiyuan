@@ -58,6 +58,25 @@ const routes: RouteRecordRaw[] = [
         name: 'settings',
         component: SettingsView,
       },
+      {
+        path: 'profile/edit',
+        name: 'profile-edit',
+        component: () => import('../views/ProfileEditView.vue'),
+      },
+      {
+        path: 'admin/publications/:pubId/accounts',
+        name: 'admin-accounts',
+        component: () => import('../views/AdminAccountsView.vue'),
+        props: (route) => ({ pubId: Number(route.params.pubId) }),
+        meta: { admin: true },
+      },
+      {
+        path: 'admin/publications/:pubId/reviews',
+        name: 'admin-reviews',
+        component: () => import('../views/AdminReviewView.vue'),
+        props: (route) => ({ pubId: Number(route.params.pubId) }),
+        meta: { admin: true },
+      },
     ],
   },
   {

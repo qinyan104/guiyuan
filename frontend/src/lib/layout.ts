@@ -241,16 +241,19 @@ function placeNodeModern(
   })
 
   if (node.adults.length > 1) {
-    const leftCardX = adultStartX
-    const rightCardX = adultStartX + cardWidth + partnerGap
-    const partnerY = originY + cardHeight / 2
+    for (let i = 0; i < node.adults.length - 1; i++) {
+      const leftCardX = adultStartX + i * (cardWidth + partnerGap)
+      const rightCardX = leftCardX + cardWidth + partnerGap
+      const partnerY = originY + cardHeight / 2
 
-    lines.push({
-      x1: leftCardX + cardWidth,
-      y1: partnerY,
-      x2: rightCardX,
-      y2: partnerY,
-    })
+      lines.push({
+        x1: leftCardX + cardWidth,
+        y1: partnerY,
+        x2: rightCardX,
+        y2: partnerY,
+        type: 'spousal',
+      })
+    }
   }
 
   if (node.children.length === 0) {
@@ -366,13 +369,19 @@ function placeNodeSu(
 
   // Horizontal partner line
   if (node.adults.length > 1) {
-    const partnerY = startY + cardHeight / 2
-    lines.push({
-      x1: startX + cardWidth,
-      y1: partnerY,
-      x2: startX + cardWidth + partnerGap,
-      y2: partnerY,
-    })
+    for (let i = 0; i < node.adults.length - 1; i++) {
+      const partnerY = startY + cardHeight / 2
+      const leftCardX = startX + i * (cardWidth + partnerGap)
+      const rightCardX = leftCardX + cardWidth + partnerGap
+      
+      lines.push({
+        x1: leftCardX + cardWidth,
+        y1: partnerY,
+        x2: rightCardX,
+        y2: partnerY,
+        type: 'spousal',
+      })
+    }
   }
 
   if (node.children.length === 0) return

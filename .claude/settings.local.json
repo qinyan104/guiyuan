@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Skill(brainstorming)",
-      "Skill(qa)"
+      "Skill(qa)",
+      "Bash(.\\\\mvnw.cmd compile *)",
+      "Bash(./mvnw compile *)",
+      "Bash(./mvnw test *)",
+      "Bash(npx vue-tsc *)",
+      "Bash(npm run *)",
+      "Bash(npx vitest *)",
+      "Read(//c/c/Users/HX/Desktop/guiyuan/frontend/src/views/**)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Read(//c/Users/HX/.claude/projects/**)",
+      "Read(//c/Users/HX/.claude/**)"
     ]
   }
 }

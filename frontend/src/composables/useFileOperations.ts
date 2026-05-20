@@ -31,7 +31,12 @@ interface FileOperationsDeps {
   errorMessage: Ref<string>
   getErrorMessage: (error: unknown, fallback: string) => string
   initializeHistoryBaseline: () => void
-  canvasRef: Ref<{ getSvgElement?: () => SVGSVGElement | null; resetView?: () => void } | null>
+  canvasRef: Ref<{
+    getSvgElement?: () => SVGSVGElement | null
+    resetView?: () => void
+    prepareForExport?: () => Promise<void>
+    releaseExportLock?: () => void
+  } | null>
   layout: PublicationStateReturn['layout']
   onImport?: () => void
 }
@@ -72,15 +77,22 @@ export function useFileOperations(deps: FileOperationsDeps) {
   }
 
   async function createCurrentStandaloneSvg(): Promise<SVGSVGElement | null> {
+    // 方案一安全锁：导出前强制渲染全部节点，防止视口裁剪导致导出残缺
+    await canvasRef.value?.prepareForExport?.()
     const svgElement = canvasRef.value?.getSvgElement?.()
     if (!svgElement || layout.value.cards.length === 0 || layout.value.width <= 0 || layout.value.height <= 0) {
+      canvasRef.value?.releaseExportLock?.()
       return null
     }
-    return await createStandalonePublicationSvg({
-      svgElement,
-      layout: layout.value,
-      title: publication.title.trim() || '归元档案预览',
-    })
+    try {
+      return await createStandalonePublicationSvg({
+        svgElement,
+        layout: layout.value,
+        title: publication.title.trim() || '归元档案预览',
+      })
+    } finally {
+      canvasRef.value?.releaseExportLock?.()
+    }
   }
 
   async function serializeCurrentSvg(): Promise<string | null> {
@@ -287,8 +299,11 @@ export function useFileOperations(deps: FileOperationsDeps) {
   }
 
   async function exportShareHtml(password?: string) {
+    // 方案一安全锁：导出前强制渲染全部节点
+    await canvasRef.value?.prepareForExport?.()
     const svgElement = canvasRef.value?.getSvgElement?.()
     if (!svgElement || layout.value.cards.length === 0) {
+      canvasRef.value?.releaseExportLock?.()
       errorMessage.value = '当前画布没有可导出的内容。'
       statusMessage.value = ''
       return
@@ -316,6 +331,8 @@ export function useFileOperations(deps: FileOperationsDeps) {
     } catch (err) {
       errorMessage.value = getErrorMessage(err, '生成分享页面失败。')
       statusMessage.value = ''
+    } finally {
+      canvasRef.value?.releaseExportLock?.()
     }
   }
 

@@ -1,10 +1,11 @@
-import { computed } from 'vue'
+import { computed, markRaw } from 'vue'
 
 import { hasPersonLifeRecord, isPersonDeceased } from '../lib/personStatus'
 import type { PublicationStateReturn } from './usePublicationState'
 
 export function usePersonEditor(pub: PublicationStateReturn) {
   const {
+    publication,
     selectedPerson,
     selectedSpouse,
     selectedChildren,
@@ -122,14 +123,15 @@ export function usePersonEditor(pub: PublicationStateReturn) {
   function updateSelectedPersonField(payload: { field: EditablePersonField; value: string }) {
     const person = selectedPerson.value
     if (person) {
-      person[payload.field] = payload.value
+      // 方案五兼容: markRaw 对象不能就地 mutate，必须替换整个对象引用以触发响应式更新
+      publication.people[person.id] = markRaw({ ...person, [payload.field]: payload.value })
     }
   }
 
   function updateSelectedPersonGender(gender: 'male' | 'female' | 'unknown') {
     const person = selectedPerson.value
     if (person) {
-      person.gender = gender
+      publication.people[person.id] = markRaw({ ...person, gender })
     }
   }
 

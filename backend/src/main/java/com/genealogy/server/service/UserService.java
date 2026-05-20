@@ -123,6 +123,20 @@ public class UserService {
         userRepository.deleteById(userId);
     }
 
+    @Transactional
+    public int batchDeleteUsers(List<Long> userIds) {
+        int deleted = 0;
+        for (Long id : userIds) {
+            User user = userRepository.findById(id).orElse(null);
+            if (user == null || "SUPER_ADMIN".equals(user.getRole())) {
+                continue;
+            }
+            userRepository.delete(user);
+            deleted++;
+        }
+        return deleted;
+    }
+
     public void resetPassword(Long userId, String newPassword) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("用户不存在"));

@@ -245,10 +245,10 @@ export function usePublicationState(
     const map: Record<string, string> = {}
     for (const pid of Object.keys(publication.people)) {
       if (pid === _viewerPersonId.value) {
-        map[pid] = '?¬º'
+        map[pid] = '本人'
       } else {
         const label = getKinshipLabel(publication, _viewerPersonId.value, pid)
-        if (label && label !== '?ªç¥å³ç³»') {
+        if (label && label !== '未知关系') {
           map[pid] = label
         }
       }

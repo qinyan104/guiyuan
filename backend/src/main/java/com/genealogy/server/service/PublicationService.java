@@ -322,6 +322,10 @@ public class PublicationService {
         if (data.containsKey("deceased")) {
             person.setDeceased((Boolean) data.get("deceased"));
         }
+        // 如果 death 有值，自动推断为已故（避免前端未传 deceased 导致数据不一致）
+        if (person.getDeath() != null && !person.getDeath().isBlank()) {
+            person.setDeceased(true);
+        }
         if (data.containsKey("age")) {
             person.setAge((String) data.get("age"));
         }
@@ -416,8 +420,10 @@ public class PublicationService {
                 entity.setName((String) personData.getOrDefault("name", "Unknown"));
                 entity.setGender((String) personData.getOrDefault("gender", "unknown"));
                 entity.setBirth((String) personData.get("birth"));
-                entity.setDeath((String) personData.get("death"));
-                entity.setDeceased(personData.containsKey("deceased") ? (Boolean) personData.get("deceased") : false);
+                String death = (String) personData.get("death");
+                entity.setDeath(death);
+                boolean deceasedFromData = personData.containsKey("deceased") && Boolean.TRUE.equals(personData.get("deceased"));
+                entity.setDeceased(death != null && !death.isBlank() || deceasedFromData);
                 entity.setAge((String) personData.get("age"));
                 entity.setTitleName((String) personData.get("titleName"));
                 entity.setClan((String) personData.get("clan"));

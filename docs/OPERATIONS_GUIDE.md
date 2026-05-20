@@ -40,11 +40,22 @@ npm run dev
 
 ### 1.0 正式版范围
 - 前端正式入口仅保留 `JSON`、`SVG` 与 `分享网页`。
+- **雅致吊线图 (Literary Lineage)**：1.0 稳定版内置的高密度血脉展示模式，通过关闭“显示卡片”触发，支持垂直书法排版与朱砂结视觉交互。
 - `单页矢量 PDF` 与 `谱书 PDF` 不属于 1.0 正式前端面。
 - 独立人物详情页已移除，人物查看与编辑统一回到工作台上下文。
 
 ### 健康检查
 - `GET /api/health`: Docker 健康检查端点（无需认证，需在 SecurityConfig 放行）
+
+### 族人账号管理（OWNER / SUPER_ADMIN）
+- `GET /api/publications/{pubId}/accounts`: 族人账号列表（含账号状态与关联用户名）
+- `POST /api/publications/{pubId}/accounts/derive`: 派生账号——为在世且无账号的族人创建平台账号（用户名自动转拼音，格式 `{拼音}_{族谱ID}`）
+- `PUT /api/publications/{pubId}/accounts/{personDbId}/disable`: 停用账号
+- `PUT /api/publications/{pubId}/accounts/{personDbId}/enable`: 启用账号
+- `POST /api/publications/{pubId}/accounts/{personDbId}/reset-password`: 重置密码
+- `DELETE /api/publications/{pubId}/accounts/{personDbId}`: 删除单条账号记录（同时清除关联的 VIEWER 协作权限）
+- `POST /api/publications/{pubId}/accounts/batch-delete`: 批量删除 `{ personDbIds: [...] }`
+- `DELETE /api/publications/{pubId}/accounts/orphans`: 清理空悬账号——删除关联 User 已被删除的所有账号记录
 
 ### 数据安全与管理（SUPER_ADMIN）
 - `GET /api/admin/backup`: 生成并下载数据库 mysqldump 备份
@@ -151,6 +162,8 @@ npm run dev
 - `persons` / `families`: 核心拓扑数据
 - `publication_access`: 权限映射表 (OWNER/EDITOR/VIEWER)
 - `audit_logs`: 操作审计
+- `person_accounts`: 族人账号派生表（关联 persons → users，含状态 active/disabled）
+- `change_requests`: 族人个人信息变更申请（用于 VIEWER 自主修改申请流程）
 
 ## 5. 分布式协作与分支合并
 本系统支持多族谱间的“缝合”查看与数据迁入。

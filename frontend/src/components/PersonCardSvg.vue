@@ -9,10 +9,13 @@ const props = defineProps<{
   card: PositionedCard
   settings: PublicationSettings
   selected: boolean
-}>()
-
+  showGlass?: boolean  // 方案三: false 时跳过 foreignObject 毛玻璃（拖拽降质）
+  kinshipNote?: string | null  // 当前查看者与此人的亲属关系称谓
+}>()
+
 const emit = defineEmits<{
   (event: 'select', personId: string): void
+  (event: 'hover', personId: string | null): void
 }>()
 
 function findYear(raw?: string): number | undefined {
@@ -29,12 +32,17 @@ function normalizeAge(raw: string): string {
 
 const personIsDeceased = computed(() => isPersonDeceased(props.person))
 const statusLabel = computed(() => getPersonStatusLabel(props.person))
-const cardNote = computed(() => props.person.titleName || props.person.note || '')
+const cardNote = computed(() => {
+  // 有亲属称谓时优先显示（族人视角）
+  if (props.kinshipNote) return props.kinshipNote
+  return props.person.titleName || props.person.note || ''
+})
 
 const cardClasses = computed(() => [
   `person-card--${props.person.gender}`,
   props.person.highlightRole ? `person-card--${props.person.highlightRole}` : '',
   props.selected ? 'person-card--selected' : '',
+  props.kinshipNote === '本人' ? 'person-card--ego' : '',
   props.person.isMountPoint ? 'is-mount-point' : '',
 ])
 
@@ -150,10 +158,26 @@ const isOu = computed(() => currentTheme.value === 'ou-style')
 function handleSelect() {
   emit('select', props.person.id)
 }
+
+function handleMouseEnter() {
+  emit('hover', props.person.id)
+}
+
+function handleMouseLeave() {
+  emit('hover', null)
+}
 </script>
 
 <template>
-  <g class="person-card" :class="cardClasses" :data-person-id="person.id" :transform="`translate(${card.x}, ${card.y})`" @click="handleSelect">
+  <g
+    class="person-card"
+    :class="cardClasses"
+    :data-person-id="person.id"
+    :transform="`translate(${card.x}, ${card.y})`"
+    @click="handleSelect"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
+  >
     <defs v-if="isSu">
       <clipPath :id="`avatar-clip-su-${person.id}`">
         <circle :cx="card.width / 2" :cy="photoY + photoHeight / 2" :r="photoWidth / 2" />
@@ -174,7 +198,7 @@ function handleSelect() {
       :ry="isOu ? 4 : 22"
     />
 
-    <foreignObject v-if="settings.showCard" x="0" y="0" :width="card.width" :height="card.height">
+    <foreignObject v-if="settings.showCard && showGlass !== false" x="0" y="0" :width="card.width" :height="card.height">
       <div xmlns="http://www.w3.org/1999/xhtml" class="person-card__glass-backdrop" :style="{ width: '100%', height: '100%', borderRadius: isOu ? '4px' : (isSu ? '0' : '22px') }"></div>
     </foreignObject>
 
@@ -253,28 +277,142 @@ function handleSelect() {
 
     <line v-if="settings.showCard" class="person-card__divider" x1="18" y1="58" :x2="card.width - 18" y2="58" />
 
-    <!-- Bloodline Knot (Compact Mode) -->
-    <circle
-      v-if="!settings.showCard"
-      class="person-card__knot"
-      :cx="card.width / 2"
-      cy="0"
-      r="2.2"
-      fill="#b33939"
-    />
+    <!-- Compact Mode (Drop-line diagram / 吊线图) -->
+    <g v-if="!settings.showCard" class="person-card--compact-mode">
+      <!-- Invisible Clickable Area to make the entire card selectable -->
+      <rect
+        x="0"
+        y="0"
+        :width="card.width"
+        :height="card.height"
+        fill="transparent"
+      />
 
-    <!-- Seal Impression Selection State (Behind the name) -->
-    <rect
-      v-if="!settings.showCard && selected"
-      class="person-card__seal-impression"
-      :x="card.width / 2 - 12 * settings.fontScale"
-      :y="6"
-      :width="24 * settings.fontScale"
-      :height="card.height - 12"
-      fill="#b33939"
-      fill-opacity="0.08"
-      rx="2"
-    />
+      <!-- Continuous Drop Line Behind Name -->
+      <line
+        class="person-card__drop-line"
+        :x1="card.width / 2"
+        y1="0"
+        :x2="card.width / 2"
+        :y2="card.height - 10"
+        stroke="var(--line-soft, rgba(0,0,0,0.15))"
+        stroke-width="1.5"
+      />
+
+      <!-- Elegant Bloodline Knot -->
+      <circle
+        class="person-card__knot-ring"
+        :cx="card.width / 2"
+        cy="0"
+        r="4.5"
+        fill="var(--bg-panel, #ffffff)"
+        :stroke="selected ? '#b33939' : 'var(--accent-amber, #0071e3)'"
+        stroke-width="1.5"
+      />
+      <circle
+        class="person-card__knot-core"
+        :cx="card.width / 2"
+        cy="0"
+        r="2"
+        :fill="selected ? '#b33939' : 'var(--accent-amber, #0071e3)'"
+      />
+
+      <!-- Refined Compact Name (Solemn and Grand Typography) -->
+      <text
+        class="person-card__name--compact"
+        :x="card.width / 2"
+        :y="32 * settings.fontScale"
+        text-anchor="middle"
+        :style="{
+          fontSize: `${22 * settings.fontScale}px`,
+          fontWeight: 500,
+          fontFamily: '\'Noto Serif SC\', \'Songti SC\', \'STZhongsong\', serif',
+          fill: selected ? '#b33939' : 'var(--text-main, #1d1d1f)',
+          transition: 'fill 0.2s ease'
+        }"
+      >
+        <tspan
+          v-for="(char, index) in person.name"
+          :key="index"
+          :x="card.width / 2"
+          :dy="index === 0 ? 0 : (
+            person.name.length === 2 ? 42 * settings.fontScale :
+            person.name.length === 3 ? 34 * settings.fontScale :
+            28 * settings.fontScale
+          )"
+        >
+          {{ char }}
+        </tspan>
+      </text>
+
+      <!-- Lineage Badge (Compact Vertical Tag at Top Right) -->
+      <g v-if="lineageBadge">
+        <rect
+          :x="card.width / 2 + 16 * settings.fontScale"
+          :y="12 * settings.fontScale"
+          :width="14 * settings.fontScale"
+          :height="lineageBadge.length * 12 * settings.fontScale + 8"
+          fill="var(--bg-panel, #ffffff)"
+          stroke="var(--line-soft, #cccccc)"
+          stroke-width="0.8"
+          rx="2"
+        />
+        <text
+          :x="card.width / 2 + 23 * settings.fontScale"
+          :y="22 * settings.fontScale"
+          text-anchor="middle"
+          :style="{
+            fontSize: `${10 * settings.fontScale}px`,
+            fontWeight: 500,
+            fontFamily: '\'Noto Serif SC\', \'Songti SC\', \'STZhongsong\', serif',
+            fill: 'var(--text-soft, #86868b)'
+          }"
+        >
+          <tspan
+            v-for="(char, index) in lineageBadge.split('')"
+            :key="index"
+            :x="card.width / 2 + 23 * settings.fontScale"
+            :dy="index === 0 ? 0 : 12 * settings.fontScale"
+          >
+            {{ char }}
+          </tspan>
+        </text>
+      </g>
+
+      <!-- Imperial/Heir Indicator (Compact Vertical Tag at Top Left) -->
+      <g v-if="imperialBadge">
+        <rect
+          :x="card.width / 2 - 30 * settings.fontScale"
+          :y="12 * settings.fontScale"
+          :width="14 * settings.fontScale"
+          :height="imperialBadge.label.length * 12 * settings.fontScale + 8"
+          fill="var(--bg-panel, #ffffff)"
+          stroke="var(--accent-amber, #0071e3)"
+          stroke-width="0.8"
+          rx="2"
+        />
+        <text
+          :x="card.width / 2 - 23 * settings.fontScale"
+          :y="22 * settings.fontScale"
+          text-anchor="middle"
+          :style="{
+            fontSize: `${10 * settings.fontScale}px`,
+            fontWeight: 500,
+            fontFamily: '\'Noto Serif SC\', \'Songti SC\', \'STZhongsong\', serif',
+            fill: 'var(--accent-amber, #0071e3)'
+          }"
+        >
+          <tspan
+            v-for="(char, index) in imperialBadge.label.split('')"
+            :key="index"
+            :x="card.width / 2 - 23 * settings.fontScale"
+            :dy="index === 0 ? 0 : 12 * settings.fontScale"
+          >
+            {{ char }}
+          </tspan>
+        </text>
+      </g>
+    </g>
 
     <text
       v-if="settings.showCard"
@@ -287,33 +425,7 @@ function handleSelect() {
       {{ person.name }}
     </text>
 
-    <!-- Refined Compact Name -->
-    <text
-      v-else
-      class="person-card__name--compact"
-      :x="card.width / 2"
-      :y="18 * settings.fontScale"
-      text-anchor="middle"
-      :style="{
-        fontSize: `${18 * settings.fontScale}px`,
-        fontWeight: 700,
-        fontFamily: '\'Noto Serif SC\', serif',
-        fill: '#2f2318'
-      }"
-    >
-      <tspan
-        v-for="(char, index) in person.name"
-        :key="index"
-        :x="card.width / 2"
-        :dy="index === 0 ? 0 : (
-          person.name.length === 2 ? 28 * settings.fontScale :
-          person.name.length === 3 ? 22 * settings.fontScale :
-          18 * settings.fontScale
-        )"
-      >
-        {{ char }}
-      </tspan>
-    </text>
+
 
     <!-- Su Style Name Seal -->
     <g v-if="settings.showCard && isSu" class="card-seal">

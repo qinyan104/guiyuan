@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue'
+import type { KinshipTerm } from '../lib/kinship'
 import type { PublicationSettings } from '../types/family'
 
 interface HistoryDisplayEntry {
@@ -19,6 +20,7 @@ const props = defineProps<{
   hasSelectedPerson: boolean
   selectedPersonName: string
   selectedPersonMeta: string
+  relationshipToSelected: KinshipTerm | null
   canFocusSelectedBranch: boolean
   settings: PublicationSettings
   historyPastCount: number
@@ -139,6 +141,10 @@ onBeforeUnmount(() => {
           <span class="selection-chip__family">宗支 {{ focusFamilyLabel }}</span>
         </div>
         <em>{{ selectedPersonMeta }}</em>
+        <div v-if="relationshipToSelected" class="selection-chip__kinship">
+          <span class="selection-chip__kinship-tag">{{ relationshipToSelected.term }}</span>
+          <span class="selection-chip__kinship-desc">{{ relationshipToSelected.description }}</span>
+        </div>
       </div>
       <div class="selection-chip__actions">
         <button class="selection-chip__btn" type="button" @click="$emit('reveal-selected-person')">

@@ -87,6 +87,7 @@ export interface LineSegment {
   y1: number
   x2: number
   y2: number
+  type?: 'spousal' | 'parent-child'
 }
 
 export interface PublicationLayout {

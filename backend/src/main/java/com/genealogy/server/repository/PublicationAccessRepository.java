@@ -13,5 +13,6 @@ public interface PublicationAccessRepository extends JpaRepository<PublicationAc
     List<PublicationAccess> findByUserId(Long userId);
     List<PublicationAccess> findByPublicationId(Long publicationId);
     void deleteByPublicationId(Long publicationId);
+    void deleteByUserId(Long userId);
     long countByPublicationIdAndRole(Long publicationId, String role);
 }

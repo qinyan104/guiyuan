@@ -122,7 +122,7 @@ vi.mock('../components/WorkbenchPanels.vue', () => ({
     props: [
       'layoutPanelOpen', 'historyOpen', 'focusFamilyLabel',
       'canReturnToMainBranch', 'canUndo', 'canRedo', 'zoom',
-      'hasSelectedPerson', 'selectedPersonName', 'selectedPersonMeta',
+      'hasSelectedPerson', 'selectedPersonName', 'selectedPersonMeta', 'relationshipToSelected',
       'canFocusSelectedBranch', 'settings',
       'historyPastCount', 'historyFutureCount', 'visibleHistoryEntries',
     ],
@@ -137,7 +137,7 @@ vi.mock('../components/PublicationCanvas.vue', () => ({
       'publication', 'settings', 'layout', 'selectedPersonId',
       'panX', 'panY', 'modelValue',
     ],
-    emits: ['update:panX', 'update:panY', 'update-zoom', 'select-person', 'keydown'],
+    emits: ['update:panX', 'update:panY', 'update-zoom', 'select-person', 'hover-person', 'keydown'],
   },
 }))
 
@@ -201,6 +201,7 @@ function createContextStub(
   })
 
   const selectedPersonId = ref(person.id)
+  const hoveredPersonId = ref<string | null>(null)
   const selectedPerson = computed(() => person)
   const zoom = ref(overrides.zoom ?? 1.0)
 
@@ -233,8 +234,17 @@ function createContextStub(
         paddingY: 10,
       },
       selectedPersonId,
+      hoveredPersonId,
       selectedPerson,
       selectedPersonMeta: computed(() => `${person.name} · 未建配偶 · 0 位子女`),
+      relationshipToSelected: computed(() =>
+        hoveredPersonId.value
+          ? { term: '堂弟', description: '父亲的兄弟的儿子，较年轻', generationGap: 0, isElder: false }
+          : null,
+      ),
+      setHoveredPerson: (personId: string | null) => {
+        hoveredPersonId.value = personId
+      },
       selectedPersonLineageSuggestion: computed(() => ''),
       selectedSpouse: computed(() => null),
       selectedParents: computed(() => []),
@@ -341,6 +351,17 @@ describe('WorkbenchView', () => {
 
       const panels = wrapper.findComponent({ name: 'WorkbenchPanels' })
       expect(panels.props('selectedPersonName')).toBe('张三')
+    })
+
+    it('passes hovered relationship info to WorkbenchPanels', () => {
+      const ctx = createContextStub()
+      ctx.pub.setHoveredPerson('p10')
+      const wrapper = mountView(ctx)
+
+      const panels = wrapper.findComponent({ name: 'WorkbenchPanels' })
+      expect(panels.props('relationshipToSelected')).toMatchObject({
+        term: '堂弟',
+      })
     })
 
     it('does not render PersonEditorDrawer when no person is selected', () => {
@@ -467,6 +488,17 @@ describe('WorkbenchView', () => {
 
       // selectedPersonId should remain unchanged
       expect(ctx.pub.selectedPersonId.value).toBe('p1')
+    })
+
+    it('updates hoveredPersonId when PublicationCanvas emits hover-person', async () => {
+      const ctx = createContextStub({ selectedPersonId: 'p1' })
+      const wrapper = mountView(ctx)
+
+      const canvas = wrapper.findComponent({ name: 'PublicationCanvas' })
+      await canvas.vm.$emit('hover-person', 'p2')
+      await wrapper.vm.$nextTick()
+
+      expect((ctx.pub as any).hoveredPersonId.value).toBe('p2')
     })
   })
 })

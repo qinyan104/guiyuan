@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPublicationActivity, type ParsedActivity } from '../api/publication'
@@ -246,9 +246,14 @@ function formatRelativeTime(dateStr: string): string {
 
 <template>
   <div class="stats-view">
+        <!-- Ambient Glassmorphism Background -->
+    <div class="ambient-bg">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+    </div>
     <div class="bento-header">
       <div class="header-left">
-        <button class="action-btn back-btn" title="返回工作台" @click="goBack">
+        <button class="action-btn back-btn" @click="goBack" aria-label="Back">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
@@ -266,7 +271,7 @@ function formatRelativeTime(dateStr: string): string {
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" /></svg>
         </div>
         <h3 class="empty-title">数据面板尚待充实</h3>
-        <p class="empty-desc">在画布中添加更多人物后，统计数据将自动呈现。</p>
+        <p class="empty-desc">&#28155;&#21152;&#20154;&#29289;&#21015;&#20013;&#65292;&#32479;&#35745;&#20449;&#24687;&#23558;&#33258;&#21160;&#29983;&#25104;&#12290;</p>
         <button class="bento-btn primary" @click="router.push({ name: 'workbench', params: { id: publicationId } })">前往画布</button>
       </div>
       <div v-else class="stats-content-inner">
@@ -296,32 +301,32 @@ function formatRelativeTime(dateStr: string): string {
         <!-- Quick Metrics Grid -->
         <div class="metrics-grid">
           <div class="bento-card metric-card">
-            <div class="metric-bg-icon">族</div>
+            <div class="metric-bg-icon">&#24635;</div>
             <div class="metric-value">{{ totalCount }}</div>
-            <div class="metric-label">档案总人数</div>
+            <div class="metric-label">&#24635;&#20154;&#25968;</div>
           </div>
           <div class="bento-card metric-card male">
-            <div class="metric-bg-icon">♂</div>
+            <div class="metric-bg-icon">&#30007;</div>
             <div class="metric-value">{{ maleCount }}</div>
-            <div class="metric-label">男性编委</div>
+            <div class="metric-label">&#30007;&#24615;&#27604;</div>
           </div>
           <div class="bento-card metric-card female">
             <div class="metric-bg-icon">♀</div>
             <div class="metric-value">{{ femaleCount }}</div>
-            <div class="metric-label">女性编委</div>
+            <div class="metric-label">&#22899;&#24615;&#27604;</div>
           </div>
           <div class="bento-card metric-card generation">
-            <div class="metric-bg-icon">代</div>
+            <div class="metric-bg-icon">&#20195;</div>
             <div class="metric-value">{{ generationCount || '-' }}</div>
-            <div class="metric-label">延续世代数</div>
+            <div class="metric-label">&#20195;&#20790;</div>
           </div>
           <div class="bento-card metric-card alive">
-            <div class="metric-bg-icon">世</div>
+            <div class="metric-bg-icon">&#23431;</div>
             <div class="metric-value">{{ aliveCount }}</div>
             <div class="metric-label">在世成员</div>
           </div>
           <div class="bento-card metric-card deceased">
-            <div class="metric-bg-icon">卒</div>
+            <div class="metric-bg-icon">&#22995;</div>
             <div class="metric-value">{{ deceasedCount }}</div>
             <div class="metric-label">已故先祖</div>
           </div>
@@ -342,8 +347,8 @@ function formatRelativeTime(dateStr: string): string {
                 </div>
               </div>
               <div class="viz-legend">
-                <div class="legend-item"><span class="dot male"></span>男性 {{ maleCount }}</div>
-                <div class="legend-item"><span class="dot female"></span>女性 {{ femaleCount }}</div>
+                <div class="legend-item"><span class="dot male"></span>&#30007; {{ maleCount }}</div>
+                <div class="legend-item"><span class="dot female"></span>&#22899; {{ femaleCount }}</div>
               </div>
             </div>
           </div>
@@ -354,7 +359,7 @@ function formatRelativeTime(dateStr: string): string {
             <div v-if="generationDist.length === 0" class="empty-hint">暂无数据</div>
             <div v-else class="glass-bar-chart">
               <div v-for="[gen, count] in generationDist" :key="gen" class="chart-row">
-                <span class="row-label">{{ gen === 0 ? '未知' : '第 ' + gen + ' 代' }}</span>
+                <span class="row-label">{{ gen === 0 ? '&#26410;&#30693;' : '&#31532;' + gen + '&#19990;' }}</span>
                 <div class="row-track">
                   <div class="row-fill" :style="{ width: (count / maxGenCount * 100) + '%' }"></div>
                 </div>
@@ -366,21 +371,21 @@ function formatRelativeTime(dateStr: string): string {
           <!-- Lifespan Insights -->
           <div class="bento-card chart-card">
             <h3 class="card-title">家族寿命概况</h3>
-            <div v-if="lifespans.length === 0" class="empty-hint">需完善生卒年数据</div>
+            <div v-if="lifespans.length === 0" class="empty-hint">&#26080;&#25968;&#25454;</div>
             <template v-else>
               <div class="stat-summary">
                 <div class="stat-item">
-                  <div class="val">{{ avgLifespan }}<small>岁</small></div>
+                  <div class="val">{{ avgLifespan }}<small>&#23681;</small></div>
                   <div class="lbl">平均寿命</div>
                 </div>
                 <div v-if="maxLifespan" class="stat-item prominent">
-                  <div class="val">{{ maxLifespan.years }}<small>岁</small></div>
+                  <div class="val">{{ maxLifespan.years }}<small>&#23681;</small></div>
                   <div class="lbl">最高寿 · {{ maxLifespan.name }}</div>
                 </div>
               </div>
               <div class="glass-bar-chart compact">
                 <div v-for="[label, count] in lifespanBuckets" :key="label" class="chart-row">
-                  <span class="row-label">{{ label }}岁</span>
+                  <span class="row-label">{{ label }}&#23681;</span>
                   <div class="row-track">
                     <div class="row-fill lifespan" :style="{ width: (count / maxBucketCount * 100) + '%' }"></div>
                   </div>
@@ -392,7 +397,7 @@ function formatRelativeTime(dateStr: string): string {
 
           <!-- Century Distribution -->
           <div class="bento-card chart-card">
-            <h3 class="card-title">历史跨度（出生/逝世）</h3>
+            <h3 class="card-title">&#22995;&#27665;&#20998;&#24067;</h3>
             <div v-if="centuryData.length === 0" class="empty-hint">暂无数据</div>
             <div v-else class="glass-timeline-chart">
               <div v-for="c in centuryData" :key="c.century" class="chart-row dual">
@@ -431,14 +436,14 @@ function formatRelativeTime(dateStr: string): string {
           <!-- Revision History -->
           <div class="bento-card chart-card wide">
             <div class="activity-card-header">
-              <h3 class="card-title">族谱修订志</h3>
+              <h3 class="card-title">&#20462;&#35746;&#35760;&#24405;</h3>
               <div v-if="!loadingHistory && history.length > 0" class="activity-summary">
                 <div class="activity-summary__item">
-                  <span class="activity-summary__label">最近编辑</span>
+                  <span class="activity-summary__label">&#25193;&#25509;&#26465;&#25968;</span>
                   <strong>{{ activitySummary.latestUsername }}</strong>
                 </div>
                 <div class="activity-summary__item">
-                  <span class="activity-summary__label">最近动作</span>
+                  <span class="activity-summary__label">&#28304;&#22010;&#20154;&#25968;</span>
                   <strong>{{ activitySummary.latestActionLabel }}</strong>
                 </div>
                 <div class="activity-summary__item">
@@ -447,10 +452,10 @@ function formatRelativeTime(dateStr: string): string {
                 </div>
               </div>
             </div>
-            <div v-if="loadingHistory" class="empty-hint">调取档案中...</div>
+            <div v-if="loadingHistory" class="empty-hint">&#21152;&#36733;&#20013;...</div>
             <div v-else-if="history.length === 0" class="empty-hint">尚无修订记录</div>
             <div v-else class="glass-history">
-              <div class="activity-filters" role="tablist" aria-label="活动筛选">
+            <div class="activity-filters" role="tablist" aria-label="Filter">
                 <button
                   v-for="filter in activityFilterOptions"
                   :key="filter.key"
@@ -489,9 +494,9 @@ function formatRelativeTime(dateStr: string): string {
                       <strong class="diff-person__name">{{ person.personName }}</strong>
                       <div v-for="change in person.changes" :key="change.field" class="diff-field">
                         <span class="diff-field__label">{{ change.fieldLabel }}</span>
-                        <span class="diff-field__old">{{ change.old || '（空）' }}</span>
-                        <span class="diff-field__arrow">→</span>
-                        <span class="diff-field__new">{{ change.new || '（空）' }}</span>
+                        <span class="diff-field__old">{{ change.old || '&#32929;' }}</span>
+                        <span class="diff-field__arrow">&#8594;</span>
+                        <span class="diff-field__new">{{ change.new || '&#32929;' }}</span>
                       </div>
                     </div>
                   </div>
@@ -521,243 +526,6 @@ function formatRelativeTime(dateStr: string): string {
   align-items: center;
   justify-content: space-between;
 }
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.page-title {
-  font-family: monospace;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--text-main);
-  margin: 0 0 6px;
-}
-.page-desc {
-  font-size: 0.85rem;
-  color: var(--text-soft);
-  margin: 0;
-}
-.back-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--glass-panel-bg, rgba(255,255,255,0.4));
-  border: 1px solid var(--glass-border-highlight, rgba(255,255,255,0.6));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-main);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.back-btn:hover {
-  background: var(--bg-panel, #fff);
-  transform: translateX(-4px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.stats-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* ── Bento Card Styles ── */
-.bento-card {
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.6));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  border-radius: 20px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
-}
-:global([data-theme="rosewood"]) .bento-card,
-:global([data-theme="star-sea"]) .bento-card {
-  background: rgba(20, 20, 20, 0.5);
-  border-color: rgba(255,255,255,0.1);
-  box-shadow: 0 24px 48px rgba(0,0,0,0.2);
-}
-
-/* ── Hero Card ── */
-.hero-card {
-  padding: 32px 24px;
-  text-align: center;
-}
-.hero-bg-accent {
-  position: absolute;
-  top: -50%; left: -50%; width: 200%; height: 200%;
-  background: radial-gradient(circle, var(--accent-amber) 0%, transparent 40%);
-  opacity: 0.05;
-  pointer-events: none;
-}
-.family-title {
-  font-family: 'Noto Serif SC', serif;
-  font-size: 2.2rem;
-  font-weight: 900;
-  margin: 0 0 8px;
-  color: var(--text-main);
-}
-.family-subtitle {
-  font-size: 1.1rem;
-  color: var(--text-soft);
-  margin: 0 0 32px;
-  font-family: 'Noto Serif SC', serif;
-}
-.family-seals {
-  display: flex;
-  justify-content: center;
-  gap: 32px;
-  flex-wrap: wrap;
-  padding-top: 32px;
-  border-top: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.05));
-}
-.seal {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 100px;
-}
-.seal .label {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--accent-amber);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border: 1px solid var(--accent-amber);
-  padding: 2px 8px;
-  border-radius: 4px;
-  width: fit-content;
-  margin: 0 auto;
-}
-.seal .value {
-  font-family: 'Noto Serif SC', serif;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text-main);
-}
-.seal.motto .value { color: var(--accent-amber, #8b2d1c); font-style: italic; }
-
-/* ── Metrics Grid ── */
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 20px;
-}
-.metric-card {
-  padding: 24px 20px;
-  transition: transform 0.3s ease;
-}
-.metric-card:hover { transform: translateY(-4px); }
-.metric-bg-icon {
-  position: absolute;
-  right: -10px; bottom: -10px;
-  font-size: 4rem;
-  font-weight: 900;
-  opacity: 0.03;
-  font-family: 'Noto Serif SC', serif;
-}
-.metric-value {
-  font-family: 'Noto Serif SC', serif;
-  font-size: 1.8rem;
-  font-weight: 900;
-  color: var(--text-main);
-  margin-bottom: 4px;
-}
-.metric-label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-soft);
-}
-.metric-card.male .metric-value { color: var(--accent-ink, #3c5363); }
-.metric-card.female .metric-value { color: var(--accent-amber, #8b2d1c); }
-.metric-card.generation .metric-value { color: var(--accent-amber); }
-.metric-card.alive .metric-value { color: var(--accent-olive, #2e7d32); }
-
-/* ── Analysis Grid ── */
-.analysis-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-.chart-card.wide { grid-column: 1 / -1; }
-.card-title {
-  font-family: 'Noto Serif SC', serif;
-  font-size: 1rem;
-  font-weight: 800;
-  margin: 0 0 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.card-title::before {
-  content: '';
-  width: 4px; height: 16px;
-  background: var(--accent-amber);
-  border-radius: 2px;
-}
-
-/* ── Custom Visualizations ── */
-.ratio-bar {
-  height: 28px;
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  background: var(--glass-border-shadow, rgba(0,0,0,0.05));
-  padding: 3px;
-  margin-bottom: 16px;
-}
-.ratio-bar .bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #fff;
-  transition: width 1s ease;
-}
-.ratio-bar .bar.male { background: linear-gradient(135deg, #3c5363, #5a7a90); border-radius: 8px 0 0 8px; }
-.ratio-bar .bar.female { background: linear-gradient(135deg, #8b2d1c, #b04a3a); border-radius: 0 8px 8px 0; }
-
-.viz-legend {
-  display: flex;
-  gap: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-soft);
-}
-.legend-item { display: flex; align-items: center; gap: 6px; }
-.dot { width: 8px; height: 8px; border-radius: 2px; }
-.dot.male { background: #3c5363; }
-.dot.female { background: #8b2d1c; }
-.dot.birth { background: #3ec29a; }
-.dot.death { background: #9ca3af; }
-
-.glass-bar-chart { display: flex; flex-direction: column; gap: 12px; }
-.chart-row { display: flex; align-items: center; gap: 12px; }
-.row-label { width: 60px; font-size: 0.75rem; font-weight: 700; color: var(--text-soft); text-align: right; }
-.row-label.surname { font-family: 'Noto Serif SC', serif; font-size: 1.1rem; font-weight: 800; color: var(--text-main); width: 40px; }
-.row-track { flex: 1; height: 10px; background: var(--glass-border-shadow, rgba(0,0,0,0.05)); border-radius: 5px; overflow: hidden; }
-.row-fill { height: 100%; background: linear-gradient(90deg, var(--accent-earth), var(--accent-amber)); border-radius: 5px; transition: width 1.2s ease; }
-.row-fill.lifespan { background: linear-gradient(90deg, #1e7a5c, #3ec29a); }
-.row-fill.surname { background: linear-gradient(90deg, #7c4dff, #b388ff); }
-.row-value { width: 30px; font-size: 0.85rem; font-weight: 700; color: var(--text-main); }
-
-.stat-summary { display: flex; gap: 32px; margin-bottom: 20px; padding: 16px; background: rgba(169, 110, 53, 0.05); border-radius: 12px; }
-.stat-item .val { font-family: 'Noto Serif SC', serif; font-size: 1.5rem; font-weight: 900; }
-.stat-item .val small { font-size: 0.7rem; margin-left: 2px; color: var(--text-soft); }
-.stat-item .lbl { font-size: 0.7rem; font-weight: 700; color: var(--accent-amber); text-transform: uppercase; margin-top: 2px; }
-
-.glass-timeline-chart .chart-row.dual { align-items: flex-start; }
-.row-bars { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.row-bars .bar { height: 10px; border-radius: 5px; transition: width 1.2s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 0.6rem; color: #fff; font-weight: 800; }
-.row-bars .bar.birth { background: linear-gradient(90deg, #1e7a5c, #3ec29a); }
 .row-bars .bar.death { background: linear-gradient(90deg, #5a5e66, #9ca3af); }
 
 /* ── History Nodes ── */
@@ -777,23 +545,26 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 .activity-summary__item {
-  padding: 10px 12px;
+  padding: 16px 20px;
   border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.08));
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.38);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .activity-summary__label {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   color: var(--text-soft);
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-family: 'Noto Serif SC', 'Songti SC', 'STZhongsong', serif;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .activity-summary__item strong {
   color: var(--text-main);
-  font-size: 0.9rem;
+  font-family: 'Noto Serif SC', 'Songti SC', 'STZhongsong', serif;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .activity-filters {

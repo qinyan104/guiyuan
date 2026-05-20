@@ -6,6 +6,7 @@ import {
   adminDeleteUser,
   adminResetPassword,
   adminChangeRole,
+  adminBatchDeleteUsers,
   type AdminUser,
 } from '../api/admin'
 import { isSuperAdmin } from '../api/auth'
@@ -30,7 +31,19 @@ const resetNewPassword = ref('')
 const deleteUserId = ref<number | null>(null)
 const pendingRoleChange = ref<{ userId: number; role: string } | null>(null)
 
+// 批量选择
+const selectedUserIds = ref<Set<number>>(new Set())
+const batchDeleting = ref(false)
+
 const canManageRoles = computed(() => isSuperAdmin())
+
+const selectableUsers = computed(() =>
+  filteredUsers.value.filter(u => !isProtected(u))
+)
+
+const isAllSelected = computed(() =>
+  selectableUsers.value.length > 0 && selectableUsers.value.every(u => selectedUserIds.value.has(u.id))
+)
 
 const roleConfig: Record<string, { label: string }> = {
   SUPER_ADMIN: { label: '主修' },
@@ -123,6 +136,39 @@ async function handleRoleChange(userId: number, newRoleVal: string) {
   }
 }
 
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    selectedUserIds.value = new Set()
+  } else {
+    selectedUserIds.value = new Set(selectableUsers.value.map(u => u.id))
+  }
+}
+
+function toggleSelectUser(id: number) {
+  const next = new Set(selectedUserIds.value)
+  if (next.has(id)) {
+    next.delete(id)
+  } else {
+    next.add(id)
+  }
+  selectedUserIds.value = next
+}
+
+async function handleBatchDelete() {
+  const ids = [...selectedUserIds.value]
+  if (ids.length === 0) return
+  batchDeleting.value = true
+  try {
+    await adminBatchDeleteUsers(ids)
+    selectedUserIds.value = new Set()
+    await loadUsers()
+  } catch {
+    // error
+  } finally {
+    batchDeleting.value = false
+  }
+}
+
 function isProtected(user: AdminUser): boolean {
   return user.role === 'SUPER_ADMIN'
 }
@@ -163,6 +209,18 @@ function formatDate(dateStr: string) {
           <span class="tab-count">{{ tabCounts[tab] }}</span>
         </button>
       </div>
+
+      <!-- Batch action bar -->
+      <transition name="glass-pop">
+        <div v-if="selectedUserIds.size > 0" class="batch-bar">
+          <span class="batch-count">已选 {{ selectedUserIds.size }} 人</span>
+          <button class="bento-btn small danger" :disabled="batchDeleting" @click="handleBatchDelete">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            {{ batchDeleting ? '删除中...' : '批量删除' }}
+          </button>
+          <button class="bento-btn small" @click="selectedUserIds = new Set()">取消选择</button>
+        </div>
+      </transition>
 
       <!-- Create Form -->
       <transition name="glass-pop">
@@ -212,6 +270,9 @@ function formatDate(dateStr: string) {
 
       <div v-else class="bento-card table-card">
         <div class="table-header">
+          <label class="check-col">
+            <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" />
+          </label>
           <span class="col-id">卷号</span>
           <span class="col-user">名讳 / 字号</span>
           <span class="col-role">职官</span>
@@ -219,7 +280,10 @@ function formatDate(dateStr: string) {
           <span class="col-ops">行事</span>
         </div>
         <div class="table-body">
-          <div v-for="user in filteredUsers" :key="user.id" class="table-row" :class="{ 'is-protected': isProtected(user) }">
+          <div v-for="user in filteredUsers" :key="user.id" class="table-row" :class="{ 'is-protected': isProtected(user), 'is-selected': selectedUserIds.has(user.id) }">
+            <label class="check-col" @click.stop>
+              <input type="checkbox" :checked="selectedUserIds.has(user.id)" :disabled="isProtected(user)" @change="toggleSelectUser(user.id)" />
+            </label>
             <span class="col-id">{{ String(user.id).padStart(4, '0') }}</span>
             <div class="col-user">
               <div class="user-avatar" :class="user.role.toLowerCase()">
@@ -557,13 +621,37 @@ function formatDate(dateStr: string) {
 }
 
 /* ── Table Layout ── */
+
+/* Batch action bar */
+.batch-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  background: rgba(169, 110, 53, 0.06);
+  border: 1px dashed var(--accent-amber, #a96e35);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+:global([data-theme="rosewood"]) .batch-bar,
+:global([data-theme="star-sea"]) .batch-bar {
+  background: rgba(169, 110, 53, 0.1);
+  border-color: rgba(169, 110, 53, 0.4);
+}
+.batch-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-amber, #a96e35);
+  margin-right: 0.5rem;
+}
+
 .table-card {
   padding: 0;
   overflow: hidden;
 }
 .table-header {
   display: grid;
-  grid-template-columns: 80px 1.5fr 1fr 150px 100px;
+  grid-template-columns: 32px 80px 1.5fr 1fr 150px 100px;
   gap: 16px;
   padding: 16px 24px;
   background: transparent;
@@ -582,7 +670,7 @@ function formatDate(dateStr: string) {
 
 .table-row {
   display: grid;
-  grid-template-columns: 80px 1.5fr 1fr 150px 100px;
+  grid-template-columns: 32px 80px 1.5fr 1fr 150px 100px;
   gap: 16px;
   padding: 16px 24px;
   align-items: center;
@@ -601,6 +689,28 @@ function formatDate(dateStr: string) {
 }
 .table-row.is-protected {
   background: rgba(180, 83, 9, 0.02);
+}
+
+.table-row.is-selected {
+  background: rgba(169, 110, 53, 0.06);
+}
+:global([data-theme="rosewood"]) .table-row.is-selected,
+:global([data-theme="star-sea"]) .table-row.is-selected {
+  background: rgba(169, 110, 53, 0.1);
+}
+
+/* Checkbox column */
+.check-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.check-col input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-amber, #a96e35);
+  cursor: pointer;
 }
 
 .col-id {
@@ -874,6 +984,7 @@ function formatDate(dateStr: string) {
     padding: 16px;
   }
   .col-id { display: none; }
+  .check-col { display: none; }
   .col-ops { justify-content: flex-end; }
   .form-grid { grid-template-columns: 1fr; }
   .form-footer { flex-direction: column; gap: 16px; align-items: stretch; }

@@ -38,6 +38,12 @@
 - **API 约束**: 所有写入 API (`PUT`) 必须携带 `expectedRevision` 负载。后端会校验传入版本与数据库版本是否一致，不匹配则抛出 `ConflictException` (HTTP 409)。
 - **前端拦截**: `http.ts` 响应拦截器捕获 409 状态码，并触发全局 `concurrency-conflict` 事件，由 `App.vue` 弹出强制刷新模态框，确保用户不基于过期数据进行覆盖保存。
 
+### 3.6 以我为中心的亲属关系视图 (Ego-Centered Kinship)
+- **Ego 识别**：`PublicationLayout` 加载族谱后调用 `listAccounts` 匹配当前登录用户 → 找到对应 `personDbId` → 通过 `usePublicationState.setViewerPersonId()` 注入上下文。
+- **称谓计算**：`usePublicationState.kinshipNotes`（computed）基于 `viewerPersonId` 遍历全谱人物，调用 `lib/kinship.ts` 的 `getKinshipLabel()` 生成 `Record<personId, 称谓>` 映射表。管理员或无匹配族人时 `viewerPersonId` 为 null，不计算称谓。
+- **卡片渲染**：`PublicationCanvas` → `PersonCardSvg` 通过 `kinshipNote` prop 在卡片 note 区域优先显示称谓（如"爷爷"），Ego 自身显示"本人"并附加 `person-card--ego` 金色发光描边样式。
+- **自动定位**：`WorkbenchView` 监听 `viewerPersonId` 首次非空，600ms 延迟后调用 `revealPersonInCanvas()` 滚动画布至 Ego 位置。
+
 ## 4. 数据库设计要点
 - **对象级权限**: `publication_access` 表存储用户与族谱的 `OWNER/EDITOR/VIEWER` 关系，并存储 `redaction_profile` JSON 脱敏配置。
 - **照片存储**: `photos` 表采用二进制存储（或文件映射），支持 Base64、URL 引用等多种导入模式。
