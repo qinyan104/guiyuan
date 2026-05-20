@@ -1,7 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 import { calculateRevealPan, type RevealPersonOptions } from '../lib/canvasViewport'
+import type { KinshipTerm } from '../lib/kinship'
 import type { Person, PublicationData, PublicationLayout, PublicationSettings } from '../types/family'
 import PersonCardSvg from './PersonCardSvg.vue'
 
@@ -10,12 +11,16 @@ const props = defineProps<{
   settings: PublicationSettings
   layout: PublicationLayout
   selectedPersonId: string
+  hoveredPersonId?: string | null
+  relationshipToSelected?: KinshipTerm | null
+  kinshipNotes?: Record<string, string> | null
   panX: number
   panY: number
 }>()
 
 const emit = defineEmits<{
   (event: 'select-person', personId: string): void
+  (event: 'hover-person', personId: string | null): void
   (event: 'update-zoom', zoom: number): void
   (event: 'update:panX', x: number): void
   (event: 'update:panY', y: number): void
@@ -95,6 +100,12 @@ let resizeObserver: ResizeObserver | null = null
 let rafId: number | null = null
 let pinchStartDist = 0
 let pinchStartZoom = 0
+let lastMoveTime = 0
+let lastMoveX = 0
+let lastMoveY = 0
+let velocityX = 0
+let velocityY = 0
+let inertiaRafId: number | null = null
 let pinchMidX = 0
 let pinchMidY = 0
 
@@ -208,6 +219,10 @@ function handleSelect(personId: string) {
   emit('select-person', personId)
 }
 
+function handleHoverPerson(personId: string | null) {
+  emit('hover-person', personId)
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
@@ -222,6 +237,7 @@ function updateViewportSize() {
 }
 
 function handlePointerDown(event: PointerEvent) {
+  cancelInertia()
   const target = event.target as Element | null
   pendingSelectPersonId = target?.closest<SVGGElement>('.person-card')?.dataset.personId ?? ''
   isDragging.value = true
@@ -229,6 +245,9 @@ function handlePointerDown(event: PointerEvent) {
   dragStartY = event.clientY
   panStartX = props.panX
   panStartY = props.panY
+  lastMoveTime = 0
+  velocityX = 0
+  velocityY = 0
   viewportRef.value?.setPointerCapture(event.pointerId)
 }
 
@@ -237,6 +256,7 @@ function handlePointerMove(event: PointerEvent) {
     return
   }
 
+  const now = performance.now()
   const deltaX = event.clientX - dragStartX
   const deltaY = event.clientY - dragStartY
 
@@ -244,7 +264,48 @@ function handlePointerMove(event: PointerEvent) {
     pendingSelectPersonId = ''
   }
 
+  if (lastMoveTime > 0) {
+    const dt = now - lastMoveTime
+    if (dt > 5) {
+      velocityX = ((event.clientX - lastMoveX) / dt) * 16
+      velocityY = ((event.clientY - lastMoveY) / dt) * 16
+    }
+  }
+  lastMoveTime = now
+  lastMoveX = event.clientX
+  lastMoveY = event.clientY
+
   setPan(panStartX + deltaX, panStartY + deltaY)
+}
+
+function cancelInertia() {
+  if (inertiaRafId !== null) {
+    cancelAnimationFrame(inertiaRafId)
+    inertiaRafId = null
+  }
+}
+
+const INERTIA_FRICTION = 0.94
+const INERTIA_STOP_THRESHOLD = 0.5
+
+function startInertia() {
+  cancelInertia()
+  const vx = velocityX
+  const vy = velocityY
+  if (Math.abs(vx) < INERTIA_STOP_THRESHOLD && Math.abs(vy) < INERTIA_STOP_THRESHOLD) return
+  let cvx = vx
+  let cvy = vy
+  function step() {
+    cvx *= INERTIA_FRICTION
+    cvy *= INERTIA_FRICTION
+    if (Math.abs(cvx) < INERTIA_STOP_THRESHOLD && Math.abs(cvy) < INERTIA_STOP_THRESHOLD) {
+      inertiaRafId = null
+      return
+    }
+    setPan(props.panX + cvx, props.panY + cvy)
+    inertiaRafId = requestAnimationFrame(step)
+  }
+  inertiaRafId = requestAnimationFrame(step)
 }
 
 function finishDrag(event: PointerEvent) {
@@ -260,13 +321,17 @@ function finishDrag(event: PointerEvent) {
     viewportRef.value.releasePointerCapture(event.pointerId)
   }
 
-  if (selectPersonId && Math.hypot(event.clientX - dragStartX, event.clientY - dragStartY) <= DRAG_SELECT_THRESHOLD) {
+  const totalDrag = Math.hypot(event.clientX - dragStartX, event.clientY - dragStartY)
+  if (selectPersonId && totalDrag <= DRAG_SELECT_THRESHOLD) {
     handleSelect(selectPersonId)
+  } else if (totalDrag > DRAG_SELECT_THRESHOLD) {
+    startInertia()
   }
 }
 
 function handleWheel(event: WheelEvent) {
   event.preventDefault()
+  cancelInertia()
   updateViewportSize()
 
   if (!viewportRef.value) {
@@ -428,6 +493,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
+  cancelInertia()
   if (rafId) cancelAnimationFrame(rafId)
 })
 
@@ -505,7 +571,9 @@ defineExpose({
               :card="card"
               :settings="settings"
               :selected="card.personId === selectedPersonId"
+              :kinshipNote="kinshipNotes?.[card.personId] ?? null"
               @select="handleSelect"
+              @hover="handleHoverPerson"
             />
           </g>
         </svg>

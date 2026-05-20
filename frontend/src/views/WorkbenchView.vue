@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { inject, nextTick, ref, toRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -48,7 +48,8 @@ function onConfirmDialogResult(result: boolean) {
   }
 }
 
-// ─── Shared Context ─────────────────────────────────────────────
+// ─── Shared Context ─────────────────────────────────────────────
+
 const context = inject(PUBLICATION_CONTEXT_KEY)!
 
 // ─── Core Composables ───────────────────────────────────────────
@@ -83,6 +84,18 @@ function adjustZoom(delta: number) {
   const nextValue = Number((context.pub.settings.zoom + delta).toFixed(2))
   context.pub.settings.zoom = Math.min(1.35, Math.max(0.10, nextValue))
 }
+
+let egoScrolled = false
+watch(
+  () => context.pub.viewerPersonId?.value,
+  (egoId) => {
+    if (egoId && !egoScrolled) {
+      egoScrolled = true
+      setTimeout(() => revealPersonInCanvas(egoId), 600)
+    }
+  },
+  { immediate: true },
+)
 
 // ─── File Operations ────────────────────────────────────────────
 const fileOps = useFileOperations({
@@ -270,9 +283,21 @@ watch(
           :settings="context.pub.settings"
           :layout="context.pub.layout.value"
           :selectedPersonId="context.pub.selectedPersonId.value"
+          :hoveredPersonId="context.pub.hoveredPersonId.value"
+          :relationshipToSelected="context.pub.relationshipToSelected.value"
+          :kinshipNotes="context.pub.kinshipNotes?.value ?? null"
           @update-zoom="context.pub.settings.zoom = $event"
           @select-person="handleSelectPerson"
+          @hover-person="context.pub.setHoveredPerson"
         />
+
+        <button
+          class="kinship-trigger"
+          title="??????"
+          @click="showKinshipDialog = true"
+        >
+          ?? ????
+        </button>
 
         <PersonEditorDrawer
           v-if="context.pub.selectedPerson.value"
@@ -323,5 +348,36 @@ watch(
       @cancel="onConfirmDialogResult(false)"
       @update:model-value="(v: boolean) => { if (!v) onConfirmDialogResult(false) }"
     />
+
+    <KinshipCalculatorDialog
+      v-if="showKinshipDialog"
+      :publication="context.pub.publication"
+      :egoPersonId="context.pub.selectedPersonId.value ?? undefined"
+      @close="showKinshipDialog = false"
+    />
   </div>
 </template>
+
+<style scoped>
+.kinship-trigger {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  padding: 10px 18px;
+  background: var(--primary, #3b82f6);
+  color: var(--primary-foreground, #fff);
+  border: none;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.kinship-trigger:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+</style>

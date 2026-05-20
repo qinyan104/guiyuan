@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+﻿import { computed, markRaw, reactive, ref } from 'vue'
 
 import type {
   FamilyBranchMode,
@@ -10,6 +10,7 @@ import type {
 } from '../types/family'
 import { findFamilyEntryPersonId, resolveFamilyBranchMode } from '../lib/familyBranchMode'
 import { layoutPublication } from '../lib/layout'
+import { resolveKinshipTerm, getKinshipLabel } from '../lib/kinship'
 import { suggestLineageNote } from '../lib/lineageLabels'
 import { getPersonStatusLabel, isPersonDeceased } from '../lib/personStatus'
 
@@ -20,17 +21,32 @@ function joinMetaParts(parts: Array<string | undefined>): string {
 export function usePublicationState(
   initialPublication: PublicationData,
   initialSettings: PublicationSettings,
+  viewerPersonId?: string | null,
 ) {
-  const publication = reactive<PublicationData>(structuredClone(initialPublication))
+  const _viewerPersonId = ref<string | null>(viewerPersonId ?? null)
+
+  function freezePeople(pub: PublicationData): void {
+    for (const id of Object.keys(pub.people)) {
+      pub.people[id] = markRaw(pub.people[id] as object) as typeof pub.people[string]
+    }
+  }
+
+  const cloned = structuredClone(initialPublication)
+  freezePeople(cloned)
+  const publication = reactive<PublicationData>(cloned)
   const settings = reactive<PublicationSettings>(structuredClone(initialSettings))
   const selectedPersonId = ref(
     publication.families[publication.focusFamilyId]?.adults[0] ?? Object.keys(publication.people)[0] ?? '',
   )
+  const hoveredPersonId = ref<string | null>(null)
 
   function replaceReactiveObject<T extends object>(target: T, source: T) {
     Object.keys(target).forEach((key) => {
       delete (target as Record<string, unknown>)[key]
     })
+    if ('people' in source) {
+      freezePeople(source as unknown as PublicationData)
+    }
     Object.assign(target, source)
   }
 
@@ -61,6 +77,10 @@ export function usePublicationState(
     return '未定'
   }
 
+  function setHoveredPerson(personId: string | null) {
+    hoveredPersonId.value = personId
+  }
+
   function getDefaultSelectedPersonId(sourcePublication: PublicationData): string {
     return sourcePublication.families[sourcePublication.focusFamilyId]?.adults[0] ?? Object.keys(sourcePublication.people)[0] ?? ''
   }
@@ -70,6 +90,12 @@ export function usePublicationState(
   const totalPeople = computed(() => peopleList.value.length)
   const selectedPerson = computed(() => publication.people[selectedPersonId.value] ?? null)
   const layout = computed(() => layoutPublication(publication, settings))
+  const relationshipToSelected = computed(() => {
+    const selected = selectedPersonId.value
+    const hovered = hoveredPersonId.value
+    if (!selected || !hovered || selected === hovered) return null
+    return resolveKinshipTerm(publication, selected, hovered)
+  })
   const aliveCount = computed(() => peopleList.value.filter((person) => !isPersonDeceased(person)).length)
   const deceasedCount = computed(() => totalPeople.value - aliveCount.value)
 
@@ -214,6 +240,22 @@ export function usePublicationState(
     isSelectedBranchFocused.value ? '已是当前宗支' : '设为当前宗支',
   )
 
+  const kinshipNotes = computed(() => {
+    if (!_viewerPersonId.value) return null as Record<string, string> | null
+    const map: Record<string, string> = {}
+    for (const pid of Object.keys(publication.people)) {
+      if (pid === _viewerPersonId.value) {
+        map[pid] = '?¬º'
+      } else {
+        const label = getKinshipLabel(publication, _viewerPersonId.value, pid)
+        if (label && label !== '?ªç¥å³ç³»') {
+          map[pid] = label
+        }
+      }
+    }
+    return map
+  })
+
   // Focus family
   const focusFamily = computed(() =>
     publication.families[publication.focusFamilyId] ?? Object.values(publication.families)[0],
@@ -240,11 +282,16 @@ export function usePublicationState(
     return [scopeLabel, focusFamilyLabel.value]
   })
 
+  function setViewerPersonId(id: string | null) {
+    _viewerPersonId.value = id
+  }
+
   return {
     // State
     publication,
     settings,
     selectedPersonId,
+    hoveredPersonId,
     // Helpers
     replaceReactiveObject,
     isPersonId,
@@ -253,11 +300,13 @@ export function usePublicationState(
     getPersonStatus,
     getGenderLabel,
     getDefaultSelectedPersonId,
+    setHoveredPerson,
     // Core computeds
     peopleList,
     totalPeople,
     selectedPerson,
     layout,
+    relationshipToSelected,
     aliveCount,
     deceasedCount,
     // Family computeds
@@ -277,6 +326,9 @@ export function usePublicationState(
     hasCompleteParents,
     selectedChildItems,
     selectedPersonLineageSuggestion,
+    kinshipNotes,
+    setViewerPersonId,
+    viewerPersonId: _viewerPersonId,
     selectedPersonMeta,
     canSwapAdults,
     // Root/branch
@@ -287,10 +339,15 @@ export function usePublicationState(
     // Focus family
     focusFamily,
     focusFamilyLabel,
-    focusLineageCrumbs,
-  }
-}
-
-export type PublicationState = ReturnType<typeof usePublicationState>
+    focusLineageCrumbs,
+
+  }
+
+}
+
+
+
+export type PublicationState = ReturnType<typeof usePublicationState>
+
 
 export type PublicationStateReturn = ReturnType<typeof usePublicationState>

@@ -1,7 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getPublication, updatePublication } from '../api/publication'
+import { listAccounts } from '../api/account'
 import { useFeedback } from '../composables/useFeedback'
 import { usePublicationState } from '../composables/usePublicationState'
 import { defaultSettings } from '../data/sampleFamily'
@@ -28,7 +29,8 @@ const viewportPan = ref({ x: 0, y: 0 })
 const feedback = useFeedback()
 
 // NOTE: Start empty so the UI does not flash sample data before the real payload loads.
-const pub = usePublicationState({ title: '', subtitle: '', people: {}, families: {}, focusFamilyId: '' }, defaultSettings)
+const viewerPersonId = ref<string | null>(null)
+const pub = usePublicationState({ title: '', subtitle: '', people: {}, families: {}, focusFamilyId: '' }, defaultSettings, viewerPersonId.value)
 
 function createEditorSnapshot(): EditorSnapshot {
   return {
@@ -158,6 +160,20 @@ watch(
   { flush: 'post' },
 )
 
+async function detectViewerPerson() {
+  const username = getUsername()
+  if (!username || !serverPublicationId.value) return
+  try {
+    const accounts = await listAccounts(serverPublicationId.value)
+    const myAccount = accounts.find(a => a.username === username)
+    if (myAccount) {
+      pub.setViewerPersonId(String(myAccount.personDbId))
+    }
+  } catch {
+    // ignore
+  }
+}
+
 async function load() {
   const targetId = publicationId.value
   if (!targetId) {
@@ -190,6 +206,7 @@ async function load() {
     syncStatus.value = 'saved'
     lastSyncedSignature.value = persistedSignature.value
     history.initializeHistoryBaseline()
+    await detectViewerPerson()
   } catch {
     feedback.setError('加载族谱失败')
   } finally {
