@@ -207,8 +207,12 @@ async function load() {
     lastSyncedSignature.value = persistedSignature.value
     history.initializeHistoryBaseline()
     await detectViewerPerson()
-  } catch {
-    feedback.setError('加载族谱失败')
+  } catch (err: any) {
+    if (err?.response?.status === 403) {
+      feedback.setError('你无权访问此家谱，请联系管理员将你添加为协作者')
+    } else {
+      feedback.setError('加载族谱失败')
+    }
   } finally {
     loading.value = false
   }
