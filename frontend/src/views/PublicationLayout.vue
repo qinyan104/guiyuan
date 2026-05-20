@@ -168,9 +168,23 @@ async function detectViewerPerson() {
     const myAccount = accounts.find(a => a.username === username)
     if (myAccount) {
       pub.setViewerPersonId(String(myAccount.personDbId))
+      return
+    }
+    // Fallback: try matching by name for non-collaborators
+    for (const [pid, person] of Object.entries(pub.publication.people)) {
+      if (person.name === username) {
+        pub.setViewerPersonId(pid)
+        return
+      }
     }
   } catch {
-    // ignore
+    // Fallback even on API error
+    for (const [pid, person] of Object.entries(pub.publication.people)) {
+      if (person.name === username) {
+        pub.setViewerPersonId(pid)
+        return
+      }
+    }
   }
 }
 
