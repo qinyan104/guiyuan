@@ -42,8 +42,6 @@ async function loadDashboard() {
 
 onMounted(loadDashboard)
 
-function openPublishing() { router.push('/publishing') }
-
 function openPublication(id: number) {
   router.push({ name: 'workbench', params: { id } })
 }
@@ -184,7 +182,7 @@ async function handleCreateFromDashboard() {
         </div>
 
         <!-- Box F: Backup (If SuperAdmin) -->
-        <div class="bento-card card-publishing" @click="openPublishing">`r`n          <div class="action-content">`r`n            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`r`n            <span class="action-title">出版工作室</span>`r`n          </div>`r`n        </div>`r`n`r`n        <div v-if="isSuperAdmin()" class="bento-card card-backup" @click="handleBackup">
+        <div v-if="isSuperAdmin()" class="bento-card card-backup" @click="handleBackup">
           <div class="action-content">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             <span class="action-title">{{ backupLoading ? '正在归档...' : '数据归档' }}</span>
@@ -208,7 +206,7 @@ async function handleCreateFromDashboard() {
               <button class="welcome-btn secondary" @click="router.push({ name: 'publications' })">
                 浏览示例模板
               </button>
-              <button class="welcome-btn accent" @click="router.push('/publishing')">📖 出版工作室</button>`r`n              <button class="welcome-btn ghost" @click="router.push({ name: 'publications' })">
+              <button class="welcome-btn ghost" @click="router.push({ name: 'publications' })">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                 导入族谱数据
               </button>
@@ -264,10 +262,6 @@ async function handleCreateFromDashboard() {
   margin: 0;
   letter-spacing: 0.05em;
 }
-
-.card-publishing { grid-column: span 6; }
-.card-publishing:hover { background: rgba(196,58,49,0.06); border-color: #c43a31; }
-@media (max-width: 768px) { .card-publishing { grid-column: span 6; } }
 
 .bento-grid {
   display: grid;
@@ -723,11 +717,7 @@ async function handleCreateFromDashboard() {
 }
 
 @media (max-width: 640px) {
-  .card-publishing { grid-column: span 6; }
-.card-publishing:hover { background: rgba(196,58,49,0.06); border-color: #c43a31; }
-@media (max-width: 768px) { .card-publishing { grid-column: span 6; } }
-
-.bento-grid { display: flex; flex-direction: column; }
+  .bento-grid { display: flex; flex-direction: column; }
   .card-hero, .card-history { min-height: 280px; }
   .card-stat, .card-action, .card-users, .card-backup { min-height: 140px; }
 }
@@ -878,9 +868,6 @@ async function handleCreateFromDashboard() {
 .welcome-btn.secondary:hover {
   transform: translateY(-2px);
 }
-.welcome-btn.accent { background: #c43a31; color: #fff; }
-.welcome-btn.accent:hover { background: #a8322a; transform: translateY(-2px); }
-
 .welcome-btn.ghost {
   background: transparent;
   color: var(--text-soft);
