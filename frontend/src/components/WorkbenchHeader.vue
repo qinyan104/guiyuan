@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { ref, inject, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { ThemeId } from '../composables/useTheme'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 import { PUBLICATION_CONTEXT_KEY } from '../types/family'
@@ -12,7 +12,7 @@ const showExportDialog = ref(false)
 const showCollabDialog = ref(false)
 const isExporting = ref(false)
 
-const route = useRoute()
+const route = useRoute(); const router = useRouter()
 const context = inject(PUBLICATION_CONTEXT_KEY) as any
 
 const isOwner = computed(() => context?.currentAccessRole?.value === 'OWNER')
@@ -118,7 +118,7 @@ function toggleUserDropdown() {
         <div class="dropdown">
           <button class="btn btn--secondary dropdown-trigger" type="button">付梓 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu">
-            <button class="dropdown-item" type="button" @click="showExportDialog = true">付梓发行 (高精影印/PDF)</button>
+            <button class="dropdown-item" type="button" @click="router.push('/publishing')">📖 出版工作室</button><div class="dropdown-divider"></div><button class="dropdown-item" type="button" @click="showExportDialog = true">付梓发行 (高精影印/PDF)</button>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item" type="button" @click="emit('download-svg')">拓印长卷 (SVG)</button>
             <button class="dropdown-item" type="button" @click="emit('export-json')">封存卷宗草本 (JSON)</button>

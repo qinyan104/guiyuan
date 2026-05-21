@@ -208,7 +208,7 @@ async function handleCreateFromDashboard() {
               <button class="welcome-btn secondary" @click="router.push({ name: 'publications' })">
                 浏览示例模板
               </button>
-              <button class="welcome-btn ghost" @click="router.push({ name: 'publications' })">
+              <button class="welcome-btn accent" @click="router.push('/publishing')">📖 出版工作室</button>`r`n              <button class="welcome-btn ghost" @click="router.push({ name: 'publications' })">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                 导入族谱数据
               </button>
@@ -878,6 +878,9 @@ async function handleCreateFromDashboard() {
 .welcome-btn.secondary:hover {
   transform: translateY(-2px);
 }
+.welcome-btn.accent { background: #c43a31; color: #fff; }
+.welcome-btn.accent:hover { background: #a8322a; transform: translateY(-2px); }
+
 .welcome-btn.ghost {
   background: transparent;
   color: var(--text-soft);
