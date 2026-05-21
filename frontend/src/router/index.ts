@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+﻿import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { getToken, isAdmin } from '../api/auth'
 import { bootstrapAuthSession } from '../api/authSession'
 import AdminLayout from '../views/AdminLayout.vue'
@@ -78,6 +78,24 @@ const routes: RouteRecordRaw[] = [
         meta: { admin: true },
       },
     ],
+  },
+  {
+    path: '/publishing',
+    name: 'publishing-dashboard',
+    component: () => import('../views/PublishingDashboard.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/publishing/:draftId',
+    name: 'publishing-studio',
+    component: () => import('../views/PublishingStudio.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/publishing/:draftId/biography/:personId',
+    name: 'biography-editor',
+    component: () => import('../views/BiographyEditor.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/publication/:id',

@@ -1,0 +1,90 @@
+﻿import http from "./http"
+import type { ApiResponse } from "../types/api"
+import type {
+  BookDraft,
+  BookDraftRequest,
+  BookPersonDetail,
+  BookPersonDetailRequest,
+  DraftSyncStatus,
+} from "../types/publishing"
+
+export async function createDraft(data: BookDraftRequest): Promise<BookDraft> {
+  const resp = await http.post<ApiResponse<BookDraft>>("/publishing/drafts", data)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "创建草稿失败")
+  return resp.data.data
+}
+
+export async function listDrafts(publicationId: number): Promise<BookDraft[]> {
+  const resp = await http.get<ApiResponse<BookDraft[]>>("/publishing/drafts", {
+    params: { publicationId },
+  })
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "获取草稿列表失败")
+  return resp.data.data
+}
+
+export async function getDraft(draftId: number): Promise<BookDraft> {
+  const resp = await http.get<ApiResponse<BookDraft>>(`/publishing/drafts/${draftId}`)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "获取草稿失败")
+  return resp.data.data
+}
+
+export async function updateDraft(
+  draftId: number,
+  data: Partial<BookDraftRequest>,
+): Promise<BookDraft> {
+  const resp = await http.put<ApiResponse<BookDraft>>(`/publishing/drafts/${draftId}`, data)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "更新草稿失败")
+  return resp.data.data
+}
+
+export async function deleteDraft(draftId: number): Promise<void> {
+  await http.delete(`/publishing/drafts/${draftId}`)
+}
+
+export async function upsertPersonDetail(
+  draftId: number,
+  data: BookPersonDetailRequest,
+): Promise<BookPersonDetail> {
+  const resp = await http.put<ApiResponse<BookPersonDetail>>(
+    `/publishing/drafts/${draftId}/persons/${data.personId}`,
+    data,
+  )
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "保存人物详情失败")
+  return resp.data.data
+}
+
+export async function listPersonDetails(
+  draftId: number,
+): Promise<BookPersonDetail[]> {
+  const resp = await http.get<ApiResponse<BookPersonDetail[]>>(
+    `/publishing/drafts/${draftId}/persons`,
+  )
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "获取人物详情列表失败")
+  return resp.data.data
+}
+
+export async function getPersonDetail(
+  draftId: number,
+  personId: string,
+): Promise<BookPersonDetail> {
+  const resp = await http.get<ApiResponse<BookPersonDetail>>(
+    `/publishing/drafts/${draftId}/persons/${personId}`,
+  )
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "获取人物详情失败")
+  return resp.data.data
+}
+
+export async function deletePersonDetail(
+  draftId: number,
+  personId: string,
+): Promise<void> {
+  await http.delete(`/publishing/drafts/${draftId}/persons/${personId}`)
+}
+
+export async function getSyncStatus(draftId: number): Promise<DraftSyncStatus> {
+  const resp = await http.get<ApiResponse<DraftSyncStatus>>(
+    `/publishing/drafts/${draftId}/sync-status`,
+  )
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "获取同步状态失败")
+  return resp.data.data
+}
