@@ -1,4 +1,4 @@
-<claude-mem-context>
+﻿<claude-mem-context>
 # Memory Context
 
 # [族谱管理系统] recent context, 2026-05-08 10:35pm GMT+8
@@ -128,4 +128,14 @@ Stats: 72 obs (4,798t read) | 579,884t work | 99% savings
 
 
 Access 580k tokens of past work via get_observations([IDs]) or mem-search skill.
+
+### May 23, 2026
+1569 10:00p 馃煟 鍓嶇 Yohaku 璁捐浠ょ墝浣撶郴閲嶆瀯 (codex/frontend-yohaku-redesign)
+1570 " 鉁?寮曞叆 Yohaku 璁捐浠ょ墝浣撶郴锛堜腑鎬ц壊 10 绾с€佹湵鐮?accent銆佸拰鑹茶涔夎壊锛?
+1571 " 鉁?鍏ㄥ墠绔?CJK font-weight 娓呴浂锛?00/700/600鈫?00锛夛紝纭槾褰辨竻闆讹紙鈫抴hisper/ring锛?
+1572 " 鉁?LandingView 浜у搧浠嬬粛椤点€乸ublishing 缁勪欢鍏╞oken 鍖?
+1573 " 馃幆 鏁堟灉锛氭殫鑹叉ā寮忓叏绔欏彲鐢紝璁捐瑙勮寖鍏ㄨ鐩?
+
 </claude-mem-context>
+
+

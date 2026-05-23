@@ -1,4 +1,4 @@
-# 族谱管理系统
+﻿# 族谱管理系统
 
 Vue 3 + Spring Boot 全栈应用，用于创建、编辑和预览家族族谱出版物。
 
@@ -79,6 +79,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 
 - **账号派生**：`AdminAccountController` / `AccountDerivationService` 支持为在世族人创建平台账号。用户名自动转拼音（pinyin4j），格式 `{拼音}_{族谱ID}`。支持单条删除、批量删除、清理空悬（关联 User 已删除的记录）。账号派生时自动创建 VIEWER 协作权限记录。
 - **已故自动检测**：`PublicationService` 保存人物时，如果 `death`（卒年）字段非空，自动推断 `deceased = true`。`AccountDerivationService.deriveAccounts()` 三重校验：`deceased` 布尔 + `death` 字段非空 + 已有账号。
+- **Design tokens** (branch codex/frontend-yohaku-redesign): frontend/src/styles/tokens/design-tokens.css — Yohaku-based 10-tier neutral scale, cinnabar accent, CJK font-weight capped at 500, no hard shadows, no bare colors. compat.css bridges old vars.
 - **空悬账号清理**：`listAccounts` 接口返回 `accountStatus: "orphaned"` 标记关联 User 已删除的异常记录。`DELETE /orphans` 一键批量清理。前端显示红色"账号异常"标签。
 - **批量删除**：`POST /batch-delete` 接受 `{ personDbIds: [...] }`，逐条删除并跳过已不存在的记录。
 
@@ -150,3 +151,6 @@ Key routing rules:
 - Ship/deploy/PR → invoke /ship or /land-and-deploy
 - Save progress → invoke /context-save
 - Resume context → invoke /context-restore
+
+
+
