@@ -150,8 +150,8 @@ onMounted(() => {
 .hero-quote em { font-style: normal; color: var(--color-accent); font-weight: 400; }
 .hero h1 { font-family: var(--font-serif); font-size: clamp(48px, 8vw, 80px); font-weight: 500; color: var(--color-neutral-10); line-height: 1.12; letter-spacing: 0.03em; margin-bottom: 56px; }
 .hero h1 em { font-style: normal; color: var(--color-accent); }
-.hero-cta { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; border-radius: 12px; background: linear-gradient(135deg, #8b2c26, var(--color-accent)); color: #fff; font-size: 15px; font-weight: 500; text-decoration: none; letter-spacing: 0.02em; transition: all 0.2s; box-shadow: 0 8px 24px rgba(196, 58, 49, 0.2); }
-.hero-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(196, 58, 49, 0.3); }
+.hero-cta { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; border-radius: 12px; background: linear-gradient(135deg, #8b2c26, var(--color-accent)); color: #fff; font-size: 15px; font-weight: 500; text-decoration: none; letter-spacing: 0.02em; transition: all 0.2s; box-shadow: 0 8px 24px rgba(196, 58, 49, 0.1); }
+.hero-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(196, 58, 49, 0.1); }
 
 .poetic-break { text-align: center; padding: 48px 0; color: var(--color-neutral-4); font-family: var(--font-serif); font-size: 14px; font-style: italic; letter-spacing: 0.08em; line-height: 2.4; }
 
@@ -164,17 +164,17 @@ onMounted(() => {
 
 .bento { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .bento-card { background: var(--color-neutral-2); border-radius: 16px; padding: 36px 32px; position: relative; overflow: hidden; transition: all 0.25s; cursor: default; }
-.bento-card:hover { background: var(--color-neutral-1); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06); }
+.bento-card:hover { background: var(--color-neutral-1); transform: translateY(-2px); box-shadow: var(--shadow-whisper); }
 .bento-num { font-family: var(--font-serif); font-size: 48px; font-weight: 500; color: var(--color-accent-muted); position: absolute; top: 12px; right: 20px; line-height: 1; opacity: 0.6; }
 .bento-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--color-accent-muted); font-family: var(--font-serif); font-size: 18px; font-weight: 500; color: var(--color-accent); margin-bottom: 16px; }
 .bento-card h4 { font-size: 17px; font-weight: 500; color: var(--color-neutral-10); margin-bottom: 6px; }
 .bento-card p { font-size: 13px; color: var(--color-neutral-7); line-height: 1.7; }
 
-.shot { margin-top: 56px; border-radius: 20px; overflow: hidden; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.08); }
+.shot { margin-top: 56px; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-whisper); }
 .shot img { width: 100%; display: block; border-radius: 20px; }
 
 .cta-section { padding: 80px 0; text-align: center; }
-.cta-seal { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #8b2c26, var(--color-accent)); border-radius: 16px; font-family: var(--font-serif); font-size: 28px; font-weight: 500; color: #fff; margin: 0 auto 24px; box-shadow: 0 16px 40px rgba(196, 58, 49, 0.25); }
+.cta-seal { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #8b2c26, var(--color-accent)); border-radius: 16px; font-family: var(--font-serif); font-size: 28px; font-weight: 500; color: #fff; margin: 0 auto 24px; box-shadow: 0 16px 40px rgba(196, 58, 49, 0.1); }
 .cta-section h2 { font-family: var(--font-serif); font-size: clamp(24px, 3.5vw, 36px); font-weight: 500; color: var(--color-neutral-10); margin-bottom: 12px; }
 .cta-section p { font-size: 15px; color: var(--color-neutral-7); margin-bottom: 16px; }
 .cta-verse { font-family: var(--font-serif); font-size: 14px; color: var(--color-neutral-6); font-style: italic; margin-bottom: 40px; line-height: 2; }
@@ -199,4 +199,5 @@ onMounted(() => {
   .ft-grid { flex-direction: column; gap: 40px; }
 }
 </style>
+
 
