@@ -117,7 +117,7 @@ function actionToNarrative(action: string): string {
   padding: 8px 16px;
   border-radius: 999px;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
@@ -154,7 +154,7 @@ function actionToNarrative(action: string): string {
   background: rgba(234, 179, 8, 0.1);
   border-color: rgba(234, 179, 8, 0.3);
   color: #b45309;
-  font-weight: 600;
+  font-weight: 500;
   padding: 16px 24px;
 }
 
@@ -228,7 +228,7 @@ function actionToNarrative(action: string): string {
   padding-top: 2px;
 }
 .c-date {
-  font-weight: 700;
+  font-weight: 500;
   font-size: 0.95rem;
   color: var(--text-main);
   margin-bottom: 2px;
@@ -262,7 +262,7 @@ function actionToNarrative(action: string): string {
   line-height: 1.6;
 }
 .c-user {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--color-neutral-10);
   margin-right: 6px;
 }
@@ -272,7 +272,7 @@ function actionToNarrative(action: string): string {
   opacity: 0.8;
 }
 .c-detail {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--color-accent, #c43a31);
   margin-left: 4px;
 }
@@ -285,3 +285,4 @@ function actionToNarrative(action: string): string {
   .chronicle-content { padding-left: 16px; font-size: 1rem; }
 }
 </style>
+

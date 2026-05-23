@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 亲戚称谓推算器 (Chinese Kinship Term Calculator)
  */
 
@@ -516,6 +516,144 @@ export function resolveKinshipTerm(publication: PublicationData, personAId: stri
   return null
 }
 
+
+// ═══════════════════════════════════════════
+// 姻亲关系推算 (In-Law Kinship)
+// ═══════════════════════════════════════════
+
+type EdgeType = "parent" | "child" | "spouse"
+
+interface BfsStep {
+  personId: string
+  edge: EdgeType
+  path: { personId: string; edge: EdgeType }[]
+}
+
+/** BFS traversing parents + children + spouses to find any connection */
+function findAnyConnection(publication: PublicationData, fromId: string, toId: string): { path: string[]; edges: EdgeType[]; spousesUsed: string[] } | null {
+  if (fromId === toId) return { path: [fromId], edges: [], spousesUsed: [] }
+  const graph = buildGraph(publication)
+  const visited = new Set<string>()
+  const queue: BfsStep[] = [{ personId: fromId, edge: "parent", path: [] }]
+
+  while (queue.length > 0) {
+    const cur = queue.shift()!
+    if (visited.has(cur.personId)) continue
+    visited.add(cur.personId)
+    const newPath = [...cur.path, { personId: cur.personId, edge: cur.edge }]
+
+    if (cur.personId === toId && newPath.length > 1) {
+      const edges = newPath.slice(1).map((s) => s.edge)
+      const spousesUsed = newPath.filter((s) => s.edge === "spouse").map((s) => s.personId)
+      return { path: newPath.map((s) => s.personId), edges, spousesUsed }
+    }
+
+    for (const pid of graph.parents.get(cur.personId) ?? []) {
+      if (!visited.has(pid)) queue.push({ personId: pid, edge: "parent", path: newPath })
+    }
+    for (const cid of graph.children.get(cur.personId) ?? []) {
+      if (!visited.has(cid)) queue.push({ personId: cid, edge: "child", path: newPath })
+    }
+    for (const sid of graph.spouses.get(cur.personId) ?? []) {
+      if (!visited.has(sid)) queue.push({ personId: sid, edge: "spouse", path: newPath })
+    }
+  }
+  return null
+}
+
+/** Female-relative husband term map */
+const FEMALE_HUSBAND: Record<string, string> = {
+  "姐姐": "姐夫", "妹妹": "妹夫", "姑姑": "姑父", "姨妈": "姨父", "姨": "姨父", "女儿": "女婿",
+  "堂姐": "堂姐夫", "堂妹": "堂妹夫", "表姐": "表姐夫", "表妹": "表妹夫",
+}
+
+/** Male-relative wife term map */
+const MALE_WIFE: Record<string, string> = {
+  "哥哥": "嫂子", "弟弟": "弟媳", "叔叔": "婶婶", "舅舅": "舅妈", "儿子": "儿媳",
+  "伯父": "伯母", "伯": "伯母",
+  "堂哥": "堂嫂", "堂弟": "堂弟媳", "表哥": "表嫂", "表弟": "表弟媳",
+}
+
+/** Classify in-law relationship */
+function classifyInLaw(
+  publication: PublicationData, personAId: string, personBId: string,
+  graph: KinshipGraph,
+): KinshipTerm | null {
+  const personA = publication.people[personAId]
+  const personB = publication.people[personBId]
+  const bGender = personB?.gender ?? "unknown"
+
+  // Direct spouse?
+  if (graph.spouses.get(personAId)?.includes(personBId)) {
+    if (bGender === "male") return { term: "丈夫", description: "配偶", generationGap: 0, isElder: false }
+    if (bGender === "female") return { term: "妻子", description: "配偶", generationGap: 0, isElder: false }
+    return { term: "配偶", description: "配偶", generationGap: 0, isElder: false }
+  }
+
+  // Case 1: B is the spouse of A blood relative
+  for (const spouseId of graph.spouses.get(personBId) ?? []) {
+    const bloodTerm = resolveKinshipTerm(publication, personAId, spouseId)
+    if (!bloodTerm) continue
+    const spouse = publication.people[spouseId]
+    if (spouse?.gender === "female") {
+      const m = FEMALE_HUSBAND[bloodTerm.term]
+      return { term: m ?? bloodTerm.term + "夫", description: bloodTerm.term + "的丈夫", generationGap: bloodTerm.generationGap, isElder: bloodTerm.isElder }
+    }
+    if (spouse?.gender === "male") {
+      const m = MALE_WIFE[bloodTerm.term]
+      return { term: m ?? bloodTerm.term + "妻", description: bloodTerm.term + "的妻子", generationGap: bloodTerm.generationGap, isElder: bloodTerm.isElder }
+    }
+  }
+
+  // Case 2: B is a blood relative of A spouse
+  for (const spouseId of graph.spouses.get(personAId) ?? []) {
+    const relTerm = resolveKinshipTerm(publication, spouseId, personBId)
+    if (!relTerm) continue
+    const egoGender = personA?.gender ?? "unknown"
+    const isWoman = egoGender === "female"
+
+    if (relTerm.term === "爸爸" || relTerm.term === "父亲")
+      return { term: isWoman ? "公公" : "岳父", description: (isWoman ? "丈夫" : "妻子") + "的父亲", generationGap: 1, isElder: true }
+    if (relTerm.term === "妈妈" || relTerm.term === "母亲")
+      return { term: isWoman ? "婆婆" : "岳母", description: (isWoman ? "丈夫" : "妻子") + "的母亲", generationGap: 1, isElder: true }
+
+    // Sibling-in-law
+    const SIB_MAP: Record<string, { f: string; m: string }> = {
+      "哥哥": { f: "大伯", m: "大舅" }, "弟弟": { f: "小叔", m: "小舅" },
+      "姐姐": { f: "大姑", m: "大姨" }, "妹妹": { f: "小姑", m: "小姨" },
+    }
+    const sb = SIB_MAP[relTerm.term]
+    if (sb) return { term: isWoman ? sb.f : sb.m, description: relTerm.description, generationGap: 0, isElder: relTerm.isElder }
+
+    // Generic
+    return { term: relTerm.term, description: (isWoman ? "夫家" : "妻家") + "的" + relTerm.term, generationGap: relTerm.generationGap, isElder: relTerm.isElder }
+  }
+
+  return { term: "姻亲", description: "姻亲关系", generationGap: 0, isElder: false }
+}
+
+/** Extended relationship resolver: blood first, then in-law */
+export function resolveKinshipTermExtended(
+  publication: PublicationData, personAId: string, personBId: string
+): KinshipTerm | null {
+  if (personAId === personBId) return { term: "本人", description: "自己", generationGap: 0, isElder: false }
+  const blood = resolveKinshipTerm(publication, personAId, personBId)
+  if (blood) return blood
+  const graph = buildGraph(publication)
+  return classifyInLaw(publication, personAId, personBId, graph)
+}
+
+/** Extended path finder */
+export function findRelationshipPathExtended(
+  publication: PublicationData, personAId: string, personBId: string
+): { isInLaw: boolean; bloodPath?: KinshipPath; inLawPath?: { path: string[]; spousesUsed: string[] } } | null {
+  if (personAId === personBId) return null
+  const bp = findRelationshipPath(publication, personAId, personBId)
+  if (bp) return { isInLaw: false, bloodPath: bp }
+  const conn = findAnyConnection(publication, personAId, personBId)
+  if (conn && conn.spousesUsed.length > 0) return { isInLaw: true, inLawPath: { path: conn.path, spousesUsed: conn.spousesUsed } }
+  return null
+}
 export function getKinshipLabel(publication: PublicationData, personAId: string, personBId: string): string {
   const result = resolveKinshipTerm(publication, personAId, personBId)
   return result?.term ?? "未知关系"

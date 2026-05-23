@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getSharePublication, getShareMeta, getSharePhotoUrl } from '../api/share'
@@ -213,7 +213,7 @@ function handleSelectPerson(personId: string) {
 .share-header-content h1 {
   margin: 0;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary, #333);
 }
 
@@ -303,3 +303,4 @@ function handleSelectPerson(personId: string) {
   }
 }
 </style>
+

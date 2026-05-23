@@ -1,3 +1,3 @@
-export function navigateAfterLogin(location: Pick<Location, 'replace'> = window.location): void {
-  location.replace('/')
+﻿export function navigateAfterLogin(location: Pick<Location, 'replace'> = window.location): void {
+  location.replace('/dashboard')
 }

@@ -175,7 +175,8 @@ describe('layoutPublication', () => {
   })
 
   it('compresses the layout when showCard is false', () => {
-    const standardSettings = { ...defaultSettings, showCard: true }
+    const standardSettings = { ...defaultSettings, showCard: true,
+      showBirth: true }
     const compactSettings = { ...defaultSettings, showCard: false }
 
     const standardLayout = layoutPublication(samplePublication, standardSettings)

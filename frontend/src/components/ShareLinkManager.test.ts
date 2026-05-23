@@ -44,11 +44,13 @@ describe('ShareLinkManager', () => {
     await flushPromises()
 
     await wrapper.get('.btn--danger').trigger('click')
+    await flushPromises()
 
     expect(revokeShareLink).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('确定要撤销此分享链接吗')
+    expect(document.body.textContent).toContain('确定要撤销此分享链接吗')
 
-    await wrapper.get('button[data-role="confirm"]').trigger('click')
+    await (document.body.querySelector('button[data-role="confirm"]') as HTMLElement).click()
+    await flushPromises()
 
     expect(revokeShareLink).toHaveBeenCalledWith(7, 8)
   })

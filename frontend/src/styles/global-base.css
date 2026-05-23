@@ -1,0 +1,570 @@
+﻿/*
+ * 归源 · 全局基础样式 (Global Base)
+ *
+ * 替代旧版 style.css（67KB）。本文件只包含：
+ *   1. CSS Reset & 浏览器标准化
+ *   2. 排版默认值（标题、正文、链接）
+ *   3. 通用工具类（少量高频复用模式）
+ *   4. 表单元素基准样式
+ *   5. 滚动条、选中、聚焦等浏览器增强
+ *
+ * 组件样式位于各自的 <style scoped> 中，引用 design-tokens.css 中的变量。
+ * 不要在此文件中添加组件专属样式。
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS Reset
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: var(--text-copy-14);
+  line-height: var(--leading-copy);
+  -webkit-text-size-adjust: 100%;
+  letter-spacing: 0.01em;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--color-neutral-1);
+  color: var(--color-neutral-9);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, svg, canvas {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: opacity var(--duration-fast) var(--ease-breath);
+}
+
+a:hover {
+  opacity: 0.8;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: inherit;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   排版
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 500;   /* CJK 禁止 700 bold */
+  color: var(--color-neutral-10);
+  line-height: var(--leading-title);
+}
+
+h1 { font-size: var(--text-display-36); }
+h2 { font-size: var(--text-title-28); }
+h3 { font-size: var(--text-title-24); }
+h4 { font-size: var(--text-title-20); }
+
+p {
+  margin-bottom: 0.75em;
+}
+
+/* CJK 强制：禁止仿粗体 */
+strong, b {
+  font-weight: 500;
+}
+
+em, i, cite {
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+small, .text-small {
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-7);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   选中 & 聚焦
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+::selection {
+  background-color: var(--color-accent-muted);
+  color: var(--color-neutral-10);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   滚动条
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-5) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-neutral-5);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-neutral-6);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   表单元素基准
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-9);
+  background-color: var(--color-neutral-1);
+  border: 1px solid var(--color-neutral-5);
+  border-radius: var(--radius-md);
+  transition: border-color var(--duration-fast) var(--ease-breath),
+              box-shadow var(--duration-fast) var(--ease-breath);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-neutral-6);
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+label {
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-7);
+  font-weight: 500;
+}
+
+/* checkbox / radio */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   通用工具类
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 卡片基础 — 所有卡片组件的公共基类 */
+.card {
+  background: var(--color-card-fill);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-whisper);
+  border: 1px solid var(--color-card-stroke);
+  transition: box-shadow var(--duration-normal) var(--ease-breath),
+              transform var(--duration-normal) var(--ease-breath);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-ring);
+}
+
+/* 按钮基础变体 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-size: var(--text-copy-14);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: all var(--duration-fast) var(--ease-breath);
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+}
+
+.btn--primary {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  filter: brightness(1.1);
+}
+
+.btn--secondary {
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-9);
+  border: 1px solid var(--color-neutral-5);
+}
+
+.btn--secondary:hover {
+  background: var(--color-neutral-4);
+}
+
+.btn--ghost {
+  color: var(--color-neutral-7);
+}
+
+.btn--ghost:hover {
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-9);
+}
+
+.btn--danger {
+  background: var(--color-error);
+  color: #fff;
+}
+
+.btn--sm {
+  padding: 4px 10px;
+  font-size: var(--text-label-12);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* 标签 / 芯片 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: var(--text-label-12);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-8);
+}
+
+.tag--accent {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+}
+
+.tag--success {
+  background: rgba(94, 159, 126, 0.12);
+  color: var(--color-success);
+}
+
+.tag--warning {
+  background: rgba(168, 122, 61, 0.12);
+  color: var(--color-warning);
+}
+
+.tag--error {
+  background: rgba(166, 73, 83, 0.12);
+  color: var(--color-error);
+}
+
+/* 分隔线 */
+.divider {
+  border: none;
+  height: 1px;
+  background: var(--color-neutral-4);
+  margin: 12px 0;
+}
+
+/* 加载骨架 */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-neutral-2) 25%,
+    var(--color-neutral-3) 50%,
+    var(--color-neutral-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--color-neutral-7);
+  gap: 12px;
+}
+
+.empty-state__icon {
+  font-size: 32px;
+  opacity: 0.4;
+}
+
+.empty-state__text {
+  font-size: var(--text-copy-15);
+}
+
+/* 过渡动画工具 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--duration-normal) var(--ease-breath);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all var(--duration-normal) var(--ease-breath);
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   布局工具
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   打印样式
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  html {
+    font-size: 12px;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   暗色模式 — 全局覆盖
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+  --color-card-fill: var(--color-neutral-2);
+  --color-card-stroke: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] ::selection {
+  background-color: rgba(224, 149, 164, 0.25);
+  color: var(--color-neutral-10);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+  box-shadow: 0 0 0 3px rgba(224, 149, 164, 0.2);
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   琉璃质感 (Glass Surfaces)
+   暖纸底上的通透层叠 — 克制、有深度、不轻浮
+   ═══════════════════════════════════════════════════════════ */
+
+/* 琉璃卡片 — 主表面 */
+.card-glass {
+  background: rgba(249, 248, 245, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-bottom-color: rgba(168, 166, 159, 0.18);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 8px 32px rgba(36, 35, 31, 0.06),
+    0 2px 8px rgba(36, 35, 31, 0.04);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  transition: box-shadow var(--duration-normal) var(--ease-breath),
+              transform var(--duration-normal) var(--ease-breath);
+}
+
+.card-glass:hover {
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 12px 40px rgba(36, 35, 31, 0.1),
+    0 4px 12px rgba(36, 35, 31, 0.06);
+}
+
+/* 琉璃面板 — 更透明的浮层（对话框/弹出层） */
+.panel-glass {
+  background: rgba(249, 248, 245, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-bottom-color: rgba(168, 166, 159, 0.14);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 16px 48px rgba(36, 35, 31, 0.12),
+    0 4px 16px rgba(36, 35, 31, 0.06);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
+/* 琉璃暗色卡片 — 深底反光 */
+.card-glass-dark {
+  background: rgba(36, 35, 31, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.06) inset,
+    0 8px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  color: var(--color-neutral-1);
+}
+
+/* 琉璃覆盖层 — 模态框遮罩 */
+.overlay-glass {
+  background: rgba(36, 35, 31, 0.25);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+/* 暗色模式适配 */
+[data-theme="dark"] .card-glass {
+  background: rgba(30, 30, 30, 0.72);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.03) inset,
+    0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .card-glass:hover {
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.03) inset,
+    0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .panel-glass {
+  background: rgba(30, 30, 30, 0.88);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .card-glass-dark {
+  background: rgba(20, 20, 20, 0.92);
+}
+
+[data-theme="dark"] .overlay-glass {
+  background: rgba(0, 0, 0, 0.5);
+}

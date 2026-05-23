@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getPublication, updatePublication } from '../api/publication'
 import { listAccounts } from '../api/account'
+import { getUsername } from '../api/tokenStore'
 import { useFeedback } from '../composables/useFeedback'
 import { usePublicationState } from '../composables/usePublicationState'
 import { defaultSettings } from '../data/sampleFamily'
@@ -150,6 +151,7 @@ async function saveToServer() {
 watch(
   persistedSignature,
   (nextSignature) => {
+    history.scheduleHistoryCommit()
     if (!serverPublicationId.value || loading.value || syncStatus.value === 'conflict') return
     if (nextSignature === lastSyncedSignature.value) return
 
@@ -338,14 +340,14 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   z-index: 1000;
   gap: 1rem;
   color: var(--text-soft, #888);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .loading-spinner {
   width: 40px;
   height: 40px;
   border: 3px solid var(--border-color, rgba(0,0,0,0.06));
-  border-top-color: var(--accent-amber, #a96e35);
+  border-top-color: var(--accent-signal, #a96e35);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -366,7 +368,7 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   background: #fff3cd;
   border-bottom: 1px solid #ffc107;
   color: #856404;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .conflict-draft-notice {
@@ -381,7 +383,7 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   background: #eef7ff;
   border-bottom: 1px solid #7db7e8;
   color: #204d73;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .conflict-draft-notice__text {
@@ -448,3 +450,4 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   color: #fff;
 }
 </style>
+

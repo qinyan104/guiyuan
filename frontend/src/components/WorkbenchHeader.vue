@@ -1,8 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref, inject, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { ThemeId } from '../composables/useTheme'
-import ThemeSwitcher from './ThemeSwitcher.vue'
+import DarkModeToggle from './DarkModeToggle.vue'
 import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import CollaboratorManager from './CollaboratorManager.vue'
 import ExportDialog from '../features/export/ExportDialog.vue'
@@ -31,7 +30,6 @@ const props = withDefaults(
     fileName?: string
     dirty?: boolean
     nativeFileAccess?: boolean
-    currentTheme?: ThemeId
     currentUsername?: string
     syncStatus?: 'saved' | 'pending' | 'syncing' | 'error' | 'conflict'
   }>(),
@@ -39,7 +37,6 @@ const props = withDefaults(
     fileName: '',
     dirty: false,
     nativeFileAccess: false,
-    currentTheme: 'parchment' as ThemeId,
     currentUsername: '',
     syncStatus: 'saved',
   },
@@ -55,7 +52,6 @@ const emit = defineEmits<{
   (event: 'print-publication'): void
   (event: 'export-json'): void
   (event: 'export-share-html', password: string): void
-  (event: 'change-theme', themeId: ThemeId): void
   (event: 'logout'): void
   (event: 'go-back'): void
   (event: 'view-stats'): void
@@ -86,21 +82,7 @@ function toggleUserDropdown() {
 
     <div class="topbar__intro">
       <h1 class="clickable-title" @click="emit('go-back')">无涯画布</h1>
-      <div class="sync-status" :class="[`sync-status--${syncStatus}`]">
-        <span class="sync-icon">
-          <svg v-if="syncStatus === 'syncing'" class="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
-          <svg v-else-if="syncStatus === 'saved'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-          <svg v-else-if="syncStatus === 'error'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-          <svg v-else-if="syncStatus === 'conflict'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /></svg>
-          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1" /></svg>
-        </span>
-        <span class="sync-text">
-          {{ syncStatus === 'syncing' ? '正在封存卷宗...' : syncStatus === 'saved' ? '卷宗已妥善归档' : syncStatus === 'error' ? '归档遇挫' : '等待封存...' }}
-        </span>
-        <span class="sync-text sync-text--resolved">
-          {{ syncStatus === 'syncing' ? '正在封存卷宗...' : syncStatus === 'saved' ? '卷宗已妥善归档' : syncStatus === 'error' ? '归档遇挫' : syncStatus === 'conflict' ? '数据发生冲突，请刷新后继续' : '等待封存...' }}
-        </span>
-      </div>
+      <span class="sync-dot" :class="`sync-dot--${syncStatus}`" :title="syncStatus === 'syncing' ? '同步中' : syncStatus === 'saved' ? '已保存' : syncStatus === 'error' ? '保存失败' : syncStatus === 'conflict' ? '数据冲突' : '未保存'"></span>
     </div>
 
     <div class="topbar__actions" aria-label="工作台操作">
@@ -108,20 +90,43 @@ function toggleUserDropdown() {
         <div class="dropdown">
           <button class="btn btn--secondary dropdown-trigger" type="button">考据 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu">
-            <button class="dropdown-item" type="button" @click="emit('view-stats')">宗族纪略</button>
-            <button class="dropdown-item" type="button" @click="emit('view-timeline')">家族编年史</button>
+            <button class="dropdown-item" type="button" @click="emit('view-stats')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+              宗族纪略
+            </button>
+            <button class="dropdown-item" type="button" @click="emit('view-timeline')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              家族编年史
+            </button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="triggerFileInput">引入前朝旧卷 (JSON)</button>
+            <button class="dropdown-item" type="button" @click="triggerFileInput">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              引入前朝旧卷 (JSON)
+            </button>
           </div>
         </div>
 
         <div class="dropdown">
           <button class="btn btn--secondary dropdown-trigger" type="button">付梓 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu">
-            <button class="dropdown-item" type="button" @click="router.push('/publishing')">📖 出版工作室</button><div class="dropdown-divider"></div><button class="dropdown-item" type="button" @click="showExportDialog = true">付梓发行 (高精影印/PDF)</button>
+            <button class="dropdown-item" type="button" @click="router.push('/publishing')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              出版工作室
+            </button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="emit('download-svg')">拓印长卷 (SVG)</button>
-            <button class="dropdown-item" type="button" @click="emit('export-json')">封存卷宗草本 (JSON)</button>
+            <button class="dropdown-item" type="button" @click="showExportDialog = true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              付梓发行 (高精影印/PDF)
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" type="button" @click="emit('download-svg')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+              拓印长卷 (SVG)
+            </button>
+            <button class="dropdown-item" type="button" @click="emit('export-json')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              封存卷宗草本 (JSON)
+            </button>
           </div>
         </div>
 
@@ -135,7 +140,7 @@ function toggleUserDropdown() {
         </button>
 
         <span class="topbar__action-divider" aria-hidden="true" />
-        <ThemeSwitcher :currentTheme="currentTheme" @change-theme="emit('change-theme', $event)" />
+        <DarkModeToggle />
         <span class="topbar__action-divider" aria-hidden="true" />
 
         <div class="user-dropdown-container">
@@ -200,115 +205,196 @@ function toggleUserDropdown() {
 </template>
 
 <style scoped>
-.clickable-title {
-  cursor: pointer;
-  padding: 0.4rem 0.8rem;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.clickable-title:hover {
-  background: var(--bg-hover);
-  color: var(--accent-amber);
-}
-
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-trigger {
+/* ── Topbar ── */
+.topbar {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--color-panel-bg);
+  border-bottom: 1px solid var(--color-card-stroke);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* ── Left: Title + Sync ── */
+.topbar__intro {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.topbar-title {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--color-neutral-10);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  letter-spacing: 0.03em;
+  transition: opacity 0.15s;
+}
+
+.topbar-title:hover {
+  opacity: 0.7;
+}
+
+/* Sync dot */
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.sync-dot--saved { background: #22c55e; }
+.sync-dot--syncing { background: #f59e0b; animation: pulse 1.2s ease-in-out infinite; }
+.sync-dot--pending { background: var(--color-neutral-4); }
+.sync-dot--error { background: #ef4444; }
+.sync-dot--conflict { background: #f97316; animation: pulse 0.6s ease-in-out infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Right: Actions ── */
+.topbar__actions {
+  display: flex;
+  align-items: center;
+}
+
+.topbar__action-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-neutral-8);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--color-neutral-2);
+}
+
+.btn--secondary {
+  background: var(--color-neutral-1);
+  border-color: var(--color-neutral-4);
+  border-radius: 999px;
+  padding: 7px 18px;
+}
+
+.btn--secondary:hover {
+  background: var(--color-neutral-2);
+  border-color: var(--color-neutral-5);
 }
 
 .caret {
-  font-size: 0.8rem;
-  opacity: 0.6;
+  font-size: 10px;
+  opacity: 0.4;
+  margin-left: 2px;
+}
+
+/* ── Dropdown ── */
+.dropdown {
+  position: relative;
+}
+
+/* invisible bridge to prevent gap between trigger and menu */
+.dropdown::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 8px;
 }
 
 .dropdown-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   left: 0;
-  margin-top: 0.5rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
-  padding: 0.5rem 0;
-  min-width: 180px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 1000;
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-}
-
-.dropdown-menu--samples {
-  min-width: 220px;
-  max-height: 460px;
-  overflow-y: auto;
-}
-
-.dropdown-section-title {
-  margin: 0;
-  padding: 0.45rem 1.2rem 0.35rem;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text-secondary);
-}
-
-.dropdown--right .dropdown-menu {
-  left: auto;
-  right: 0;
+  z-index: 200;
+  min-width: 200px;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .dropdown:hover .dropdown-menu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+  display: flex;
 }
 
 .dropdown-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 0.6rem 1.2rem;
-  background: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
   border: none;
-  color: var(--text-main);
-  font-size: 0.9rem;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 13px;
   font-weight: 500;
+  color: var(--color-neutral-8);
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.12s;
+  text-align: left;
+  width: 100%;
 }
 
 .dropdown-item:hover {
-  background: var(--bg-hover);
-  color: var(--accent-color, var(--text-main));
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-10);
+}
+
+.dropdown-item svg {
+  color: var(--color-neutral-5);
+  flex-shrink: 0;
 }
 
 .dropdown-divider {
   height: 1px;
-  background: var(--border-color);
-  margin: 0.4rem 0;
+  background: var(--color-neutral-3);
+  margin: 4px 8px;
 }
 
-.text-danger {
-  color: #ef4444;
+/* ── Action Divider ── */
+.topbar__action-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--color-neutral-4);
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
-.text-danger:hover {
-  background: rgba(239, 68, 68, 0.08);
-  color: #dc2626;
-}
-
-/* ── User Profile Popover ── */
+/* ── User Profile Pill ── */
 .user-dropdown-container {
   position: relative;
 }
@@ -316,23 +402,19 @@ function toggleUserDropdown() {
 .user-profile-pill {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 4px 12px 4px 6px;
-  background: transparent;
-  border: 1px solid transparent;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border: 1px solid var(--color-neutral-4);
   border-radius: 999px;
+  background: var(--color-neutral-1);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s;
 }
+
 .user-profile-pill:hover,
 .user-profile-pill.is-open {
-  background: rgba(0,0,0,0.04);
-}
-:global([data-theme="rosewood"]) .user-profile-pill:hover,
-:global([data-theme="star-sea"]) .user-profile-pill:hover,
-:global([data-theme="rosewood"]) .user-profile-pill.is-open,
-:global([data-theme="star-sea"]) .user-profile-pill.is-open {
-  background: rgba(255,255,255,0.08);
+  background: var(--color-neutral-2);
+  border-color: var(--color-neutral-5);
 }
 
 .avatar-ring {
@@ -357,332 +439,188 @@ function toggleUserDropdown() {
   font-size: 0.8rem;
   font-weight: 800;
   font-family: 'Noto Serif SC', serif;
-  color: var(--text-main);
-}
-:global([data-theme="rosewood"]) .avatar-text,
-:global([data-theme="star-sea"]) .avatar-text {
-  background: rgba(40,40,40,1);
-  color: #fff;
+  color: var(--color-neutral-9);
 }
 
 .username {
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: var(--text-main);
-  letter-spacing: 0.05em;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--color-neutral-9);
 }
 
 .dropdown-chevron {
-  color: var(--text-soft);
+  color: var(--color-neutral-5);
   transition: transform 0.2s ease;
+  margin-left: 2px;
 }
+
 .dropdown-chevron.rotated {
   transform: rotate(180deg);
 }
 
+/* ── User Popover ── */
 .user-popover {
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% + 10px);
   right: 0;
   width: 220px;
-  border-radius: 20px;
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--glass-border-shadow, rgba(0,0,0,0.05));
+  border-radius: var(--radius-xl);
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.1);
   padding: 8px;
   z-index: 9999;
   transform-origin: top right;
 }
 
-:global([data-theme="rosewood"]) .user-popover,
-:global([data-theme="star-sea"]) .user-popover {
-  background: rgba(20, 20, 20, 0.85);
-  border-color: rgba(255,255,255,0.1);
-  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+.popover-header {
+  padding: 10px 12px 8px;
 }
 
-.popover-header {
-  padding: 12px 12px 8px;
-  margin-bottom: 4px;
-}
 .popover-title {
   font-family: monospace;
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  color: var(--text-soft);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--color-neutral-5);
   text-transform: uppercase;
 }
+
 .popover-account {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-main);
-  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-neutral-10);
+  margin-top: 2px;
 }
 
 .popover-menu {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .popover-hint {
   padding: 10px 12px;
-  font-size: 0.8rem;
-  color: var(--text-soft);
-  font-style: italic;
+  font-size: 12px;
+  color: var(--color-neutral-6);
   text-align: center;
 }
 
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-.menu-item:hover {
-  background: rgba(0,0,0,0.04);
-}
-:global([data-theme="rosewood"]) .menu-item:hover,
-:global([data-theme="star-sea"]) .menu-item:hover {
-  background: rgba(255,255,255,0.06);
-}
-
-/* Popover Transitions */
-.glass-pop-enter-active,
-.glass-pop-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.glass-pop-enter-from,
-.glass-pop-leave-to {
-  opacity: 0;
-  transform: scale(0.95) translateY(-8px);
-}
-
-.user-trigger {
-  padding: 0.4rem 0.8rem;
-  border-radius: 999px;
-  background: transparent;
-  border: 1px solid transparent;
-}
-
-.user-trigger:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-color);
-}
-
-.user-avatar {
-  font-size: 1.1rem;
-}
-
-.user-name {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--text-main);
-}
-
-.topbar__back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: none;
-  border: none;
-  color: var(--text-soft, #888);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
-  margin-right: 0.75rem;
-}
-
-.topbar__back-btn:hover {
-  color: var(--text-main, #1a1a1a);
-  background: var(--bg-hover, rgba(0,0,0,0.04));
-}
-
-.topbar__intro h1 {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-main);
-  margin: 0;
-}
-
-.sync-status {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  background: var(--bg-hover);
-  margin-left: 0.5rem;
-  transition: all 0.3s ease;
-}
-
-.sync-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sync-text {
-  font-size: 0.72rem;
-  font-weight: 600;
-}
-
-.sync-text:not(.sync-text--resolved) {
-  display: none;
-}
-
-.sync-status--saved {
-  color: var(--task-calm, #16a34a);
-  background: rgba(22, 163, 74, 0.08);
-}
-
-.sync-status--syncing, .sync-status--pending {
-  color: var(--accent-amber, #a96e35);
-  background: rgba(169, 110, 53, 0.08);
-}
-
-.sync-status--error {
-  color: var(--danger-text, #ef4444);
-  background: rgba(239, 68, 68, 0.08);
-}
-
-.sync-status--conflict {
-  color: var(--task-warm, #b7791f);
-  background: rgba(245, 158, 11, 0.14);
-}
-
-.spinner {
-  animation: rotate 1.5s linear infinite;
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* ── Glass Modals ── */
+/* ── Glass Modal (Collaborator) ── */
 .glass-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
   padding: 24px;
 }
-:global([data-theme="rosewood"]) .glass-modal-overlay,
-:global([data-theme="star-sea"]) .glass-modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-}
 
 .glass-sheet {
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.8));
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.6));
-  border-radius: 28px;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-xl);
   width: 100%;
   max-width: 480px;
-  padding: 32px;
-  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-}
-.glass-sheet.collab-sheet {
-  max-width: 560px;
+  max-height: 85vh;
+  padding: 28px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
 }
 
-.sheet-body {
-  overflow-y: auto;
-  max-height: 65vh;
-  scrollbar-width: thin;
-}
-:global([data-theme="rosewood"]) .glass-sheet,
-:global([data-theme="star-sea"]) .glass-sheet {
-  background: rgba(20, 20, 20, 0.85);
-  border-color: rgba(255,255,255,0.1);
+.glass-sheet.collab-sheet {
+  max-width: 600px;
 }
 
 .sheet-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .header-content {
   display: flex;
-  gap: 16px;
+  gap: 14px;
 }
 
 .header-icon {
-  width: 48px;
-  height: 48px;
-  background: var(--accent-amber);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  color: white;
-}
-
-.sheet-title {
-  font-family: 'Noto Serif SC', serif;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--text-main);
-  margin: 0;
-}
-
-.sheet-subtitle {
-  font-size: 0.85rem;
-  color: var(--text-soft);
-  margin: 4px 0 0;
-}
-
-.close-btn {
-  background: rgba(0,0,0,0.05);
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  background: var(--color-accent-muted);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  color: var(--text-soft);
+  color: var(--color-accent);
+}
+
+.sheet-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-neutral-10);
+  margin: 0;
+}
+
+.sheet-subtitle {
+  font-size: 13px;
+  color: var(--color-neutral-6);
+  margin: 2px 0 0;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-6);
+  font-size: 18px;
   cursor: pointer;
-  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
-  background: rgba(0,0,0,0.1);
-  color: var(--text-main);
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-9);
 }
 
-/* Fade Transitions */
+.sheet-body {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Transitions ── */
+.glass-pop-enter-active,
+.glass-pop-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.glass-pop-enter-from,
+.glass-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-6px);
+}
+
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
 </style>
+

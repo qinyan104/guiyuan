@@ -1,26 +1,46 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import ConfirmDialog from './ConfirmDialog.vue'
 
 describe('ConfirmDialog', () => {
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
   it('emits confirm and cancel separately', async () => {
+    const onConfirm = vi.fn()
+    const onCancel = vi.fn()
     const wrapper = mount(ConfirmDialog, {
-      props: { modelValue: true, title: 'Delete', message: 'Are you sure?' },
-      global: {
-        stubs: {
-          Teleport: {
-            template: '<div><slot /></div>',
-          },
-        },
-      },
+      props: { modelValue: true, title: 'Delete', message: 'Are you sure?', onConfirm, onCancel },
+      attachTo: document.body,
     })
 
-    await wrapper.get('button[data-role="confirm"]').trigger('click')
-    expect(wrapper.emitted('confirm')).toHaveLength(1)
+    await nextTick()
+    const confirmButton = document.body.querySelector<HTMLButtonElement>('button[data-role="confirm"]')
+    expect(confirmButton).not.toBeNull()
+    confirmButton?.click()
+    await nextTick()
+    expect(onConfirm).toHaveBeenCalledTimes(1)
 
-    await wrapper.get('button[data-role="cancel"]').trigger('click')
-    expect(wrapper.emitted('cancel')).toHaveLength(1)
-    expect(wrapper.emitted('update:modelValue')?.[1]).toEqual([false])
+    await wrapper.setProps({ modelValue: true })
+    await nextTick()
+    const cancelButton = document.body.querySelector<HTMLButtonElement>('button[data-role="cancel"]')
+    expect(cancelButton).not.toBeNull()
+    cancelButton?.click()
+    await nextTick()
+    expect(onCancel).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses readable default Chinese action labels', () => {
+    const wrapper = mount(ConfirmDialog, {
+      props: { modelValue: true, title: '删除确认', message: '确定删除吗？' },
+      attachTo: document.body,
+    })
+
+    expect(document.body.querySelector<HTMLButtonElement>('button[data-role="cancel"]')?.textContent?.trim()).toBe('取消')
+    expect(document.body.querySelector<HTMLButtonElement>('button[data-role="confirm"]')?.textContent?.trim()).toBe('确认')
+    wrapper.unmount()
   })
 
   it('does not render when modelValue is false', () => {

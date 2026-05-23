@@ -1,4 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
+import { useFeedback } from '../composables/useFeedback'
+import FeedbackStrip from '../components/FeedbackStrip.vue'
+
+const feedback = useFeedback()
 import { ref, computed } from 'vue'
 import { getUsername, isSuperAdmin } from '../api/auth'
 import { changePassword, changeNickname, uploadAvatar } from '../api/profile'
@@ -14,11 +18,11 @@ async function handleAvatarUpload(event: Event) {
   if (!input.files?.length) return
   const file = input.files[0]
   if (!file.type.startsWith('image/')) {
-    alert('仅支持图片文件')
+    feedback.errorMessage.value = '仅支持图片文件'
     return
   }
   if (file.size > 5 * 1024 * 1024) {
-    alert('图片大小不能超过 5MB')
+    feedback.errorMessage.value = '图片大小不能超过 5MB'
     return
   }
   avatarUploading.value = true
@@ -26,7 +30,7 @@ async function handleAvatarUpload(event: Event) {
     const url = await uploadAvatar(file)
     avatarUrl.value = url
   } catch (err: any) {
-    alert('头像上传失败: ' + (err.message || '未知错误'))
+    feedback.errorMessage.value = '头像上传失败: ' + (err.message || '未知错误')
   } finally {
     avatarUploading.value = false
     input.value = '' // reset
@@ -91,10 +95,10 @@ async function handleRestore() {
   restorePending.value = true
   try {
     const msg = await adminRestoreDatabase(restoreFile.value)
-    alert(msg)
+    feedback.errorMessage.value = msg
     window.location.reload()
   } catch (e: any) {
-    alert(e.message || '数据库还原失败')
+    feedback.errorMessage.value = e.message || '数据库还原失败'
   } finally {
     restorePending.value = false
   }
@@ -106,7 +110,7 @@ async function handleConsistencyCheck() {
     const report = await adminCheckConsistency()
     consistencyResult.value = report.issues
   } catch (e: any) {
-    alert(e.message || '一致性检查失败')
+    feedback.errorMessage.value = e.message || '一致性检查失败'
   } finally {
     consistencyRunning.value = false
   }
@@ -167,6 +171,7 @@ async function handleChangeNickname() {
 </script>
 
 <template>
+  <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
   <div class="settings-view-root">
     <div class="settings-view">
       <header class="poetic-header">
@@ -375,15 +380,15 @@ async function handleChangeNickname() {
 .page-title {
   font-family: monospace;
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.1em;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   margin: 0 0 6px;
 }
 
 .page-desc {
   font-size: 0.85rem;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   margin: 0;
 }
 
@@ -396,12 +401,6 @@ async function handleChangeNickname() {
   border-radius: 20px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
   padding: 32px;
-}
-:global([data-theme="rosewood"]) .bento-card,
-:global([data-theme="star-sea"]) .bento-card {
-  background: rgba(20, 20, 20, 0.5);
-  border-color: rgba(255,255,255,0.1);
-  box-shadow: 0 24px 48px rgba(0,0,0,0.2);
 }
 
 .bento-grid {
@@ -431,7 +430,7 @@ async function handleChangeNickname() {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at center, var(--accent-amber) 0%, transparent 40%);
+  background: radial-gradient(circle at center, var(--color-accent) 0%, transparent 40%);
   opacity: 0.05;
   pointer-events: none;
 }
@@ -440,7 +439,7 @@ async function handleChangeNickname() {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--glass-border-highlight), transparent);
+  background: linear-gradient(135deg, var(--color-neutral-2), transparent);
   padding: 4px;
   display: flex;
   align-items: center;
@@ -454,7 +453,7 @@ async function handleChangeNickname() {
   position: absolute;
   inset: -10px;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, transparent, var(--accent-amber), transparent);
+  background: conic-gradient(from 0deg, transparent, var(--color-accent), transparent);
   opacity: 0.3;
   animation: rotate 6s linear infinite;
   z-index: -1;
@@ -468,7 +467,7 @@ async function handleChangeNickname() {
 .large-avatar {
   width: 100%;
   height: 100%;
-  background: var(--bg-panel, #fff);
+  background: var(--color-card-fill);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -476,13 +475,8 @@ async function handleChangeNickname() {
   font-size: 2.5rem;
   font-weight: 800;
   font-family: 'Noto Serif SC', serif;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-}
-:global([data-theme="rosewood"]) .large-avatar,
-:global([data-theme="star-sea"]) .large-avatar {
-  background: rgba(30,30,30,1);
-  color: #fff;
 }
 
 .profile-info {
@@ -498,22 +492,18 @@ async function handleChangeNickname() {
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.15em;
-  color: var(--accent-amber);
+  color: var(--color-accent);
   text-transform: uppercase;
   background: rgba(0,0,0,0.04);
   padding: 4px 10px;
   border-radius: 999px;
-}
-:global([data-theme="rosewood"]) .profile-status,
-:global([data-theme="star-sea"]) .profile-status {
-  background: rgba(255,255,255,0.06);
 }
 
 .profile-name {
   font-family: 'Noto Serif SC', serif;
   font-size: 1.8rem;
   font-weight: 800;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   margin: 0;
   letter-spacing: 0.05em;
 }
@@ -523,7 +513,7 @@ async function handleChangeNickname() {
   align-items: center;
   gap: 6px;
   font-size: 0.85rem;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-family: monospace;
 }
 
@@ -539,13 +529,13 @@ async function handleChangeNickname() {
 }
 .card-title {
   font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-main);
+  font-weight: 500;
+  color: var(--color-neutral-9);
   margin: 0 0 6px;
 }
 .card-subtitle {
   font-size: 0.85rem;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   margin: 0;
 }
 
@@ -574,8 +564,8 @@ async function handleChangeNickname() {
 }
 .field label {
   font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-soft);
+  font-weight: 500;
+  color: var(--color-neutral-6);
   letter-spacing: 0.05em;
 }
 
@@ -585,21 +575,15 @@ async function handleChangeNickname() {
   border-radius: 14px;
   border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
   background: rgba(255,255,255,0.4);
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   font-size: 0.95rem;
   outline: none;
   transition: all 0.2s ease;
   box-sizing: border-box;
 }
-:global([data-theme="rosewood"]) .glass-input,
-:global([data-theme="star-sea"]) .glass-input {
-  background: rgba(0,0,0,0.3);
-  border-color: rgba(255,255,255,0.1);
-  color: #fff;
-}
 .glass-input:focus {
-  background: var(--bg-panel, #fff);
-  border-color: var(--text-main);
+  background: var(--color-card-fill);
+  border-color: var(--color-neutral-9);
   box-shadow: 0 0 0 4px rgba(0,0,0,0.04);
 }
 
@@ -619,15 +603,15 @@ async function handleChangeNickname() {
   height: 48px;
   border-radius: 14px;
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
   white-space: nowrap;
 }
 .bento-btn.primary {
-  background: var(--text-main);
-  color: var(--bg-panel, #fff);
+  background: var(--color-neutral-9);
+  color: var(--color-card-fill);
   box-shadow: 0 8px 16px rgba(0,0,0,0.1);
 }
 .bento-btn.primary:hover:not(:disabled) {
@@ -645,7 +629,7 @@ async function handleChangeNickname() {
   align-items: center;
   gap: 8px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 500;
   margin: 16px 0 0;
   padding: 10px 16px;
   border-radius: 10px;
@@ -691,3 +675,4 @@ async function handleChangeNickname() {
   }
 }
 </style>
+

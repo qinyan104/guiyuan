@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+﻿import { describe, expect, it, vi } from 'vitest'
 import { formatHttpError, shouldRetryAuthRefresh } from './http'
 
 describe('shouldRetryAuthRefresh', () => {
@@ -11,13 +11,13 @@ describe('shouldRetryAuthRefresh', () => {
 })
 
 describe('formatHttpError', () => {
-  it('includes method url status and api message when present', () => {
+  it('returns user-facing message from the error classifier', () => {
     expect(
       formatHttpError({
         config: { method: 'get', url: '/publications' },
         response: { status: 401, data: { message: 'Unauthorized' } },
       }),
-    ).toBe('GET /publications failed with 401: Unauthorized')
+    ).toBe('Unauthorized')
   })
 })
 
@@ -54,7 +54,7 @@ describe('http interceptors', () => {
     }))
   })
 
-  it('does not dispatch the global concurrency event for publication save conflicts', async () => {
+  it('does not dispatch concurrency-conflict for publication save conflicts', async () => {
     const { default: http } = await import('./http')
     const axiosMock = (http as any)
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
@@ -70,6 +70,10 @@ describe('http interceptors', () => {
     const responseInterceptor = axiosMock.interceptors.response.handlers[0].rejected
     await responseInterceptor(error).catch(() => {})
 
-    expect(dispatchSpy).not.toHaveBeenCalled()
+    // api-error is always dispatched, but concurrency-conflict should not be
+    const concurrencyEvents = dispatchSpy.mock.calls.filter(
+      ([event]) => (event as CustomEvent).type === 'concurrency-conflict'
+    )
+    expect(concurrencyEvents).toHaveLength(0)
   })
 })

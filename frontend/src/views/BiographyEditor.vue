@@ -1,4 +1,8 @@
 ﻿<script setup lang="ts">
+import { useFeedback } from '../composables/useFeedback'
+import FeedbackStrip from '../components/FeedbackStrip.vue'
+
+const feedback = useFeedback()
 import { ref, computed, onMounted, onUnmounted } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { getPersonDetail, upsertPersonDetail } from "../api/publishing"
@@ -25,7 +29,7 @@ async function load() {
     savedBio.value = biography.value
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "加载人物详情失败"
-    alert(msg)
+    feedback.errorMessage.value = msg
   } finally {
     loading.value = false
   }
@@ -69,6 +73,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
   <div class="biography-editor">
     <!-- Header -->
     <header class="bio-header">
@@ -148,7 +153,7 @@ onUnmounted(() => {
 
 .bio-label {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
   color: #333;
 }
 

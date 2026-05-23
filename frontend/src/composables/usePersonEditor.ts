@@ -48,8 +48,6 @@ export function usePersonEditor(pub: PublicationStateReturn) {
     const details = [
       { label: '状态', value: getPersonStatus(person) },
       { label: '性别', value: getGenderLabel(person.gender) },
-      { label: '称号', value: person.titleName || '未录入' },
-      { label: '宗族', value: person.clan || '未录入' },
       { label: '身份', value: person.note || selectedPersonLineageSuggestion.value || '待补充注记' },
       { label: '出生', value: person.birth || '待补全' },
       { label: '卒年', value: person.death || (isPersonDeceased(person) ? '已故（未录卒年）' : '未录入') },

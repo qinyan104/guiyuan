@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchApi, type PublicationHit, type PersonHit, type SearchResult } from '../api/search'
@@ -201,7 +201,7 @@ onBeforeUnmount(() => {
 }
 
 .search-input-wrapper:focus-within {
-  border-color: var(--accent-amber, #a96e35);
+  border-color: var(--accent-signal, #a96e35);
   box-shadow: 0 4px 16px rgba(169, 110, 53, 0.15);
   background: var(--glass-bg, rgba(255, 255, 255, 0.4));
 }
@@ -235,7 +235,7 @@ onBeforeUnmount(() => {
   width: 16px;
   height: 16px;
   border: 2px solid var(--glass-border-shadow, rgba(255, 255, 255, 0.15));
-  border-top-color: var(--accent-amber, #a96e35);
+  border-top-color: var(--accent-signal, #a96e35);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
   flex-shrink: 0;
@@ -299,7 +299,7 @@ onBeforeUnmount(() => {
 .section-header {
   padding: 8px 12px 6px;
   font-size: 0.65rem;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--text-soft, #888);
@@ -334,7 +334,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   border-radius: 8px;
   background: var(--glass-pill-bg, rgba(255, 255, 255, 0.5));
-  color: var(--accent-amber, #a96e35);
+  color: var(--accent-signal, #a96e35);
 }
 
 .result-item-content {
@@ -347,16 +347,11 @@ onBeforeUnmount(() => {
 
 .result-item-title {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-main, #1a1a1a);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-:global([data-theme="rosewood"]) .result-item-title,
-:global([data-theme="star-sea"]) .result-item-title {
-  color: #fff;
 }
 
 .result-item-subtitle,
@@ -384,3 +379,4 @@ onBeforeUnmount(() => {
   transform: scale(0.95) translateY(-8px);
 }
 </style>
+

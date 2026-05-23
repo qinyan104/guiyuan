@@ -25,6 +25,53 @@ export interface BookStyleConfig {
   sealStyle: string
 }
 
+export interface TraditionalLayoutOptions {
+  paper: "A4" | "A3"
+  cardWidth: number
+  cardHeight: number
+}
+
+export interface PersonCardPlacement {
+  personId: string
+  x: number
+  y: number
+  generation: number
+}
+
+export interface LayoutPoint {
+  x: number
+  y: number
+}
+
+export interface LinePlacement {
+  fromPersonId: string
+  toPersonId: string
+  points: LayoutPoint[]
+}
+
+export interface PageAnchor {
+  direction: "top" | "bottom" | "left" | "right"
+  label: string
+  targetPage: number
+}
+
+export interface BookSheetLayout {
+  sheetNumber: number
+  sheetType: "genealogy"
+  dimensions: {
+    width: number
+    height: number
+  }
+  rootPersonIds: string[]
+  elements: {
+    personCards: PersonCardPlacement[]
+    connectionLines: LinePlacement[]
+    anchors: PageAnchor[]
+  }
+  continuationOf?: number
+  continuesTo?: number[]
+}
+
 export interface BookDraftRequest {
   publicationId: number
   title: string

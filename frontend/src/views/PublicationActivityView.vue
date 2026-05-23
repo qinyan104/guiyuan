@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPublicationActivity, type ParsedActivity } from '../api/publication'
@@ -41,7 +41,7 @@ async function loadActivities() {
 }
 
 function goBack() {
-  router.push({ name: 'workbench', params: { id: props.publicationId } })
+  router.back()
 }
 
 function actionLabel(action: string): string {
@@ -59,11 +59,21 @@ function formatRelativeTime(dateStr: string): string {
   const diffMin = Math.floor(diffMs / 60000)
   if (diffMin < 1) return '刚刚'
   if (diffMin < 60) return `${diffMin} 分钟前`
-  const diffHour = Math.floor(diffMin / 60)
-  if (diffHour < 24) return `${diffHour} 小时前`
-  const diffDay = Math.floor(diffHour / 24)
-  if (diffDay < 30) return `${diffDay} 天前`
-  return date.toLocaleDateString('zh-CN')
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const month = pad(date.getMonth() + 1)
+  const day = pad(date.getDate())
+  const hours = pad(date.getHours())
+  const minutes = pad(date.getMinutes())
+
+  const isToday = date.toDateString() === now.toDateString()
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const isYesterday = date.toDateString() === yesterday.toDateString()
+
+  if (isToday) return `今天 ${hours}:${minutes}`
+  if (isYesterday) return `昨天 ${hours}:${minutes}`
+  return `${month}月${day}日 ${hours}:${minutes}`
 }
 
 onMounted(loadActivities)
@@ -71,10 +81,12 @@ onMounted(loadActivities)
 
 <template>
   <section class="activity-view">
+    <button class="activity-back" type="button" data-testid="activity-back" @click="goBack">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      返回
+    </button>
+
     <header class="activity-header">
-      <button class="activity-back" type="button" data-testid="activity-back" @click="goBack">
-        返回工作台
-      </button>
       <div class="activity-heading">
         <p class="activity-eyebrow">协作动态</p>
         <h1>{{ publicationTitle }}</h1>
@@ -123,6 +135,7 @@ onMounted(loadActivities)
           </div>
           <div class="activity-entry__card">
             <div class="activity-entry__meta">
+              <span class="activity-avatar">{{ entry.username.charAt(0).toUpperCase() }}</span>
               <strong>{{ entry.username }}</strong>
               <time :datetime="entry.createdAt">{{ formatRelativeTime(entry.createdAt) }}</time>
               <span class="activity-tag" :class="actionTagClass(entry.action)">
@@ -149,246 +162,375 @@ onMounted(loadActivities)
 </template>
 
 <style scoped>
+/* ── Layout ── */
 .activity-view {
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  max-width: 1040px;
+  gap: 24px;
+  max-width: 960px;
   margin: 0 auto;
+  padding: 32px 16px 48px;
 }
 
+/* ── Header ── */
 .activity-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 18px;
+  /* heading block, back button is separate above */
 }
 
 .activity-back {
-  padding: 8px 12px;
-  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.08));
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--text-main);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-1);
+  color: var(--color-neutral-7);
   cursor: pointer;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.15s;
+  width: fit-content;
+}
+
+.activity-back:hover {
+  background: var(--color-neutral-2);
+  border-color: var(--color-neutral-5);
+  color: var(--color-neutral-9);
 }
 
 .activity-heading {
   flex: 1;
+  min-width: 0;
 }
 
 .activity-eyebrow {
-  margin: 0 0 6px;
-  color: var(--accent-amber, #a96e35);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  margin: 0 0 4px;
+  color: var(--color-accent);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .activity-heading h1 {
-  margin: 0 0 6px;
-  color: var(--text-main);
-  font-family: 'Noto Serif SC', serif;
-  font-size: 2rem;
+  margin: 0 0 4px;
+  color: var(--color-neutral-10);
+  font-family: var(--font-serif);
+  font-size: var(--text-title-28);
+  font-weight: 500;
 }
 
 .activity-heading p {
   margin: 0;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
+  font-size: 14px;
 }
 
+/* ── Loading / Empty ── */
+.activity-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  color: var(--color-neutral-5);
+  font-size: 14px;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-xl);
+}
+
+/* ── Summary Cards ── */
 .activity-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
 }
 
-.activity-summary__item,
-.activity-panel,
-.activity-empty {
-  border: 1px solid var(--glass-border-highlight, rgba(255,255,255,0.65));
-  border-radius: 8px;
-  background: var(--glass-panel-bg, rgba(255,255,255,0.55));
-  box-shadow: 0 18px 40px rgba(0,0,0,0.04);
+.activity-summary__item {
+  padding: 18px 20px;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-lg);
+  transition: box-shadow 0.2s;
 }
 
-.activity-summary__item {
-  padding: 14px 16px;
+.activity-summary__item:hover {
+  box-shadow: var(--shadow-whisper);
 }
 
 .activity-summary__item span {
   display: block;
-  margin-bottom: 5px;
-  color: var(--text-soft);
-  font-size: 0.76rem;
-  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--color-neutral-5);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .activity-summary__item strong {
-  color: var(--text-main);
+  color: var(--color-neutral-10);
+  font-size: 18px;
+  font-weight: 500;
+  font-family: var(--font-serif);
 }
 
+/* ── Panel ── */
 .activity-panel {
-  padding: 18px;
+  padding: 24px;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-whisper);
 }
 
+/* ── Filters ── */
 .activity-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 18px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-neutral-3);
 }
 
 .activity-filter {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 11px;
-  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.08));
-  border-radius: 8px;
-  background: rgba(255,255,255,0.45);
-  color: var(--text-soft);
+  gap: 7px;
+  padding: 7px 15px;
+  border: 1px solid var(--color-neutral-4);
+  border-radius: 999px;
+  background: var(--color-neutral-1);
+  color: var(--color-neutral-7);
   cursor: pointer;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s ease;
 }
 
 .activity-filter small {
-  color: var(--accent-amber, #a96e35);
+  color: var(--color-neutral-5);
+  font-size: 11px;
+  background: var(--color-neutral-3);
+  padding: 1px 7px;
+  border-radius: 999px;
+  min-width: 20px;
+  text-align: center;
 }
 
-.activity-filter--active,
 .activity-filter:hover {
-  border-color: var(--accent-amber, #a96e35);
-  background: rgba(169, 110, 53, 0.12);
-  color: var(--text-main);
+  border-color: var(--color-neutral-5);
+  background: var(--color-neutral-2);
 }
 
+.activity-filter--active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+}
+
+.activity-filter--active small {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* ── Timeline Entry ── */
 .activity-entry {
   display: flex;
-  gap: 16px;
+  gap: 18px;
+  position: relative;
 }
 
+.activity-entry:last-child .activity-entry__card {
+  padding-bottom: 0;
+}
+
+.activity-entry:last-child .activity-entry__rail::before {
+  bottom: 50%;
+}
+
+/* Rail / timeline line */
 .activity-entry__rail {
-  width: 14px;
+  width: 16px;
+  flex-shrink: 0;
   position: relative;
 }
 
 .activity-entry__rail::before {
   content: '';
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 6px;
+  top: 28px;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 2px;
-  background: var(--glass-border-shadow, rgba(0,0,0,0.1));
+  background: var(--color-neutral-3);
+  border-radius: 1px;
 }
 
+/* Rail dot — color varies by action tag parent */
 .activity-entry__rail span {
   position: absolute;
-  top: 17px;
-  left: 1px;
-  width: 12px;
-  height: 12px;
-  border: 3px solid var(--accent-amber, #a96e35);
-  border-radius: 999px;
-  background: var(--bg-panel, #fff);
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border: 2.5px solid var(--color-neutral-4);
+  border-radius: 50%;
+  background: var(--color-panel-bg);
+  z-index: 1;
 }
 
+/* ── Entry Card ── */
 .activity-entry__card {
   flex: 1;
-  padding: 12px 0 24px;
+  padding: 10px 0 28px;
+  min-width: 0;
 }
 
 .activity-entry__meta {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.activity-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent), #a8322b);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .activity-entry__meta strong {
-  color: var(--text-main);
-  background: rgba(0,0,0,0.04);
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 0.78rem;
+  color: var(--color-neutral-9);
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .activity-entry__meta time {
-  color: var(--accent-amber, #a96e35);
+  color: var(--color-neutral-5);
+  font-size: 12px;
   font-family: monospace;
-  font-size: 0.78rem;
-  font-weight: 700;
 }
 
+/* Action tag */
 .activity-tag {
   margin-left: auto;
   border-radius: 999px;
-  padding: 2px 9px;
-  font-size: 0.72rem;
-  font-weight: 800;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
-.activity-tag--info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-.activity-tag--success { background: rgba(39, 174, 96, 0.1); color: #27ae60; }
-.activity-tag--warning { background: rgba(217, 119, 6, 0.12); color: #b45309; }
-.activity-tag--danger { background: rgba(192, 57, 43, 0.1); color: #c0392b; }
+.activity-tag--info {
+  background: rgba(59, 130, 246, 0.08);
+  color: #2563eb;
+}
 
-.activity-diff,
-.activity-entry__detail {
-  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.06));
-  border-radius: 8px;
-  background: rgba(255,255,255,0.38);
-  padding: 10px 12px;
+.activity-tag--success {
+  background: rgba(22, 163, 74, 0.08);
+  color: #16a34a;
+}
+
+.activity-tag--warning {
+  background: rgba(217, 119, 6, 0.08);
+  color: #d97706;
+}
+
+.activity-tag--danger {
+  background: rgba(196, 58, 49, 0.08);
+  color: var(--color-accent);
+}
+
+/* ── Diff card ── */
+.activity-diff {
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-neutral-1);
+  padding: 14px 16px;
 }
 
 .activity-diff__person {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
+}
+
+.activity-diff__person > strong {
+  font-size: 14px;
+  color: var(--color-neutral-10);
+  font-family: var(--font-serif);
 }
 
 .activity-diff__field {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 0.84rem;
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 13px;
+  padding: 6px 0;
 }
 
-.activity-diff__field span {
-  color: var(--text-soft);
-  font-weight: 700;
+.activity-diff__field + .activity-diff__field {
+  border-top: 1px solid var(--color-neutral-3);
+}
+
+.activity-diff__field > span {
+  color: var(--color-neutral-5);
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .activity-diff__field del {
-  color: #c0392b;
-  background: rgba(192, 57, 43, 0.06);
+  color: var(--color-accent);
+  background: rgba(196, 58, 49, 0.06);
   border-radius: 4px;
-  padding: 0 6px;
+  padding: 2px 8px;
+  text-decoration: line-through;
+  font-size: 12px;
 }
 
 .activity-diff__field b {
-  color: #27ae60;
-  background: rgba(39, 174, 96, 0.06);
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.06);
   border-radius: 4px;
-  padding: 0 6px;
+  padding: 2px 8px;
+  font-weight: 500;
+  font-size: 12px;
 }
 
+/* ── Plain detail text ── */
 .activity-entry__detail {
   margin: 0;
-  color: var(--text-soft);
+  padding: 12px 16px;
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-1);
+  color: var(--color-neutral-7);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
-.activity-empty {
-  padding: 32px;
-  color: var(--text-soft);
-  text-align: center;
-}
-
+/* ── Responsive ── */
 @media (max-width: 720px) {
-  .activity-header {
-    flex-direction: column;
-  }
+
 
   .activity-summary {
     grid-template-columns: 1fr;
@@ -401,5 +543,11 @@ onMounted(loadActivities)
   .activity-tag {
     margin-left: 0;
   }
+
+  .activity-diff__field {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
 }
 </style>
+

@@ -65,9 +65,12 @@ export interface PublicationSettings {
   fontScale: number
   zoom: number
   showCard: boolean
+  showBirth: boolean
   showDeath: boolean
   showAge: boolean
   showNote: boolean
+  showStatus: boolean
+  showLineage: boolean
   showPhoto: boolean
   paddingX: number
   paddingY: number

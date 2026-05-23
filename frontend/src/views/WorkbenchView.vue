@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import { inject, nextTick, ref, toRef, watch } from 'vue'
+﻿<script setup lang="ts">
+import { computed, inject, nextTick, ref, toRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import FeedbackStrip from '../components/FeedbackStrip.vue'
@@ -14,9 +14,9 @@ import { usePersonEditor } from '../composables/usePersonEditor'
 import { useFileOperations } from '../composables/useFileOperations'
 import { useRelationshipActions } from '../composables/useRelationshipActions'
 import { useWorkbenchRouteFocus } from '../composables/useWorkbenchRouteFocus'
-import { useTheme } from '../composables/useTheme'
 import { getUsername } from '../api/auth'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import KinshipCalculatorDialog from '../components/KinshipCalculatorDialog.vue'
 
 import { PUBLICATION_CONTEXT_KEY, type PublicationSettings } from '../types/family'
 
@@ -49,6 +49,8 @@ function onConfirmDialogResult(result: boolean) {
   }
 }
 
+defineExpose({ confirmAsync })
+
 // ─── Shared Context ─────────────────────────────────────────────
 
 const context = inject(PUBLICATION_CONTEXT_KEY)!
@@ -57,15 +59,13 @@ const context = inject(PUBLICATION_CONTEXT_KEY)!
 const panels = usePanelState()
 const feedback = useFeedback()
 const personEditor = usePersonEditor(context.pub)
-const theme = useTheme()
-
 const canvasRef = ref<InstanceType<typeof PublicationCanvas> | null>(null)
 
 // ─── Canvas Controls ────────────────────────────────────────────
 function revealPersonInCanvas(personId: string) {
   nextTick(() => {
     const leftInset = panels.historyOpen.value ? 388 : panels.layoutPanelOpen.value ? 360 : 24
-    const rightInset = panels.editorOpen.value ? 444 : 24
+    const rightInset = 24
 
     canvasRef.value?.revealPerson?.(personId, {
       padding: 40,
@@ -97,6 +97,15 @@ watch(
   },
   { immediate: true },
 )
+
+// ─── Editor Anchor (card screen position for floating editor) ──
+
+const editorAnchor = computed(() => {
+  const personId = context.pub.selectedPersonId.value
+  if (!personId || !canvasRef.value) return null
+  const pos = canvasRef.value.getCardScreenPosition?.(personId)
+  return pos
+})
 
 // ─── File Operations ────────────────────────────────────────────
 const fileOps = useFileOperations({
@@ -177,21 +186,6 @@ useWorkbenchRouteFocus({
   revealPersonInCanvas,
 })
 
-// ─── Theme & Layout Sync ──────────────────────────────────────
-watch(
-  () => theme.currentTheme.value,
-  (newTheme) => {
-    if (newTheme === 'su-style') {
-      updateSettings({ layoutMode: 'su' })
-    } else if (newTheme === 'ou-style') {
-      updateSettings({ layoutMode: 'ou' })
-    } else {
-      updateSettings({ layoutMode: 'modern' })
-    }
-  },
-  { immediate: true },
-)
-
 // ─── Watchers ───────────────────────────────────────────────────
 watch(
   () => context.pub.selectedPerson.value,
@@ -219,7 +213,6 @@ watch(
       :fileName="fileOps.draftFileName.value"
       :dirty="fileOps.hasUnsavedFileChanges.value"
       :nativeFileAccess="fileOps.nativeFileAccessSupported"
-      :currentTheme="theme.currentTheme.value"
       :currentUsername="currentUsername"
       :syncStatus="context.syncStatus.value"
       @import-json="fileOps.importDraftFromFileEvent"
@@ -230,7 +223,6 @@ watch(
       @download-svg="fileOps.downloadSvg"
       @export-json="fileOps.exportJson"
       @export-share-html="fileOps.exportShareHtml"
-      @change-theme="theme.setTheme"
       @logout="goBackToList"
       @go-back="goBackToList"
       @view-stats="router.push({ name: 'publication-stats' })"
@@ -256,6 +248,7 @@ watch(
           :hasSelectedPerson="Boolean(context.pub.selectedPerson.value)"
           :selectedPersonName="context.pub.selectedPerson.value?.name || ''"
           :selectedPersonMeta="context.pub.selectedPersonMeta.value"
+          :relationshipToSelected="context.pub.relationshipToSelected.value"
           :canFocusSelectedBranch="Boolean(context.pub.selectedPerson.value && !context.pub.isSelectedBranchFocused.value)"
           :settings="context.pub.settings"
           :historyPastCount="context.history.historyPast.value.length"
@@ -272,7 +265,7 @@ watch(
           @open-editor="openEditor"
           @reveal-selected-person="revealSelectedPerson"
           @focus-selected-branch="relActions.focusSelectedBranch"
-          @close-layout="panels.layoutPanelOpen.value = false"
+          @close-layout="panels.layoutPanelOpen.value = false" @open-kinship="showKinshipDialog = true"
           @close-history="panels.historyOpen.value = false"
         />
 
@@ -292,13 +285,6 @@ watch(
           @hover-person="context.pub.setHoveredPerson"
         />
 
-        <button
-          class="kinship-trigger"
-          title="推算两个成员之间的亲属称谓"
-          @click="showKinshipDialog = true"
-        >
-          关系推算
-        </button>
 
         <PersonEditorDrawer
           v-if="context.pub.selectedPerson.value"
@@ -360,25 +346,5 @@ watch(
 </template>
 
 <style scoped>
-.kinship-trigger {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 100;
-  padding: 10px 18px;
-  background: var(--primary, #3b82f6);
-  color: var(--primary-foreground, #fff);
-  border: none;
-  border-radius: 24px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: transform 0.15s, box-shadow 0.15s;
-}
 
-.kinship-trigger:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-}
 </style>

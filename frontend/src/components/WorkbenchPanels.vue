@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue'
 import type { KinshipTerm } from '../lib/kinship'
 import type { PublicationSettings } from '../types/family'
@@ -41,6 +41,7 @@ const emit = defineEmits<{
   (event: 'focus-selected-branch'): void
   (event: 'close-layout'): void
   (event: 'close-history'): void
+  (event: 'open-kinship'): void
   (event: 'update-settings', patch: Partial<PublicationSettings>): void
 }>()
 
@@ -63,13 +64,9 @@ function readPaperValue(event: Event): PublicationSettings['paper'] {
 function onClickOutside(e: MouseEvent) {
   const target = e.target as Element | null
   if (!target) return
-
-  // If clicked inside any floating panel or panel toggle button, do nothing
   if (target.closest('.floating-panel') || target.closest('.tool-btn--panel')) {
     return
   }
-
-  // Otherwise, close any open panels
   if (props.layoutPanelOpen) emit('close-layout')
   if (props.historyOpen) emit('close-history')
 }
@@ -126,6 +123,15 @@ onBeforeUnmount(() => {
       <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="5" width="16" height="10" rx="2" /><circle cx="10" cy="10" r="3" /><path d="M4.5 7.5l2 2" /></svg>
       全览
     </button>
+    <button
+      class="tool-btn tool-btn--quiet"
+      type="button"
+      title="推算两个成员之间的亲属称谓"
+      @click="$emit('open-kinship')"
+    >
+      <svg class="tool-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2" /><circle cx="12" cy="11" r="2" /><path d="M4 7l-1 4 4 1" /><path d="M10 9l1-4-4-1" /></svg>
+      关系
+    </button>
   </div>
 
   <div class="floating-toolbar floating-toolbar--right">
@@ -137,8 +143,8 @@ onBeforeUnmount(() => {
     <div v-if="hasSelectedPerson" class="selection-chip">
       <div class="selection-chip__content">
         <div class="selection-chip__header">
+          <span class="selection-chip__family">{{ focusFamilyLabel }}</span>
           <strong>{{ selectedPersonName }}</strong>
-          <span class="selection-chip__family">宗支 {{ focusFamilyLabel }}</span>
         </div>
         <em>{{ selectedPersonMeta }}</em>
         <div v-if="relationshipToSelected" class="selection-chip__kinship">
@@ -147,29 +153,24 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <div class="selection-chip__actions">
+        <button class="selection-chip__btn selection-chip__btn--danger" type="button" @click="$emit('open-editor')">
+          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M11 2l3 3-9 9H2v-3l9-9z" /></svg>
+          编辑
+        </button>
         <button class="selection-chip__btn" type="button" @click="$emit('reveal-selected-person')">
-          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="4.5" /><line x1="10.2" y1="10.2" x2="14" y2="14" /></svg>
+          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3" /><path d="M1 8s3-6 7-6 7 6 7 6-3 6-7 6-7-6-7-6z" /></svg>
           定位
         </button>
-        <button class="selection-chip__btn" type="button" :disabled="!canFocusSelectedBranch" @click="$emit('focus-selected-branch')">
-          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 2v5" /><path d="M4 9v5" /><path d="M12 9v5" /><path d="M4 9h8" /></svg>
-          切到该支
-        </button>
-        <button class="selection-chip__btn selection-chip__btn--accent" type="button" @click="$emit('open-editor')">
-          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z" /></svg>
-          编辑
+        <button v-if="canFocusSelectedBranch" class="selection-chip__btn selection-chip__btn--accent" type="button" @click="$emit('focus-selected-branch')">
+          设为主支
         </button>
       </div>
     </div>
 
     <div class="zoom-control">
-      <button class="zoom-control__btn" type="button" aria-label="缩小" @click="$emit('adjust-zoom', -0.05)">
-        <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="4" y1="8" x2="12" y2="8" /></svg>
-      </button>
+      <button class="zoom-control__btn" type="button" @click="$emit('adjust-zoom', -0.05)">−</button>
       <span>{{ Math.round(zoom * 100) }}%</span>
-      <button class="zoom-control__btn" type="button" aria-label="放大" @click="$emit('adjust-zoom', 0.05)">
-        <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="4" y1="8" x2="12" y2="8" /><line x1="8" y1="4" x2="8" y2="12" /></svg>
-      </button>
+      <button class="zoom-control__btn" type="button" @click="$emit('adjust-zoom', 0.05)">+</button>
     </div>
   </div>
 
@@ -177,7 +178,6 @@ onBeforeUnmount(() => {
     <section v-if="layoutPanelOpen" class="floating-panel floating-panel--left">
       <div class="floating-panel__header">
         <div>
-          <p class="floating-panel__eyebrow">Layout</p>
           <h2>版式设置</h2>
         </div>
         <button class="floating-panel__close" type="button" @click="$emit('close-layout')">
@@ -188,58 +188,78 @@ onBeforeUnmount(() => {
 
       <label class="field">
         <span>纸张尺寸</span>
-        <select :value="settings.paper" @change="updateSetting('paper', readPaperValue($event))">
-          <option value="A3">A3 横向</option>
-          <option value="A4">A4 横向</option>
-        </select>
+        <AppSelect :model-value="settings.paper" :options="[{value:'A3',label:'A3 横向'},{value:'A4',label:'A4 横向'}]" @change="(v: string) => updateSetting('paper', v as PublicationSettings['paper'])" />
       </label>
 
       <label class="field">
         <span>人物卡宽度 {{ settings.cardWidth }}px</span>
-        <input :value="settings.cardWidth" type="range" min="142" max="176" step="2" @input="updateSetting('cardWidth', readNumericValue($event))" />
+        <input :value="settings.cardWidth" type="range" min="120" max="200" step="2" @input="updateSetting('cardWidth', readNumericValue($event))" />
       </label>
 
       <label class="field">
         <span>代际间距 {{ settings.generationGap }}px</span>
-        <input :value="settings.generationGap" type="range" min="120" max="220" step="10" @input="updateSetting('generationGap', readNumericValue($event))" />
+        <input :value="settings.generationGap" type="range" min="80" max="280" step="10" @input="updateSetting('generationGap', readNumericValue($event))" />
       </label>
 
       <label class="field">
         <span>兄弟间距 {{ settings.siblingGap }}px</span>
-        <input :value="settings.siblingGap" type="range" min="56" max="140" step="4" @input="updateSetting('siblingGap', readNumericValue($event))" />
+        <input :value="settings.siblingGap" type="range" min="40" max="180" step="4" @input="updateSetting('siblingGap', readNumericValue($event))" />
       </label>
 
       <label class="field">
         <span>字体倍率 {{ settings.fontScale.toFixed(2) }}</span>
-        <input :value="settings.fontScale" type="range" min="0.88" max="1.18" step="0.02" @input="updateSetting('fontScale', readNumericValue($event))" />
+        <input :value="settings.fontScale" type="range" min="0.72" max="1.40" step="0.02" @input="updateSetting('fontScale', readNumericValue($event))" />
       </label>
 
-      <div class="toggle-row">
-        <label class="toggle">
-          <input :checked="settings.showCard" type="checkbox" @change="updateSetting('showCard', readCheckedValue($event))" />
-          <span>显示卡片</span>
-        </label>
+      <fieldset class="toggle-group">
+        <legend class="toggle-group__label">卡片信息</legend>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input :checked="settings.showCard" type="checkbox" @change="updateSetting('showCard', readCheckedValue($event))" />
+            <span>显示卡片</span>
+          </label>
+          <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
+            <input :checked="settings.showPhoto" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showPhoto', readCheckedValue($event))" />
+            <span>显示照片</span>
+          </label>
+          <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
+            <input :checked="settings.showStatus" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showStatus', readCheckedValue($event))" />
+            <span>显示状态</span>
+          </label>
+          <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
+            <input :checked="settings.showNote" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showNote', readCheckedValue($event))" />
+            <span>显示注记</span>
+          </label>
+        </div>
+      </fieldset>
 
-        <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
-          <input :checked="settings.showDeath" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showDeath', readCheckedValue($event))" />
-          <span>显示卒年</span>
-        </label>
+      <fieldset class="toggle-group">
+        <legend class="toggle-group__label">生卒信息</legend>
+        <div class="toggle-row">
+          <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
+            <input :checked="settings.showBirth" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showBirth', readCheckedValue($event))" />
+            <span>显示生辰</span>
+          </label>
+          <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
+            <input :checked="settings.showDeath" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showDeath', readCheckedValue($event))" />
+            <span>显示卒年</span>
+          </label>
+          <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
+            <input :checked="settings.showAge" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showAge', readCheckedValue($event))" />
+            <span>显示年龄</span>
+          </label>
+        </div>
+      </fieldset>
 
-        <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
-          <input :checked="settings.showAge" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showAge', readCheckedValue($event))" />
-          <span>显示年龄</span>
-        </label>
-
-        <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
-          <input :checked="settings.showNote" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showNote', readCheckedValue($event))" />
-          <span>显示注记</span>
-        </label>
-
-        <label class="toggle" :class="{ 'toggle--disabled': !settings.showCard }">
-          <input :checked="settings.showPhoto" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showPhoto', readCheckedValue($event))" />
-          <span>显示照片</span>
-        </label>
-      </div>
+      <fieldset class="toggle-group">
+        <legend class="toggle-group__label">世系</legend>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input :checked="settings.showLineage" type="checkbox" @change="updateSetting('showLineage', readCheckedValue($event))" />
+            <span>显示世系</span>
+          </label>
+        </div>
+      </fieldset>
     </section>
   </Transition>
 
@@ -247,7 +267,6 @@ onBeforeUnmount(() => {
     <section v-if="historyOpen" class="floating-panel floating-panel--left floating-panel--history">
       <div class="floating-panel__header">
         <div>
-          <p class="floating-panel__eyebrow">History</p>
           <h2>操作历史</h2>
         </div>
         <button class="floating-panel__close" type="button" @click="$emit('close-history')">
@@ -262,13 +281,13 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="history-panel__actions">
-        <button class="relation-btn" type="button" :disabled="!canUndo" @click="$emit('undo')">
-          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7a3 3 0 0 1 0 6H9" /><path d="M7 3L4 6l3 3" /></svg>
-          撤销上一步
+        <button class="history-action-btn" type="button" :disabled="!canUndo" @click="$emit('undo')">
+          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7a3 3 0 0 1 0 6H9" /><path d="M7 3L4 6l3 3" /></svg>
+          <span>撤销</span>
         </button>
-        <button class="relation-btn" type="button" :disabled="!canRedo" @click="$emit('redo')">
-          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6H5a3 3 0 0 0 0 6h2" /><path d="M9 3l3 3-3 3" /></svg>
-          重做上一步
+        <button class="history-action-btn" type="button" :disabled="!canRedo" @click="$emit('redo')">
+          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6H5a3 3 0 0 0 0 6h2" /><path d="M9 3l3 3-3 3" /></svg>
+          <span>重做</span>
         </button>
       </div>
 

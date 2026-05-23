@@ -9,8 +9,10 @@ export interface AuditLogEntry {
   createdAt: string
 }
 
-export async function listLogs(): Promise<AuditLogEntry[]> {
-  const resp = await http.get<ApiResponse<AuditLogEntry[]>>('/admin/logs')
+export async function listLogs(page = 0, size = 100): Promise<AuditLogEntry[]> {
+  const resp = await http.get<ApiResponse<AuditLogEntry[]>>('/admin/logs', {
+    params: { page, size },
+  })
   return resp.data.data ?? []
 }
 

@@ -36,9 +36,8 @@ const viewportHeight = ref(0)
 const isMinimapDragging = ref(false)
 
 // Theme adaptation
-const currentTheme = ref(document.documentElement.getAttribute('data-theme') || 'parchment')
-const isSu = computed(() => currentTheme.value === 'su-style')
-const isOu = computed(() => currentTheme.value === 'ou-style')
+const isSu = computed(() => false)
+const isOu = computed(() => false)
 
 const junctions = computed(() => {
   if (!isSu.value) return []
@@ -114,10 +113,10 @@ const MINIMAP_HEIGHT = 164
 const DRAG_SELECT_THRESHOLD = 5
 
 const MINIMAP_COLORS = {
-  male: '#4b7bec',
-  female: '#eb3b5a',
-  unknown: '#a5b1c2',
-  selected: '#f7b731',
+  male: '#5b6e8a',
+  female: '#c47a5a',
+  unknown: '#b5a99a',
+  selected: '#d4a853',
 }
 
 const stageStyle = computed(() => ({
@@ -194,7 +193,7 @@ function drawMinimapCanvas() {
 
       const x = (card.x + card.width / 2) * scale
       const y = (card.y + card.height / 2) * scale
-      const size = isSelected ? 4 : 3
+      const size = isSelected ? 6 : 5
 
       ctx.fillRect(x - size / 2, y - size / 2, size, size)
     })
@@ -481,14 +480,6 @@ onMounted(() => {
     resizeObserver.observe(viewportRef.value)
   }
 
-  const observer = new MutationObserver(() => {
-    const theme = document.documentElement.getAttribute('data-theme')
-    if (theme && theme !== currentTheme.value) {
-      currentTheme.value = theme as any
-    }
-  })
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
-  onBeforeUnmount(() => observer.disconnect())
 })
 
 onBeforeUnmount(() => {
@@ -530,11 +521,11 @@ defineExpose({
         >
           <defs>
             <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#6d4f31" flood-opacity="0.12" />
+              <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#6d4f31" flood-opacity="0.18" />
             </filter>
             <!-- Ou Grid Pattern -->
             <pattern v-if="isOu" id="ou-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--line-soft)" stroke-width="0.5" />
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--color-neutral-4)" stroke-width="0.5" />
             </pattern>
           </defs>
 

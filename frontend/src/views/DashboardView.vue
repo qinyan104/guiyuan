@@ -5,10 +5,13 @@ import { useLexicon } from '../composables/useLexicon'
 import { listPublications, createPublication, type PublicationSummary } from '../api/publication'
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { isAdmin, isSuperAdmin } from '../api/auth'
+import FeedbackStrip from '../components/FeedbackStrip.vue'
+import { useFeedback } from '../composables/useFeedback'
 import { adminListUsers, adminBackupDatabase } from '../api/admin'
 
 const router = useRouter()
 const { lexicon } = useLexicon()
+const feedback = useFeedback()
 
 const pubCount = ref(0)
 const userCount = ref(0)
@@ -52,7 +55,7 @@ async function handleBackup() {
   try {
     await adminBackupDatabase()
   } catch (err: any) {
-    alert('备份失败: ' + (err.message || '未知错误'))
+    feedback.setError('备份失败: ' + (err.message || '未知错误'))
   } finally {
     backupLoading.value = false
   }
@@ -76,7 +79,7 @@ async function handleCreateFromDashboard() {
     const id = await createPublication({ ...blankPublication, title, subtitle: newSubtitle.value.trim() }, defaultSettings, title)
     router.push({ name: 'workbench', params: { id } })
   } catch (err: any) {
-    alert('创建失败: ' + (err.message || '未知错误'))
+    feedback.setError('创建失败: ' + (err.message || '未知错误'))
   }
 }
 </script>
@@ -84,6 +87,7 @@ async function handleCreateFromDashboard() {
 <template>
   <div class="dashboard-view-root">
     <div class="dashboard-stage">
+    <FeedbackStrip :status-message="feedback.statusMessage.value" :error-message="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
       <header class="poetic-header">
         <div class="poetic-header__main">
           <div class="poetic-eyebrow">{{ lexicon.dashboard.headerEyebrow }}</div>
@@ -113,9 +117,10 @@ async function handleCreateFromDashboard() {
       </div>
 
       <div v-else-if="pubCount > 0" class="bento-grid">
-        <!-- Box A: Latest Publication (Hero) -->
+                <!-- Box A: Latest Publication (Hero) -->
         <div v-if="latestPub" class="bento-card card-hero" @click="openPublication(latestPub.id)">
           <div class="hero-bg-layer"></div>
+          <div class="hero-accent-line"></div>
           <div class="card-glass-panel">
             <span class="card-eyebrow">最新修撰</span>
             <h2 class="hero-pub-title">{{ latestPub.title || '未命名族谱' }}</h2>
@@ -126,6 +131,17 @@ async function handleCreateFromDashboard() {
                 继续编撰 
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
+            </div>
+          </div>
+        </div>
+        <div v-else class="bento-card card-hero empty-hero" @click="router.push({ name: 'publications' })">
+          <div class="hero-bg-layer"></div>
+          <div class="hero-accent-line"></div>
+          <div class="card-glass-panel">
+            <span class="card-eyebrow">起步</span>
+            <h2 class="hero-pub-title">尚未创建族谱</h2>
+            <div class="hero-footer">
+              <button class="ghost-pill" @click.stop="router.push({ name: 'publications' })">立即创建</button>
             </div>
           </div>
         </div>
@@ -140,7 +156,7 @@ async function handleCreateFromDashboard() {
         </div>
 
         <!-- Box C: Action (Quick Create) -->
-        <div class="bento-card card-action" @click="router.push({ name: 'publications' })">
+        <div class="bento-card card-action" @click="showCreateDialog = true">
           <div class="action-shimmer"></div>
           <div class="action-content">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
@@ -221,7 +237,7 @@ async function handleCreateFromDashboard() {
       <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
         <div class="dialog-panel">
           <h3>创建新族谱</h3>
-          <p style="color: var(--text-soft); margin: 8px 0 20px;">输入族谱名称后即可开始编撰。</p>
+          <p style="color: var(--color-neutral-6); margin: 8px 0 20px;">输入族谱名称后即可开始编撰。</p>
           <input v-model="newTitle" placeholder="族谱名称..." class="glass-input" @keyup.enter="handleCreateFromDashboard" />
           <input v-model="newSubtitle" placeholder="副标题（可选）..." class="glass-input" style="margin-top: 12px;" />
           <div class="dialog-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
@@ -250,15 +266,15 @@ async function handleCreateFromDashboard() {
   font-family: monospace;
   font-size: 0.75rem;
   letter-spacing: 0.2em;
-  color: var(--text-soft, #888);
+  color: var(--color-neutral-6);
   margin-bottom: 0.5rem;
 }
 
 .header-title {
   font-size: 2.2rem;
   font-family: 'Noto Serif SC', serif;
-  font-weight: 700;
-  color: var(--text-main, #1a1a1a);
+  font-weight: 500;
+  color: var(--color-neutral-9);
   margin: 0;
   letter-spacing: 0.05em;
 }
@@ -271,13 +287,13 @@ async function handleCreateFromDashboard() {
 }
 
 .bento-card {
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.4));
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.6));
+  background: var(--color-card-fill));
+  border: 1px solid var(--color-card-stroke));
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 
     0 12px 32px -12px rgba(0,0,0,0.05),
-    inset 0 0 0 1px var(--glass-border-shadow, rgba(255,255,255,0.2));
+    inset 0 0 0 1px var(--color-neutral-4));
   backdrop-filter: blur(24px) saturate(150%);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
   position: relative;
@@ -287,8 +303,8 @@ async function handleCreateFromDashboard() {
   flex-direction: column;
 }
 
-:global([data-theme="rosewood"]) .bento-card,
-:global([data-theme="star-sea"]) .bento-card {
+[data-theme="dark"] .bento-card,
+[data-theme="dark"] .bento-card {
   background: rgba(0, 0, 0, 0.2);
   border-color: rgba(255, 255, 255, 0.06);
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
@@ -332,8 +348,8 @@ async function handleCreateFromDashboard() {
 .card-eyebrow {
   font-size: 0.7rem;
   letter-spacing: 0.25em;
-  color: var(--accent-amber, #a96e35);
-  font-weight: 700;
+  color: var(--color-accent);
+  font-weight: 500;
   text-transform: uppercase;
 }
 
@@ -343,38 +359,80 @@ async function handleCreateFromDashboard() {
 .hero-bg-layer {
   position: absolute;
   inset: 0;
-  background: 
-    linear-gradient(135deg, rgba(255, 255, 255, 0.4), transparent),
-    url('data:image/svg+xml;utf8,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="rgba(0,0,0,0.05)"/></pattern></defs><rect width="100%" height="100%" fill="url(#dots)"/></svg>');
-  z-index: 0;
-}
-:global([data-theme="rosewood"]) .hero-bg-layer,
-:global([data-theme="star-sea"]) .hero-bg-layer {
-  background: 
-    linear-gradient(135deg, rgba(0, 0, 0, 0.4), transparent),
-    url('data:image/svg+xml;utf8,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100%" height="100%" fill="url(#dots)"/></svg>');
+  background: var(--color-card-fill);
+  border-radius: inherit;
 }
 
 .card-glass-panel {
   position: relative;
   z-index: 1;
-  padding: 2.5rem;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
+[data-theme="dark"] .card-glass-panel {
+  background: rgba(30, 30, 30, 0.6);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.hero-accent-line {
+  position: absolute;
+  left: 0;
+  top: 10%;
+  bottom: 10%;
+  width: 3px;
+  background: var(--color-accent);
+  border-radius: 0 4px 4px 0;
+  opacity: 0.6;
+}
+[data-theme="dark"] .hero-bg-layer {
+  background: var(--color-neutral-2);
+}
+
+.card-glass-panel {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+[data-theme="dark"] .card-glass-panel {
+  background: rgba(30, 30, 30, 0.6);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+
+
+
+
+
+
+
 .hero-pub-title {
   font-family: 'Noto Serif SC', serif;
   font-size: 3rem;
-  font-weight: 700;
-  color: var(--text-main);
+  font-weight: 500;
+  color: var(--color-neutral-9);
   margin: 1rem 0 0.5rem;
 }
 
 .hero-pub-subtitle {
   font-size: 1rem;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   margin: 0 0 2rem;
 }
 
@@ -387,20 +445,20 @@ async function handleCreateFromDashboard() {
 
 .hero-date {
   font-family: monospace;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-size: 0.85rem;
   letter-spacing: 0.05em;
   padding-bottom: 0.5rem;
 }
 
 .ghost-pill {
-  background: var(--bg-panel, #fff);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+  background: transparent;
+  border: 1px solid var(--color-neutral-5);
   border-radius: 999px;
   padding: 0.75rem 1.5rem;
   font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-main);
+  font-weight: 500;
+  color: var(--color-neutral-9);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -409,26 +467,24 @@ async function handleCreateFromDashboard() {
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 .ghost-pill:hover {
-  background: var(--text-main);
-  color: var(--bg-panel, #fff);
+  background: var(--color-neutral-9);
+  color: var(--color-card-fill);
   border-color: transparent;
 }
-:global([data-theme="rosewood"]) .ghost-pill,
-:global([data-theme="star-sea"]) .ghost-pill {
+[data-theme="dark"] .ghost-pill {
   background: rgba(0,0,0,0.4);
   border-color: rgba(255,255,255,0.1);
   color: #fff;
 }
-:global([data-theme="rosewood"]) .ghost-pill:hover,
-:global([data-theme="star-sea"]) .ghost-pill:hover {
+[data-theme="dark"] .ghost-pill:hover {
   background: #fff;
   color: #000;
 }
 
 /* Stat Box */
 .card-dark {
-  background: var(--card-dark-bg, var(--text-main, #1a1a1a));
-  color: var(--card-dark-color, var(--bg-panel, #fff));
+  background: var(--color-neutral-8);
+  color: var(--color-card-fill);
   padding: 2rem;
   justify-content: space-between;
   border: none;
@@ -448,13 +504,13 @@ async function handleCreateFromDashboard() {
   text-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 .card-users .stat-value {
-  background: linear-gradient(135deg, var(--text-main), var(--text-sub));
+  background: linear-gradient(135deg, var(--color-neutral-9), var(--color-neutral-7));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: none;
 }
-:global([data-theme="rosewood"]) .card-users .stat-value,
-:global([data-theme="star-sea"]) .card-users .stat-value {
+[data-theme="dark"] .card-users .stat-value,
+[data-theme="dark"] .card-users .stat-value {
   background: linear-gradient(135deg, #fff, #aaa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -479,7 +535,7 @@ async function handleCreateFromDashboard() {
 
 /* Action Box */
 .card-action {
-  background: linear-gradient(135deg, var(--accent-ink, #6a4b2f), var(--accent-amber, #a96e35));
+  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
   color: #fff;
   border: none;
   justify-content: center;
@@ -505,7 +561,7 @@ async function handleCreateFromDashboard() {
   gap: 0.75rem;
 }
 .action-title {
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.1em;
   font-size: 1rem;
 }
@@ -523,14 +579,14 @@ async function handleCreateFromDashboard() {
 .link-btn {
   background: none;
   border: none;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-size: 0.8rem;
   cursor: pointer;
   transition: color 0.2s;
   padding: 0;
 }
 .link-btn:hover {
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   text-decoration: underline;
 }
 .history-list {
@@ -549,11 +605,11 @@ async function handleCreateFromDashboard() {
   bottom: 10px;
   left: 17px;
   width: 1px;
-  background: var(--border-color, rgba(0,0,0,0.1));
+  background: var(--color-neutral-5);
   z-index: 0;
 }
-:global([data-theme="rosewood"]) .history-list::before,
-:global([data-theme="star-sea"]) .history-list::before {
+[data-theme="dark"] .history-list::before,
+[data-theme="dark"] .history-list::before {
   background: rgba(255,255,255,0.1);
 }
 
@@ -576,12 +632,12 @@ async function handleCreateFromDashboard() {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--accent-amber, #a96e35);
-  box-shadow: 0 0 0 4px var(--glass-panel-bg, #fff);
+  background: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-card-fill);
   transition: transform 0.2s;
 }
-:global([data-theme="rosewood"]) .history-thread,
-:global([data-theme="star-sea"]) .history-thread {
+[data-theme="dark"] .history-thread,
+[data-theme="dark"] .history-thread {
   box-shadow: 0 0 0 4px rgba(0,0,0,0.5);
 }
 
@@ -592,16 +648,16 @@ async function handleCreateFromDashboard() {
 .history-item:hover .history-thread {
   transform: translateY(-50%) scale(1.5);
 }
-:global([data-theme="rosewood"]) .history-item:hover,
-:global([data-theme="star-sea"]) .history-item:hover {
+[data-theme="dark"] .history-item:hover,
+[data-theme="dark"] .history-item:hover {
   background: rgba(255,255,255,0.06);
 }
 
 .history-time {
   font-family: monospace;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-weight: 400;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   width: 45px;
   flex-shrink: 0;
   text-align: right;
@@ -611,9 +667,9 @@ async function handleCreateFromDashboard() {
   min-width: 0;
 }
 .history-title {
-  font-weight: 700;
+  font-weight: 500;
   font-size: 0.95rem;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -622,7 +678,7 @@ async function handleCreateFromDashboard() {
 
 .empty-hint {
   text-align: center;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-size: 0.85rem;
   padding: 2rem 0;
 }
@@ -640,13 +696,13 @@ async function handleCreateFromDashboard() {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 2px solid var(--bg-panel, #fff);
-  background: linear-gradient(135deg, var(--glass-border-shadow, #ccc), var(--glass-border-highlight, #eee));
+  border: 2px solid var(--color-card-fill);
+  background: linear-gradient(135deg, var(--color-neutral-4), var(--color-card-stroke));
   margin-left: -8px;
 }
 .avatar-circle.more {
-  background: var(--text-main);
-  color: var(--bg-panel, #fff);
+  background: var(--color-neutral-9);
+  color: var(--color-card-fill);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -657,22 +713,20 @@ async function handleCreateFromDashboard() {
 /* Backup Box */
 .card-backup {
   background: transparent;
-  border: 1px dashed var(--border-color, rgba(0,0,0,0.2));
+  border: 1px dashed var(--color-neutral-5);
   justify-content: center;
   align-items: center;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   box-shadow: none;
 }
 .card-backup:hover {
   background: rgba(0,0,0,0.02);
   border-style: solid;
 }
-:global([data-theme="rosewood"]) .card-backup,
-:global([data-theme="star-sea"]) .card-backup {
+[data-theme="dark"] .card-backup {
   border-color: rgba(255,255,255,0.2);
 }
-:global([data-theme="rosewood"]) .card-backup:hover,
-:global([data-theme="star-sea"]) .card-backup:hover {
+[data-theme="dark"] .card-backup:hover {
   background: rgba(255,255,255,0.05);
 }
 
@@ -683,21 +737,21 @@ async function handleCreateFromDashboard() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   gap: 1.5rem;
 }
 .spinner {
   width: 40px;
   height: 40px;
   border: 3px solid rgba(0,0,0,0.1);
-  border-top-color: var(--accent-amber, #a96e35);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
-:global([data-theme="rosewood"]) .spinner,
-:global([data-theme="star-sea"]) .spinner {
+[data-theme="dark"] .spinner,
+[data-theme="dark"] .spinner {
   border-color: rgba(255,255,255,0.1);
-  border-top-color: var(--accent-amber);
+  border-top-color: var(--color-accent);
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
@@ -732,7 +786,7 @@ async function handleCreateFromDashboard() {
 .error-card {
   max-width: 420px;
   width: 100%;
-  background: var(--glass-panel-bg, rgba(255,255,255,0.6));
+  background: var(--color-card-fill));
   backdrop-filter: blur(40px) saturate(180%);
   border-radius: 32px;
   border: 1px solid rgba(255, 59, 48, 0.2);
@@ -740,8 +794,8 @@ async function handleCreateFromDashboard() {
   padding: 48px 40px;
   text-align: center;
 }
-:global([data-theme="rosewood"]) .error-card,
-:global([data-theme="star-sea"]) .error-card {
+[data-theme="dark"] .error-card,
+[data-theme="dark"] .error-card {
   background: rgba(0,0,0,0.5);
   border-color: rgba(255, 59, 48, 0.3);
 }
@@ -753,12 +807,12 @@ async function handleCreateFromDashboard() {
 .error-title {
   font-family: 'Noto Serif SC', serif;
   font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-main);
+  font-weight: 500;
+  color: var(--color-neutral-9);
   margin: 0 0 8px;
 }
 .error-desc {
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-size: 0.95rem;
   margin: 0 0 24px;
   line-height: 1.6;
@@ -780,10 +834,10 @@ async function handleCreateFromDashboard() {
   position: relative;
   max-width: 520px;
   width: 100%;
-  background: var(--glass-panel-bg, rgba(255,255,255,0.6));
+  background: var(--color-card-fill));
   backdrop-filter: blur(40px) saturate(180%);
   border-radius: 32px;
-  border: 1px solid var(--glass-border-highlight);
+  border: 1px solid var(--color-neutral-2);
   box-shadow: 0 32px 64px rgba(0,0,0,0.08);
   overflow: hidden;
   text-align: center;
@@ -794,7 +848,7 @@ async function handleCreateFromDashboard() {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at center, var(--accent-amber) 0%, transparent 40%);
+  background: radial-gradient(circle at center, var(--color-accent) 0%, transparent 40%);
   opacity: 0.06;
   pointer-events: none;
 }
@@ -811,7 +865,7 @@ async function handleCreateFromDashboard() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--accent-ink), var(--accent-amber));
+  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
   border-radius: 20px;
   font-family: 'Noto Serif SC', serif;
   font-size: 2rem;
@@ -822,12 +876,12 @@ async function handleCreateFromDashboard() {
 .welcome-title {
   font-family: 'Noto Serif SC', serif;
   font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--text-main);
+  font-weight: 500;
+  color: var(--color-neutral-9);
   margin: 0 0 12px;
 }
 .welcome-desc {
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-size: 1rem;
   margin: 0 0 32px;
   line-height: 1.6;
@@ -847,13 +901,13 @@ async function handleCreateFromDashboard() {
   padding: 14px 24px;
   border-radius: 14px;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
 }
 .welcome-btn.primary {
-  background: linear-gradient(135deg, var(--accent-ink), var(--accent-amber));
+  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
   color: #fff;
   box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
@@ -862,19 +916,20 @@ async function handleCreateFromDashboard() {
   box-shadow: 0 12px 32px rgba(0,0,0,0.2);
 }
 .welcome-btn.secondary {
-  background: var(--text-main);
-  color: var(--bg-panel);
+  background: var(--color-neutral-9);
+  color: var(--color-card-fill);
 }
 .welcome-btn.secondary:hover {
   transform: translateY(-2px);
 }
 .welcome-btn.ghost {
   background: transparent;
-  color: var(--text-soft);
-  border: 1px solid var(--glass-border-shadow);
+  color: var(--color-neutral-6);
+  border: 1px solid var(--color-neutral-4);
 }
 .welcome-btn.ghost:hover {
   background: rgba(0,0,0,0.03);
-  color: var(--text-main);
+  color: var(--color-neutral-9);
 }
 </style>
+

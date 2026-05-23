@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useLexicon, type LexiconId } from '../composables/useLexicon'
 
@@ -113,9 +113,9 @@ onBeforeUnmount(() => {
 .dropdown-title {
   font-family: monospace;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.1em;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   text-transform: uppercase;
 }
 
@@ -143,7 +143,7 @@ onBeforeUnmount(() => {
 }
 
 .theme-item.is-active {
-  background: var(--btn-primary-bg);
+  background: var(--color-accent);
   color: var(--btn-primary-color);
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
@@ -156,15 +156,15 @@ onBeforeUnmount(() => {
 
 .theme-name {
   font-size: 13px;
-  font-weight: 700;
-  color: var(--text-main);
+  font-weight: 500;
+  color: var(--color-neutral-9);
 }
 .theme-item.is-active .theme-name {
   color: inherit;
 }
 
 .theme-desc {
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-size: 11px;
   line-height: 1.4;
   margin-top: 2px;
@@ -192,3 +192,4 @@ onBeforeUnmount(() => {
   transform: scale(0.95) translateY(-8px);
 }
 </style>
+

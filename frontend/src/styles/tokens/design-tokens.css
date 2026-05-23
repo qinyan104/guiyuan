@@ -1,0 +1,221 @@
+﻿/*
+ * 归源 · 设计令牌 (Design Tokens)
+ *
+ * 基于 Yohaku (Innei) 设计体系，为族谱场景适配。
+ * 本文件是唯一的颜色/字体/间距定义源，所有组件和样式必须引用此处的变量。
+ *
+ * 分层体系：
+ *   Tier 1 (n-1~4)  — 表面/填充    — 绝不用作文本颜色
+ *   Tier 2 (n-5~7)  — 边框/图标/次要文字
+ *   Tier 3 (n-8~10) — 正文/标题    — n-9 为默认正文色
+ *
+ * 许可证：MIT（design-system 部分）
+ * 原始项目：https://github.com/Innei/Yohaku
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   中性色阶 — Pure Scale（浅色暖纸基调，暗色自动反转为纯灰）
+   n-5 禁止用于文字。Tailwind 的 neutral-50~950 全项目禁用。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Tier 1 — 表面 */
+  --color-neutral-1: #f9f8f5;   /* 页面底色 */
+  --color-neutral-2: #f0efeb;   /* 卡片底色 */
+  --color-neutral-3: #e3e1db;   /* 悬停表面 */
+  --color-neutral-4: #d0cec6;   /* 强填充（如单色图标背景） */
+
+  /* Tier 2 — 边框 / 图标 / 次要文字 */
+  --color-neutral-5: #a8a69f;   /* 边框（禁止用于文字） */
+  --color-neutral-6: #787670;   /* 图标 / 极小字号标签 */
+  --color-neutral-7: #5c5a55;   /* 次要文字、说明 */
+
+  /* Tier 3 — 正文 / 标题 */
+  --color-neutral-8: #403f3a;   /* 正文备选、强调次要文字 */
+  --color-neutral-9: #24231f;   /* 默认正文色 */
+  --color-neutral-10: #141312;  /* 标题、最强强调 */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     强调色 — 朱砂 (cinnabar) #c43a31
+     ≤5% 表面覆盖。仅用于：主CTA、聚焦环、品牌标记、引用竖线、链接下划线
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  --color-accent: #c43a31;
+  --color-accent-light: #d47068;   /* 暗色模式下提亮 */
+  --color-accent-muted: rgba(196, 58, 49, 0.10);  /* 淡色强调背景 */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     语义色 — 传统和色（Japanese 和色）
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  --color-info: #3d6896;      /* 縹 hanada — 信息提示 */
+  --color-success: #5e9f7e;   /* 若竹 wakatake — 成功状态 */
+  --color-warning: #a87a3d;   /* 朽葉 kuchiba — 警告状态 */
+  --color-error: #a64953;     /* 蘇芳 suoh — 错误/危险操作 */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     族谱专用 Token
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* 性别标识 — 从语义色派生，保持色系一致 */
+  --color-male: #3d6896;          /* 男 — 縹色系 */
+  --color-male-muted: rgba(61, 104, 150, 0.08);
+  --color-female: #c43a31;        /* 女 — 梅色系（与accent同系） */
+  --color-female-muted: rgba(196, 58, 49, 0.07);
+
+  /* 生卒状态 */
+  --color-alive: #5e9f7e;         /* 在世 — 若竹 */
+  --color-deceased: #787670;      /* 已故 — neutral-6  */
+
+  /* 族谱树连线 */
+  --color-tree-line: rgba(120, 118, 112, 0.72);    /* 普通连线 */
+  --color-tree-line-selected: #c43a31;               /* 选中连线 — accent */
+
+  /* 卡片系统 */
+  --color-card-fill: var(--color-neutral-2);
+  --color-card-stroke: rgba(24, 24, 27, 0.08);
+  --color-card-hover-fill: var(--color-neutral-1);
+  --color-card-selected-stroke: var(--color-accent);
+
+  /* 画布 / 缩略图 */
+  --color-canvas-bg: var(--color-neutral-1);
+  --color-canvas-grid: rgba(168, 166, 159, 0.12);
+  --color-minimap-bg: rgba(249, 248, 245, 0.92);
+  --color-minimap-node: rgba(120, 118, 112, 0.4);
+  --color-minimap-node-selected: rgba(196, 58, 49, 0.75);
+
+  /* 面板 & 对话框 */
+  --color-panel-bg: rgba(249, 248, 245, 0.96);
+  --color-overlay: rgba(20, 19, 18, 0.3);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     排版
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* 字体族 */
+  --font-sans: 'Manrope', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC',
+               'Hiragino Sans GB', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
+                'Songti SC', SimSun, serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas',
+               Monaco, 'Courier New', monospace;
+
+  /* 字号体系 — Geist 风格 role+px（14px 基准）
+     禁止使用 text-xs/sm/base/lg/... 裸名，禁止硬编码 text-[Npx] */
+  --text-caption-10: 10px;
+  --text-label-12: 12px;
+  --text-copy-13: 13px;
+  --text-copy-14: 14px;     /* 默认正文基准 */
+  --text-copy-15: 15px;
+  --text-copy-16: 16px;
+  --text-title-20: 20px;
+  --text-title-24: 24px;
+  --text-title-28: 28px;
+  --text-display-36: 36px;
+  --text-display-48: 48px;
+
+  /* 行高 */
+  --leading-caption: 1.4;
+  --leading-label: 1.5;
+  --leading-copy: 1.6;
+  --leading-title: 1.35;
+  --leading-display: 1.2;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     间距 & 圆角
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;       /* 最大圆角上限 — hero 表面专用 */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     阴影 — 只用 ring 或 whisper，禁止硬阴影
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  --shadow-whisper: 0 4px 24px rgba(0, 0, 0, 0.05);
+  --shadow-ring: 0 0 0 1px rgba(24, 24, 27, 0.08);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     动效
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  --ease-breath: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     全局默认
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  color-scheme: light;
+  font-family: var(--font-sans);
+  font-size: var(--text-copy-14);
+  line-height: var(--leading-copy);
+  color: var(--color-neutral-9);
+  background-color: var(--color-neutral-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   暗色模式 — 中性色反转为纯灰，暖意由 --color-paper 承载
+   强调色提亮至 --color-accent-light
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+  /* 中性色反转 */
+  --color-neutral-1: #141414;
+  --color-neutral-2: #1e1e1e;
+  --color-neutral-3: #2c2c2c;
+  --color-neutral-4: #404040;
+  --color-neutral-5: #5c5c5c;
+  --color-neutral-6: #888888;
+  --color-neutral-7: #b0b0b0;
+  --color-neutral-8: #d0d0d0;
+  --color-neutral-9: #e8e8e8;
+  --color-neutral-10: #f5f5f5;
+
+  /* 强调色 — 暗色下提亮 */
+  --color-accent: #e07068;
+
+  /* 语义色 — 各提亮约 15% */
+  --color-info: #5a8cc0;
+  --color-success: #7ec09a;
+  --color-warning: #c99a5a;
+  --color-error: #c46b75;
+
+  /* 族谱专用 — 暗色适配 */
+  --color-male: #5a8cc0;
+  --color-male-muted: rgba(90, 140, 192, 0.12);
+  --color-female: #e07068;
+  --color-female-muted: rgba(224, 112, 104, 0.10);
+  --color-alive: #7ec09a;
+  --color-deceased: #888888;
+
+  --color-tree-line: rgba(136, 136, 136, 0.6);
+  --color-tree-line-selected: #e07068;
+
+  --color-card-fill: var(--color-neutral-2);
+  --color-card-stroke: rgba(255, 255, 255, 0.06);
+  --color-card-hover-fill: var(--color-neutral-3);
+  --color-card-selected-stroke: var(--color-accent);
+
+  --color-canvas-bg: var(--color-neutral-1);
+  --color-canvas-grid: rgba(92, 92, 92, 0.15);
+  --color-minimap-bg: rgba(20, 20, 20, 0.9);
+  --color-minimap-node: rgba(136, 136, 136, 0.4);
+  --color-minimap-node-selected: rgba(224, 112, 104, 0.7);
+
+  --color-panel-bg: rgba(30, 30, 30, 0.96);
+  --color-overlay: rgba(0, 0, 0, 0.5);
+
+  --shadow-whisper: 0 4px 24px rgba(0, 0, 0, 0.2);
+  --shadow-ring: 0 0 0 1px rgba(255, 255, 255, 0.08);
+
+  color-scheme: dark;
+}

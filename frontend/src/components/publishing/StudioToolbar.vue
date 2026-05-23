@@ -59,7 +59,7 @@ function statusText(status: string): string {
 
 .toolbar-title {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-neutral-9);
 }
 
@@ -90,3 +90,4 @@ function statusText(status: string): string {
   border-radius: 4px;
 }
 </style>
+

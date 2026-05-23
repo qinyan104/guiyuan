@@ -8,6 +8,7 @@ import AdminUsersView from '../views/AdminUsersView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import SamplePreviewView from '../views/SamplePreviewView.vue'
+import LandingView from '../views/LandingView.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -29,6 +30,12 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
+    name: 'landing',
+    component: LandingView,
+    meta: { public: true },
+  },
+  {
+    path: '/dashboard',
     component: AdminLayout,
     children: [
       {

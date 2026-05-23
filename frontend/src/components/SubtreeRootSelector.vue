@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { getPublication } from '../api/publication'
 import { defaultSettings } from '../data/sampleFamily'
@@ -220,7 +220,7 @@ onMounted(() => {
   width: 40px;
   height: 40px;
   border: 3px solid var(--line-soft, #f3f3f3);
-  border-top: 3px solid var(--accent-amber, #8b4513);
+  border-top: 3px solid var(--accent-signal, #8b4513);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 12px;
@@ -251,8 +251,8 @@ onMounted(() => {
 }
 
 .selected-name {
-  color: var(--accent-amber, #8b4513);
-  font-weight: 700;
+  color: var(--accent-signal, #8b4513);
+  font-weight: 500;
 }
 
 .actions {
@@ -263,7 +263,7 @@ onMounted(() => {
 .action-btn {
   padding: 10px 24px;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   border: 1px solid var(--line-soft, transparent);
@@ -295,10 +295,11 @@ onMounted(() => {
 .retry-btn {
   margin-top: 12px;
   padding: 6px 16px;
-  background: var(--accent-amber, #8b4513);
+  background: var(--accent-signal, #8b4513);
   color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
 </style>
+

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { getMyProfile, submitProfileChange, type MyProfile, type MyProfilePerson } from '../api/profile'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
@@ -329,21 +329,6 @@ function genderLabel(g: string) {
   margin: 0 auto;
 }
 .poetic-header {
-  margin-bottom: 2rem;
-}
-.poetic-eyebrow {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  opacity: 0.5;
-  margin-bottom: 0.25rem;
-}
-.poetic-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin: 0;
-}
-.edit-layout {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 1.5rem;
@@ -362,7 +347,7 @@ function genderLabel(g: string) {
 .field label {
   display: block;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   opacity: 0.7;
@@ -496,14 +481,14 @@ function genderLabel(g: string) {
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 .card-info {
   margin-bottom: 0.75rem;
 }
 .card-name {
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 500;
   margin: 0 0 0.35rem;
 }
 .card-gender {
@@ -604,3 +589,4 @@ function genderLabel(g: string) {
   }
 }
 </style>
+

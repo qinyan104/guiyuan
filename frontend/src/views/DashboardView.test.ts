@@ -47,7 +47,7 @@ describe('DashboardView', () => {
     ])
   })
 
-  it('shows who last updated the latest publication', async () => {
+  it('renders the latest publication title and access link', async () => {
     const wrapper = mount(DashboardView, {
       global: {
         stubs: {
@@ -61,6 +61,41 @@ describe('DashboardView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('陈氏宗谱')
-    expect(wrapper.text()).toContain('继续编撰')
+    expect(wrapper.text()).toContain('进入画布')
+  })
+
+  it('renders publication count stat card', async () => {
+    const wrapper = mount(DashboardView, {
+      global: {
+        stubs: {
+          Teleport: {
+            template: '<div><slot /></div>',
+          },
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('卷宗')
+  })
+
+  it('shows empty state when no publications', async () => {
+    vi.mocked(listPublications).mockResolvedValue([])
+
+    const wrapper = mount(DashboardView, {
+      global: {
+        stubs: {
+          Teleport: {
+            template: '<div><slot /></div>',
+          },
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('归源')
+    expect(wrapper.text()).toContain('创建第一个族谱')
   })
 })

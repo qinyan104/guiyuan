@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import {
@@ -106,9 +106,9 @@ function statusLabel(link: ShareLinkSummary): string {
 }
 
 function statusClass(link: ShareLinkSummary): string {
-  if (link.status === 'REVOKED') return 'status-revoked'
-  if (link.status === 'EXPIRED' || link.expired) return 'status-expired'
-  return 'status-active'
+  if (link.status === 'REVOKED') return 'status-badge--revoked'
+  if (link.status === 'EXPIRED' || link.expired) return 'status-badge--expired'
+  return 'status-badge--active'
 }
 
 onMounted(load)
@@ -225,7 +225,7 @@ onMounted(load)
 
 .token-warning {
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: #92400e;
   margin-bottom: 8px;
 }
@@ -301,27 +301,6 @@ onMounted(load)
   flex-wrap: wrap;
 }
 
-.status-badge {
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.status-active {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.status-revoked {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.status-expired {
-  background: #fef3c7;
-  color: #92400e;
-}
 
 .link-meta {
   font-size: 0.8rem;
@@ -363,3 +342,4 @@ onMounted(load)
   background: #fef2f2;
 }
 </style>
+

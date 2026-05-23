@@ -1,4 +1,4 @@
-import type { PublicationLayout, PublicationPaper } from '../../types/family'
+﻿import type { PublicationLayout, PublicationPaper } from '../../types/family'
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink'
@@ -22,7 +22,7 @@ const SVG_THEME_VARIABLES = [
   '--card-detail-fill',
   '--card-male-header',
   '--card-female-header',
-  '--accent-amber',
+  '--accent-signal',
   '--border-color',
   '--line-soft',
   '--shell-bg-image',

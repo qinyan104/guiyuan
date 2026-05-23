@@ -9,7 +9,6 @@ const props = defineProps<{
   card: PositionedCard
   settings: PublicationSettings
   selected: boolean
-  showGlass?: boolean  // 方案三: false 时跳过 foreignObject 毛玻璃（拖拽降质）
   kinshipNote?: string | null  // 当前查看者与此人的亲属关系称谓
 }>()
 
@@ -58,6 +57,12 @@ const imperialBadge = computed(() => {
   return null
 })
 
+const knotColor = computed(() => {
+  if (props.person.gender === 'male') return '#4b7bec'
+  if (props.person.gender === 'female') return '#eb3b5a'
+  return '#a5b1c2'
+})
+
 const lineageBadge = computed(() => {
   if (props.card.lineageRole === 'married-out') {
     return '外嫁'
@@ -85,7 +90,7 @@ const lineageBadgeLines = computed(() => {
 const detailRows = computed(() => {
   const rows: Array<{ label: string; value: string }> = []
 
-  if (props.person.birth) {
+  if (props.settings.showBirth && props.person.birth) {
     rows.push({ label: '生于', value: props.person.birth })
   }
 
@@ -112,9 +117,6 @@ const detailRows = computed(() => {
     rows.push({ label: '宗族', value: props.person.clan })
   }
 
-  if (rows.length === 0) {
-    rows.push(personIsDeceased.value ? { label: '状态', value: '已故' } : { label: '待录', value: '补充生平信息' })
-  }
 
   return rows.slice(0, 3)
 })
@@ -140,7 +142,7 @@ const octagonalPath = computed(() => {
 
 const photoWidth = computed(() => props.card.width * 0.46)
 const photoHeight = computed(() => photoWidth.value * 1.25)
-const photoY = 106
+const photoY = 114
 
 const detailStartY = computed(() => {
   if (props.settings.showPhoto && props.person.avatarUrl) {
@@ -150,6 +152,23 @@ const detailStartY = computed(() => {
 })
 
 const noteY = computed(() => props.card.height * 0.47)
+
+const hoverInfo = computed(() => {
+  const lines: string[] = []
+  if (props.person.birth) lines.push(`生: ${props.person.birth}`)
+  if (props.settings.showDeath && props.person.death) lines.push(`卒: ${props.person.death}`)
+  if (props.settings.showAge) {
+    if (props.person.age) {
+      lines.push(`${personIsDeceased.value ? '享年' : '今年'} ${normalizeAge(props.person.age)}`)
+    } else {
+      const by = findYear(props.person.birth)
+      const dy = findYear(props.person.death)
+      if (by !== undefined && dy !== undefined && dy >= by) lines.push(`享年 ${dy - by}岁`)
+      else if (by !== undefined && dy === undefined && !personIsDeceased.value) lines.push(`今年 ${new Date().getFullYear() - by}岁`)
+    }
+  }
+  return lines
+})
 
 const currentTheme = computed(() => document.documentElement.getAttribute('data-theme'))
 const isSu = computed(() => currentTheme.value === 'su-style')
@@ -198,11 +217,6 @@ function handleMouseLeave() {
       :ry="isOu ? 4 : 22"
     />
 
-    <foreignObject v-if="settings.showCard && showGlass !== false" x="0" y="0" :width="card.width" :height="card.height">
-      <div xmlns="http://www.w3.org/1999/xhtml" class="person-card__glass-backdrop" :style="{ width: '100%', height: '100%', borderRadius: isOu ? '4px' : (isSu ? '0' : '22px') }"></div>
-    </foreignObject>
-
-    <rect v-if="settings.showCard" class="person-card__inner" x="8" y="8" :width="card.width - 16" :height="card.height - 16" :rx="isOu ? 2 : (isSu ? 14 : 18)" :ry="isOu ? 2 : (isSu ? 14 : 18)" />
 
     <!-- Branch Mount Point Icon -->
     <g v-if="settings.showCard && person.isMountPoint" transform="translate(10, 10)">
@@ -265,7 +279,7 @@ function handleMouseLeave() {
     </g>
 
     <text
-      v-if="settings.showCard"
+      v-if="settings.showCard && settings.showStatus"
       class="person-card__status"
       :x="card.width / 2"
       y="35"
@@ -306,7 +320,7 @@ function handleMouseLeave() {
         cy="0"
         r="4.5"
         fill="var(--bg-panel, #ffffff)"
-        :stroke="selected ? '#b33939' : 'var(--accent-amber, #0071e3)'"
+        :stroke="knotColor"
         stroke-width="1.5"
       />
       <circle
@@ -314,7 +328,7 @@ function handleMouseLeave() {
         :cx="card.width / 2"
         cy="0"
         r="2"
-        :fill="selected ? '#b33939' : 'var(--accent-amber, #0071e3)'"
+        :fill="knotColor"
       />
 
       <!-- Refined Compact Name (Solemn and Grand Typography) -->
@@ -325,10 +339,10 @@ function handleMouseLeave() {
         text-anchor="middle"
         :style="{
           fontSize: `${22 * settings.fontScale}px`,
-          fontWeight: 500,
+          fontWeight: selected ? 600 : 500,
           fontFamily: '\'Noto Serif SC\', \'Songti SC\', \'STZhongsong\', serif',
-          fill: selected ? '#b33939' : 'var(--text-main, #1d1d1f)',
-          transition: 'fill 0.2s ease'
+          fill: selected ? 'var(--color-accent, #c43a31)' : 'var(--text-main, #1d1d1f)',
+          transition: 'fill 0.2s ease, font-weight 0.2s ease'
         }"
       >
         <tspan
@@ -346,7 +360,7 @@ function handleMouseLeave() {
       </text>
 
       <!-- Lineage Badge (Compact Vertical Tag at Top Right) -->
-      <g v-if="lineageBadge">
+      <g v-if="settings.showLineage && lineageBadge">
         <rect
           :x="card.width / 2 + 16 * settings.fontScale"
           :y="12 * settings.fontScale"
@@ -412,6 +426,32 @@ function handleMouseLeave() {
           </tspan>
         </text>
       </g>
+    <!-- Compact Mode Hover Overlay -->
+    <g class="compact-hover-overlay" :transform="`translate(${card.width + 8}, 12)`">
+      <rect
+        class="compact-hover-overlay__panel"
+        x="0" y="0"
+        :width="140 * settings.fontScale"
+        :height="Math.max(36, 12 + hoverInfo.length * 16) * settings.fontScale"
+        rx="8" ry="8"
+      />
+      <text
+        class="compact-hover-overlay__name"
+        x="70"
+        y="18"
+        text-anchor="middle"
+        :style="{ fontSize: `${14 * settings.fontScale}px` }"
+      >{{ person.name }}</text>
+      <text
+        v-for="(line, i) in hoverInfo"
+        :key="i"
+        class="compact-hover-overlay__detail"
+        x="70"
+        :y="34 + i * 16"
+        text-anchor="middle"
+        :style="{ fontSize: `${11 * settings.fontScale}px` }"
+      >{{ line }}</text>
+    </g>
     </g>
 
     <text
@@ -435,20 +475,20 @@ function handleMouseLeave() {
       </text>
     </g>
 
-    <g v-if="settings.showCard && lineageBadgeLines.length">
+    <g v-if="settings.showCard && settings.showLineage && lineageBadgeLines.length">
       <rect
         class="person-card__lineage-pill"
-        x="18"
-        y="68"
+        x="16"
+        y="20"
         width="26"
-        :height="lineageBadgeLines.length > 1 ? 44 : 28"
-        rx="13"
-        ry="13"
+        :height="lineageBadgeLines.length > 1 ? 32 : 20"
+        rx="10"
+        ry="10"
       />
       <text
         class="person-card__lineage-text"
-        x="31"
-        :y="lineageBadgeLines.length > 1 ? 83 : 86"
+        x="29"
+        :y="lineageBadgeLines.length > 1 ? 33 : 36"
         text-anchor="middle"
         :style="{ fontSize: `${noteFontSize}px` }"
       >

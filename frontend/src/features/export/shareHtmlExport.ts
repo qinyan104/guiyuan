@@ -1,4 +1,4 @@
-import type { PublicationData, PublicationLayout, PublicationSettings } from '../../types/family'
+﻿import type { PublicationData, PublicationLayout, PublicationSettings } from '../../types/family'
 import {
   createStandalonePublicationSvg,
   escapeHtml,
@@ -531,12 +531,12 @@ body {
   margin-bottom: 12px;
 }
 #pwd-input:focus {
-  border-color: var(--accent-amber, #b08d57);
+  border-color: var(--accent-signal, #b08d57);
 }
 #pwd-submit {
   width: 100%;
   padding: 14px;
-  background: var(--accent-amber, #b08d57);
+  background: var(--accent-signal, #b08d57);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -759,8 +759,8 @@ body {
   transition: all 0.15s;
 }
 .rel-item:hover {
-  border-color: var(--accent-amber, #b08d57);
-  color: var(--accent-amber, #b08d57);
+  border-color: var(--accent-signal, #b08d57);
+  color: var(--accent-signal, #b08d57);
 }
 
 /* Footer */

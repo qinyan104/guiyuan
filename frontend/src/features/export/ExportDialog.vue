@@ -1,4 +1,4 @@
-<!-- src/features/export/ExportDialog.vue -->
+﻿<!-- src/features/export/ExportDialog.vue -->
 <template>
   <div v-if="modelValue" class="export-dialog-backdrop" @click.self="$emit('update:modelValue', false)">
     <div class="export-dialog">
@@ -131,13 +131,6 @@ function emitExportShareHtml() {
   animation: slideUp 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-:global([data-theme="rosewood"]) .export-dialog,
-:global([data-theme="star-sea"]) .export-dialog {
-  background: rgba(20, 20, 20, 0.6);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
 .dialog-header {
   display: flex;
   flex-direction: column;
@@ -158,7 +151,7 @@ function emitExportShareHtml() {
   margin: 0;
   font-family: 'Noto Serif SC', 'Songti SC', serif;
   font-size: 1.4rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.05em;
   color: var(--text-main, #241a10);
 }
@@ -182,11 +175,6 @@ function emitExportShareHtml() {
   line-height: 1;
 }
 
-:global([data-theme="rosewood"]) .close-btn,
-:global([data-theme="star-sea"]) .close-btn {
-  background: rgba(255, 255, 255, 0.06);
-}
-
 .close-btn:hover {
   background: rgba(0, 0, 0, 0.08);
   color: var(--text-main, #241a10);
@@ -201,11 +189,6 @@ function emitExportShareHtml() {
   padding: 4px;
 }
 
-:global([data-theme="rosewood"]) .tabs,
-:global([data-theme="star-sea"]) .tabs {
-  background: rgba(255, 255, 255, 0.04);
-}
-
 .tab-btn {
   flex: 1;
   padding: 10px 12px;
@@ -214,7 +197,7 @@ function emitExportShareHtml() {
   border-radius: 12px;
   font-family: 'Manrope', sans-serif;
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--text-soft, #8f8878);
   cursor: pointer;
@@ -226,13 +209,7 @@ function emitExportShareHtml() {
   background: var(--bg-paper, #fff9ef);
   color: var(--text-main, #241a10);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  font-weight: 700;
-}
-
-:global([data-theme="rosewood"]) .tab-btn.active,
-:global([data-theme="star-sea"]) .tab-btn.active {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
 }
 
 .tab-btn:hover:not(.active) {
@@ -281,7 +258,7 @@ function emitExportShareHtml() {
 }
 
 .share-password-input:focus {
-  border-color: var(--accent-amber, rgba(114, 79, 46, 0.45));
+  border-color: var(--accent-signal, rgba(114, 79, 46, 0.45));
   box-shadow: 0 0 0 4px var(--line-soft, rgba(130, 99, 68, 0.12));
   background: var(--bg-paper, #fffdf9);
 }
@@ -309,11 +286,6 @@ function emitExportShareHtml() {
   overflow: hidden;
 }
 
-:global([data-theme="rosewood"]) .strength-bar,
-:global([data-theme="star-sea"]) .strength-bar {
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .strength-fill {
   height: 100%;
   border-radius: 999px;
@@ -323,7 +295,7 @@ function emitExportShareHtml() {
 .strength-label {
   font-family: 'Manrope', sans-serif;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
@@ -338,7 +310,7 @@ function emitExportShareHtml() {
   border-radius: 999px;
   font-family: 'Manrope', sans-serif;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: transform 150ms cubic-bezier(0.2, 0, 0, 1), box-shadow 150ms ease, opacity 150ms ease;
@@ -377,3 +349,4 @@ function emitExportShareHtml() {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 </style>
+

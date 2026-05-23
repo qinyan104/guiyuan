@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import FeedbackStrip from './FeedbackStrip.vue'
 
@@ -10,16 +10,16 @@ describe('FeedbackStrip', () => {
     expect(wrapper.find('.feedback-strip').exists()).toBe(false)
   })
 
-  it('shows error message with error styling', () => {
+  it('shows error message with readable error label and error styling', () => {
     const wrapper = mount(FeedbackStrip, {
-      props: { errorMessage: '出错了', statusMessage: '' },
+      props: { errorMessage: '保存失败', statusMessage: '' },
     })
-    expect(wrapper.text()).toContain('出错了')
+    expect(wrapper.text()).toContain('保存失败')
     expect(wrapper.text()).toContain('需要处理')
     expect(wrapper.classes()).toContain('feedback-strip--error')
   })
 
-  it('shows status message without error styling', () => {
+  it('shows status message with readable success label without error styling', () => {
     const wrapper = mount(FeedbackStrip, {
       props: { errorMessage: '', statusMessage: '保存成功' },
     })
@@ -37,11 +37,12 @@ describe('FeedbackStrip', () => {
     expect(wrapper.classes()).toContain('feedback-strip--error')
   })
 
-  it('emits dismiss when close button is clicked', () => {
+  it('emits dismiss when close button is clicked', async () => {
+    const onDismiss = vi.fn()
     const wrapper = mount(FeedbackStrip, {
-      props: { errorMessage: '出错了', statusMessage: '' },
+      props: { errorMessage: '保存失败', statusMessage: '', onDismiss },
     })
-    wrapper.find('button').trigger('click')
-    expect(wrapper.emitted('dismiss')).toHaveLength(1)
+    await wrapper.find('button').trigger('click')
+    expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 })

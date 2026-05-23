@@ -1,0 +1,165 @@
+﻿/*
+ * 归源 · 旧变量兼容桥接 (Compat Bridge)
+ *
+ * 将旧的 CSS 自定义属性映射到新的 Yohaku 设计 token。
+ * 本文件使所有现有组件无需修改即可使用新色板。
+ * 待组件逐个重构后，本文件可逐步删除。
+ */
+
+:root {
+  /* ── 背景 ── */
+  --bg-shell: var(--color-neutral-1);
+  --bg-panel: var(--color-card-fill);
+  --bg-panel-strong: var(--color-neutral-1);
+  --bg-paper: var(--color-neutral-1);
+  --bg-hover: var(--color-neutral-3);
+  --bg-hover-light: var(--color-neutral-2);
+
+  /* ── 文字 ── */
+  --text-main: var(--color-neutral-9);
+  --text-sub: var(--color-neutral-7);
+  --text-soft: var(--color-neutral-6);
+  --text-secondary: var(--color-neutral-6);
+  --text-primary: var(--color-neutral-9);
+  --text-muted: var(--color-neutral-6);
+
+  /* ── 强调色 ── */
+  --accent-signal: var(--color-accent);
+  --accent-muted: var(--color-neutral-7);
+  --accent-secondary: var(--color-success);
+  --accent-strong: var(--color-neutral-10);
+  --accent-hover: var(--color-accent-light);
+
+  /* ── 边框 & 线条 ── */
+  --line-soft: var(--color-neutral-4);
+  --border-color: var(--color-neutral-4);
+  --divider: var(--color-neutral-4);
+
+  /* ── 表面 ── */
+  --surface: var(--color-neutral-1);
+  --surface-alt: var(--color-neutral-2);
+  --fill-secondary: var(--color-neutral-3);
+  --fill-tertiary: var(--color-neutral-2);
+
+  /* ── 卡片系统 ── */
+  --card-panel-fill: var(--color-card-fill);
+  --card-panel-stroke: var(--color-neutral-4);
+  --card-name-fill: var(--color-neutral-10);
+  --card-status-fill: var(--color-neutral-7);
+  --card-detail-fill: var(--color-neutral-8);
+  --card-inner-stroke: var(--color-neutral-4);
+  --card-header-fill: var(--color-neutral-3);
+  --card-male-header: var(--color-male-muted);
+  --card-female-header: var(--color-female-muted);
+  --card-selected-stroke: var(--color-card-selected-stroke);
+  --card-hover-fill: var(--color-card-hover-fill);
+  --card-hover-stroke: var(--color-neutral-6);
+  --card-dark-bg: var(--color-neutral-8);
+  --card-dark-color: var(--color-neutral-1);
+
+  /* ── 树连线 ── */
+  --tree-line-color: var(--color-tree-line);
+
+  /* ── 画布 ── */
+  --canvas-grid-color: var(--color-canvas-grid);
+  --canvas-bg: var(--color-neutral-1);
+  --minimap-bg: var(--color-minimap-bg);
+  --minimap-node: var(--color-minimap-node);
+  --minimap-node-selected: var(--color-minimap-node-selected);
+
+  /* ── 面板 & 编辑器 ── */
+  --scrim-bg: var(--color-overlay);
+  --editor-panel-bg: var(--color-panel-bg);
+
+  /* ── 按钮 ── */
+  --btn-primary-bg: var(--color-accent);
+  --btn-primary-color: #fff;
+  --btn-primary-hover-bg: var(--color-accent-light);
+  --btn-secondary-bg: var(--color-neutral-2);
+  --btn-secondary-color: var(--color-neutral-9);
+  --btn-secondary-border: var(--color-neutral-5);
+
+  /* ── 危险/错误 ── */
+  --danger-title: var(--color-error);
+  --danger-text: var(--color-error);
+  --danger-bg: rgba(196, 58, 49, 0.08);
+  --danger-border: rgba(196, 58, 49, 0.18);
+  --danger-btn-color: var(--color-error);
+
+  /* ── 任务状态色 ── */
+  --task-urgent: var(--color-error);
+  --task-warm: var(--color-warning);
+  --task-calm: var(--color-success);
+
+  /* ── 指标色 ── */
+  --metric-amber: var(--color-warning);
+  --metric-ink: var(--color-info);
+  --metric-olive: var(--color-success);
+  --metric-earth: var(--color-neutral-7);
+
+  /* ── 反馈条 ── */
+  --feedback-bg: rgba(94, 159, 126, 0.08);
+  --feedback-border: rgba(94, 159, 126, 0.2);
+  --feedback-color: var(--color-success);
+  --feedback-error-bg: rgba(196, 58, 49, 0.08);
+  --feedback-error-border: rgba(196, 58, 49, 0.2);
+  --feedback-error-color: var(--color-error);
+
+  /* ── Glass 变体（琉璃主题残留） ── */
+  --glass-bg: var(--color-card-fill);
+  --glass-panel-bg: var(--color-card-fill);
+  --glass-border-highlight: var(--color-neutral-2);
+  --glass-border-shadow: var(--color-neutral-4);
+  --glass-pill-bg: var(--color-neutral-3);
+  --glass-pill-active: var(--color-accent);
+  --glass-input-bg: var(--color-neutral-2);
+  --glass-input-border: var(--color-neutral-5);
+  --glass-input-focus: var(--color-accent-muted);
+  --glass-brand-bg: var(--color-neutral-2);
+  --glass-form-bg: var(--color-neutral-1);
+  --glass-seal-bg: var(--color-neutral-3);
+
+  /* ── 按钮变体 ── */
+  --accent-btn-bg: var(--color-accent);
+  --accent-btn-color: #fff;
+
+  /* ── 状态色 ── */
+  --status-success-bg: rgba(94, 159, 126, 0.12);
+  --status-success-text: var(--color-success);
+  --status-warning-bg: rgba(168, 122, 61, 0.12);
+  --status-warning-text: var(--color-warning);
+  --status-danger-bg: rgba(196, 58, 49, 0.12);
+  --status-danger-text: var(--color-error);
+
+  /* ── 阴影 & 圆角 ── */
+  --control-shadow: var(--shadow-whisper);
+  --panel-shadow: var(--shadow-whisper);
+  --control-radius: var(--radius-md);
+  --panel-radius: var(--radius-lg);
+
+  /* ── 纹理/滤镜 — 简化 ── */
+  --filter-paper: none;
+  --workspace-glow: none;
+  --shell-bg-image: none;
+  --workspace-bg: var(--color-neutral-1);
+  --workspace-border: var(--color-neutral-4);
+  --font-mono: var(--font-mono);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   暗色模式桥接
+   ═══════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+  --card-dark-bg: var(--color-neutral-5);
+  --card-dark-color: var(--color-neutral-1);
+  --glass-input-bg: var(--color-neutral-3);
+  --glass-input-border: var(--color-neutral-5);
+  --glass-pill-bg: var(--color-neutral-4);
+  --danger-bg: rgba(224, 112, 104, 0.12);
+  --danger-border: rgba(224, 112, 104, 0.24);
+  --feedback-bg: rgba(126, 192, 154, 0.1);
+  --feedback-border: rgba(126, 192, 154, 0.22);
+  --feedback-error-bg: rgba(224, 112, 104, 0.1);
+  --feedback-error-border: rgba(224, 112, 104, 0.22);
+}

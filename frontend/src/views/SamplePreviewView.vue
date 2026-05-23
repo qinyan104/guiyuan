@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -218,7 +218,7 @@ function handleUpdateZoom(zoom: number) {
   border-radius: 8px;
   padding: 6px 12px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-sub, #666);
   cursor: pointer;
   transition: all 0.2s;
@@ -228,7 +228,7 @@ function handleUpdateZoom(zoom: number) {
 .back-btn:hover {
   background: var(--text-main, #1a1a1a);
   color: var(--bg-panel, #fff);
-  border-color: var(--text-main);
+  border-color: var(--color-neutral-9);
 }
 
 .header-divider {
@@ -247,10 +247,10 @@ function handleUpdateZoom(zoom: number) {
 
 .sample-badge {
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.1em;
   color: #fff;
-  background: var(--accent-amber, #a96e35);
+  background: var(--accent-signal, #a96e35);
   padding: 2px 8px;
   border-radius: 4px;
   flex-shrink: 0;
@@ -259,7 +259,7 @@ function handleUpdateZoom(zoom: number) {
 .sample-title {
   font-family: 'Noto Serif SC', serif;
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-main, #1a1a1a);
   margin: 0;
   white-space: nowrap;
@@ -290,7 +290,7 @@ function handleUpdateZoom(zoom: number) {
   border-radius: 8px;
   padding: 8px 16px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
@@ -336,7 +336,7 @@ function handleUpdateZoom(zoom: number) {
   padding: 1px 6px;
   font-family: inherit;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 500;
   background: var(--bg-panel, #fff);
   border: 1px solid var(--border-color, rgba(0,0,0,0.12));
   border-radius: 4px;
@@ -344,28 +344,5 @@ function handleUpdateZoom(zoom: number) {
 }
 
 /* ── Dark theme overrides ── */
-:global([data-theme="rosewood"]) .preview-header,
-:global([data-theme="star-sea"]) .preview-header {
-  background: rgba(0, 0, 0, 0.4);
-  border-color: rgba(255,255,255,0.06);
-}
-:global([data-theme="rosewood"]) .back-btn,
-:global([data-theme="star-sea"]) .back-btn {
-  border-color: rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.7);
-}
-:global([data-theme="rosewood"]) .back-btn:hover,
-:global([data-theme="star-sea"]) .back-btn:hover {
-  background: #fff;
-  color: #000;
-}
-:global([data-theme="rosewood"]) .preview-hint,
-:global([data-theme="star-sea"]) .preview-hint {
-  background: rgba(0, 0, 0, 0.3);
-}
-:global([data-theme="rosewood"]) .preview-hint kbd,
-:global([data-theme="star-sea"]) .preview-hint kbd {
-  background: rgba(0,0,0,0.4);
-  border-color: rgba(255,255,255,0.15);
-}
 </style>
+

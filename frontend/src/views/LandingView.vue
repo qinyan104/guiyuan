@@ -137,7 +137,7 @@ onMounted(() => {
 .nav-logo { display: flex; align-items: center; gap: 10px; }
 .nav-seal { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #c43a31, var(--color-accent)); border-radius: 8px; font-family: var(--font-serif); font-size: 18px; font-weight: 500; color: #fff; }
 .nav-brand { font-family: var(--font-serif); font-size: 18px; font-weight: 500; color: var(--color-neutral-10); letter-spacing: 0.06em; }
-.nav-cta { padding: 8px 20px; border-radius: 10px; background: var(--color-neutral-9); color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; letter-spacing: 0.02em; transition: all 0.2s; }
+.nav-cta { padding: 8px 20px; border-radius: 10px; background: var(--color-neutral-9); color: #fff; font-size: 13px; font-weight: 500; text-decoration: none; letter-spacing: 0.02em; transition: all 0.2s; }
 .nav-cta:hover { background: var(--color-neutral-10); transform: translateY(-1px); }
 
 .hero { display: flex; align-items: center; justify-content: center; min-height: 90vh; padding: 120px 40px; text-align: center; }
@@ -199,6 +199,7 @@ onMounted(() => {
   .ft-grid { flex-direction: column; gap: 40px; }
 }
 </style>
+
 
 
 

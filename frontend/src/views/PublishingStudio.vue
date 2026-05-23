@@ -1,4 +1,8 @@
 ﻿<script setup lang="ts">
+import { useFeedback } from '../composables/useFeedback'
+import FeedbackStrip from '../components/FeedbackStrip.vue'
+
+const feedback = useFeedback()
 import { ref, onMounted, computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { usePublishingStudio } from "../composables/usePublishingStudio"
@@ -39,14 +43,14 @@ onMounted(async () => {
 function handleBack() { router.push("/publishing") }
 
 async function handleAutoLayout() {
-  if (!pubData.value) { alert("请先加载族谱数据"); return }
+  if (!pubData.value) { feedback.errorMessage.value = "请先加载族谱数据"; return }
   try {
     const { computeTraditionalLayout } = await import("../lib/traditionalLayout")
     layoutSheets.value = computeTraditionalLayout(pubData.value)
     sheetTypes.value = layoutSheets.value.map(() => "世系")
     activeSheetIndex.value = 0
   } catch (e: any) {
-    alert("自动排版失败: " + (e.message || e))
+    feedback.errorMessage.value = "自动排版失败: " + (e.message || e)
   }
 }
 
@@ -56,6 +60,7 @@ const currentLayout = computed(() => layoutSheets.value[activeSheetIndex.value] 
 </script>
 
 <template>
+  <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
   <div v-if="loading" class="studio-loading"><p>加载中…</p></div>
 
   <div v-else-if="!draft" class="studio-loading">

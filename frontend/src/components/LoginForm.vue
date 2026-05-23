@@ -228,7 +228,7 @@ async function onSubmit() {
 
 .logo-text {
   font-size: var(--text-label-12);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.12em;
   color: var(--color-neutral-7);
 }
@@ -249,14 +249,14 @@ async function onSubmit() {
   font-size: var(--text-caption-10);
   letter-spacing: 0.16em;
   color: var(--color-accent);
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 8px;
 }
 
 .hero-title {
   font-family: var(--font-serif);
   font-size: clamp(30px, 4.5vw, 42px);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--color-neutral-10);
   line-height: 1.15;
   margin: 0; letter-spacing: 0.03em;
@@ -305,7 +305,7 @@ async function onSubmit() {
   font-size: var(--text-caption-10);
   letter-spacing: 0.1em;
   color: var(--color-neutral-6);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .info-value {
@@ -374,7 +374,7 @@ async function onSubmit() {
   display: block;
   font-size: 12px;
   color: var(--color-neutral-6);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   transition: color var(--duration-fast) var(--ease-breath);
@@ -505,7 +505,7 @@ async function onSubmit() {
   border: none;
   border-radius: var(--radius-lg);
   font-size: var(--text-copy-15);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(196, 58, 49, 0.15);
   transition: filter var(--duration-fast) var(--ease-breath),
@@ -559,7 +559,7 @@ async function onSubmit() {
 .form-footer a {
   color: var(--color-accent);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .form-footer a:hover {
@@ -603,3 +603,4 @@ async function onSubmit() {
   }
 }
 </style>
+

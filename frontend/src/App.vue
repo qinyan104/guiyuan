@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getAccessToken } from './api/tokenStore'
@@ -34,39 +34,27 @@ onMounted(async () => {
 </script>
 
 <template>
+  <!-- 加载画面 -->
   <div v-if="!authReady" class="app-loading-shell">
     <div class="app-loading-spinner"></div>
-    <span>正在恢复登录状态...</span>
+    <span class="app-loading-text">正在恢复登录状态...</span>
   </div>
+
   <router-view v-else />
 
-  <!-- Concurrency Conflict Modal -->
-  <div v-if="conflictMessage" class="conflict-overlay">
+  <!-- 并发冲突弹窗 -->
+  <div v-if="conflictMessage" class="conflict-overlay" @click.self="conflictMessage = null">
     <div class="conflict-modal">
-      <div class="conflict-icon">⚠️</div>
+      <span class="conflict-icon">⚠️</span>
       <h3>数据版本冲突</h3>
       <p>{{ conflictMessage }}</p>
-      <div class="conflict-actions">
-        <button class="reload-btn" @click="handleReload">立即刷新</button>
-      </div>
+      <button class="btn btn--primary" @click="handleReload">立即刷新</button>
     </div>
   </div>
-
-  <!-- Material Textures -->
-  <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
-    <filter id="su-paper-texture">
-      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" result="noise" />
-      <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0" />
-      <feBlend in="SourceGraphic" mode="multiply" />
-    </filter>
-    <filter id="ou-silk-texture">
-      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" result="noise" />
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" />
-    </filter>
-  </svg>
 </template>
 
 <style scoped>
+/* ── 全屏加载 ── */
 .app-loading-shell {
   position: fixed;
   inset: 0;
@@ -74,35 +62,34 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 28%),
-    linear-gradient(225deg, rgba(255, 255, 255, 0.12), transparent 32%),
-    var(--shell-bg-image, var(--bg-shell, #f5f0e8));
-  color: var(--text-soft, #6b7280);
-  font-weight: 600;
+  gap: 16px;
+  background: var(--color-neutral-1);
   z-index: 2000;
 }
 
 .app-loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(0, 0, 0, 0.08);
-  border-top-color: var(--accent-amber, #a96e35);
+  border: 3px solid var(--color-neutral-4);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: app-spin 1s linear infinite;
 }
 
-@keyframes app-spin {
-  to {
-    transform: rotate(360deg);
-  }
+.app-loading-text {
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-7);
 }
 
+@keyframes app-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── 冲突弹窗 ── */
 .conflict-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-overlay);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -111,46 +98,33 @@ onMounted(async () => {
 }
 
 .conflict-modal {
-  background: var(--bg-card, #fff);
+  background: var(--color-panel-bg);
   padding: 32px;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-width: 400px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-whisper);
+  max-width: 420px;
   width: 90%;
   text-align: center;
-  border: 1px solid var(--border-color, #e5e7eb);
+  border: 1px solid var(--color-card-stroke);
 }
 
 .conflict-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  font-size: 40px;
+  display: block;
+  margin-bottom: 12px;
 }
 
 .conflict-modal h3 {
-  margin: 0 0 12px;
-  color: var(--text-main, #111827);
-  font-size: 20px;
+  margin: 0 0 8px;
+  color: var(--color-neutral-10);
+  font-family: var(--font-serif);
+  font-size: var(--text-title-20);
+  font-weight: 500;
 }
 
 .conflict-modal p {
   margin: 0 0 24px;
-  color: var(--text-soft, #6b7280);
-  line-height: 1.5;
-}
-
-.reload-btn {
-  background: var(--accent-amber, #a96e35);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.reload-btn:hover {
-  background: var(--accent-amber-dark, #8e5c2d);
-  transform: translateY(-1px);
+  color: var(--color-neutral-7);
+  font-size: var(--text-copy-14);
 }
 </style>

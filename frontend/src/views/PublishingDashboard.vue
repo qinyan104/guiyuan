@@ -3,8 +3,11 @@ import { ref, onMounted } from "vue"
 import { useRouter } from "vue-router"
 import { listDrafts, createDraft, deleteDraft } from "../api/publishing"
 import type { BookDraft } from "../types/publishing"
+import { useFeedback } from '../composables/useFeedback'
+import FeedbackStrip from '../components/FeedbackStrip.vue'
 
 const router = useRouter()
+const feedback = useFeedback()
 const drafts = ref<BookDraft[]>([])
 const loading = ref(false)
 const showCreateDialog = ref(false)
@@ -17,7 +20,7 @@ async function loadDrafts() {
     drafts.value = await listDrafts(selectedPublicationId.value)
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "加载草稿列表失败"
-    alert(msg)
+    feedback.errorMessage.value = msg
   } finally {
     loading.value = false
   }
@@ -37,7 +40,7 @@ async function handleCreate() {
     router.push(`/publishing/${draft.id}`)
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "创建草稿失败"
-    alert(msg)
+    feedback.errorMessage.value = msg
   }
 }
 
@@ -48,7 +51,7 @@ async function handleDelete(draft: BookDraft) {
     await loadDrafts()
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "删除草稿失败"
-    alert(msg)
+    feedback.errorMessage.value = msg
   }
 }
 
@@ -80,6 +83,7 @@ export function formatTime(iso: string): string {
 </script>
 
 <template>
+  <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
   <div class="publishing-dashboard">
     <header class="dashboard-header">
       <h1 class="dashboard-title">出版工作室</h1>
@@ -163,7 +167,7 @@ export function formatTime(iso: string): string {
 
 .dashboard-title {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 500;
   color: #c43a31;
   margin: 0;
 }
@@ -220,7 +224,7 @@ export function formatTime(iso: string): string {
 
 .card-title {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
   color: #333;
   margin: 0 0 4px;
 }
@@ -308,7 +312,7 @@ export function formatTime(iso: string): string {
 
 .dialog-title {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 500;
   color: #333;
   margin: 0 0 20px;
 }
@@ -363,3 +367,4 @@ export function formatTime(iso: string): string {
   background: #a8322a;
 }
 </style>
+

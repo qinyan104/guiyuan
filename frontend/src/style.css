@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
 
 :root {
   --bg-shell: #efe3cf;
@@ -21,8 +21,8 @@
   --card-panel-fill: rgba(248,244,237,0.97);
   --card-panel-stroke: #6f5943;
   --card-name-fill: #24170d;
-  --card-status-fill: #6b5338;
-  --card-detail-fill: #463425;
+  --card-status-fill: #3d2e1c;
+  --card-detail-fill: #2c1f15;
   --card-inner-stroke: rgba(120,94,63,0.16);
   --card-header-fill: rgba(119,90,56,0.08);
   --card-male-header: rgba(93,120,144,0.1);
@@ -30,7 +30,7 @@
   --card-selected-stroke: #ab6d30;
   --card-hover-fill: rgba(250,247,241,1);
   --card-hover-stroke: #8d6538;
-  --tree-line-color: rgba(95,73,50,0.88);
+  --tree-line-color: rgba(26,20,12,0.94);
   --canvas-grid-color: rgba(145,112,74,0.09);
   --canvas-bg: linear-gradient(180deg, rgba(242,233,217,0.92), rgba(229,216,193,0.96));
   --minimap-bg: rgba(255,251,245,0.88);
@@ -452,10 +452,10 @@ textarea {
 
 /* ─── Icon System ─── */
 .tool-icon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  opacity: 0.8;
+  opacity: 0.85;
   transition: opacity 150ms ease;
 }
 
@@ -520,7 +520,6 @@ textarea {
   position: absolute;
   inset: 12px;
   border-radius: 22px;
-  border: 1px solid var(--workspace-border, rgba(255, 255, 255, 0.18));
   pointer-events: none;
   z-index: 0;
 }
@@ -537,7 +536,7 @@ textarea {
 .floating-toolbar--left {
   top: 16px;
   left: 16px;
-  gap: 8px;
+  gap: 6px;
 }
 
 .floating-toolbar--right {
@@ -558,11 +557,11 @@ textarea {
 
 .tool-btn {
   display: inline-flex;
-  gap: 4px;
+  gap: 3px;
   align-items: center;
-  padding: 8px 12px;
+  padding: 6px 10px;
   color: var(--text-sub);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition:
@@ -593,17 +592,17 @@ textarea {
 
 .tool-switcher {
   display: inline-flex;
-  gap: 2px;
+  gap: 1px;
   align-items: center;
-  padding: 4px;
+  padding: 3px;
   border-radius: 16px;
   background: var(--bg-panel, rgba(255, 249, 241, 0.78));
   border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.14));
-  box-shadow: 0 8px 16px rgba(82, 57, 28, 0.05);
+  box-shadow: 0 8px 16px rgba(82, 57, 28, 0.04);
 }
 
 .tool-btn--panel {
-  min-width: 52px;
+  min-width: 44px;
   border: 1px solid transparent;
   border-radius: 12px;
   background: transparent;
@@ -628,10 +627,10 @@ textarea {
 }
 
 .tool-btn--quiet {
-  padding-inline: 12px;
-  border-style: dashed;
+  padding-inline: 10px;
+  border-style: solid;
   background: var(--bg-paper, rgba(255, 251, 244, 0.5));
-  box-shadow: none;
+  box-shadow: 0 2px 4px rgba(82, 57, 28, 0.03);
 }
 
 .status-chip {
@@ -788,6 +787,17 @@ textarea {
   color: var(--accent-btn-color);
 }
 
+
+.selection-chip__btn--danger {
+  background: #c43a31;
+  color: #fff;
+  border-color: #c43a31;
+}
+
+.selection-chip__btn--danger:hover:not(:disabled) {
+  background: #c43a31;
+  opacity: 0.85;
+}
 .lineage-chip {
   display: inline-flex;
   flex-direction: column;
@@ -992,21 +1002,23 @@ select {
 }
 
 .toggle-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 4px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
 }
 
 .toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  border-radius: 999px;
+  gap: 6px;
+  width: 100%;
+  border-radius: 10px;
   background: var(--bg-panel-strong, rgba(255, 252, 247, 0.92));
   border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.14));
-  padding: 10px 12px;
+  padding: 8px 10px;
   color: var(--text-sub);
+  font-size: 13px;
+  box-sizing: border-box;
 }
 
 .toggle input {
@@ -1183,7 +1195,7 @@ select {
 
 .history-list {
   display: grid;
-  gap: 8px;
+  gap: 4px;
   margin-top: 12px;
 }
 
@@ -1358,7 +1370,7 @@ select {
 .editor-mini-card {
   padding: 12px 12px 11px;
   border-radius: 16px;
-  background: var(--bg-paper, rgba(255, 255, 255, 0.62));
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.1));
   border: 1px solid var(--line-soft, rgba(125, 99, 67, 0.12));
 }
 
@@ -1427,21 +1439,10 @@ select {
 }
 
 .relationship-card {
-  position: relative;
-  overflow: hidden;
   min-height: 78px;
   padding: 12px;
   border-radius: 16px;
-  background: var(--bg-paper, rgba(255, 253, 248, 0.7));
   border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.12));
-}
-
-.relationship-card::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: linear-gradient(180deg, rgba(153, 106, 57, 0.7), rgba(103, 114, 79, 0.42));
 }
 
 .relationship-card--wide {
@@ -1608,7 +1609,6 @@ select {
   min-width: 0;
   padding: 10px 12px;
   border-radius: 12px;
-  background: var(--bg-paper, rgba(255, 252, 247, 0.76));
   border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.12));
   text-align: left;
   cursor: pointer;
@@ -1648,15 +1648,17 @@ select {
 
 .child-order-item__actions {
   display: grid;
-  grid-template-columns: repeat(2, 40px);
-  gap: 6px;
+  grid-template-columns: repeat(2, 48px);
+  gap: 8px;
 }
 
 .relation-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
   border-radius: 12px;
   background: var(--bg-paper, rgba(255, 252, 247, 0.88));
   border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.16));
@@ -1687,6 +1689,174 @@ select {
 
 .editor-form {
   margin-top: 16px;
+}
+/* ── 编辑区块 ── */
+.editor-block {
+  margin-top: 28px;
+}
+
+.editor-block__title {
+  margin: 0 0 16px;
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-block__row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.editor-block__sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft, rgba(124, 98, 69, 0.08));
+}
+
+.editor-badge {
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-soft);
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.14));
+}
+
+/* ── 关系行 ── */
+.editor-rel-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft, rgba(124, 98, 69, 0.06));
+}
+
+.editor-rel-row:last-of-type {
+  border-bottom: none;
+}
+
+.editor-rel-row__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.editor-rel-row__label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-soft);
+  margin-bottom: 2px;
+}
+
+.editor-rel-row__value {
+  display: block;
+  font-size: 13px;
+  color: var(--text-main);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editor-rel-row__actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ── 关系芯片按钮 ── */
+.rel-chip {
+  padding: 4px 10px;
+  font-size: 11px;
+  border-radius: 8px;
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.16));
+  background: transparent;
+  color: var(--text-sub);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.rel-chip:hover:not(:disabled) {
+  border-color: var(--accent-amber, rgba(145, 99, 49, 0.4));
+  color: var(--text-main);
+  background: rgba(145, 99, 49, 0.03);
+}
+
+.rel-chip:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.rel-chip--danger {
+  color: rgba(196, 58, 49, 0.7);
+  border-color: rgba(196, 58, 49, 0.14);
+}
+
+.rel-chip--danger:hover:not(:disabled) {
+  border-color: rgba(196, 58, 49, 0.35);
+  background: rgba(196, 58, 49, 0.04);
+  color: var(--color-error, #c43a31);
+}
+
+.rel-chip--accent {
+  color: var(--color-accent, #c43a31);
+  border-color: rgba(196, 58, 49, 0.18);
+  font-weight: 600;
+}
+
+.rel-chip--active {
+  background: rgba(196, 58, 49, 0.06);
+  border-color: rgba(196, 58, 49, 0.3);
+  color: var(--color-accent, #c43a31);
+}
+
+/* ── 焦点区元数据 ── */
+.editor-focus__meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.editor-focus__meta h3 {
+  margin: 0 0 4px;
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.editor-focus__meta-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--text-soft);
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.12));
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field--half {
+  flex: 1;
+  min-width: 0;
+}
+
+.editor-form--compact {
+  margin-top: 8px;
+}
+
+.editor-form--compact .field {
+  margin-bottom: 8px;
 }
 
 .lineage-suggestion {
@@ -1762,6 +1932,8 @@ select {
   margin-top: 16px;
   padding: 14px;
   border-radius: 18px;
+  background: rgba(196, 58, 49, 0.04);
+  border: 1px solid rgba(196, 58, 49, 0.14);
   background: var(--danger-bg);
   border: 1px solid var(--danger-border);
 }
@@ -1883,9 +2055,9 @@ select {
 
 .canvas-minimap__viewport {
   position: absolute;
-  border-radius: 10px;
-  border: 2px solid var(--minimap-node-selected);
-  background: var(--card-header-fill, rgba(171, 109, 48, 0.08));
+  border-radius: 8px;
+  border: 1.5px dashed var(--minimap-node-selected, rgba(180, 140, 70, 0.5));
+  background: transparent;
   box-shadow: none;
 }
 
@@ -1905,7 +2077,7 @@ select {
 
 .tree-lines line {
   stroke: var(--tree-line-color);
-  stroke-width: 2.2;
+  stroke-width: 2.6;
   stroke-linecap: round;
 }
 
@@ -1925,18 +2097,69 @@ select {
   transition: fill 0.3s ease;
 }
 
+.person-card__drop-line {
+  stroke: var(--line-soft, rgba(0,0,0,0.15));
+  transition: stroke 0.2s ease;
+}
+
 .person-card:hover .person-card__name--compact {
   fill: var(--accent-amber) !important;
+}
+
+.person-card:hover .person-card__drop-line {
+  stroke: var(--color-neutral-6);
+}
+
+.person-card--selected .person-card__drop-line {
+  stroke: var(--color-accent);
+  stroke-opacity: 0.4;
 }
 
 .person-card:hover .person-card__knot {
   transform: scale(1.4);
 }
 
-.person-card--selected .person-card__name--compact {
-  fill: #b33939 !important;
+.person-card--selected .person-card__knot-ring {
+  filter: drop-shadow(0 0 6px var(--color-accent, #c43a31));
 }
 
+.person-card--selected .person-card__knot-core {
+  filter: drop-shadow(0 0 3px var(--color-accent, #c43a31));
+}
+
+.person-card--selected .person-card__name--compact {
+  fill: var(--color-accent, #c43a31) !important;
+  font-weight: 600;
+}
+
+
+.compact-hover-overlay {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.person-card:hover .compact-hover-overlay {
+  opacity: 1;
+}
+
+.compact-hover-overlay__panel {
+  fill: var(--bg-panel-strong, #fff);
+  stroke: var(--color-neutral-4);
+  stroke-width: 1;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+}
+
+.compact-hover-overlay__name {
+  fill: var(--color-neutral-10);
+  font-family: var(--font-serif);
+  font-weight: 600;
+}
+
+.compact-hover-overlay__detail {
+  fill: var(--color-neutral-7);
+  font-family: var(--font-sans);
+}
 .person-card__seal-impression {
   pointer-events: none;
 }
@@ -1955,12 +2178,6 @@ select {
     stroke 180ms ease,
     stroke-width 180ms ease,
     fill 180ms ease;
-}
-
-.person-card__inner {
-  fill: none;
-  stroke: var(--card-inner-stroke);
-  stroke-width: 1;
 }
 
 .person-card__accent-frame {
@@ -2012,7 +2229,7 @@ select {
 }
 
 .person-card__lineage-pill {
-  fill: var(--card-header-fill);
+  fill: none;
   stroke: var(--card-inner-stroke);
   stroke-width: 0.8;
 }
@@ -2054,21 +2271,19 @@ select {
 }
 
 .person-card__detail-band {
-  fill: var(--card-header-fill);
-  stroke: var(--card-inner-stroke);
-  stroke-width: 0.8;
+  fill: none;
 }
 
 .person-card--male .person-card__header,
 .person-card--male .person-card__note-pill,
 .person-card--male .person-card__detail-band {
-  fill: var(--card-male-header);
+  fill: none;
 }
 
 .person-card--female .person-card__header,
 .person-card--female .person-card__note-pill,
 .person-card--female .person-card__detail-band {
-  fill: var(--card-female-header);
+  fill: none;
 }
 
 .person-card--emperor .person-card__accent-frame--emperor {
@@ -2083,9 +2298,12 @@ select {
 
 .person-card--emperor .person-card__header,
 .person-card--emperor .person-card__note-pill,
-.person-card--emperor .person-card__detail-band,
+.person-card--emperor .person-card__detail-band {
+  fill: none;
+}
+
 .person-card--emperor .person-card__lineage-pill {
-  fill: rgba(198, 147, 47, 0.18);
+  fill: none;
   stroke: rgba(198, 147, 47, 0.26);
 }
 
@@ -2102,9 +2320,12 @@ select {
 
 .person-card--heir .person-card__header,
 .person-card--heir .person-card__note-pill,
-.person-card--heir .person-card__detail-band,
+.person-card--heir .person-card__detail-band {
+  fill: none;
+}
+
 .person-card--heir .person-card__lineage-pill {
-  fill: rgba(154, 77, 54, 0.15);
+  fill: none;
   stroke: rgba(154, 77, 54, 0.22);
 }
 
@@ -2116,10 +2337,6 @@ select {
 .person-card--selected .person-card__panel {
   stroke: var(--card-selected-stroke);
   stroke-width: 2.4;
-}
-
-.person-card--selected .person-card__inner {
-  stroke: rgba(171, 109, 48, 0.28);
 }
 
 /* Ego (viewer's own card) highlight */

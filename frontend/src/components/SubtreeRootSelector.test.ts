@@ -40,6 +40,7 @@ const previewSettings: PublicationSettings = {
   fontScale: 1.1,
   zoom: 1,
   showCard: true,
+  showBirth: true,
   showDeath: true,
   showAge: true,
   showNote: false,

@@ -13,6 +13,7 @@ import { layoutPublication } from '../lib/layout'
 import { resolveKinshipTerm, getKinshipLabel } from '../lib/kinship'
 import { suggestLineageNote } from '../lib/lineageLabels'
 import { getPersonStatusLabel, isPersonDeceased } from '../lib/personStatus'
+import { useDevAudit } from './useDevAudit'
 
 function joinMetaParts(parts: Array<string | undefined>): string {
   return parts.filter((value): value is string => Boolean(value?.trim())).join(' · ')
@@ -24,6 +25,7 @@ export function usePublicationState(
   viewerPersonId?: string | null,
 ) {
   const _viewerPersonId = ref<string | null>(viewerPersonId ?? null)
+  const audit = useDevAudit('usePublicationState')
 
   function freezePeople(pub: PublicationData): void {
     for (const id of Object.keys(pub.people)) {
@@ -41,6 +43,7 @@ export function usePublicationState(
   const hoveredPersonId = ref<string | null>(null)
 
   function replaceReactiveObject<T extends object>(target: T, source: T) {
+    const timer = audit.trackTimed('replaceReactiveObject', { keys: Object.keys(source).length })
     Object.keys(target).forEach((key) => {
       delete (target as Record<string, unknown>)[key]
     })
@@ -48,6 +51,7 @@ export function usePublicationState(
       freezePeople(source as unknown as PublicationData)
     }
     Object.assign(target, source)
+    timer.end({ targetKeys: Object.keys(target).length })
   }
 
   function listFamilies(): FamilyUnit[] {
@@ -283,6 +287,7 @@ export function usePublicationState(
   })
 
   function setViewerPersonId(id: string | null) {
+    audit.track('setViewerPersonId', { from: _viewerPersonId.value, to: id })
     _viewerPersonId.value = id
   }
 

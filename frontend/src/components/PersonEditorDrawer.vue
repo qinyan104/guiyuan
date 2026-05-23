@@ -1,21 +1,17 @@
-<script setup lang="ts">
-import BranchMountManager from './BranchMountManager.vue'
-import type { FamilyBranchMode, Gender, Person } from '../types/family'
-import { uploadPhoto, getPhotoUrl } from '../api/photo'
+﻿<script setup lang="ts">
+import { ref, watch } from "vue"
+import { useFeedback } from "../composables/useFeedback"
+import FeedbackStrip from "../components/FeedbackStrip.vue"
+import BranchMountManager from "./BranchMountManager.vue"
+import AppSelect from "./AppSelect.vue"
+import type { FamilyBranchMode, Gender, Person } from "../types/family"
+import { uploadPhoto, getPhotoUrl } from "../api/photo"
 
-interface PersonDetailItem {
-  label: string
-  value: string
-}
+interface PersonDetailItem { label: string; value: string }
+interface ChildOrderItem { person: Person; index: number; isFirst: boolean; isLast: boolean }
+type EditablePersonField = "name" | "birth" | "death" | "age" | "titleName" | "clan" | "note" | "avatarUrl"
 
-interface ChildOrderItem {
-  person: Person
-  index: number
-  isFirst: boolean
-  isLast: boolean
-}
-
-type EditablePersonField = 'name' | 'birth' | 'death' | 'age' | 'titleName' | 'clan' | 'note' | 'avatarUrl'
+const feedback = useFeedback()
 
 const props = defineProps<{
   open: boolean
@@ -33,286 +29,261 @@ const props = defineProps<{
   canSwapAdults: boolean
   isSelectedBranchFocused: boolean
   canSetBranchMode: boolean
-  branchMode: FamilyBranchMode | ''
+  branchMode: FamilyBranchMode | ""
   parentActionLabel: string
   branchActionLabel: string
 }>()
 
 const emit = defineEmits<{
-  (event: 'close'): void
-  (event: 'select-person', personId: string): void
-  (event: 'add-spouse'): void
-  (event: 'add-child', gender: Gender): void
-  (event: 'add-parents'): void
-  (event: 'remove-spouse'): void
-  (event: 'remove-parents'): void
-  (event: 'focus-branch'): void
-  (event: 'update-branch-mode', branchMode: FamilyBranchMode): void
-  (event: 'swap-partners'): void
-  (event: 'move-child', payload: { childId: string; direction: -1 | 1 }): void
-  (event: 'update-person-field', payload: { field: EditablePersonField; value: string }): void
-  (event: 'update-person-gender', gender: Gender): void
-  (event: 'apply-note-suggestion', value: string): void
-  (event: 'delete-person'): void
+  (e: "close"): void
+  (e: "select-person", id: string): void
+  (e: "add-spouse"): void
+  (e: "add-child", g: Gender): void
+  (e: "add-parents"): void
+  (e: "remove-spouse"): void
+  (e: "remove-parents"): void
+  (e: "focus-branch"): void
+  (e: "update-branch-mode", m: FamilyBranchMode): void
+  (e: "swap-partners"): void
+  (e: "move-child", p: { childId: string; direction: -1 | 1 }): void
+  (e: "update-person-field", p: { field: EditablePersonField; value: string }): void
+  (e: "update-person-gender", g: Gender): void
+  (e: "apply-note-suggestion", v: string): void
+  (e: "delete-person"): void
 }>()
 
-function updatePersonField(field: EditablePersonField, event: Event) {
-  emit('update-person-field', { field, value: (event.target as HTMLInputElement).value })
+
+function uf(f: EditablePersonField, e: Event) { emit("update-person-field", { field: f, value: (e.target as HTMLInputElement).value }) }
+function ug(e: Event) { emit("update-person-gender", (e.target as HTMLSelectElement).value as Gender) }
+async function upAvatar(e: Event) {
+  const i = e.target as HTMLInputElement; if (!i.files?.length) return
+  if (!props.publicationId) { feedback.errorMessage.value = "请先保存族谱到服务器后再上传照片"; return }
+  try { const pid = await uploadPhoto(props.person.id, props.publicationId, i.files[0]); emit("update-person-field", { field: "avatarUrl", value: getPhotoUrl(pid) }) }
+  catch { feedback.errorMessage.value = "上传失败" }
 }
 
-function updatePersonGender(event: Event) {
-  emit('update-person-gender', (event.target as HTMLSelectElement).value as Gender)
+const dcid = ref<string | null>(null); const dcoid = ref<string | null>(null)
+function cds(id: string, e: DragEvent) { dcid.value = id; e.dataTransfer!.effectAllowed = "move" }
+function cdo(id: string, e: DragEvent) { e.preventDefault(); dcoid.value = id }
+function cdl() { dcoid.value = null }
+function cdop(tid: string, e: DragEvent) {
+  e.preventDefault(); const s = dcid.value; dcid.value = null; dcoid.value = null
+  if (!s || s === tid) return
+  const si = props.childItems.findIndex(c => c.person.id === s)
+  const ti = props.childItems.findIndex(c => c.person.id === tid)
+  if (si === -1 || ti === -1) return
+  for (let i = 0; i < Math.abs(ti - si); i++) emit("move-child", { childId: s, direction: ti > si ? 1 : -1 })
+}
+function cde() { dcid.value = null; dcoid.value = null }
+
+function gl(g: Gender) { return g === "male" ? "男" : g === "female" ? "女" : "未知" }
+function gc(g: Gender) { return g === "male" ? "gm" : g === "female" ? "gf" : "" }
+
+function extractYear(s: string | undefined): number | null {
+  if (!s) return null
+  const m = s.match(/(\d{4})/)
+  return m ? parseInt(m[1]) : null
 }
 
-async function uploadAvatar(event: Event) {
-  const input = event.target as HTMLInputElement
-  if (!input.files || input.files.length === 0) return
-  if (!props.publicationId) {
-    alert('请先保存族谱到服务器后再上传照片')
-    return
+const autoAge = ref<string>("")
+
+const genderOptions = [{ value: "male", label: "男" }, { value: "female", label: "女" }, { value: "unknown", label: "未知" }]
+
+watch([() => props.person.birth, () => props.person.death], ([b, d]) => {
+  const by = extractYear(b)
+  if (!by) { autoAge.value = ""; return }
+  const dy = extractYear(d)
+  if (dy && dy > by && dy - by < 150) {
+    autoAge.value = String(dy - by)
+    emit("update-person-field", { field: "age", value: String(dy - by) })
+  } else if (!d || !dy) {
+    autoAge.value = String(new Date().getFullYear() - by)
+  } else {
+    autoAge.value = ""
   }
+}, { immediate: true })
 
-  const file = input.files[0]
-  try {
-    const photoId = await uploadPhoto(props.person.id, props.publicationId, file)
-    emit('update-person-field', { field: 'avatarUrl', value: getPhotoUrl(photoId) })
-  } catch (error) {
-    console.error('上传出错', error)
-    alert('上传出错，请检查后端服务是否启动')
-  }
-}
 </script>
 
 <template>
-  <Transition name="editor-sheet">
-    <div v-if="open" class="editor-overlay">
-      <button class="editor-overlay__scrim" type="button" aria-label="关闭人物编辑" @click="$emit('close')" />
-
-      <aside class="editor-sheet-panel">
-        <div class="editor-sheet-panel__header">
-          <div>
-            <p class="editor-sheet-panel__eyebrow">卷宗编修</p>
-            <h3>{{ person.name }}</h3>
+  <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
+  <Teleport to="body">
+    <Transition name="ak-slide">
+      <div v-if="open" class="ak-overlay" @click.self="$emit('close')">
+        <article class="ak-card" @click.stop>
+          <div class="ak-bar">
+            <button class="ak-bar__btn" @click="$emit('close')">取消</button>
+            <span class="ak-bar__title">编辑人物</span>
+            <button class="ak-bar__btn ak-bar__done" @click="$emit('close')">完成</button>
           </div>
-          <button class="editor-sheet-panel__close" type="button" @click="$emit('close')">合卷</button>
-        </div>
-
-        <div class="editor-focus">
-          <div class="editor-focus__title" style="display: flex; align-items: center; gap: 16px;">
-            <div class="avatar-upload" style="position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: rgba(169, 110, 53, 0.05); border: 1px solid var(--border-color); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-              <img v-if="person.avatarUrl" :src="person.avatarUrl" style="width: 100%; height: 100%; object-fit: contain;" />
-              <div v-else style="font-size: 28px; opacity: 0.5;">👤</div>
-              <input type="file" accept="image/*" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" title="上传照片" @change="uploadAvatar" />
-            </div>
-            <div style="flex: 1;">
-              <p>当前传主</p>
-              <h3>{{ person.name }}</h3>
-            </div>
-            <span>{{ [person.titleName, person.clan, person.note || lineageSuggestion].filter(Boolean).join(' · ') || '尚未定论' }}</span>
-          </div>
-          <p class="editor-focus__hint">{{ suggestion }}</p>
-
-          <div class="editor-focus__grid">
-            <div v-for="item in details" :key="item.label" class="editor-mini-card">
-              <span>{{ item.label }}</span>
-              <strong>{{ item.value }}</strong>
-            </div>
-          </div>
-        </div>
-
-        <section class="relationship-panel">
-          <div class="relationship-panel__header">
-            <div>
-              <p class="relationship-panel__eyebrow">宗法关系</p>
-              <h4>世系编排</h4>
-            </div>
-            <span class="relationship-panel__badge">{{ children.length }} 位子嗣</span>
-          </div>
-
-          <div class="relationship-grid">
-            <article class="relationship-card">
-              <span>配偶</span>
-              <strong>{{ spouse?.name || '未建立配偶关系' }}</strong>
-            </article>
-            <article class="relationship-card">
-              <span>父母</span>
-              <strong>{{ parents.length ? parents.map((item) => item.name).join(' · ') : '未建立父母关系' }}</strong>
-            </article>
-            <article class="relationship-card relationship-card--wide">
-              <span>子女</span>
-              <strong>{{ children.length ? children.map((item) => item.name).join(' · ') : '暂无子女' }}</strong>
-            </article>
-          </div>
-
-          <div class="relationship-section">
-            <div class="relationship-section__header">
-              <strong>配偶关系</strong>
-              <span>建立或调整夫妻位置</span>
-            </div>
-            <div class="relationship-actions">
-              <button class="relation-btn" type="button" :disabled="!canAddSpouse" @click="$emit('add-spouse')">缔结姻亲</button>
-              <button class="relation-btn" type="button" :disabled="!canSwapAdults" @click="$emit('swap-partners')">调配尊卑位次</button>
-              <button class="relation-btn relation-btn--danger relationship-actions__wide" type="button" :disabled="!spouse" @click="$emit('remove-spouse')">
-                断绝姻缘
-              </button>
-            </div>
-          </div>
-
-          <div class="relationship-section">
-            <div class="relationship-section__header">
-              <strong>父母关系</strong>
-              <span>补齐上代信息或解除引用</span>
-            </div>
-            <div class="relationship-actions">
-              <button class="relation-btn" type="button" :disabled="hasCompleteParents" @click="$emit('add-parents')">
-                {{ parentActionLabel }}
-              </button>
-              <button class="relation-btn relation-btn--danger" type="button" :disabled="!parents.length" @click="$emit('remove-parents')">
-                斩断血脉渊源
-              </button>
-            </div>
-          </div>
-
-          <div class="relationship-section">
-            <div class="relationship-section__header">
-              <strong>子女关系</strong>
-              <span>按性别新增，并可调整排序</span>
-            </div>
-            <div class="relationship-actions">
-              <button class="relation-btn" type="button" @click="$emit('add-child', 'male')">录入男丁</button>
-              <button class="relation-btn" type="button" @click="$emit('add-child', 'female')">录入女眷</button>
-            </div>
-          </div>
-
-          <div class="relationship-section relationship-section--branch">
-            <div class="relationship-section__header">
-              <strong>谱系查看</strong>
-              <span>切换到当前人物所在宗支</span>
-            </div>
-            <div class="branch-actions">
-              <button class="relation-btn relation-btn--accent" type="button" :disabled="isSelectedBranchFocused" @click="$emit('focus-branch')">
-                {{ branchActionLabel }}
-              </button>
-            </div>
-          </div>
-
-          <div v-if="canSetBranchMode" class="relationship-section relationship-section--branch">
-            <div class="relationship-section__header">
-              <strong>婚配归属</strong>
-              <span>女性成家后可区分外嫁或招婿</span>
-            </div>
-            <div class="relationship-actions">
-              <button
-                class="relation-btn"
-                :class="{ 'relation-btn--accent': branchMode === 'married-out' }"
-                type="button"
-                @click="$emit('update-branch-mode', 'married-out')"
-              >
-                适人
-              </button>
-              <button
-                class="relation-btn"
-                :class="{ 'relation-btn--accent': branchMode === 'uxorilocal' }"
-                type="button"
-                @click="$emit('update-branch-mode', 'uxorilocal')"
-              >
-                赘婿
-              </button>
-            </div>
-          </div>
-
-          <div v-if="childItems.length" class="child-order-panel">
-            <div class="child-order-panel__header">
-              <span>子嗣长幼</span>
-              <strong>左右顺序会影响画卷排布</strong>
-            </div>
-
-            <div class="child-order-list">
-              <article v-for="child in childItems" :key="child.person.id" class="child-order-item">
-                <button class="child-order-item__main" type="button" @click="$emit('select-person', child.person.id)">
-                  <strong>{{ child.index + 1 }}. {{ child.person.name }}</strong>
-                  <span>{{ child.person.titleName || child.person.note || '子女' }}</span>
-                </button>
-                <div class="child-order-item__actions">
-                  <button class="relation-icon-btn" type="button" :disabled="child.isFirst" @click="$emit('move-child', { childId: child.person.id, direction: -1 })">
-                    ←
-                  </button>
-                  <button class="relation-icon-btn" type="button" :disabled="child.isLast" @click="$emit('move-child', { childId: child.person.id, direction: 1 })">
-                    →
-                  </button>
+          <div class="ak-hbody">
+            <div class="ak-left">
+              <label class="ak-av">
+                <img v-if="person.avatarUrl" :src="person.avatarUrl" class="ak-av__img" />
+                <svg v-else width="36" height="36" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <input type="file" accept="image/*" class="ak-av__inp" @change="upAvatar" />
+              </label>
+              <div class="ak-identity">
+                <input :value="person.name" type="text" class="ak-inp ak-inp--hero" placeholder="姓名" @input="uf('name', $event)" />
+              </div>
+              <div v-if="details.length" class="ak-dlist">
+                <div v-for="d in details" :key="d.label" class="ak-ditem">
+                  <span class="ak-ditem__l">{{ d.label }}</span>
+                  <span class="ak-ditem__v">{{ d.value }}</span>
                 </div>
-              </article>
+              </div>
+            </div>
+            <div class="ak-right">
+              <div class="ak-grp">
+                <div class="ak-grp__h">生卒信息</div>
+                <div class="ak-row"><label class="ak-fld"><span class="ak-fld__l">生年</span><input :value="person.birth" type="text" class="ak-inp" placeholder="光绪三十二年" @input="uf('birth', $event)" /></label><label class="ak-fld"><span class="ak-fld__l">卒年</span><input :value="person.death" type="text" class="ak-inp" placeholder="" @input="uf('death', $event)" /></label></div>
+                <div class="ak-row"><label class="ak-fld"><span class="ak-fld__l">性别</span><AppSelect :modelValue="person.gender" :options="genderOptions" placeholder="选择性别" @update:modelValue="(v: string) => emit('update-person-gender', v as Gender)" /></label><label class="ak-fld"><span class="ak-fld__l">{{ person.death ? '享年' : '年龄' }}</span><input :value="person.age" type="text" class="ak-inp" :placeholder="autoAge || '自动推算'" @input="uf('age', $event)" /></label></div>
+              </div>
+
+              <div class="ak-grp">
+                <div class="ak-grp__h">亲属关系</div>
+                
+                <div class="ak-rel__row">
+                  <span class="ak-rel__label">配偶</span>
+                  <div class="ak-rel__body">
+                    <template v-if="spouse">
+                      <button class="ak-pchp" :class="gc(spouse.gender)" @click="$emit('select-person', spouse.id)"><span class="ak-pchp__a">{{ spouse.name.charAt(0) }}</span><span class="ak-pchp__n">{{ spouse.name }}</span></button>
+                      <button v-if="canSwapAdults" class="ak-rel__aux-btn" @click="$emit('swap-partners')">调整</button>
+                      <button class="ak-rel__aux-btn ak-rel__aux-btn--del" @click="$emit('remove-spouse')">解除</button>
+                    </template>
+                    <button v-else-if="canAddSpouse" class="ak-rel__add" @click="$emit('add-spouse')">+ 添加配偶</button>
+                    <span v-else class="ak-rel__nil">—</span>
+                  </div>
+                </div>
+                <div class="ak-rel__row">
+                  <span class="ak-rel__label">父母</span>
+                  <div class="ak-rel__body">
+                    <template v-if="parents.length">
+                      <button v-for="p in parents" :key="p.id" class="ak-pchp" :class="gc(p.gender)" @click="$emit('select-person', p.id)"><span class="ak-pchp__a">{{ p.name.charAt(0) }}</span><span class="ak-pchp__n">{{ p.name }}</span></button>
+                      <button class="ak-rel__aux-btn ak-rel__aux-btn--del" @click="$emit('remove-parents')">解除</button>
+                    </template>
+                    <button v-else-if="!hasCompleteParents" class="ak-rel__add" @click="$emit('add-parents')">{{ parentActionLabel || '+ 添加父母' }}</button>
+                    <span v-else class="ak-rel__nil">—</span>
+                  </div>
+                </div>
+                <div class="ak-rel__row">
+                  <span class="ak-rel__label">子女</span>
+                  <div class="ak-rel__body">
+                    <template v-if="childItems.length">
+                      <button v-for="c in childItems" :key="c.person.id" class="ak-pchp ak-pchp--drag" :class="[gc(c.person.gender), {'ak-chi--over':dcoid===c.person.id,'ak-chi--drag':dcid===c.person.id}]" draggable="true" @dragstart="cds(c.person.id,$event)" @dragover="cdo(c.person.id,$event)" @dragleave="cdl" @drop="cdop(c.person.id,$event)" @dragend="cde" @click="$emit('select-person', c.person.id)"><span class="ak-pchp__badge">{{ c.index + 1 }}</span><span class="ak-pchp__a">{{ c.person.name.charAt(0) }}</span><span class="ak-pchp__n">{{ c.person.name }}</span></button>
+                    </template>
+                    <button class="ak-rel__add" @click="$emit('add-child','male')">+ 添子</button>
+                    <button class="ak-rel__add" @click="$emit('add-child','female')">+ 添女</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ak-grp">
+                <div class="ak-grp__h">分支设置</div>
+                <div class="ak-chips"><button class="ak-chp ak-chp--b" :disabled="isSelectedBranchFocused" @click="$emit('focus-branch')">{{ branchActionLabel }}</button><button v-if="canSetBranchMode" class="ak-chp" :class="{'ak-chp--on':branchMode==='married-out'}" @click="$emit('update-branch-mode','married-out')">适人</button><button v-if="canSetBranchMode" class="ak-chp" :class="{'ak-chp--on':branchMode==='uxorilocal'}" @click="$emit('update-branch-mode','uxorilocal')">赘婿</button></div>
+              </div>
+
+              <div class="ak-grp">
+                <div class="ak-grp__h">补充信息</div>
+                <label class="ak-fld"><span class="ak-fld__l">注记</span><input :value="person.note" type="text" class="ak-inp" placeholder="长房 / 次子" @input="uf('note', $event)" /><button v-if="lineageSuggestion && person.note !== lineageSuggestion" class="ak-sug" @click="$emit('apply-note-suggestion', lineageSuggestion)">采纳「{{ lineageSuggestion }}」</button></label>
+                <div class="ak-sep"></div>
+                <BranchMountManager :person="person" :publicationId="publicationId" />
+              </div>
+
+              <button class="ak-del" @click="$emit('delete-person')">删除此人</button>
             </div>
           </div>
-        </section>
-
-        <BranchMountManager :person="person" :publicationId="publicationId" />
-
-        <div class="editor-form">
-          <label class="field">
-            <span>性别</span>
-            <select :value="person.gender" @change="updatePersonGender">
-              <option value="male">男</option>
-              <option value="female">女</option>
-              <option value="unknown">未定</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span>姓名</span>
-            <input :value="person.name" type="text" @input="updatePersonField('name', $event)" />
-          </label>
-
-          <label class="field">
-            <span>出生</span>
-            <input :value="person.birth" type="text" placeholder="如：1978年十月初八" @input="updatePersonField('birth', $event)" />
-          </label>
-
-          <label class="field">
-            <span>称号</span>
-            <input :value="person.titleName" type="text" placeholder="如：唐太宗 / 宣统帝 / 皇太子" @input="updatePersonField('titleName', $event)" />
-          </label>
-
-          <label class="field">
-            <span>宗族</span>
-            <input :value="person.clan" type="text" placeholder="如：陇西李氏 / 爱新觉罗氏" @input="updatePersonField('clan', $event)" />
-          </label>
-
-          <label class="field">
-            <span>卒年</span>
-            <input :value="person.death" type="text" placeholder="如：2022年五月" @input="updatePersonField('death', $event)" />
-          </label>
-
-          <label class="field">
-            <span>年龄</span>
-            <input :value="person.age" type="text" placeholder="支持直接填写 71岁" @input="updatePersonField('age', $event)" />
-          </label>
-
-          <label class="field">
-            <span>注记</span>
-            <input :value="person.note" type="text" placeholder="如：长房 / 次子 / 配偶" @input="updatePersonField('note', $event)" />
-          </label>
-
-          <div v-if="lineageSuggestion" class="lineage-suggestion">
-            <span>史馆推演：{{ lineageSuggestion }}</span>
-            <button
-              v-if="person.note !== lineageSuggestion"
-              type="button"
-              @click="$emit('apply-note-suggestion', lineageSuggestion)"
-            >
-              落笔注记
-            </button>
-          </div>
-        </div>
-
-        <section class="danger-zone">
-          <div>
-            <p>非常行事</p>
-            <span>除名后，此人在所有姻亲、血脉网络中的关联将一并抹除。</span>
-          </div>
-          <button class="relation-btn relation-btn--danger" type="button" @click="$emit('delete-person')">从宗谱除名</button>
-        </section>
-      </aside>
-    </div>
-  </Transition>
+        </article>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
+
+<style scoped>
+.ak-overlay { position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; background:rgba(58,45,25,0.18); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
+.ak-card { width:820px; max-height:88vh; background:#faf6ee; backdrop-filter:blur(32px); -webkit-backdrop-filter:blur(32px); border-radius:16px; box-shadow:0 4px 32px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.08); display:flex; flex-direction:column; overflow:hidden; }
+.ak-bar { display:flex; align-items:center; padding:12px 20px 8px; flex-shrink:0; }
+.ak-bar__btn { font-size:16px; color:#916331; border:none; background:none; cursor:pointer; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; padding:0; font-weight:400; min-width:44px; text-align:left; }
+.ak-bar__btn:active { opacity:.3; }
+.ak-bar__done { text-align:right; font-weight:600; }
+.ak-bar__title { flex:1; text-align:center; font-size:16px; font-weight:600; color:#3a3229; }
+.ak-hbody { display:flex; gap:0; overflow:hidden; flex:1; min-height:0; }
+.ak-left { width:200px; flex-shrink:0; padding:20px 18px 20px; display:flex; flex-direction:column; align-items:center; gap:12px; border-right:1px solid rgba(120,95,65,0.1); overflow-y:auto; }
+.ak-right { flex:1; padding:20px 24px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; min-width:0; }
+.ak-left::-webkit-scrollbar, .ak-right::-webkit-scrollbar { width:3px; }
+.ak-left::-webkit-scrollbar-thumb, .ak-right::-webkit-scrollbar-thumb { background:rgba(120,95,65,0.12); border-radius:3px; }
+.ak-av { position:relative; width:88px; height:88px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:rgba(120,95,65,0.08); flex-shrink:0; transition:background .15s; }
+.ak-av:hover { background:rgba(120,95,65,0.14); }
+.ak-av__img { width:100%; height:100%; object-fit:contain; }
+.ak-av__inp { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.ak-identity { width:100%; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.ak-dlist { width:100%; display:flex; flex-direction:column; gap:1px; background:rgba(120,95,65,0.06); border-radius:8px; overflow:hidden; }
+.ak-ditem { display:flex; align-items:center; justify-content:space-between; padding:7px 10px; background:#faf6ee; }
+.ak-ditem + .ak-ditem { border-top:1px solid rgba(120,95,65,0.06); }
+.ak-ditem__l { font-size:11px; color:#8c7b6b; font-weight:500; }
+.ak-ditem__v { font-size:12px; color:#3a3229; font-weight:500; text-align:right; }
+.ak-inp { width:100%; padding:8px 12px; border-radius:8px; border:none; background:#faf6ee; border:1px solid rgba(120,95,65,0.12); font-size:14px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:#3a3229; box-sizing:border-box; transition:background .15s; }
+.ak-inp:focus { outline:none; border-color:#916331; box-shadow:0 0 0 3px rgba(145,99,49,0.1); background:#faf6ee; }
+.ak-inp::placeholder { color:#b8a898; }
+.ak-inp--hero { font-size:28px; font-weight:700; text-align:center; background:transparent; color:#3a3229; padding:4px 0; letter-spacing:-.01em; width:100%; }
+.ak-inp--hero:focus { background:transparent; }
+.ak-sel { appearance:none; background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2386868b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; cursor:pointer; }
+.ak-fld { display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
+.ak-fld__l { font-size:10px; color:#8c7b6b; font-weight:500; }
+.ak-sug { display:inline-flex; align-items:center; gap:3px; margin-top:4px; padding:2px 8px; border-radius:5px; border:none; background:rgba(145,99,49,0.06); color:#916331; font-size:11px; font-weight:500; cursor:pointer; font-family:inherit; width:fit-content; }
+.ak-sug:hover { background:rgba(145,99,49,0.12); }
+.ak-row { display:flex; gap:12px; }
+.ak-grp { background:#faf6ee; border-radius:12px; padding:16px; border:1px solid rgba(120,95,65,0.1); }
+.ak-grp__h { font-size:11px; font-weight:600; color:#3a3229; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(120,95,65,0.08); }
+.ak-sep { height:1px; background:rgba(120,95,65,0.1); margin:8px 0; }
+.ak-rel__row { display:flex; align-items:flex-start; gap:12px; padding:10px 0; }
+.ak-rel__row + .ak-rel__row { border-top:1px solid rgba(120,95,65,0.08); }
+.ak-rel__label { width:36px; flex-shrink:0; font-size:13px; font-weight:600; color:#3a3229; padding-top:4px; }
+.ak-rel__body { flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.ak-rel__add { font-size:12px; color:#916331; border:none; background:none; cursor:pointer; font-family:inherit; padding:3px 0; white-space:nowrap; }
+.ak-rel__add:hover { opacity:.7; }
+.ak-rel__nil { margin:0; font-size:12px; color:#b8a898; padding:3px 0; }
+.ak-rel__aux-btn { font-size:11px; padding:2px 7px; border-radius:4px; border:1px solid rgba(120,95,65,0.1); background:transparent; color:#8c7b6b; cursor:pointer; font-family:inherit; white-space:nowrap; }
+.ak-rel__aux-btn:hover { border-color:rgba(120,95,65,0.2); background:rgba(120,95,65,0.04); }
+.ak-rel__aux-btn--del { color:#FF3B30; }
+.ak-rel__aux-btn--del:hover { background:rgba(255,59,48,.06); }
+.ak-chp { font-size:12px; padding:4px 12px; border-radius:6px; border:1px solid rgba(120,95,65,0.12); background:#faf6ee; color:#3a3229; cursor:pointer; font-family:inherit; transition:background .15s; }
+.ak-chp:hover:not(:disabled) { background:rgba(145,99,49,0.06); border-color:rgba(120,95,65,0.2); }
+.ak-chp:disabled { opacity:.25; cursor:not-allowed; }
+.ak-chp--d { color:#FF3B30; }
+.ak-chp--d:hover:not(:disabled) { background:rgba(255,59,48,.08); }
+.ak-chp--b { color:#916331; font-weight:500; }
+.ak-chp--on { background:rgba(145,99,49,0.1); color:#916331; }
+.ak-chips { display:flex; flex-wrap:wrap; gap:4px; }
+.ak-pchps { display:flex; flex-wrap:wrap; gap:3px; }
+.ak-pchp { display:inline-flex; align-items:center; gap:6px; padding:6px 12px 6px 6px; border-radius:8px; border:1px solid rgba(120,95,65,0.1); background:#faf6ee; cursor:pointer; font-family:inherit; font-size:13px; color:#3a3229; transition:all .15s; }
+.ak-pchp:hover { border-color:#916331; background:rgba(145,99,49,0.04); }
+.ak-pchp--drag { cursor:grab; }
+.ak-pchp--drag:active { cursor:grabbing; }
+.ak-pchp__badge { display:flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:rgba(120,95,65,0.12); font-size:9px; font-weight:700; color:#8c7b6b; flex-shrink:0; }
+.ak-pchp.gm { background:rgba(145,99,49,0.06); }
+.ak-pchp.gf { background:rgba(255,45,85,.06); }
+.ak-pchp__a { display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(120,95,65,0.1); font-size:10px; font-weight:600; color:#8c7b6b; flex-shrink:0; }
+.ak-pchp__n { font-weight:500; max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.ak-del { padding:10px; border-radius:10px; border:none; background:transparent; color:#FF3B30; font-size:14px; font-weight:400; cursor:pointer; font-family:inherit; transition:background .15s; width:100%; }
+.ak-del:hover { background:rgba(255,59,48,.06); }
+.ak-slide-enter-active { transition:opacity 300ms cubic-bezier(.22,1,.36,1); }
+.ak-slide-leave-active { transition:opacity 200ms ease-in; }
+.ak-slide-enter-active .ak-card { animation:ak-up 380ms cubic-bezier(.22,1,.36,1) forwards; }
+.ak-slide-leave-active .ak-card { animation:ak-down 180ms ease-in forwards; }
+/* AppSelect — blend into drawer aesthetic */
+:deep(.app-select .app-select__trigger) { background:#faf6ee; border:1px solid rgba(120,95,65,0.12); border-radius:8px; padding:8px 12px; font-size:14px; color:#3a3229; }
+:deep(.app-select.open .app-select__trigger),
+:deep(.app-select .app-select__trigger:hover) { border-color:#916331; box-shadow:0 0 0 3px rgba(145,99,49,0.1); }
+:deep(.app-select .app-select__value.placeholder) { color:#b8a898; }
+:deep(.app-select__dropdown) { background:#faf6ee; border:1px solid rgba(120,95,65,0.12); border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,.12); }
+:deep(.app-select__option) { color:#3a3229; font-size:14px; }
+:deep(.app-select__option:hover),
+:deep(.app-select__option.highlighted) { background:rgba(145,99,49,0.08); }
+:deep(.app-select__option.selected) { color:#916331; font-weight:600; }
+:deep(.app-select__option.selected::after) { background:#916331; }
+
+@keyframes ak-up { from { opacity:0; transform:translateY(32px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes ak-down { from { opacity:1; transform:translateY(0) scale(1); } to { opacity:0; transform:translateY(16px) scale(.98); } }
+</style>

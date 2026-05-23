@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import CollaboratorManager from './CollaboratorManager.vue'
+import AppSelect from './AppSelect.vue'
 import {
   listAccessRecords,
   removeAccessRecord,
@@ -27,6 +28,7 @@ vi.mock('../api/account', () => ({
 
 describe('CollaboratorManager', () => {
   beforeEach(() => {
+    document.body.innerHTML = ''
     vi.mocked(searchUsers).mockReset()
     vi.mocked(listAccessRecords).mockReset()
     vi.mocked(updateAccessRole).mockReset()
@@ -59,6 +61,7 @@ describe('CollaboratorManager', () => {
     const wrapper = mount(CollaboratorManager, {
       props: { publicationId: 7 },
       global: {
+        components: { AppSelect },
         stubs: {
           Teleport: {
             template: '<div><slot /></div>',
@@ -78,8 +81,10 @@ describe('CollaboratorManager', () => {
 
   it('requires confirmation before changing a collaborator role', async () => {
     const wrapper = mount(CollaboratorManager, {
+      attachTo: document.body,
       props: { publicationId: 7 },
       global: {
+        components: { AppSelect },
         stubs: {
           Teleport: {
             template: '<div><slot /></div>',
@@ -90,14 +95,23 @@ describe('CollaboratorManager', () => {
 
     await flushPromises()
 
-    const selects = wrapper.findAll('select.role-select-inline')
-    await selects[0].setValue('VIEWER')
+    // Open the inline AppSelect inside the collaborator card and pick "浏览者"
+    const trigger = document.querySelector('.user-card .app-select__trigger') as HTMLElement | null
+    expect(trigger).not.toBeNull()
+    trigger!.click()
+    await flushPromises()
+    const options = document.querySelectorAll('.app-select__option')
+    const viewerOpt = Array.from(options).find(el => el.textContent === '浏览者')
+    viewerOpt?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await flushPromises()
 
     expect(updateAccessRole).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('调整')
-    expect(wrapper.text()).toContain('Editor')
+    expect(document.body.textContent).toContain('调整')
+    expect(document.body.textContent).toContain('Editor')
 
-    await wrapper.get('button[data-role="confirm"]').trigger('click')
+    const confirmButton = document.querySelector('button[data-role="confirm"]') as HTMLButtonElement
+    confirmButton.click()
+    await flushPromises()
 
     expect(updateAccessRole).toHaveBeenCalledWith(
       7,

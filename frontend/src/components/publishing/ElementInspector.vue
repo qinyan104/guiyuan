@@ -29,7 +29,7 @@ defineProps<{
 
 .inspector-title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-neutral-9);
   margin: 0 0 8px;
 }
@@ -55,3 +55,4 @@ defineProps<{
   padding-top: 40px;
 }
 </style>
+

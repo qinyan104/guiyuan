@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { reactive, ref } from 'vue'
 
 import { register, type RegisterRequest } from '../api/auth'
@@ -218,22 +218,6 @@ async function onSubmit() {
   perspective: 1000px;
 }
 
-:global([data-theme="rosewood"]) .auth-stage,
-:global([data-theme="star-sea"]) .auth-stage {
-  --glass-bg: rgba(34, 31, 27, 0.82);
-  --glass-border-highlight: rgba(255, 248, 235, 0.16);
-  --glass-border-shadow: rgba(0, 0, 0, 0.36);
-  --glass-brand-bg: linear-gradient(135deg, rgba(44, 40, 35, 0.9), rgba(26, 23, 20, 0.7));
-  --glass-form-bg: rgba(36, 32, 27, 0.74);
-  --glass-seal-bg: linear-gradient(135deg, rgba(76, 68, 57, 0.9), rgba(38, 34, 29, 0.76));
-  --glass-feature-bg: rgba(48, 44, 38, 0.72);
-  --glass-pill-bg: rgba(255, 248, 235, 0.08);
-  --glass-pill-active: rgba(255, 248, 235, 0.16);
-  --glass-input-bg: rgba(48, 44, 38, 0.78);
-  --glass-input-border: rgba(255, 248, 235, 0.18);
-  --glass-input-focus: rgba(64, 58, 50, 0.9);
-}
-
 .glass-container {
   position: relative;
   width: 100%;
@@ -246,7 +230,7 @@ async function onSubmit() {
   position: absolute;
   inset: -2px;
   border-radius: 34px;
-  background: linear-gradient(135deg, var(--glass-border-highlight) 0%, transparent 50%, var(--glass-border-shadow) 100%);
+  background: linear-gradient(135deg, var(--color-neutral-2) 0%, transparent 50%, var(--color-neutral-4) 100%);
   z-index: -1;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -257,14 +241,14 @@ async function onSubmit() {
 
 .glass-panel {
   display: flex;
-  background: var(--glass-bg);
+  background: var(--color-card-fill);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   border-radius: 32px;
   box-shadow: 
     0 40px 80px -20px rgba(0,0,0,0.15),
-    inset 0 1px 0 var(--glass-border-highlight),
-    inset 0 -1px 0 var(--glass-border-shadow);
+    inset 0 1px 0 var(--color-neutral-2),
+    inset 0 -1px 0 var(--color-neutral-4);
   overflow: hidden;
   min-height: 640px;
 }
@@ -274,8 +258,8 @@ async function onSubmit() {
   flex: 1.2;
   position: relative;
   padding: 4rem;
-  background: var(--glass-brand-bg);
-  border-right: 1px solid var(--glass-border-shadow);
+  background: var(--color-neutral-2);
+  border-right: 1px solid var(--color-neutral-4);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -286,7 +270,7 @@ async function onSubmit() {
   position: absolute;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, var(--accent-olive) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--color-success) 0%, transparent 70%);
   opacity: 0.2;
   filter: blur(60px);
   top: -100px;
@@ -296,7 +280,7 @@ async function onSubmit() {
 }
 
 .brand-glow-sphere.quaternary {
-  background: radial-gradient(circle, var(--accent-earth) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--color-neutral-7) 0%, transparent 70%);
   top: auto;
   bottom: -150px;
   left: auto;
@@ -322,7 +306,7 @@ async function onSubmit() {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border-bottom: 1px solid var(--glass-border-shadow);
+  border-bottom: 1px solid var(--color-neutral-4);
   padding-bottom: 2.5rem;
 }
 
@@ -338,28 +322,28 @@ async function onSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--glass-seal-bg);
-  border: 1px solid var(--glass-border-highlight);
+  background: var(--color-neutral-3);
+  border: 1px solid var(--color-neutral-2);
   border-radius: 12px;
   font-family: 'Noto Serif SC', serif;
   font-size: 1.25rem;
   font-weight: bold;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   box-shadow: 0 8px 16px rgba(0,0,0,0.05);
 }
 
 .logo-text {
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.3em;
   font-size: 0.75rem;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
 }
 
 .layout-meta {
   font-family: monospace;
   font-size: 0.75rem;
   letter-spacing: 0.2em;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   margin-top: 0.5rem;
 }
 
@@ -374,16 +358,16 @@ async function onSubmit() {
 .hero-eyebrow {
   font-size: 0.8rem;
   letter-spacing: 0.4em;
-  color: var(--accent-olive);
+  color: var(--color-success);
   margin-bottom: 1.5rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .hero-title {
   font-size: 3.2rem;
   line-height: 1.3;
   font-family: 'Noto Serif SC', serif;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   margin: 0;
   letter-spacing: 0.05em;
   font-weight: 500;
@@ -392,29 +376,29 @@ async function onSubmit() {
 .text-italic {
   font-style: italic;
   font-weight: 300;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-family: serif;
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--accent-olive), var(--accent-earth));
+  background: linear-gradient(135deg, var(--color-success), var(--color-neutral-7));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .hero-divider {
   width: 60px;
   height: 1px;
-  background: var(--glass-border-highlight);
+  background: var(--color-neutral-2);
   margin: 3rem 0;
 }
 
 .hero-quote {
   font-size: 1.05rem;
   line-height: 2.2;
-  color: var(--text-sub);
+  color: var(--color-neutral-7);
   margin: 0;
   letter-spacing: 0.05em;
   font-weight: 400;
@@ -423,7 +407,7 @@ async function onSubmit() {
 .layout-footer {
   display: flex;
   justify-content: space-between;
-  border-top: 1px solid var(--glass-border-shadow);
+  border-top: 1px solid var(--color-neutral-4);
   padding-top: 2.5rem;
 }
 
@@ -441,14 +425,14 @@ async function onSubmit() {
 .info-label {
   font-size: 0.65rem;
   letter-spacing: 0.25em;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   text-transform: uppercase;
 }
 
 .info-value {
   font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-main);
+  font-weight: 500;
+  color: var(--color-neutral-9);
   letter-spacing: 0.05em;
 }
 
@@ -459,7 +443,7 @@ async function onSubmit() {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: var(--glass-form-bg);
+  background: var(--color-neutral-1);
 }
 
 .form-wrapper {
@@ -475,12 +459,12 @@ async function onSubmit() {
 .switcher-pill {
   position: relative;
   display: flex;
-  background: var(--glass-pill-bg);
+  background: var(--color-neutral-3);
   border-radius: 999px;
   padding: 0.35rem;
   margin-bottom: 2rem;
   width: fit-content;
-  border: 1px solid var(--glass-border-shadow);
+  border: 1px solid var(--color-neutral-4);
 }
 
 .switcher-bg {
@@ -489,7 +473,7 @@ async function onSubmit() {
   bottom: 0.35rem;
   left: 0.35rem;
   width: calc(50% - 0.35rem);
-  background: var(--glass-pill-active);
+  background: var(--color-accent);
   border-radius: 999px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -502,25 +486,25 @@ async function onSubmit() {
   border: none;
   padding: 0.5rem 1.5rem;
   font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text-sub);
+  font-weight: 500;
+  color: var(--color-neutral-7);
   cursor: pointer;
   transition: color 0.3s ease;
 }
 
 .switcher-btn.active {
-  color: var(--text-main);
+  color: var(--color-neutral-9);
 }
 
 .form-title {
   font-size: 2.2rem;
   margin: 0 0 0.5rem;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   font-family: 'Noto Serif SC', serif;
 }
 
 .form-desc {
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   margin: 0;
   font-size: 1rem;
 }
@@ -541,8 +525,8 @@ async function onSubmit() {
   display: flex;
   flex-direction: column;
   border-radius: 18px;
-  background: var(--glass-input-bg);
-  border: 1px solid var(--glass-input-border);
+  background: var(--color-neutral-2);
+  border: 1px solid var(--color-neutral-5);
   padding: 0.75rem 1.25rem;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   flex: 1;
@@ -552,7 +536,7 @@ async function onSubmit() {
   position: absolute;
   inset: -1px;
   border-radius: 18px;
-  background: linear-gradient(135deg, var(--accent-olive), var(--accent-earth));
+  background: linear-gradient(135deg, var(--color-success), var(--color-neutral-7));
   opacity: 0;
   z-index: -1;
   transition: opacity 0.3s ease;
@@ -560,7 +544,7 @@ async function onSubmit() {
 }
 
 .input-group.is-focused {
-  background: var(--glass-input-focus);
+  background: var(--color-accent-muted);
   border-color: transparent;
   transform: translateY(-2px);
   box-shadow: 0 12px 32px rgba(0,0,0,0.08);
@@ -576,10 +560,10 @@ async function onSubmit() {
   transform: translateY(-50%);
   left: 1.25rem;
   font-size: 1rem;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   pointer-events: none;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .input-group.is-focused label,
@@ -587,7 +571,7 @@ async function onSubmit() {
   top: 0.85rem;
   transform: translateY(0);
   font-size: 0.75rem;
-  color: var(--accent-olive);
+  color: var(--color-success);
   font-weight: 800;
 }
 
@@ -596,10 +580,10 @@ async function onSubmit() {
   background: none;
   outline: none;
   font-size: 1.05rem;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   padding: 1.35rem 0 0.25rem;
   width: 100%;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* 修复浏览器自动填充的难看背景 */
@@ -608,9 +592,9 @@ async function onSubmit() {
 .input-group input:-webkit-autofill:focus, 
 .input-group input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 30px transparent inset !important;
-  -webkit-text-fill-color: var(--text-main) !important;
+  -webkit-text-fill-color: var(--color-neutral-9) !important;
   transition: background-color 5000s ease-in-out 0s;
-  caret-color: var(--text-main);
+  caret-color: var(--color-neutral-9);
 }
 
 .password-toggle {
@@ -620,7 +604,7 @@ async function onSubmit() {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   cursor: pointer;
   padding: 0.25rem;
   display: flex;
@@ -630,12 +614,12 @@ async function onSubmit() {
 }
 
 .password-toggle:hover {
-  color: var(--text-main);
+  color: var(--color-neutral-9);
 }
 
 .submit-btn {
   position: relative;
-  background: linear-gradient(135deg, var(--accent-olive) 0%, var(--accent-earth) 100%);
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-neutral-7) 100%);
   color: #fff;
   border: none;
   padding: 1.25rem;
@@ -695,19 +679,19 @@ async function onSubmit() {
 .terms-text {
   text-align: center;
   font-size: 0.85rem;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   margin-top: 0.5rem;
 }
 
 .terms-text a {
-  color: var(--accent-olive);
+  color: var(--color-success);
   text-decoration: none;
-  font-weight: 700;
+  font-weight: 500;
   transition: color 0.2s ease;
 }
 
 .terms-text a:hover {
-  color: var(--text-main);
+  color: var(--color-neutral-9);
 }
 
 .error-banner {
@@ -719,7 +703,7 @@ async function onSubmit() {
   padding: 1rem;
   border-radius: 14px;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 500;
   border: 1px solid rgba(255, 59, 48, 0.25);
 }
 
@@ -732,7 +716,7 @@ async function onSubmit() {
   padding: 1rem;
   border-radius: 14px;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 500;
   border: 1px solid rgba(52, 199, 89, 0.25);
 }
 
@@ -758,7 +742,7 @@ async function onSubmit() {
   .brand-section {
     padding: 3rem;
     border-right: none;
-    border-bottom: 1px solid var(--glass-border-shadow);
+    border-bottom: 1px solid var(--color-neutral-4);
   }
   .form-section {
     padding: 3rem;
@@ -783,3 +767,4 @@ async function onSubmit() {
   }
 }
 </style>
+
