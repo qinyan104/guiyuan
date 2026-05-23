@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { listReviews, approveReview, rejectReview, batchReview, type ReviewItem } from '../api/review'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
@@ -295,25 +295,6 @@ function formatTime(t: string | null) {
   max-width: 900px;
   margin: 0 auto;
 }
-.poetic-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  gap: 1.5rem;
-}
-.poetic-eyebrow {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  opacity: 0.5;
-  margin-bottom: 0.25rem;
-}
-.poetic-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin: 0;
-}
 .batch-actions {
   display: flex;
   align-items: center;
@@ -393,7 +374,7 @@ function formatTime(t: string | null) {
   flex-wrap: wrap;
 }
 .person-name {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.9rem;
 }
 .field-tag {
@@ -536,7 +517,7 @@ function formatTime(t: string | null) {
   padding: 1.5rem;
   width: 90%;
   max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-whisper);
 }
 .reject-input-card h3 {
   margin: 0 0 1rem;
@@ -590,3 +571,4 @@ function formatTime(t: string | null) {
   overflow: hidden;
 }
 </style>
+

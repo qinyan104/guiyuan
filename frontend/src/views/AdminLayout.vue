@@ -1,16 +1,16 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useTheme } from '../composables/useTheme'
+
 import { useLexicon } from '../composables/useLexicon'
 import { logout, getUsername, isAdmin } from '../api/auth'
-import ThemeSwitcher from '../components/ThemeSwitcher.vue'
+import DarkModeToggle from '../components/DarkModeToggle.vue'
 import LexiconSwitcher from '../components/LexiconSwitcher.vue'
 import GlobalSearch from '../components/GlobalSearch.vue'
 
 const router = useRouter()
 const route = useRoute()
-const theme = useTheme()
+
 const { lexicon } = useLexicon()
 const currentUsername = computed(() => getUsername() ?? '')
 const userInitials = computed(() => currentUsername.value ? currentUsername.value.charAt(0).toUpperCase() : '总')
@@ -39,12 +39,18 @@ const visibleNavItems = computed(() => navItems.value.filter((item) => !item.adm
 const activeRouteName = computed(() => route.name as string)
 
 // 灵魂水印逻辑
-const soulMap = computed<Record<string, string>>(() => ({
-  'dashboard': lexicon.value.dashboard.soul,
-  'publications': lexicon.value.publications.soul,
-  'admin-users': lexicon.value.users.soul,
-  'admin-logs': lexicon.value.logs.soul,
-  'settings': lexicon.value.settings.soul
+const soulMap = computed<Record<string, string>>(() => ({
+
+  'dashboard': lexicon.value.dashboard.soul,
+
+  'publications': lexicon.value.publications.soul,
+
+  'admin-users': lexicon.value.users.soul,
+
+  'admin-logs': lexicon.value.logs.soul,
+
+  'settings': lexicon.value.settings.soul
+
 }))
 const currentSoul = computed(() => soulMap.value[activeRouteName.value] || lexicon.value.dashboard.soul)
 
@@ -138,8 +144,8 @@ onBeforeUnmount(() => {
       <header class="top-action-bar">
         <GlobalSearch />
         <div class="top-actions-group">
-          <!-- Theme Switcher Component -->
-          <ThemeSwitcher :currentTheme="theme.currentTheme.value" @change-theme="theme.setTheme" />
+          <!-- Dark Mode Toggle -->
+          <DarkModeToggle />
           <LexiconSwitcher />
           
           <div class="action-divider"></div>
@@ -198,11 +204,11 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .spatial-workspace {
-  --glass-bg: rgba(255, 255, 255, 0.4);
-  --glass-border-highlight: rgba(255, 255, 255, 0.6);
-  --glass-border-shadow: rgba(255, 255, 255, 0.15);
-  --glass-seal-bg: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.3));
-  --glass-pill-bg: rgba(255, 255, 255, 0.5);
+  --glass-bg: var(--color-card-fill);
+  --glass-border-highlight: var(--color-card-stroke);
+  --glass-border-shadow: var(--color-neutral-4);
+  --glass-seal-bg: linear-gradient(135deg, var(--color-neutral-2), var(--color-neutral-1));
+  --glass-pill-bg: var(--color-neutral-3);
   --glow-opacity: 0.2;
   
   display: flex;
@@ -219,13 +225,13 @@ onBeforeUnmount(() => {
   gap: 24px;
 }
 
-:global([data-theme="rosewood"]) .spatial-workspace,
-:global([data-theme="star-sea"]) .spatial-workspace {
-  --glass-bg: rgba(40, 36, 31, 0.7);
-  --glass-border-highlight: rgba(255, 248, 235, 0.16);
-  --glass-border-shadow: rgba(0, 0, 0, 0.32);
-  --glass-seal-bg: linear-gradient(135deg, rgba(76, 68, 57, 0.92), rgba(38, 34, 29, 0.82));
-  --glass-pill-bg: rgba(255, 248, 235, 0.08);
+[data-theme="dark"] .spatial-workspace,
+[data-theme="dark"] .spatial-workspace {
+  --glass-bg: var(--color-neutral-2);
+  --glass-border-highlight: rgba(255,255,255,0.06);
+  --glass-border-shadow: rgba(255,255,255,0.04);
+  --glass-seal-bg: linear-gradient(135deg, var(--color-neutral-3), var(--color-neutral-2));
+  --glass-pill-bg: var(--color-neutral-4);
   --glow-opacity: 0.05;
 }
 
@@ -242,7 +248,7 @@ onBeforeUnmount(() => {
   position: absolute;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, var(--accent-amber, #a96e35) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--color-accent) 0%, transparent 70%);
   opacity: var(--glow-opacity);
   filter: blur(80px);
   top: -150px;
@@ -251,7 +257,7 @@ onBeforeUnmount(() => {
 }
 
 .brand-glow-sphere.secondary {
-  background: radial-gradient(circle, var(--accent-ink, #6a4b2f) 0%, transparent 70%);
+  background: radial-gradient(circle, #8b2c26 0%, transparent 70%);
   top: auto;
   bottom: -200px;
   left: auto;
@@ -306,7 +312,7 @@ onBeforeUnmount(() => {
   font-family: 'Noto Serif SC', serif;
   font-size: 1.3rem;
   font-weight: bold;
-  color: var(--text-main, #1a1a1a);
+  color: var(--color-neutral-9);
   box-shadow: 0 8px 16px rgba(0,0,0,0.08);
 }
 
@@ -316,9 +322,9 @@ onBeforeUnmount(() => {
 }
 
 .logo-title {
-  font-weight: 700;
+  font-weight: 500;
   font-size: 1.05rem;
-  color: var(--text-main, #1a1a1a);
+  color: var(--color-neutral-9);
   letter-spacing: 0.05em;
   font-family: 'Noto Serif SC', serif;
 }
@@ -326,7 +332,7 @@ onBeforeUnmount(() => {
 .logo-subtitle {
   font-size: 0.65rem;
   letter-spacing: 0.2em;
-  color: var(--text-soft, #888);
+  color: var(--color-neutral-6);
   font-family: monospace;
   margin-top: 2px;
 }
@@ -342,7 +348,7 @@ onBeforeUnmount(() => {
 .dock-poetic-quote {
   font-size: 0.7rem;
   line-height: 1.6;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   opacity: 0.5;
   letter-spacing: 0.2em;
   font-family: 'Noto Serif SC', serif;
@@ -368,10 +374,10 @@ onBeforeUnmount(() => {
   border: none;
   background: transparent;
   border-radius: 16px;
-  color: var(--text-sub, #555);
+  color: var(--color-neutral-7);
   font-family: 'Noto Serif SC', serif;
   font-size: 1.05rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
@@ -379,15 +385,15 @@ onBeforeUnmount(() => {
 }
 
 .nav-item:hover {
-  background: var(--glass-pill-bg);
-  color: var(--text-main, #1a1a1a);
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-9);
   transform: translateX(6px);
 }
 
 .nav-item.is-active {
   color: #fff;
-  background: linear-gradient(135deg, var(--accent-ink, #6a4b2f), var(--accent-amber, #a96e35));
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
+  box-shadow: var(--shadow-whisper);
   transform: translateX(6px);
 }
 
@@ -425,7 +431,7 @@ onBeforeUnmount(() => {
 .nav-active-glow {
   position: absolute;
   inset: -2px;
-  background: linear-gradient(135deg, var(--accent-amber), var(--accent-ink));
+  background: linear-gradient(135deg, var(--color-accent), #8b2c26);
   filter: blur(12px);
   opacity: 0.5;
   z-index: 0;
@@ -461,7 +467,7 @@ onBeforeUnmount(() => {
 .top-actions-group {
   display: flex;
   align-items: center;
-  background: var(--glass-pill-bg);
+  background: var(--color-neutral-3);
   padding: 6px;
   border-radius: 999px;
   border: 1px solid var(--glass-border-highlight);
@@ -496,10 +502,10 @@ onBeforeUnmount(() => {
 .user-profile-pill.is-open {
   background: rgba(0,0,0,0.04);
 }
-:global([data-theme="rosewood"]) .user-profile-pill:hover,
-:global([data-theme="star-sea"]) .user-profile-pill:hover,
-:global([data-theme="rosewood"]) .user-profile-pill.is-open,
-:global([data-theme="star-sea"]) .user-profile-pill.is-open {
+[data-theme="dark"] .user-profile-pill:hover,
+[data-theme="dark"] .user-profile-pill:hover,
+[data-theme="dark"] .user-profile-pill.is-open,
+[data-theme="dark"] .user-profile-pill.is-open {
   background: rgba(255,255,255,0.08);
 }
 
@@ -507,7 +513,7 @@ onBeforeUnmount(() => {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--glass-border-highlight), var(--glass-border-shadow));
+  background: linear-gradient(135deg, var(--color-neutral-6), var(--color-neutral-4));
   padding: 2px;
   display: flex;
   align-items: center;
@@ -517,7 +523,7 @@ onBeforeUnmount(() => {
 .avatar-text {
   width: 100%;
   height: 100%;
-  background: var(--bg-panel, #fff);
+  background: var(--color-accent-muted); color: var(--color-accent);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -525,23 +531,22 @@ onBeforeUnmount(() => {
   font-size: 0.8rem;
   font-weight: 800;
   font-family: 'Noto Serif SC', serif;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
 }
-:global([data-theme="rosewood"]) .avatar-text,
-:global([data-theme="star-sea"]) .avatar-text {
+[data-theme="dark"] .avatar-text {
   background: rgba(40,40,40,1);
   color: #fff;
 }
 
 .username {
-  font-weight: 700;
+  font-weight: 500;
   font-size: 0.85rem;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   letter-spacing: 0.05em;
 }
 
 .dropdown-chevron {
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   transition: transform 0.2s ease;
 }
 .dropdown-chevron.rotated {
@@ -558,17 +563,17 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--glass-border-shadow, rgba(0,0,0,0.05));
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
   padding: 8px;
   z-index: 9999;
   transform-origin: top right;
 }
 
-:global([data-theme="rosewood"]) .user-popover,
-:global([data-theme="star-sea"]) .user-popover {
+[data-theme="dark"] .user-popover,
+[data-theme="dark"] .user-popover {
   background: rgba(20, 20, 20, 0.85);
   border-color: rgba(255,255,255,0.1);
-  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+  box-shadow: var(--shadow-whisper);
 }
 
 .popover-header {
@@ -579,13 +584,13 @@ onBeforeUnmount(() => {
   font-family: monospace;
   font-size: 0.65rem;
   letter-spacing: 0.15em;
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   text-transform: uppercase;
 }
 .popover-account {
   font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-main);
+  font-weight: 500;
+  color: var(--color-neutral-9);
   margin-top: 4px;
 }
 
@@ -607,8 +612,8 @@ onBeforeUnmount(() => {
   transition: all 0.2s ease;
   text-align: left;
   font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-main);
+  font-weight: 500;
+  color: var(--color-neutral-9);
 }
 .menu-item:hover {
   background: rgba(0,0,0,0.04);
@@ -620,12 +625,12 @@ onBeforeUnmount(() => {
   background: rgba(239, 68, 68, 0.1);
 }
 
-:global([data-theme="rosewood"]) .menu-item:hover,
-:global([data-theme="star-sea"]) .menu-item:hover {
+[data-theme="dark"] .menu-item:hover,
+[data-theme="dark"] .menu-item:hover {
   background: rgba(255,255,255,0.06);
 }
-:global([data-theme="rosewood"]) .menu-item.danger:hover,
-:global([data-theme="star-sea"]) .menu-item.danger:hover {
+[data-theme="dark"] .menu-item.danger:hover,
+[data-theme="dark"] .menu-item.danger:hover {
   background: rgba(239, 68, 68, 0.15);
 }
 
@@ -640,6 +645,7 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow-y: auto;
   padding: 40px;
+  scrollbar-gutter: stable;
 }
 
 .route-loading-state {
@@ -649,7 +655,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  color: var(--text-soft, #6b7280);
+  color: var(--color-neutral-6);
 }
 
 .scrollable-container::-webkit-scrollbar {
@@ -663,7 +669,7 @@ onBeforeUnmount(() => {
   border-radius: 4px;
 }
 .scrollable-container::-webkit-scrollbar-thumb:hover {
-  background: var(--text-soft);
+  background: var(--color-accent-muted); color: var(--color-accent);
 }
 
 /* Transitions */
@@ -695,14 +701,14 @@ onBeforeUnmount(() => {
 
 .page-soul-watermark {
   position: fixed;
-  right: 8%;
+  right: 5%;
   top: 50%;
   transform: translateY(-50%);
   font-family: 'Noto Serif SC', serif;
-  font-size: 38vh;
-  font-weight: 900;
-  color: var(--text-main);
-  opacity: 0.04;
+  font-size: 28vh;
+  font-weight: 500;
+  color: var(--color-neutral-9);
+  opacity: 0.035;
   pointer-events: none;
   z-index: 1; /* 提升到 Ambient 背景之上 */
   user-select: none;
@@ -758,3 +764,4 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+

@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+﻿<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
 import {
   adminListUsers,
   adminCreateUser,
@@ -30,6 +30,32 @@ const resetNewPassword = ref('')
 
 const deleteUserId = ref<number | null>(null)
 const pendingRoleChange = ref<{ userId: number; role: string } | null>(null)
+// Toast notification
+const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+function showToast(message: string, type: 'success' | 'error' = 'success') {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.value = { message, type }
+  toastTimer = setTimeout(() => { toast.value = null }, 2800)
+}
+
+// Search / filter
+const searchQuery = ref('')
+// Role popover state
+const roleMenuUserId = ref<number | null>(null)
+function toggleRoleMenu(userId: number) {
+  roleMenuUserId.value = roleMenuUserId.value === userId ? null : userId
+}
+function closeRoleMenu() {
+  roleMenuUserId.value = null
+}
+
+function onDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.role-switcher')) {
+    closeRoleMenu()
+  }
+}
 
 // 批量选择
 const selectedUserIds = ref<Set<number>>(new Set())
@@ -63,6 +89,15 @@ const filteredUsers = computed(() => {
   return users.value.filter((u) => u.role === activeTab.value)
 })
 
+const displayedUsers = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return filteredUsers.value
+  return filteredUsers.value.filter(u =>
+    u.username.toLowerCase().includes(q) ||
+    (u.nickname && u.nickname.toLowerCase().includes(q))
+  )
+})
+
 async function loadUsers() {
   loading.value = true
   try {
@@ -74,7 +109,10 @@ async function loadUsers() {
   }
 }
 
-onMounted(loadUsers)
+onMounted(() => {
+  loadUsers()
+  document.addEventListener('click', onDocumentClick)
+})
 
 async function handleCreate() {
   if (!newUsername.value.trim() || !newPassword.value.trim()) return
@@ -85,9 +123,10 @@ async function handleCreate() {
     newNickname.value = ''
     newRole.value = 'USER'
     showCreateForm.value = false
+    showToast('账号创建成功', 'success')
     await loadUsers()
   } catch {
-    // error
+    showToast('创建账号失败', 'error')
   }
 }
 
@@ -95,9 +134,10 @@ async function handleDelete(id: number) {
   try {
     await adminDeleteUser(id)
     deleteUserId.value = null
+    showToast('账号已删除', 'success')
     await loadUsers()
   } catch {
-    // error
+    showToast('删除失败', 'error')
   }
 }
 
@@ -107,8 +147,9 @@ async function handleResetPassword() {
     await adminResetPassword(resetUserId.value, resetNewPassword.value.trim())
     resetUserId.value = null
     resetNewPassword.value = ''
+    showToast('密码已重置', 'success')
   } catch {
-    // error
+    showToast('重置密码失败', 'error')
   }
 }
 
@@ -131,8 +172,9 @@ async function handleRoleChange(userId: number, newRoleVal: string) {
   try {
     await adminChangeRole(userId, newRoleVal)
     await loadUsers()
+    showToast('角色已更新', 'success')
   } catch {
-    // error
+    showToast('角色修改失败', 'error')
   }
 }
 
@@ -162,8 +204,9 @@ async function handleBatchDelete() {
     await adminBatchDeleteUsers(ids)
     selectedUserIds.value = new Set()
     await loadUsers()
+    showToast('批量删除完成', 'success')
   } catch {
-    // error
+    showToast('批量删除失败', 'error')
   } finally {
     batchDeleting.value = false
   }
@@ -195,6 +238,12 @@ function formatDate(dateStr: string) {
           </button>
         </div>
       </header>
+
+      <!-- Search -->
+      <div class="search-bar">
+<input v-model="searchQuery" type="text" class="search-input" placeholder="搜索用户名或昵称..." />
+        <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">&times;</button>
+      </div>
 
       <!-- Role Tabs -->
       <div class="glass-tabs">
@@ -268,7 +317,7 @@ function formatDate(dateStr: string) {
         <span>加载名录中...</span>
       </div>
 
-      <div v-else class="bento-card table-card">
+      <div v-else-if="displayedUsers.length > 0" class="bento-card table-card">
         <div class="table-header">
           <label class="check-col">
             <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" />
@@ -280,7 +329,7 @@ function formatDate(dateStr: string) {
           <span class="col-ops">行事</span>
         </div>
         <div class="table-body">
-          <div v-for="user in filteredUsers" :key="user.id" class="table-row" :class="{ 'is-protected': isProtected(user), 'is-selected': selectedUserIds.has(user.id) }">
+          <div v-for="user in displayedUsers" :key="user.id" class="table-row" :class="{ 'is-protected': isProtected(user), 'is-selected': selectedUserIds.has(user.id) }">
             <label class="check-col" @click.stop>
               <input type="checkbox" :checked="selectedUserIds.has(user.id)" :disabled="isProtected(user)" @change="toggleSelectUser(user.id)" />
             </label>
@@ -298,15 +347,38 @@ function formatDate(dateStr: string) {
               </div>
             </div>
             <span class="col-role">
-              <select
-                v-if="canManageRoles && !isProtected(user)"
-                :value="user.role"
-                class="glass-select"
-                @change="requestRoleChange(user.id, ($event.target as HTMLSelectElement).value)"
-              >
-                <option value="USER">编委</option>
-                <option value="ADMIN">协修</option>
-              </select>
+              <div v-if="canManageRoles && !isProtected(user)" class="role-switcher">
+                <button
+                  class="role-badge role-badge--clickable"
+                  :class="user.role.toLowerCase()"
+                  @click.stop="toggleRoleMenu(user.id)"
+                >
+                  {{ roleConfig[user.role]?.label || user.role }}
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <transition name="role-pop">
+                  <div v-if="roleMenuUserId === user.id" class="role-popover">
+                    <button
+                      class="role-option"
+                      :class="{ 'is-current': user.role === 'USER' }"
+                      @click.stop="requestRoleChange(user.id, 'USER'); closeRoleMenu()"
+                    >
+                      <span class="role-option-dot user"></span>
+                      编委
+                      <svg v-if="user.role === 'USER'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                    <button
+                      class="role-option"
+                      :class="{ 'is-current': user.role === 'ADMIN' }"
+                      @click.stop="requestRoleChange(user.id, 'ADMIN'); closeRoleMenu()"
+                    >
+                      <span class="role-option-dot admin"></span>
+                      协修
+                      <svg v-if="user.role === 'ADMIN'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                  </div>
+                </transition>
+              </div>
               <span
                 v-else
                 class="role-badge"
@@ -331,6 +403,15 @@ function formatDate(dateStr: string) {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="!loading" class="empty-state">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <p class="empty-title">{{ searchQuery ? "未找到匹配账号" : "暂无此类账号" }}</p>
+        <p class="empty-desc">{{ searchQuery ? "尝试其他关键词" : "该角色下还没有编委账号" }}</p>
       </div>
 
       <!-- Reset Password Dialog -->
@@ -380,6 +461,16 @@ function formatDate(dateStr: string) {
       </Teleport>
     </div>
   </div>
+  <!-- Toast Notification -->
+      <Teleport to="body">
+        <transition name="toast-fade">
+          <div v-if="toast" class="toast" :class="toast.type">
+            <svg v-if="toast.type === 'success'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span>{{ toast.message }}</span>
+          </div>
+        </transition>
+      </Teleport>
 </template>
 
 <style scoped>
@@ -389,80 +480,14 @@ function formatDate(dateStr: string) {
   gap: 20px;
 }
 
-/* ── Header ── */
-.bento-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.page-title {
-  font-family: monospace;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--text-main);
-  margin: 0 0 6px;
-}
-
-.page-desc {
-  font-size: 0.85rem;
-  color: var(--text-soft);
-  margin: 0;
-}
-
-.bento-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-.bento-btn.primary {
-  background: var(--text-main);
-  color: var(--bg-panel, #fff);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-.bento-btn.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-}
-.bento-btn.ghost {
-  background: transparent;
-  color: var(--text-main);
-  border: 1px solid var(--glass-border-highlight, rgba(0,0,0,0.1));
-}
-.bento-btn.ghost:hover {
-  background: rgba(0,0,0,0.05);
-}
-:global([data-theme="rosewood"]) .bento-btn.ghost:hover,
-:global([data-theme="star-sea"]) .bento-btn.ghost:hover {
-  background: rgba(255,255,255,0.1);
-}
-.bento-btn.danger {
-  background: #ef4444;
-  color: #fff;
-}
-.bento-btn.danger:hover {
-  background: #dc2626;
-  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
-}
-
 /* ── Tabs ── */
 .glass-tabs {
   display: flex;
   gap: 8px;
   padding: 6px;
-  background: var(--glass-panel-bg, rgba(255,255,255,0.4));
-  border-radius: 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border-highlight, rgba(255,255,255,0.5));
+  background: var(--color-neutral-1);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-neutral-4);
   width: fit-content;
 }
 
@@ -473,53 +498,43 @@ function formatDate(dateStr: string) {
   padding: 8px 16px;
   background: transparent;
   border: none;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-soft);
+  border-radius: var(--radius-md);
+  font-size: var(--text-copy-14);
+  font-weight: 500;
+  color: var(--color-neutral-7);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast);
 }
-.glass-tab:hover {
-  color: var(--text-main);
-}
+
+.glass-tab:hover { color: var(--color-neutral-9); }
+
 .glass-tab.is-active {
-  background: var(--bg-panel, #fff);
-  color: var(--text-main);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-:global([data-theme="rosewood"]) .glass-tab.is-active,
-:global([data-theme="star-sea"]) .glass-tab.is-active {
-  background: rgba(255,255,255,0.1);
+  background: var(--color-panel-bg);
+  color: var(--color-neutral-9);
+  box-shadow: var(--shadow-whisper);
 }
 
 .tab-count {
   padding: 2px 8px;
-  background: rgba(0,0,0,0.05);
+  background: var(--color-neutral-3);
   border-radius: 999px;
-  font-size: 0.7rem;
+  font-size: var(--text-label-12);
   font-family: monospace;
-}
-.glass-tab.is-active .tab-count {
-  background: var(--text-main);
-  color: var(--bg-panel, #fff);
+  color: var(--color-neutral-6);
 }
 
-/* ── Glass Bento Cards ── */
-.bento-card {
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.6));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  border-radius: 20px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
-  padding: 24px;
+.glass-tab.is-active .tab-count {
+  background: var(--color-accent);
+  color: #fff;
 }
-:global([data-theme="rosewood"]) .bento-card,
-:global([data-theme="star-sea"]) .bento-card {
-  background: rgba(20, 20, 20, 0.5);
-  border-color: rgba(255,255,255,0.1);
-  box-shadow: 0 24px 48px rgba(0,0,0,0.2);
+
+/* ── Cards ── */
+.bento-card {
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-whisper);
+  padding: 24px;
 }
 
 /* ── Create Form ── */
@@ -528,195 +543,136 @@ function formatDate(dateStr: string) {
   flex-direction: column;
   gap: 20px;
 }
+
 .form-header h3 {
   margin: 0;
-  font-size: 1rem;
-  font-family: 'Noto Serif SC', serif;
-  color: var(--text-main);
+  font-size: var(--text-title-18);
+  font-family: var(--font-serif);
+  color: var(--color-neutral-9);
 }
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
+
 .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
+
 .field label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-soft);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: var(--text-label-12);
+  font-weight: 500;
+  color: var(--color-neutral-6);
 }
+
 .field input {
   padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
-  background: rgba(255,255,255,0.5);
-  color: var(--text-main);
-  font-size: 0.9rem;
+  border: 1px solid var(--color-neutral-5);
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-1);
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-9);
   outline: none;
-  transition: all 0.2s ease;
+  transition: border-color var(--duration-fast);
 }
-:global([data-theme="rosewood"]) .field input,
-:global([data-theme="star-sea"]) .field input {
-  background: rgba(0,0,0,0.3);
-  border-color: rgba(255,255,255,0.1);
-}
+
 .field input:focus {
-  background: var(--bg-panel, #fff);
-  border-color: var(--text-main);
-  box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 
 .form-footer {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding-top: 16px;
-  border-top: 1px dashed var(--glass-border-shadow, rgba(0,0,0,0.1));
-}
-.role-selector {
-  display: flex;
   align-items: center;
-  gap: 12px;
-}
-.role-selector .label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-soft);
-}
-.role-radio {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-soft);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.role-radio input {
-  display: none;
-}
-.role-radio.is-active {
-  background: var(--text-main);
-  color: var(--bg-panel, #fff);
-  border-color: var(--text-main);
-}
-.role-radio.admin.is-active {
-  background: var(--accent-amber);
-  border-color: var(--accent-amber);
 }
 
 .actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
-/* ── Table Layout ── */
-
-/* Batch action bar */
-.batch-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 1rem;
-  background: rgba(169, 110, 53, 0.06);
-  border: 1px dashed var(--accent-amber, #a96e35);
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-:global([data-theme="rosewood"]) .batch-bar,
-:global([data-theme="star-sea"]) .batch-bar {
-  background: rgba(169, 110, 53, 0.1);
-  border-color: rgba(169, 110, 53, 0.4);
-}
-.batch-count {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--accent-amber, #a96e35);
-  margin-right: 0.5rem;
-}
-
+/* ── Table ── */
 .table-card {
   padding: 0;
   overflow: hidden;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-whisper);
 }
+
 .table-header {
   display: grid;
-  grid-template-columns: 32px 80px 1.5fr 1fr 150px 100px;
+  grid-template-columns: 40px 60px 1fr 130px 130px 100px;
   gap: 16px;
-  padding: 16px 24px;
-  background: transparent;
-  border-bottom: 1px dashed var(--glass-border-shadow, rgba(0,0,0,0.1));
-  font-family: 'Noto Serif SC', serif;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--accent-amber, #a96e35);
-  text-transform: none;
-  letter-spacing: 0.2em;
+  padding: 14px 24px;
+  background: var(--color-neutral-1);
+  border-bottom: 1px solid var(--color-neutral-4);
+  font-size: var(--text-label-12);
+  font-weight: 500;
+  color: var(--color-neutral-6);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
-:global([data-theme="rosewood"]) .table-header,
-:global([data-theme="star-sea"]) .table-header {
-  border-color: rgba(255,255,255,0.1);
+
+.table-body {
+  background: var(--color-panel-bg);
 }
 
 .table-row {
   display: grid;
-  grid-template-columns: 32px 80px 1.5fr 1fr 150px 100px;
+  grid-template-columns: 40px 60px 1fr 130px 130px 100px;
   gap: 16px;
   padding: 16px 24px;
   align-items: center;
-  border-bottom: 1px dashed var(--glass-border-shadow, rgba(0,0,0,0.05));
-  transition: background 0.2s ease;
+  border-bottom: 1px solid var(--color-neutral-3);
+  transition: background 0.15s ease;
 }
+
 .table-row:last-child {
   border-bottom: none;
 }
+
 .table-row:hover {
-  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.02), transparent);
-}
-:global([data-theme="rosewood"]) .table-row:hover,
-:global([data-theme="star-sea"]) .table-row:hover {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-}
-.table-row.is-protected {
-  background: rgba(180, 83, 9, 0.02);
+  background: var(--color-neutral-1);
 }
 
 .table-row.is-selected {
-  background: rgba(169, 110, 53, 0.06);
-}
-:global([data-theme="rosewood"]) .table-row.is-selected,
-:global([data-theme="star-sea"]) .table-row.is-selected {
-  background: rgba(169, 110, 53, 0.1);
+  background: var(--color-accent-muted);
+  border-bottom-color: rgba(196, 58, 49, 0.12);
 }
 
-/* Checkbox column */
-.check-col {
+.table-row.is-selected + .table-row {
+  border-top-color: rgba(196, 58, 49, 0.12);
+}
+
+.batch-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(196, 58, 49, 0.06);
+  border: 1px dashed var(--color-accent);
+  border-radius: var(--radius-md);
 }
-.check-col input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent-amber, #a96e35);
-  cursor: pointer;
+
+.batch-bar span {
+  font-size: var(--text-copy-14);
+  font-weight: 500;
+  color: var(--color-accent);
 }
+
+.check-col input[type="checkbox"] { accent-color: var(--color-accent); }
 
 .col-id {
   font-family: monospace;
-  font-size: 0.85rem;
-  color: var(--text-soft);
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-5);
 }
 
 .col-user {
@@ -724,270 +680,517 @@ function formatDate(dateStr: string) {
   align-items: center;
   gap: 12px;
 }
+
 .user-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 6px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Noto Serif SC', serif;
-  font-size: 1.4rem;
-  font-weight: 300;
-  color: #c82c2c;
-  border: 2px solid #c82c2c;
-  background: transparent;
-  opacity: 0.85;
-}
-.user-avatar.super_admin {
-  border-width: 3px;
-  font-weight: 700;
-  background: rgba(200, 44, 44, 0.05);
-}
-.user-avatar.admin {
-  border-width: 2px;
+  font-size: var(--text-title-18);
   font-weight: 500;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+.user-avatar.super_admin {
+  background: linear-gradient(135deg, #c43a31, #a8322b);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(196, 58, 49, 0.3);
+}
+
+.user-avatar.admin {
+  background: linear-gradient(135deg, #3d6896, #2d5178);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(61, 104, 150, 0.25);
+}
+
+.user-avatar.user {
+  background: linear-gradient(135deg, #787670, #5c5a55);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .user-info {
   display: flex;
   flex-direction: column;
 }
+
 .uname {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-main);
+  font-size: var(--text-copy-14);
+  font-weight: 500;
+  color: var(--color-neutral-9);
 }
+
 .unick {
-  font-size: 0.75rem;
-  color: var(--text-soft);
-}
-.lock-icon {
-  color: var(--accent-amber);
-  opacity: 0.8;
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-6);
 }
 
 .col-role {
+  font-size: var(--text-copy-14);
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.role-badge.super_admin {
+  background: rgba(196, 58, 49, 0.08);
+  color: var(--color-accent);
+}
+
+.role-badge.admin {
+  background: rgba(61, 104, 150, 0.08);
+  color: var(--color-info);
+}
+
+.role-badge.user {
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-7);
+}
+
+.role-badge--clickable {
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  user-select: none;
+  padding-right: 8px;
+}
+
+.role-badge--clickable:hover {
+  border-color: var(--color-neutral-4);
+  background: var(--color-neutral-2);
+}
+
+.role-badge--clickable:active {
+  transform: scale(0.97);
+}
+
+/* ── Role Switcher ── */
+.role-switcher {
+  position: relative;
+  display: inline-flex;
+}
+
+.role-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  min-width: 140px;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-option {
   display: flex;
   align-items: center;
-}
-.role-badge {
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: rgba(0,0,0,0.05);
-  color: var(--text-main);
-}
-.role-badge.super_admin {
-  background: rgba(180, 83, 9, 0.1);
-  color: #b45309;
-}
-.role-badge.admin {
-  background: rgba(59, 130, 246, 0.1);
-  color: #2563eb;
-}
-:global([data-theme="rosewood"]) .role-badge.super_admin,
-:global([data-theme="star-sea"]) .role-badge.super_admin {
-  background: rgba(251, 146, 60, 0.2);
-  color: #fdba74;
-}
-
-.glass-select {
-  appearance: none;
-  -webkit-appearance: none;
-  padding: 4px 26px 4px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
-  background: rgba(255,255,255,0.4) url('data:image/svg+xml;utf8,<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><polyline points="6 9 12 15 18 9"></polyline></svg>') no-repeat right 8px center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-main);
-  outline: none;
+  gap: 10px;
+  padding: 9px 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-neutral-8);
   cursor: pointer;
-  transition: all 0.2s;
-}
-.glass-select:focus {
-  border-color: var(--text-main);
-  background-color: var(--bg-panel, #fff);
-  box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
-}
-:global([data-theme="rosewood"]) .glass-select,
-:global([data-theme="star-sea"]) .glass-select {
-  background-color: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.1);
-  color: #fff;
-  background-image: url('data:image/svg+xml;utf8,<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><polyline points="6 9 12 15 18 9"></polyline></svg>');
-}
-:global([data-theme="rosewood"]) .glass-select:focus,
-:global([data-theme="star-sea"]) .glass-select:focus {
-  background-color: rgba(255,255,255,0.15);
-  border-color: var(--accent-amber);
+  transition: background 0.12s ease;
+  text-align: left;
+  width: 100%;
 }
 
+.role-option:hover {
+  background: var(--color-neutral-2);
+}
+
+.role-option.is-current {
+  color: var(--color-neutral-10);
+  font-weight: 500;
+  background: var(--color-neutral-2);
+}
+
+.role-option svg:last-child {
+  margin-left: auto;
+  color: var(--color-accent);
+}
+
+.role-option-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.role-option-dot.user { background: var(--color-neutral-6); }
+.role-option-dot.admin { background: var(--color-info); }
+
+.role-pop-enter-active,
+.role-pop-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.role-pop-enter-from,
+.role-pop-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.96);
+}
+
+/* ── Columns ── */
 .col-date {
-  font-size: 0.85rem;
-  font-family: monospace;
-  color: var(--text-soft);
+  font-size: 13px;
+  color: var(--color-neutral-6);
 }
 
 .col-ops {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  justify-content: flex-end;
 }
+
 .icon-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid transparent;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
-}
-.icon-btn.reset {
-  color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
-}
-.icon-btn.reset:hover {
-  background: rgba(59, 130, 246, 0.2);
-}
-.icon-btn.danger {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
-}
-.icon-btn.danger:hover {
-  background: rgba(239, 68, 68, 0.2);
+  transition: all 0.15s ease;
 }
 
-/* ── Dialogs ── */
+.icon-btn.reset {
+  color: var(--color-info);
+}
+
+.icon-btn.reset:hover {
+  background: rgba(61, 104, 150, 0.08);
+  border-color: rgba(61, 104, 150, 0.15);
+}
+
+.icon-btn.danger {
+  color: var(--color-neutral-5);
+}
+
+.icon-btn.danger:hover {
+  color: var(--color-error);
+  background: rgba(196, 58, 49, 0.08);
+  border-color: rgba(196, 58, 49, 0.15);
+}
+
+/* ── 按钮体系 ── */
+.bento-btn {
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-4);
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-9);
+  font-size: var(--text-copy-14);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bento-btn:hover { background: var(--color-neutral-3); }
+
+.bento-btn.primary {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+.bento-btn.primary:hover { filter: brightness(1.08); }
+
+.bento-btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-neutral-7);
+}
+
+.bento-btn.ghost:hover {
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-9);
+}
+
+.bento-btn.danger {
+  background: var(--color-error);
+  color: #fff;
+  border-color: var(--color-error);
+}
+
+.bento-btn.danger:hover { filter: brightness(1.08); }
+
+.bento-btn.small {
+  padding: 5px 14px;
+  font-size: var(--text-label-12);
+}
+
+.bento-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── 对话框 ── */
 .glass-dialog-overlay {
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: rgba(0,0,0,0.2);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--color-overlay);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 .glass-dialog {
   width: 100%;
   max-width: 400px;
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  border-radius: 24px;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-xl);
   padding: 32px;
-  box-shadow: 0 24px 48px rgba(0,0,0,0.1);
-}
-:global([data-theme="rosewood"]) .glass-dialog,
-:global([data-theme="star-sea"]) .glass-dialog {
-  background: rgba(20, 20, 20, 0.85);
-  border-color: rgba(255,255,255,0.1);
+  box-shadow: var(--shadow-whisper);
 }
 
 .dialog-title {
-  margin: 0 0 24px;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--text-main);
+  margin: 0 0 20px;
+  font-family: var(--font-serif);
+  font-size: var(--text-title-20);
+  font-weight: 500;
+  color: var(--color-neutral-10);
   text-align: center;
 }
+
 .dialog-desc {
   margin: 0 0 24px;
-  font-size: 0.9rem;
-  color: var(--text-soft);
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-7);
   text-align: center;
-  line-height: 1.5;
+  line-height: 1.6;
 }
+
 .dialog-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
+
 .dialog-field label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-soft);
+  font-size: var(--text-label-12);
+  font-weight: 500;
+  color: var(--color-neutral-6);
 }
+
 .dialog-field input {
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
-  background: rgba(255,255,255,0.5);
-  font-size: 1rem;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-5);
+  background: var(--color-neutral-1);
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-9);
   outline: none;
 }
-:global([data-theme="rosewood"]) .dialog-field input,
-:global([data-theme="star-sea"]) .dialog-field input {
-  background: rgba(0,0,0,0.3);
-  color: #fff;
+
+.dialog-field input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 
 .dialog-actions {
   display: flex;
   gap: 12px;
-  justify-content: stretch;
 }
-.dialog-actions > * {
-  flex: 1;
-  justify-content: center;
-}
+
+.dialog-actions > * { flex: 1; justify-content: center; }
 
 .glass-pop-enter-active,
 .glass-pop-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.25s ease, transform 0.25s var(--ease-breath);
 }
+
 .glass-pop-enter-from,
 .glass-pop-leave-to {
   opacity: 0;
-  transform: scale(0.96) translateY(10px);
+  transform: scale(0.96) translateY(8px);
 }
 
+/* ── Loading ── */
 .loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px;
-  color: var(--text-soft);
   gap: 16px;
+  padding: 64px;
+  color: var(--color-neutral-7);
 }
+
 .spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
-  border-top-color: var(--text-main);
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-neutral-3);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
-@keyframes spin {
-  to { transform: rotate(360deg); }
+
+/* ── Search Bar ── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--color-card-fill);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-whisper);
 }
 
+.search-icon {
+  color: var(--color-neutral-5);
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-9);
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: var(--color-neutral-5);
+}
+
+.search-clear {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-7);
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all var(--duration-fast);
+}
+
+.search-clear:hover {
+  background: var(--color-neutral-4);
+  color: var(--color-neutral-9);
+}
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.empty-icon {
+  color: var(--color-neutral-4);
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-title-18);
+  font-weight: 500;
+  color: var(--color-neutral-7);
+  margin: 0 0 8px;
+}
+
+.empty-desc {
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-5);
+  margin: 0;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-copy-14);
+  font-weight: 500;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+
+.toast.success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.toast.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-12px);
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── 响应式 ── */
 @media (max-width: 960px) {
-  .table-header {
-    display: none;
-  }
+  .table-header { display: none; }
   .table-row {
     grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 16px;
+    gap: 10px;
+    padding: 14px;
   }
-  .col-id { display: none; }
-  .check-col { display: none; }
+  .col-id, .check-col { display: none; }
   .col-ops { justify-content: flex-end; }
   .form-grid { grid-template-columns: 1fr; }
-  .form-footer { flex-direction: column; gap: 16px; align-items: stretch; }
+  .form-footer { flex-direction: column; gap: 14px; align-items: stretch; }
   .actions { flex-direction: column; }
 }
 </style>
