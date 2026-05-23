@@ -33,8 +33,8 @@ defineEmits<{
 .thumbnail-bar {
   width: 100px;
   padding: 12px 10px;
-  border-right: 1px solid #e8e0d5;
-  background: #faf7f2;
+  border-right: 1px solid var(--color-neutral-3);
+  background: var(--color-neutral-1);
   flex-shrink: 0;
   overflow-y: auto;
 }
@@ -45,15 +45,15 @@ defineEmits<{
   margin: 8px auto 0;
   padding: 10px 0;
   background: transparent;
-  border: 2px dashed #d0c8b8;
+  border: 2px dashed var(--color-neutral-4);
   border-radius: 4px;
-  color: #999;
+  color: var(--color-neutral-6);
   font-size: 13px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
 .btn-add-sheet:hover {
-  border-color: #c43a31;
-  color: #c43a31;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 </style>

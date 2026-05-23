@@ -21,8 +21,8 @@ defineProps<{
 .element-inspector {
   width: 220px;
   padding: 16px;
-  border-left: 1px solid #e8e0d5;
-  background: #faf7f2;
+  border-left: 1px solid var(--color-neutral-3);
+  background: var(--color-neutral-1);
   flex-shrink: 0;
   overflow-y: auto;
 }
@@ -30,13 +30,13 @@ defineProps<{
 .inspector-title {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-neutral-9);
   margin: 0 0 8px;
 }
 
 .inspector-id {
   font-size: 12px;
-  color: #c43a31;
+  color: var(--color-accent);
   font-family: monospace;
   margin: 0 0 12px;
   word-break: break-all;
@@ -44,13 +44,13 @@ defineProps<{
 
 .inspector-hint {
   font-size: 12px;
-  color: #999;
+  color: var(--color-neutral-6);
   margin: 0;
 }
 
 .inspector-empty {
   font-size: 13px;
-  color: #bbb;
+  color: var(--color-neutral-5);
   text-align: center;
   padding-top: 40px;
 }

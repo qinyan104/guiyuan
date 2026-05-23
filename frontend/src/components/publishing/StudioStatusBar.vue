@@ -20,10 +20,10 @@ defineProps<{
   display: flex;
   align-items: center;
   padding: 6px 20px;
-  border-top: 1px solid #e8e0d5;
-  background: #faf7f2;
+  border-top: 1px solid var(--color-neutral-3);
+  background: var(--color-neutral-1);
   font-size: 12px;
-  color: #888;
+  color: var(--color-neutral-6);
   flex-shrink: 0;
 }
 
@@ -32,11 +32,11 @@ defineProps<{
 }
 
 .status-sync-warning {
-  color: #b45309;
+  color: var(--color-warning);
   margin-right: 16px;
 }
 
 .status-version-label {
-  color: #bbb;
+  color: var(--color-neutral-5);
 }
 </style>

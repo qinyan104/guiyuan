@@ -32,17 +32,17 @@ defineEmits<{
   text-align: center;
 }
 .page-thumbnail:hover .thumb-preview {
-  background: #f5f0e8;
+  background: var(--color-neutral-2);
 }
 .page-thumbnail.active .thumb-preview {
-  background: #fef3c7;
-  border-color: #c43a31;
+  background: var(--color-accent-muted);
+  border-color: var(--color-accent);
 }
 
 .thumb-preview {
   height: 110px;
   background: #fff;
-  border: 1px solid #e0d8cc;
+  border: 1px solid var(--color-neutral-4);
   border-radius: 3px;
   display: flex;
   align-items: center;
@@ -52,13 +52,13 @@ defineEmits<{
 
 .thumb-page-num {
   font-size: 18px;
-  color: #999;
+  color: var(--color-neutral-6);
 }
 
 .thumb-label {
   display: block;
   font-size: 11px;
-  color: #aaa;
+  color: var(--color-neutral-5);
   margin-top: 4px;
 }
 </style>

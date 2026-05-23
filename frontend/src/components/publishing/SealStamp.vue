@@ -17,7 +17,7 @@ function generateSeal() {
   const ctx = canvas.getContext("2d")!
   
   // 1. 朱砂底色
-  ctx.fillStyle = "#C43A31"
+  const styles = getComputedStyle(canvas); ctx.fillStyle = styles.getPropertyValue("--color-accent").trim() || "#C43A31"
   ctx.fillRect(0, 0, s, s)
 
   // 2. 斑驳纹理 — 随机散布半透明暗点模拟拓印不均
@@ -45,14 +45,14 @@ function generateSeal() {
 
   // 4. 双线边框
   const m = s * 0.05
-  ctx.strokeStyle = "#8B0000"
+  ctx.strokeStyle = "#8B0000"  /* 印章边框 — 暗红固定色 */
   ctx.lineWidth = s * 0.02
   ctx.strokeRect(m, m, s - 2*m, s - 2*m)
   ctx.lineWidth = s * 0.008
   ctx.strokeRect(m*2.5, m*2.5, s - 5*m, s - 5*m)
 
   // 5. 文字 — 竖排居中，米白色模拟刻痕
-  ctx.fillStyle = "#FFF5EE"
+  ctx.fillStyle = "#FFF5EE"  /* 印章文字 — 米白固定色 */
   const chars = [...props.text].filter(c => c.trim())
   if (chars.length === 0) return
   const fontSize = Math.min(s / chars.length * 0.7, s * 0.2)
@@ -96,3 +96,5 @@ watch(() => props.size, generateSeal)
 .seal-stamp { overflow: hidden; border-radius: 2px; }
 .seal-canvas { width: 100%; height: 100%; display: block; }
 </style>
+
+
