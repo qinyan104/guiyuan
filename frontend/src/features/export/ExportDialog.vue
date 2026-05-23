@@ -259,7 +259,7 @@ function emitExportShareHtml() {
 
 .share-password-input:focus {
   border-color: var(--accent-signal, rgba(114, 79, 46, 0.45));
-  box-shadow: 0 0 0 4px var(--line-soft, rgba(130, 99, 68, 0.12));
+  box-shadow: var(--shadow-ring);
   background: var(--bg-paper, #fffdf9);
 }
 
@@ -325,12 +325,12 @@ function emitExportShareHtml() {
 .btn--primary {
   background: var(--btn-primary-bg, linear-gradient(135deg, #3e2a18 0%, #7f5631 100%));
   color: var(--btn-primary-color, #fff8ee);
-  box-shadow: 0 12px 24px rgba(70, 46, 24, 0.18);
+  box-shadow: var(--shadow-whisper);
 }
 
 .btn--primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 16px 32px rgba(70, 46, 24, 0.24);
+  box-shadow: var(--shadow-whisper);
 }
 
 .btn--primary:disabled {
@@ -349,4 +349,5 @@ function emitExportShareHtml() {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 </style>
+
 

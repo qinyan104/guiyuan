@@ -399,7 +399,7 @@ async function handleChangeNickname() {
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
   border-radius: 20px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+  box-shadow: var(--shadow-whisper);
   padding: 32px;
 }
 
@@ -616,7 +616,7 @@ async function handleChangeNickname() {
 }
 .bento-btn.primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-whisper);
 }
 .bento-btn.primary:disabled {
   opacity: 0.6;
@@ -675,4 +675,5 @@ async function handleChangeNickname() {
   }
 }
 </style>
+
 

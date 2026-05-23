@@ -402,7 +402,7 @@ function avatarLetter(name: string): string {
   width: 100%; max-width: 700px;
   background: var(--bg-panel-strong, #fefcf7);
   border-radius: 24px;
-  box-shadow: 0 24px 80px rgba(60, 40, 20, 0.16), 0 4px 16px rgba(60, 40, 20, 0.06);
+  box-shadow: var(--shadow-whisper);
   overflow: hidden;
 }
 
@@ -739,4 +739,5 @@ function avatarLetter(name: string): string {
   .kinship-result__term { font-size: 36px; }
 }
 </style>
+
 

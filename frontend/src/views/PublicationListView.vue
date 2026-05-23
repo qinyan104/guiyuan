@@ -461,7 +461,7 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 .glass-pill-btn.primary:hover {
   opacity: 0.85;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-whisper);
 }
 .glass-pill-btn.danger {
   background: #ff4704;
@@ -857,7 +857,7 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 .bento-btn.primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-whisper);
 }
 
 /* ── Glass Modals ── */
@@ -1019,4 +1019,5 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
   .glass-input-group.full { grid-column: 1 / 2; }
 }
 </style>
+
 

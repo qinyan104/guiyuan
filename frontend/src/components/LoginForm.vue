@@ -507,7 +507,7 @@ async function onSubmit() {
   font-size: var(--text-copy-15);
   font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(196, 58, 49, 0.15);
+  box-shadow: 0 4px 16px rgba(196, 58, 49, 0.1);
   transition: filter var(--duration-fast) var(--ease-breath),
               transform var(--duration-fast) var(--ease-breath);
 }
@@ -603,4 +603,5 @@ async function onSubmit() {
   }
 }
 </style>
+
 

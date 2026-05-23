@@ -526,7 +526,7 @@ function toggleUserDropdown() {
   max-width: 480px;
   max-height: 85vh;
   padding: 28px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-whisper);
   display: flex;
   flex-direction: column;
 }
@@ -623,4 +623,5 @@ function toggleUserDropdown() {
   opacity: 0;
 }
 </style>
+
 

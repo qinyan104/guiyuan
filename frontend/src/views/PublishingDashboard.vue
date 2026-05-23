@@ -307,7 +307,7 @@ export function formatTime(iso: string): string {
   border-radius: 10px;
   padding: 28px 32px;
   width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-whisper);
 }
 
 .dialog-title {
@@ -367,4 +367,5 @@ export function formatTime(iso: string): string {
   background: #a8322a;
 }
 </style>
+
 

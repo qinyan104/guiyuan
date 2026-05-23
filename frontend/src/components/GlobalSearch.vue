@@ -202,7 +202,7 @@ onBeforeUnmount(() => {
 
 .search-input-wrapper:focus-within {
   border-color: var(--accent-signal, #a96e35);
-  box-shadow: 0 4px 16px rgba(169, 110, 53, 0.15);
+  box-shadow: var(--shadow-ring);
   background: var(--glass-bg, rgba(255, 255, 255, 0.4));
 }
 
@@ -258,7 +258,7 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--glass-border-shadow, rgba(0, 0, 0, 0.05));
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
   z-index: 9999;
   padding: 8px;
 }
@@ -379,4 +379,5 @@ onBeforeUnmount(() => {
   transform: scale(0.95) translateY(-8px);
 }
 </style>
+
 

@@ -162,7 +162,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-whisper);
   border: 1px solid var(--line-soft, #e0d5c1);
 }
 
@@ -302,4 +302,5 @@ onMounted(() => {
   cursor: pointer;
 }
 </style>
+
 

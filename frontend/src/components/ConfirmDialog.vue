@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 /**
  * ConfirmDialog — 统一确认弹窗组件
  *
@@ -99,7 +99,7 @@ function onCancel() {
   border: 1px solid var(--color-card-stroke, #e5e7eb);
   border-radius: var(--radius-xl, 16px);
   padding: 32px;
-  box-shadow: var(--shadow-whisper, 0 8px 32px rgba(0, 0, 0, 0.12));
+  box-shadow: var(--shadow-whisper);
   margin: 16px;
 }
 
@@ -150,3 +150,4 @@ function onCancel() {
   padding: 40px;
 }
 </style>
+

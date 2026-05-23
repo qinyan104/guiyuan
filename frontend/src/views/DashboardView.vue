@@ -871,7 +871,7 @@ async function handleCreateFromDashboard() {
   font-size: 2rem;
   color: #fff;
   margin-bottom: 24px;
-  box-shadow: 0 16px 32px rgba(0,0,0,0.12);
+  box-shadow: var(--shadow-whisper);
 }
 .welcome-title {
   font-family: 'Noto Serif SC', serif;
@@ -909,11 +909,11 @@ async function handleCreateFromDashboard() {
 .welcome-btn.primary {
   background: linear-gradient(135deg, #8b2c26, var(--color-accent));
   color: #fff;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-whisper);
 }
 .welcome-btn.primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-whisper);
 }
 .welcome-btn.secondary {
   background: var(--color-neutral-9);
@@ -932,4 +932,5 @@ async function handleCreateFromDashboard() {
   color: var(--color-neutral-9);
 }
 </style>
+
 
