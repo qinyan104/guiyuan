@@ -28,3 +28,6 @@ backend/src/main/resources/application.properties
 .gstack/
 .codex/
 .superpowers/
+
+# Temp debug scripts
+tmp_*.cjs
