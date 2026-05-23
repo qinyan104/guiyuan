@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { reactive, ref } from 'vue'
 
 import { login, type LoginRequest } from '../api/auth'
@@ -30,604 +30,491 @@ async function onSubmit() {
 
 <template>
   <div class="auth-stage">
-    <div class="glass-container">
-      <div class="glass-panel">
-        <!-- Left: Brand / Showcase -->
-        <aside class="brand-section">
-          <div class="editorial-layout">
-            <div class="layout-header">
-              <div class="logo-mark">
-                <div class="logo-seal">溯</div>
-                <span class="logo-text">GUIYUAN</span>
-              </div>
-              <div class="layout-meta">01 // VISIONS</div>
+    <div class="login-panel">
+      <!-- 左侧：品牌展示 -->
+      <aside class="brand-section">
+        <div class="editorial-layout">
+          <div class="layout-header">
+            <div class="logo-mark">
+              <div class="logo-seal">溯</div>
+              <span class="logo-text">GUIYUAN</span>
             </div>
-            
-            <div class="layout-body">
-              <div class="hero-eyebrow">CHAPTER I</div>
-              <h1 class="hero-title">
-                万物<span class="text-italic">逆旅</span><br />
-                百代<span class="text-gradient">过客</span>
-              </h1>
-              <div class="hero-divider"></div>
-              <p class="hero-quote">
-                我们在时间的缝隙中寻找来处，<br />
-                在浩瀚的星海里标记归途。<br />
-                每一段记忆，都是抵抗遗忘的史诗。
-              </p>
+            <div class="layout-meta">01 // VISIONS</div>
+          </div>
+
+          <div class="layout-body">
+            <div class="hero-eyebrow">CHAPTER I</div>
+            <h1 class="hero-title">
+              万物<span class="text-italic">逆旅</span><br />
+              百代<span class="text-gradient">过客</span>
+            </h1>
+            <hr class="hero-divider" />
+            <p class="hero-quote">
+              我们在时间的缝隙中寻找来处，<br />
+              在浩瀚的星海里标记归途。<br />
+              每一段记忆，都是抵抗遗忘的史诗。
+            </p>
+          </div>
+
+          <div class="layout-footer">
+            <div class="footer-info">
+              <span class="info-label">AESTHETICS</span>
+              <span class="info-value">Timeless Design</span>
             </div>
-            
-            <div class="layout-footer">
-              <div class="footer-info">
-                <span class="info-label">AESTHETICS</span>
-                <span class="info-value">Timeless Design</span>
-              </div>
-              <div class="footer-info text-right">
-                <span class="info-label">EDITION</span>
-                <span class="info-value">Volume. I</span>
-              </div>
+            <div class="footer-info text-right">
+              <span class="info-label">EDITION</span>
+              <span class="info-value">Volume. I</span>
             </div>
           </div>
-          <div class="brand-glow-sphere"></div>
-          <div class="brand-glow-sphere secondary"></div>
-        </aside>
+        </div>
+      </aside>
 
-        <!-- Right: Form -->
-        <main class="form-section">
-          <div class="form-wrapper">
-            <div class="form-header">
-              <h2 class="form-title">归源·数字档案馆</h2>
-              <p class="form-desc">进入无涯画布，追溯家族源流</p>
+      <!-- 右侧：登录表单 -->
+      <main class="form-section">
+        <div class="form-wrapper">
+          <div class="form-header">
+            <h2 class="form-title">欢迎回来</h2>
+            <p class="form-desc">念念不忘，必有回响</p>
+          </div>
+
+          <form class="auth-form" @submit.prevent="onSubmit">
+            <div class="input-group" :class="{ 'is-focused': focusedField === 'username', 'has-value': form.username }">
+              <label>账号 / 邮箱</label>
+              <input
+                v-model="form.username"
+                type="text"
+                required
+                @focus="focusedField = 'username'"
+                @blur="focusedField = null"
+              />
             </div>
 
-            <form class="auth-form" @submit.prevent="onSubmit">
-              <div class="input-group" :class="{ 'is-focused': focusedField === 'username', 'has-value': form.username }">
-                <div class="input-glow"></div>
-                <label>账号 / 邮箱</label>
-                <input
-                  v-model="form.username"
-                  type="text"
-                  required
-                  @focus="focusedField = 'username'"
-                  @blur="focusedField = null"
-                />
-              </div>
-
-              <div class="input-group" :class="{ 'is-focused': focusedField === 'password', 'has-value': form.password }">
-                <div class="input-glow"></div>
-                <label>登录密码</label>
-                <input
-                  v-model="form.password"
-                  :type="showPassword ? 'text' : 'password'"
-                  required
-                  @focus="focusedField = 'password'"
-                  @blur="focusedField = null"
-                />
-                <button type="button" class="password-toggle" @click="showPassword = !showPassword">
-                  <svg v-if="showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22" /></svg>
-                  <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                </button>
-              </div>
-
-              <div class="form-actions">
-                <label class="remember-me">
-                  <input type="checkbox" checked />
-                  <span class="checkmark"></span>
-                  保持登录
-                </label>
-                <a href="#" class="forgot-link">忘记密码？</a>
-              </div>
-
-              <transition name="fade-slide">
-                <div v-if="errorMsg" class="error-banner">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                  {{ errorMsg }}
-                </div>
-              </transition>
-
-              <button type="submit" class="submit-btn" :class="{ 'is-loading': loading }" :disabled="loading">
-                <span class="btn-text">{{ loading ? '验证中...' : '进入工作台' }}</span>
-                <span class="btn-shimmer"></span>
-                <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+            <div class="input-group" :class="{ 'is-focused': focusedField === 'password', 'has-value': form.password }">
+              <label>登录密码</label>
+              <input
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                required
+                @focus="focusedField = 'password'"
+                @blur="focusedField = null"
+              />
+              <button type="button" class="password-toggle" @click="showPassword = !showPassword">
+                <svg v-if="showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22" /></svg>
+                <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
               </button>
-            </form>
-          </div>
-        </main>
-      </div>
+            </div>
+
+            <div class="form-actions">
+              <label class="remember-me">
+                <input type="checkbox" checked />
+                <span class="checkmark"></span>
+                保持登录
+              </label>
+              <a href="#" class="forgot-link">忘记密码？</a>
+            </div>
+
+            <button type="submit" class="submit-btn" :class="{ 'is-loading': loading }" :disabled="loading">
+              <span v-if="loading">正在登录...</span>
+              <template v-else>
+                <span>登 录</span>
+                <span class="btn-arrow">→</span>
+              </template>
+            </button>
+
+            <p v-if="errorMsg" class="error-banner">{{ errorMsg }}</p>
+          </form>
+
+          <p class="form-footer">
+            还没有账号？
+            <router-link to="/register">立即注册</router-link>
+          </p>
+        </div>
+      </main>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* ═══════════════════════════════════════════════════════════
+   LoginForm — 归源登录表单
+   基于 Yohaku 设计体系，纸面质感 + 留白美学
+   ═══════════════════════════════════════════════════════════ */
+
 .auth-stage {
-  --glass-bg: rgba(255, 255, 255, 0.15);
-  --glass-border-highlight: rgba(255, 255, 255, 0.6);
-  --glass-border-shadow: rgba(255, 255, 255, 0.15);
-  --glass-brand-bg: linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.05));
-  --glass-form-bg: rgba(255, 255, 255, 0.08);
-  --glass-seal-bg: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.3));
-  --glass-feature-bg: rgba(255, 255, 255, 0.4);
-  --glass-pill-bg: rgba(0, 0, 0, 0.05);
-  --glass-pill-active: #fff;
-  --glass-input-bg: rgba(255, 255, 255, 0.5);
-  --glass-input-border: rgba(255, 255, 255, 0.6);
-  --glass-input-focus: rgba(255, 255, 255, 0.9);
-  --glow-opacity: 0.2;
-
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: 100%;
+  justify-content: center;
   width: 100%;
-  padding: 2rem;
-  z-index: 10;
-  perspective: 1000px;
+  padding: 24px;
+  animation: floatUp 0.7s var(--ease-breath);
 }
 
-:global([data-theme="rosewood"]) .auth-stage,
-:global([data-theme="star-sea"]) .auth-stage {
-  --glass-bg: rgba(30, 27, 23, 0.85);
-  --glass-border-highlight: rgba(255, 248, 235, 0.16);
-  --glass-border-shadow: rgba(0, 0, 0, 0.4);
-  --glass-brand-bg: linear-gradient(135deg, rgba(42, 38, 33, 0.92), rgba(24, 22, 19, 0.72));
-  --glass-form-bg: rgba(32, 28, 24, 0.76);
-  --glass-seal-bg: linear-gradient(135deg, rgba(72, 64, 54, 0.92), rgba(36, 32, 27, 0.78));
-  --glass-feature-bg: rgba(46, 42, 36, 0.76);
-  --glass-pill-bg: rgba(255, 248, 235, 0.08);
-  --glass-pill-active: rgba(255, 248, 235, 0.16);
-  --glass-input-bg: rgba(44, 40, 35, 0.82);
-  --glass-input-border: rgba(255, 248, 235, 0.18);
-  --glass-input-focus: rgba(58, 53, 46, 0.92);
-  --glow-opacity: 0.05;
+@keyframes floatUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.glass-container {
-  position: relative;
-  width: 100%;
-  max-width: 1100px;
-  animation: floatUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.glass-container::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 34px;
-  background: linear-gradient(135deg, var(--glass-border-highlight) 0%, transparent 50%, var(--glass-border-shadow) 100%);
-  z-index: -1;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  padding: 1px;
-}
-
-.glass-panel {
+/* ── 主面板：左右分栏 ── */
+.login-panel {
   display: flex;
-  background: var(--glass-bg);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border-radius: 32px;
-  box-shadow: 
-    0 40px 80px -20px rgba(0,0,0,0.15),
-    inset 0 1px 0 var(--glass-border-highlight),
-    inset 0 -1px 0 var(--glass-border-shadow);
+  max-width: 960px;
+  width: 100%;
+  min-height: 540px;
+  background: var(--color-card-fill);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 8px 48px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03);
+  border: 1px solid var(--color-card-stroke);
   overflow: hidden;
-  min-height: 640px;
 }
 
-/* BRAND SECTION */
+/* ── 左侧品牌区 ── */
 .brand-section {
-  flex: 1.2;
+  flex: 1;
   position: relative;
-  padding: 4rem;
-  background: var(--glass-brand-bg);
-  border-right: 1px solid var(--glass-border-shadow);
+  padding: 48px 40px;
+  background: var(--color-neutral-2);
+  border-right: 1px solid var(--color-neutral-4);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+/* 径向光晕 */
+.brand-section::before {
+  content: "";
+  position: absolute;
+  top: -30%; left: -20%;
+  width: 140%; height: 160%;
+  background: radial-gradient(ellipse at 60% 40%, var(--color-accent-muted) 0%, transparent 60%),
+              radial-gradient(ellipse at 30% 70%, rgba(168,166,159,0.06) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+
+.editorial-layout {
+  position: relative;
+  z-index: 1;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  overflow: hidden;
-}
-
-.brand-glow-sphere {
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, var(--accent-amber) 0%, transparent 70%);
-  opacity: var(--glow-opacity);
-  filter: blur(60px);
-  top: -100px;
-  left: -100px;
-  pointer-events: none;
-  animation: drift 10s ease-in-out infinite alternate;
-}
-
-.brand-glow-sphere.secondary {
-  background: radial-gradient(circle, var(--accent-ink) 0%, transparent 70%);
-  top: auto;
-  bottom: -150px;
-  left: auto;
-  right: -100px;
-  animation-delay: -5s;
-}
-
-@keyframes drift {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(30px, 50px) scale(1.1); }
-}
-
-/* EDITORIAL LAYOUT */
-.editorial-layout {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  min-height: 100%;
 }
 
 .layout-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border-bottom: 1px solid var(--glass-border-shadow);
-  padding-bottom: 2.5rem;
 }
 
 .logo-mark {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 10px;
 }
 
 .logo-seal {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--glass-seal-bg);
-  border: 1px solid var(--glass-border-highlight);
-  border-radius: 12px;
-  font-family: 'Noto Serif SC', serif;
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--text-main);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
+  color: #fff;
+  font-family: var(--font-serif);
+  font-size: var(--text-title-24);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-whisper);
 }
 
 .logo-text {
-  font-weight: 700;
-  letter-spacing: 0.3em;
-  font-size: 0.75rem;
-  color: var(--text-main);
+  font-size: var(--text-label-12);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--color-neutral-7);
 }
 
 .layout-meta {
-  font-family: monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
-  color: var(--text-soft);
-  margin-top: 0.5rem;
-}
-
-.layout-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 3rem 0;
-}
-
-.hero-eyebrow {
-  font-size: 0.8rem;
-  letter-spacing: 0.4em;
-  color: var(--accent-amber);
-  margin-bottom: 1.5rem;
-  font-weight: 600;
-}
-
-.hero-title {
-  font-size: 3.2rem;
-  line-height: 1.3;
-  font-family: 'Noto Serif SC', serif;
-  color: var(--text-main);
-  margin: 0;
-  letter-spacing: 0.05em;
+  font-size: var(--text-caption-10);
+  letter-spacing: 0.08em;
+  color: var(--color-neutral-6);
   font-weight: 500;
 }
 
+.layout-body {
+  margin: auto 0;
+  padding: 24px 0;
+}
+
+.hero-eyebrow {
+  font-size: var(--text-caption-10);
+  letter-spacing: 0.16em;
+  color: var(--color-accent);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: clamp(30px, 4.5vw, 42px);
+  font-weight: 700;
+  color: var(--color-neutral-10);
+  line-height: 1.15;
+  margin: 0; letter-spacing: 0.03em;
+}
+
 .text-italic {
-  font-style: italic;
-  font-weight: 300;
-  color: var(--text-soft);
-  font-family: serif;
+  font-style: oblique 10deg;
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--accent-amber), var(--accent-ink));
+  background: var(--color-accent);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  display: inline-block;
-  font-weight: 700;
+  background-clip: text;
 }
 
 .hero-divider {
-  width: 60px;
-  height: 1px;
-  background: var(--glass-border-highlight);
-  margin: 3rem 0;
+  width: 56px;
+  height: 2px;
+  background: var(--color-accent);
+  border: none;
+  margin: 20px 0;
+  opacity: 0.4;
 }
 
 .hero-quote {
-  font-size: 1.05rem;
-  line-height: 2.2;
-  color: var(--text-sub);
-  margin: 0;
-  letter-spacing: 0.05em;
-  font-weight: 400;
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-7);
+  line-height: 1.8;
+  max-width: 320px;
+  font-style: oblique 10deg;
 }
 
 .layout-footer {
   display: flex;
   justify-content: space-between;
-  border-top: 1px solid var(--glass-border-shadow);
-  padding-top: 2.5rem;
 }
 
 .footer-info {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 2px;
+}
+
+.info-label {
+  font-size: var(--text-caption-10);
+  letter-spacing: 0.1em;
+  color: var(--color-neutral-6);
+  font-weight: 600;
+}
+
+.info-value {
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-8);
+  font-weight: 500;
 }
 
 .text-right {
   text-align: right;
-  align-items: flex-end;
 }
 
-.info-label {
-  font-size: 0.65rem;
-  letter-spacing: 0.25em;
-  color: var(--text-soft);
-  text-transform: uppercase;
-}
-
-.info-value {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-main);
-  letter-spacing: 0.05em;
-}
-
-/* FORM SECTION */
+/* ── 右侧表单区 ── */
 .form-section {
   flex: 1;
-  padding: 4rem;
+  padding: 56px 52px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background: var(--glass-form-bg);
+  align-items: center;
+  background: var(--color-neutral-1);
+  background-image:
+    radial-gradient(ellipse at 80% 20%, rgba(196,58,49,0.03) 0%, transparent 50%);
 }
 
 .form-wrapper {
-  max-width: 380px;
   width: 100%;
+  max-width: 380px;
   margin: 0 auto;
 }
 
 .form-header {
-  margin-bottom: 3rem;
+  margin-bottom: 48px;
 }
 
 .form-title {
-  font-size: 2.2rem;
-  margin: 0 0 0.5rem;
-  color: var(--text-main);
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
+  font-size: var(--text-title-24);
+  font-weight: 500;
+  color: var(--color-neutral-10);
+  margin: 0 0 8px;
 }
-
+.form-title::before {
+  content: "";
+  display: block;
+  width: 24px; height: 2px;
+  background: var(--color-accent);
+  opacity: 0.35; border-radius: 1px;
+  margin-bottom: 16px;
+}
 .form-desc {
-  color: var(--text-soft);
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-7);
   margin: 0;
-  font-size: 1rem;
+  font-style: oblique 10deg;
 }
 
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
+/* ── 输入框 ── */
 .input-group {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  border-radius: 18px;
-  background: var(--glass-input-bg);
-  border: 1px solid var(--glass-input-border);
-  padding: 0.75rem 1.25rem;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.input-glow {
-  position: absolute;
-  inset: -1px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, var(--accent-amber), var(--accent-ink));
-  opacity: 0;
-  z-index: -1;
-  transition: opacity 0.3s ease;
-  filter: blur(8px);
+  margin-bottom: 24px;
 }
 
 .input-group.is-focused {
-  background: var(--glass-input-focus);
-  border-color: transparent;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
-}
-
-.input-group.is-focused .input-glow {
-  opacity: 0.4;
-}
+  }
 
 .input-group label {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  left: 1.25rem;
-  font-size: 1rem;
-  color: var(--text-soft);
-  pointer-events: none;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: block;
+  font-size: 12px;
+  color: var(--color-neutral-6);
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: color var(--duration-fast) var(--ease-breath);
 }
 
-.input-group.is-focused label,
-.input-group.has-value label {
-  top: 0.85rem;
-  transform: translateY(0);
-  font-size: 0.75rem;
-  color: var(--accent-amber);
-  font-weight: 800;
+.input-group.is-focused label {
+  color: var(--color-accent);
 }
 
 .input-group input {
-  border: none;
-  background: none;
-  outline: none;
-  font-size: 1.05rem;
-  color: var(--text-main);
-  padding: 1.35rem 0 0.25rem;
   width: 100%;
-  font-weight: 600;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: var(--color-neutral-9);
+  background: var(--color-neutral-2);
+  border: 1px solid var(--color-neutral-3);
+  outline: none;
+  font-weight: 500;
+  border-radius: 10px;
+  margin-top: 6px;
+  transition: border-color var(--duration-fast) var(--ease-breath),
+              box-shadow var(--duration-fast) var(--ease-breath);
 }
 
-/* 修复浏览器自动填充的难看背景 */
-.input-group input:-webkit-autofill,
-.input-group input:-webkit-autofill:hover, 
-.input-group input:-webkit-autofill:focus, 
-.input-group input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
-  -webkit-text-fill-color: var(--text-main) !important;
-  transition: background-color 5000s ease-in-out 0s;
-  caret-color: var(--text-main);
+.input-group input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+  background: var(--color-neutral-1);
+}
+
+.input-group input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px var(--color-neutral-2) inset !important;
+  -webkit-text-fill-color: var(--color-neutral-9) !important;
 }
 
 .password-toggle {
   position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--text-soft);
-  cursor: pointer;
-  padding: 0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s ease;
+  right: 14px;
+  top: 38px;
+  color: var(--color-neutral-6);
+  padding: 4px;
+  transition: color var(--duration-fast);
 }
 
 .password-toggle:hover {
-  color: var(--text-main);
+  color: var(--color-neutral-9);
 }
 
+/* ── 表单操作行 ── */
 .form-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9rem;
+  margin-bottom: 20px;
 }
 
 .remember-me {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: var(--text-sub);
+  gap: 8px;
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-7);
   cursor: pointer;
-  position: relative;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .remember-me input {
   position: absolute;
   opacity: 0;
-  cursor: pointer;
-  height: 0;
   width: 0;
+  height: 0;
 }
 
 .checkmark {
-  height: 20px;
-  width: 20px;
-  background: var(--glass-input-bg);
-  border: 1px solid var(--glass-input-border);
-  border-radius: 6px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-neutral-3);
+  border: 1px solid var(--color-neutral-5);
+  border-radius: var(--radius-sm);
   position: relative;
-  transition: all 0.2s ease;
-}
-
-.remember-me:hover input ~ .checkmark {
-  background: var(--glass-input-focus);
+  transition: all var(--duration-fast);
 }
 
 .remember-me input:checked ~ .checkmark {
-  background: var(--text-main);
-  border-color: var(--text-main);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
-.checkmark:after {
+.checkmark::after {
   content: "";
   position: absolute;
   display: none;
-  left: 6px;
-  top: 2px;
+  left: 5px;
+  top: 1px;
   width: 5px;
   height: 10px;
-  border: solid white;
+  border: solid #fff;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
-.remember-me input:checked ~ .checkmark:after {
+.remember-me input:checked ~ .checkmark::after {
   display: block;
 }
 
 .forgot-link {
-  color: var(--text-soft);
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-7);
   text-decoration: none;
-  font-weight: 700;
-  transition: color 0.2s ease;
+  font-weight: 500;
+  transition: color var(--duration-fast);
 }
 
 .forgot-link:hover {
-  color: var(--text-main);
+  color: var(--color-accent);
 }
 
+/* ── 提交按钮 ── */
 .submit-btn {
-  position: relative;
-  background: linear-gradient(135deg, var(--accent-ink) 0%, var(--accent-amber) 100%);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
   color: #fff;
   border: none;
-  padding: 1.25rem;
-  border-radius: 18px;
-  font-size: 1.05rem;
-  font-weight: 800;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-copy-15);
+  font-weight: 600;
   cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  overflow: hidden;
-  box-shadow: 0 12px 24px rgba(0,0,0,0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  margin-top: 1rem;
+  box-shadow: 0 4px 16px rgba(196, 58, 49, 0.15);
+  transition: filter var(--duration-fast) var(--ease-breath),
+              transform var(--duration-fast) var(--ease-breath);
 }
 
 .submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 32px rgba(0,0,0,0.15);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
 
 .submit-btn:active {
@@ -635,90 +522,84 @@ async function onSubmit() {
 }
 
 .submit-btn.is-loading {
-  opacity: 0.8;
+  opacity: 0.7;
   cursor: not-allowed;
+  filter: none;
   transform: none;
 }
 
-.btn-shimmer {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
-  transform: skewX(-20deg);
-  animation: shimmer 3s infinite;
+.btn-arrow {
+  transition: transform var(--duration-fast) var(--ease-breath);
 }
 
-@keyframes shimmer {
-  0% { left: -100%; }
-  20% { left: 200%; }
-  100% { left: 200%; }
+.submit-btn:hover .btn-arrow {
+  transform: translateX(3px);
 }
 
-.btn-icon {
-  transition: transform 0.3s ease;
-}
-
-.submit-btn:hover .btn-icon {
-  transform: translateX(4px);
-}
-
+/* ── 错误提示 ── */
 .error-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: rgba(255, 59, 48, 0.15);
-  color: #ff3b30;
-  padding: 1rem;
-  border-radius: 14px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  border: 1px solid rgba(255, 59, 48, 0.25);
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(166, 73, 83, 0.1);
+  border: 1px solid rgba(166, 73, 83, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  font-size: var(--text-copy-14);
+  font-weight: 500;
 }
 
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.fade-slide-enter-from,
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
+/* ── 表单底部 ── */
+.form-footer {
+  margin-top: 32px;
+  text-align: center;
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-7);
 }
 
-@keyframes floatUp {
-  0% { opacity: 0; transform: translateY(50px) scale(0.97); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+.form-footer a {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 600;
 }
 
+.form-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ── 响应式 ── */
 @media (max-width: 960px) {
-  .glass-panel {
+  .login-panel {
     flex-direction: column;
+    min-height: auto;
   }
+
   .brand-section {
-    padding: 3rem;
+    padding: 36px 32px;
     border-right: none;
-    border-bottom: 1px solid var(--glass-border-shadow);
+    border-bottom: 1px solid var(--color-neutral-4);
   }
+
   .form-section {
-    padding: 3rem;
+    padding: 36px 32px;
+  }
+
+  .hero-title {
+    font-size: var(--text-title-28);
   }
 }
 
 @media (max-width: 640px) {
   .auth-stage {
-    padding: 1rem;
+    padding: 12px;
   }
-  .glass-panel {
-    border-radius: 24px;
+
+  .login-panel {
+    border-radius: var(--radius-xl);
   }
-  .brand-section, .form-section {
-    padding: 2rem;
-  }
-  .hero-title {
-    font-size: 2.2rem;
+
+  .brand-section,
+  .form-section {
+    padding: 28px 24px;
   }
 }
 </style>

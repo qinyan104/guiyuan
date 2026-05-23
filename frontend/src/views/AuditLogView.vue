@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { listLogs, type AuditLogEntry } from '../api/audit'
 import { useLexicon } from '../composables/useLexicon'
@@ -110,28 +110,6 @@ function actionToNarrative(action: string): string {
   gap: 20px;
 }
 
-/* ── Header ── */
-.bento-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.page-title {
-  font-family: monospace;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--text-main);
-  margin: 0 0 6px;
-}
-
-.page-desc {
-  font-size: 0.85rem;
-  color: var(--text-soft);
-  margin: 0;
-}
-
 .bento-btn {
   display: inline-flex;
   align-items: center;
@@ -152,28 +130,22 @@ function actionToNarrative(action: string): string {
 .bento-btn.ghost:hover {
   background: var(--bg-panel, #fff);
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
-:global([data-theme="rosewood"]) .bento-btn.ghost:hover,
-:global([data-theme="star-sea"]) .bento-btn.ghost:hover {
-  background: rgba(255,255,255,0.15);
-}
+
 
 /* ── Glass Bento Cards ── */
 .bento-card {
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.6));
+  background: var(--color-card-fill);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  border: 1px solid var(--color-card-stroke);
   border-radius: 20px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+  box-shadow: var(--shadow-whisper);
   padding: 24px;
 }
-:global([data-theme="rosewood"]) .bento-card,
-:global([data-theme="star-sea"]) .bento-card {
-  background: rgba(20, 20, 20, 0.5);
-  border-color: rgba(255,255,255,0.1);
-  box-shadow: 0 24px 48px rgba(0,0,0,0.2);
-}
+
 
 .audit-notice {
   display: flex;
@@ -185,11 +157,7 @@ function actionToNarrative(action: string): string {
   font-weight: 600;
   padding: 16px 24px;
 }
-:global([data-theme="rosewood"]) .audit-notice,
-:global([data-theme="star-sea"]) .audit-notice {
-  background: rgba(234, 179, 8, 0.15);
-  color: #fde047;
-}
+
 
 .loading-state, .empty-state {
   display: flex;
@@ -232,12 +200,9 @@ function actionToNarrative(action: string): string {
   bottom: 0;
   left: 140px;
   width: 1px;
-  background: var(--glass-border-shadow, rgba(0,0,0,0.1));
+  background: var(--color-neutral-4);
 }
-:global([data-theme="rosewood"]) .chronicle-body::before,
-:global([data-theme="star-sea"]) .chronicle-body::before {
-  background: rgba(255,255,255,0.1);
-}
+
 
 .chronicle-row {
   position: relative;
@@ -282,14 +247,11 @@ function actionToNarrative(action: string): string {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent-amber, #a96e35);
-  box-shadow: 0 0 0 4px var(--glass-panel-bg, #fff);
+  background: var(--color-accent, #c43a31);
+  box-shadow: 0 0 0 4px var(--color-card-fill);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-:global([data-theme="rosewood"]) .chronicle-node,
-:global([data-theme="star-sea"]) .chronicle-node {
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.5);
-}
+
 
 .chronicle-content {
   flex: 1;
@@ -301,20 +263,17 @@ function actionToNarrative(action: string): string {
 }
 .c-user {
   font-weight: 700;
-  color: var(--accent-ink, #1a1a1a);
+  color: var(--color-neutral-10);
   margin-right: 6px;
 }
-:global([data-theme="rosewood"]) .c-user,
-:global([data-theme="star-sea"]) .c-user {
-  color: #fff;
-}
+
 .c-action {
   color: var(--text-main);
   opacity: 0.8;
 }
 .c-detail {
   font-weight: 700;
-  color: var(--accent-amber, #a96e35);
+  color: var(--color-accent, #c43a31);
   margin-left: 4px;
 }
 

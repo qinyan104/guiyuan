@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>归源 — 登录</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --n1:#f9f8f5;--n2:#f0efeb;--n3:#e3e1db;--n4:#d0cec6;
+  --n5:#a8a69f;--n6:#787670;--n7:#5c5a55;--n8:#403f3a;--n9:#24231f;--n10:#141312;
+  --accent:#c43a31;--accent-muted:rgba(196,58,49,0.10);
+  --serif:'Noto Serif SC',serif;
+  --sans:'Manrope','PingFang SC','Microsoft YaHei',sans-serif;
+}
+body{
+  font-family:var(--sans);background:var(--n1);
+  color:var(--n9);line-height:1.6;
+  -webkit-font-smoothing:antialiased;min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ═══ Panel ═══ */
+.login-panel{
+  display:flex;width:880px;min-height:560px;
+  background:var(--n1);
+  border:1px solid var(--n3);border-radius:24px;
+  overflow:hidden;
+  box-shadow:0 4px 40px rgba(0,0,0,.04);
+}
+
+/* ═══ Left — Poetic Brand ═══ */
+.brand{
+  flex:0 0 420px;display:flex;flex-direction:column;justify-content:center;
+  padding:56px 48px;position:relative;overflow:hidden;
+}
+.brand-meta{
+  font-size:10px;font-weight:700;letter-spacing:.18em;
+  color:var(--accent);margin-bottom:40px;
+}
+.brand h2{
+  font-family:var(--serif);font-size:28px;font-weight:700;
+  color:var(--n10);line-height:1.4;margin-bottom:24px;
+  letter-spacing:.02em;
+}
+.brand h2 em{font-style:normal;color:var(--accent)}
+.brand-quote{
+  font-family:var(--serif);font-size:14px;color:var(--n6);
+  font-style:italic;line-height:2;margin-bottom:48px;
+}
+.brand-footer{
+  font-size:10px;color:var(--n4);letter-spacing:.12em;
+  display:flex;align-items:center;gap:8px;
+}
+.brand-footer-line{width:24px;height:1px;background:var(--n4)}
+
+/* ═══ Right — Form ═══ */
+.form-side{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:56px 48px;background:var(--n2);
+}
+.form-side h3{
+  font-family:var(--serif);font-size:18px;font-weight:700;
+  color:var(--n10);margin-bottom:6px;
+}
+.form-desc{font-size:13px;color:var(--n6);margin-bottom:36px}
+
+.input-group{margin-bottom:20px}
+.input-group label{
+  display:block;font-size:11px;font-weight:600;
+  color:var(--n7);margin-bottom:6px;letter-spacing:.04em;
+}
+.input-group input{
+  width:100%;padding:12px 16px;border-radius:10px;
+  border:1px solid var(--n3);background:var(--n1);
+  font-size:14px;color:var(--n9);outline:none;
+  transition:border-color .2s,box-shadow .2s;
+  font-family:var(--sans);
+}
+.input-group input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-muted);
+}
+
+.form-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.remember{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--n7);cursor:pointer}
+.remember input{accent-color:var(--accent)}
+.forgot{font-size:12px;color:var(--n6);text-decoration:none}
+.forgot:hover{color:var(--accent)}
+
+.submit-btn{
+  width:100%;padding:13px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,#8b2c26,var(--accent));
+  color:#fff;font-size:14px;font-weight:700;cursor:pointer;
+  letter-spacing:.04em;transition:all .2s;
+  box-shadow:0 4px 16px rgba(196,58,49,.15);
+  font-family:var(--sans);
+}
+.submit-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(196,58,49,.25)}
+
+.form-footer{
+  margin-top:28px;text-align:center;font-size:13px;color:var(--n7);
+}
+.form-footer a{color:var(--accent);text-decoration:none;font-weight:600}
+.form-footer a:hover{text-decoration:underline}
+
+.back-link{
+  position:fixed;top:24px;left:24px;
+  font-size:12px;color:var(--n6);text-decoration:none;
+  display:flex;align-items:center;gap:6px;transition:color .2s;
+}
+.back-link:hover{color:var(--accent)}
+
+@media(max-width:900px){
+  .login-panel{flex-direction:column;width:100%;max-width:420px;margin:24px}
+  .brand{flex:auto;padding:40px 32px;text-align:center}
+  .form-side{padding:40px 32px}
+  .brand-footer{justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; 返回首页</a>
+
+<div class="login-panel">
+  <!-- Left — Brand -->
+  <div class="brand">
+    <p class="brand-meta">CHAPTER II</p>
+    <h2>
+      推开这扇<em>门</em><br>
+      看见你的<em>来处</em>
+    </h2>
+    <p class="brand-quote">
+      念念不忘，必有回响。<br>
+      生生不息，是为归源。
+    </p>
+    <div class="brand-footer">
+      <span>GUIYUAN</span>
+      <span class="brand-footer-line"></span>
+      <span>DIGITAL ARCHIVE</span>
+    </div>
+  </div>
+
+  <!-- Right — Form -->
+  <div class="form-side">
+    <h3>欢迎回来</h3>
+    <p class="form-desc">登录以继续编辑你的数字记忆</p>
+
+    <form onsubmit="return false">
+      <div class="input-group">
+        <label>账号 / 邮箱</label>
+        <input type="text" placeholder="输入账号或邮箱" required>
+      </div>
+      <div class="input-group">
+        <label>登录密码</label>
+        <input type="password" placeholder="输入密码" required>
+      </div>
+      <div class="form-row">
+        <label class="remember"><input type="checkbox" checked> 保持登录</label>
+        <a href="#" class="forgot">忘记密码？</a>
+      </div>
+      <button type="submit" class="submit-btn">登 录</button>
+    </form>
+
+    <p class="form-footer">还没有账号？<a href="#">立即注册</a></p>
+  </div>
+</div>
+
+</body>
+</html>
