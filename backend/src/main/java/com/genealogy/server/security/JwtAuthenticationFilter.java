@@ -2,6 +2,7 @@ package com.genealogy.server.security;
 
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.RefreshTokenService;
+import com.genealogy.server.model.User;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -66,7 +67,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String username = jwtService.extractUsername(jwt);
         String role = jwtService.extractRole(jwt);
-        setAuthentication(request, username, role);
+        userRepository.findByUsername(username).ifPresent(user -> {
+            setAuthentication(request, username, role, user.getId());
+        });
     }
 
     private void authenticateWithRefreshCookie(HttpServletRequest request) {
@@ -81,15 +84,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         userRepository.findById(userId.get())
-                .ifPresent(user -> setAuthentication(request, user.getUsername(), user.getRole()));
+                .ifPresent(user -> setAuthentication(request, user.getUsername(), user.getRole(), userId.get()));
     }
 
-    private void setAuthentication(HttpServletRequest request, String username, String role) {
+    private void setAuthentication(HttpServletRequest request, String username, String role, Long userId) {
         if (username == null || SecurityContextHolder.getContext().getAuthentication() != null) {
             return;
         }
-
         request.setAttribute("currentUsername", username);
+        request.setAttribute("userId", userId);
         List<SimpleGrantedAuthority> authorities = List.of(
                 new SimpleGrantedAuthority("ROLE_" + (role != null ? role : "USER")));
 
