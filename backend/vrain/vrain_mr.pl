@@ -678,7 +678,7 @@ if(defined $title_directory and $title_directory == 1) {
 	}
 }
 
-my $pdfn = "《$title》文本$from"."至$to";
+my $pdfn = $book_id."_vrain";
 
 $pdfn = $pdfn.'_test' if($opts{'z'});
 print "生成PDF文件'books_mr/$book_id/$pdfn.pdf'...";
