@@ -8,6 +8,7 @@ import { useRoute, useRouter } from "vue-router"
 import { usePublishingStudio } from "../composables/usePublishingStudio"
 import { getPublication } from "../api/publication"
 import { saveSheets, listSheets, deleteSheet, updateDraft } from "../api/publishing"
+import http from "../api/http"
 import type { PublicationData } from "../types/family"
 import type { BookSheetLayout, LineagePage } from "../types/publishing"
 import StudioToolbar from "../components/publishing/StudioToolbar.vue"
@@ -62,6 +63,20 @@ onMounted(async () => {
 })
 
 function handleBack() { router.push("/publishing") }
+
+async function handleExport() {
+  try {
+    feedback.statusMessage.value = "正在生成古籍 PDF..."
+    const resp = await http.post(`/publishing/drafts/${draftId.value}/export`)
+    if (resp.data.code === 200) {
+      feedback.statusMessage.value = resp.data.data || "PDF 导出成功"
+    } else {
+      feedback.errorMessage.value = resp.data.message || "导出失败"
+    }
+  } catch (e: any) {
+    feedback.errorMessage.value = "导出失败: " + (e.message || e)
+  }
+}
 
 async function handleAutoLayout() {
   if (!pubData.value) { feedback.errorMessage.value = "请先加载族谱数据"; return }
@@ -156,7 +171,7 @@ const currentPageData = computed(() => layoutPages.value[activeSheetIndex.value]
     <StudioToolbar
       :draftTitle="draft.title" :draftStatus="draft.status"
       :hasPendingSync="hasPendingSync"
-      @back="handleBack" @autoLayout="handleAutoLayout"
+      @back="handleBack" @autoLayout="handleAutoLayout" @export="handleExport"
     />
 
     <div class="studio-body">

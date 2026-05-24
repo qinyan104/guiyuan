@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 defineProps<{
   draftTitle: string
   draftStatus: string
@@ -10,6 +10,7 @@ defineEmits<{
   back: []
   autoLayout: []
   paperChange: [paper: "A4" | "A3"]
+  export: []
 }>()
 
 function statusClass(status: string): string {
@@ -28,6 +29,7 @@ function statusText(status: string): string {
     <span class="toolbar-title">{{ draftTitle }}</span>
     <span :class="['status-badge', statusClass(draftStatus)]">{{ statusText(draftStatus) }}</span>
     <div class="toolbar-spacer" />
+    <button class="btn-export" @click="$emit('export')" title="导出古籍 PDF">付梓导出</button>
     <button class="btn-auto-layout" @click="$emit('autoLayout')">自动排版</button>
     <AppSelect v-bind="{ 'model-value': paper ?? 'A4' }" variant="compact" :options="[{value:'A4',label:'A4'},{value:'A3',label:'A3'}]" @change="(v: string) => $emit('paperChange', v as 'A4'|'A3')" />
     <span v-if="hasPendingSync" class="sync-warning" title="主数据有更新，需要同步">⚠ 待同步</span>
@@ -77,6 +79,19 @@ function statusText(status: string): string {
   font-size: 13px;
   cursor: pointer;
 }
+.btn-export {
+  padding: 6px 16px;
+  background: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-export:hover {
+  background: var(--color-accent-muted);
+}
+
 .btn-auto-layout:hover {
   background: var(--color-accent);
 }
