@@ -84,6 +84,10 @@ export async function deletePersonDetail(
 export async function getSyncStatus(draftId: number): Promise<DraftSyncStatus> {
   const resp = await http.get<ApiResponse<DraftSyncStatus>>(
     `/publishing/drafts/${draftId}/sync-status`,
+  )
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "获取同步状态失败")
+  return resp.data.data
+}
 
 // -- Sheet CRUD --
 
@@ -103,7 +107,7 @@ export interface SheetSaveRequest {
 
 export async function saveSheets(draftId: number, sheets: SheetSaveRequest[]): Promise<SheetResponse[]> {
   const resp = await http.post<ApiResponse<SheetResponse[]>>(
-    /publishing/drafts//sheets,
+    `/publishing/drafts/${draftId}/sheets`,
     sheets,
   )
   if (resp.data.code !== 200) throw new Error(resp.data.message || "保存书页失败")
@@ -112,15 +116,12 @@ export async function saveSheets(draftId: number, sheets: SheetSaveRequest[]): P
 
 export async function listSheets(draftId: number): Promise<SheetResponse[]> {
   const resp = await http.get<ApiResponse<SheetResponse[]>>(
-    /publishing/drafts//sheets,
+    `/publishing/drafts/${draftId}/sheets`,
   )
   if (resp.data.code !== 200) throw new Error(resp.data.message || "获取书页列表失败")
   return resp.data.data
 }
 
 export async function deleteSheet(draftId: number, sheetId: number): Promise<void> {
-  await http.delete(/publishing/drafts//sheets/)
-}  )
-  if (resp.data.code !== 200) throw new Error(resp.data.message || "获取同步状态失败")
-  return resp.data.data
+  await http.delete(`/publishing/drafts/${draftId}/sheets/${sheetId}`)
 }
