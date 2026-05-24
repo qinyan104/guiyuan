@@ -168,8 +168,22 @@ public class VrainExportService {
             comment_font1_size=28
             comment_font2_size=24
 
-            text_comma_nop=0
-            comment_comma_nop=0
+            text_comma_nop=
+            comment_comma_nop=
+
+            title_font_size=42
+            title_font_color=black
+            title_y=1700
+            title_ydis=1.2
+            if_tpcenter=1
+
+            pager_font_size=24
+            pager_font_color=black
+            pager_y=100
+
+            if_book_vline=0
+            book_line_width=1
+            book_line_color=black
 
             cover_title_font_size=48
             cover_title_y=400
