@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { useFeedback } from '../composables/useFeedback'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 
@@ -45,15 +45,11 @@ async function save() {
     })
     savedBio.value = biography.value
     lastSaved.value = new Date().toLocaleTimeString("zh-CN")
-  } catch (e: unknown) {
-    // silent fail for auto-save
-  }
+  } catch { /* silent for auto-save */ }
 }
 
 async function autoSave() {
-  if (biography.value !== savedBio.value) {
-    await save()
-  }
+  if (biography.value !== savedBio.value) await save()
 }
 
 function goBack() {
@@ -61,6 +57,7 @@ function goBack() {
 }
 
 const wordCount = computed(() => biography.value.replace(/\s/g, "").length)
+const personLabel = computed(() => detail.value?.personName || personId.value)
 
 onMounted(async () => {
   await load()
@@ -75,31 +72,22 @@ onUnmounted(() => {
 <template>
   <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
   <div class="biography-editor">
-    <!-- Header -->
     <header class="bio-header">
       <button class="btn-back" @click="goBack">← 返回草稿</button>
-      <span class="bio-person-id">{{ personId }}</span>
+      <span class="bio-person-name">{{ personLabel }}</span>
       <span class="bio-label">传记编辑</span>
       <div class="header-spacer" />
       <button class="btn-save" @click="save">保存</button>
       <span v-if="lastSaved" class="last-saved">上次保存: {{ lastSaved }}</span>
     </header>
 
-    <div v-if="loading" class="bio-loading">
-      <p>加载中…</p>
-    </div>
+    <div v-if="loading" class="bio-loading"><p>加载中…</p></div>
 
     <div v-else class="bio-body">
-      <!-- Left: Textarea -->
       <div class="bio-editor-pane">
-        <textarea
-          v-model="biography"
-          class="bio-textarea"
-          placeholder="在此编辑传记内容…"
-        />
+        <textarea v-model="biography" class="bio-textarea" placeholder="在此编辑传记内容…" />
       </div>
 
-      <!-- Right: Vertical preview -->
       <div class="bio-preview-pane">
         <div class="bio-preview">
           <p v-if="biography" class="preview-text">{{ biography }}</p>
@@ -108,7 +96,6 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Footer -->
     <footer class="bio-footer">
       <span>{{ wordCount }} 字</span>
       <span class="footer-hint">每 30 秒自动保存</span>
@@ -121,7 +108,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #faf7f2;
+  background: var(--color-neutral-1);
 }
 
 .bio-header {
@@ -129,54 +116,48 @@ onUnmounted(() => {
   align-items: center;
   gap: 16px;
   padding: 12px 20px;
-  border-bottom: 1px solid #e8e0d5;
-  background: #fffdf8;
+  border-bottom: 1px solid var(--color-neutral-3);
+  background: var(--color-neutral-1);
   flex-shrink: 0;
 }
 
 .btn-back {
   background: transparent;
   border: none;
-  color: #c43a31;
-  font-size: 14px;
+  color: var(--color-accent);
+  font-size: var(--text-copy-14);
   cursor: pointer;
 }
-.btn-back:hover {
-  text-decoration: underline;
-}
+.btn-back:hover { text-decoration: underline; }
 
-.bio-person-id {
-  font-size: 13px;
-  color: #888;
-  font-family: monospace;
+.bio-person-name {
+  font-size: var(--text-copy-13);
+  color: var(--color-neutral-6);
+  font-family: var(--font-mono);
 }
 
 .bio-label {
-  font-size: 15px;
+  font-size: var(--text-copy-15);
   font-weight: 500;
-  color: #333;
+  color: var(--color-neutral-9);
 }
 
-.header-spacer {
-  flex: 1;
-}
+.header-spacer { flex: 1; }
 
 .btn-save {
   padding: 6px 16px;
-  background: #c43a31;
+  background: var(--color-accent);
   color: #fff;
   border: none;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: var(--text-copy-13);
   cursor: pointer;
 }
-.btn-save:hover {
-  background: #a8322a;
-}
+.btn-save:hover { filter: brightness(0.9); }
 
 .last-saved {
   font-size: 11px;
-  color: #bbb;
+  color: var(--color-neutral-5);
 }
 
 .bio-loading {
@@ -184,42 +165,34 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: #999;
+  color: var(--color-neutral-6);
 }
 
-.bio-body {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
+.bio-body { display: flex; flex: 1; overflow: hidden; }
 
-.bio-editor-pane {
-  flex: 1;
-  padding: 20px;
-}
+.bio-editor-pane { flex: 1; padding: 20px; }
 
 .bio-textarea {
   width: 100%;
   height: 100%;
-  border: 1px solid #e8e0d5;
+  border: 1px solid var(--color-neutral-3);
   border-radius: 6px;
   padding: 16px;
-  font-family: "Noto Serif SC", "SimSun", serif;
-  font-size: 15px;
+  font-family: var(--font-serif);
+  font-size: var(--text-copy-15);
   line-height: 1.8;
   resize: none;
   outline: none;
-  background: #fffdf8;
+  background: var(--color-neutral-1);
   box-sizing: border-box;
+  color: var(--color-neutral-9);
 }
-.bio-textarea:focus {
-  border-color: #c43a31;
-}
+.bio-textarea:focus { border-color: var(--color-accent); }
 
 .bio-preview-pane {
   width: 320px;
   padding: 20px 16px;
-  border-left: 1px solid #e8e0d5;
+  border-left: 1px solid var(--color-neutral-3);
   flex-shrink: 0;
 }
 
@@ -228,39 +201,30 @@ onUnmounted(() => {
   overflow-y: auto;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  font-family: "Noto Serif SC", "SimSun", serif;
-  font-size: 14px;
+  font-family: var(--font-serif);
+  font-size: var(--text-copy-14);
   line-height: 2;
-  color: #333;
+  color: var(--color-neutral-9);
   padding: 12px;
-  background: #fffdf8;
-  border: 1px solid #e8e0d5;
+  background: var(--color-neutral-1);
+  border: 1px solid var(--color-neutral-3);
   border-radius: 6px;
 }
 
-.preview-text {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.preview-empty {
-  margin: 0;
-  color: #ccc;
-}
+.preview-text { margin: 0; white-space: pre-wrap; }
+.preview-empty { margin: 0; color: var(--color-neutral-4); }
 
 .bio-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 8px 20px;
-  border-top: 1px solid #e8e0d5;
-  background: #faf7f2;
-  font-size: 12px;
-  color: #999;
+  border-top: 1px solid var(--color-neutral-3);
+  background: var(--color-neutral-1);
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-6);
   flex-shrink: 0;
 }
 
-.footer-hint {
-  color: #ccc;
-}
+.footer-hint { color: var(--color-neutral-4); }
 </style>

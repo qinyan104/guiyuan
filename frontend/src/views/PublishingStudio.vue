@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { useFeedback } from '../composables/useFeedback'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 
@@ -7,7 +7,10 @@ import { ref, onMounted, computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { usePublishingStudio } from "../composables/usePublishingStudio"
 import { getPublication } from "../api/publication"
+import { saveSheets, listSheets, deleteSheet } from "../api/publishing"
+import { updateDraft } from "../api/publishing"
 import type { PublicationData } from "../types/family"
+import type { BookSheetLayout } from "../types/publishing"
 import StudioToolbar from "../components/publishing/StudioToolbar.vue"
 import PageThumbnailBar from "../components/publishing/PageThumbnailBar.vue"
 import PageCanvas from "../components/publishing/PageCanvas.vue"
@@ -25,18 +28,37 @@ const {
 
 const pubData = ref<PublicationData | null>(null)
 const sheetTypes = ref<string[]>([])
-const layoutSheets = ref<any[]>([])
+const layoutSheets = ref<BookSheetLayout[]>([])
+const savedSheetIds = ref<number[]>([]) // backend IDs for each sheet index
 
 onMounted(async () => {
   await loadDraft()
   if (draft.value) {
-    // Load actual publication data for rendering
+    // Load publication data
     try {
       const result = await getPublication(draft.value.publicationId)
       pubData.value = result.publication
     } catch { /* publication may not be loaded */ }
-    const count = draft.value.sheetCount || 1
-    sheetTypes.value = Array.from({ length: count }, () => "世系")
+
+    // Try loading saved sheets from backend
+    try {
+      const saved = await listSheets(draftId.value)
+      if (saved.length > 0) {
+        layoutSheets.value = saved.map(s => {
+          try { return JSON.parse(s.layoutData) as BookSheetLayout }
+          catch { return null }
+        }).filter(Boolean) as BookSheetLayout[]
+        savedSheetIds.value = saved.map(s => s.id)
+        sheetTypes.value = saved.map(s => s.sheetType)
+      } else {
+        // Fallback: use draft sheetCount
+        const count = draft.value.sheetCount || 1
+        sheetTypes.value = Array.from({ length: count }, () => "genealogy")
+      }
+    } catch {
+      const count = draft.value.sheetCount || 1
+      sheetTypes.value = Array.from({ length: count }, () => "genealogy")
+    }
   }
 })
 
@@ -47,11 +69,76 @@ async function handleAutoLayout() {
   try {
     const { computeTraditionalLayout } = await import("../lib/traditionalLayout")
     layoutSheets.value = computeTraditionalLayout(pubData.value)
-    sheetTypes.value = layoutSheets.value.map(() => "世系")
+    sheetTypes.value = layoutSheets.value.map(() => "genealogy")
     activeSheetIndex.value = 0
+
+    // Save to backend
+    const sheetsToSave = layoutSheets.value.map((sheet, i) => ({
+      sheetNumber: i + 1,
+      sheetType: sheetTypes.value[i] || "genealogy",
+      layoutData: JSON.stringify(sheet),
+    }))
+    const saved = await saveSheets(draftId.value, sheetsToSave)
+    savedSheetIds.value = saved.map(s => s.id)
+
+    // Update draft sheetCount
+    await updateDraft(draftId.value, { publicationId: draft.value!.publicationId, title: draft.value!.title })
+
+    feedback.statusMessage.value = `排版完成，共 ${layoutSheets.value.length} 页，已保存`
   } catch (e: any) {
     feedback.errorMessage.value = "自动排版失败: " + (e.message || e)
   }
+}
+
+async function handleAddSheet() {
+  const newSheet: BookSheetLayout = {
+    sheetNumber: layoutSheets.value.length + 1,
+    sheetType: "genealogy",
+    dimensions: { width: 210, height: 297 },
+    rootPersonIds: [],
+    elements: { personCards: [], connectionLines: [], anchors: [] },
+  }
+  layoutSheets.value.push(newSheet)
+  sheetTypes.value.push("genealogy")
+  activeSheetIndex.value = layoutSheets.value.length - 1
+
+  // Save the new sheet
+  try {
+    const sheetsToSave = layoutSheets.value.map((sheet, i) => ({
+      sheetNumber: i + 1,
+      sheetType: sheetTypes.value[i] || "genealogy",
+      layoutData: JSON.stringify(sheet),
+    }))
+    const saved = await saveSheets(draftId.value, sheetsToSave)
+    savedSheetIds.value = saved.map(s => s.id)
+  } catch { /* silent */ }
+}
+
+async function handleDeleteSheet(index: number) {
+  if (layoutSheets.value.length <= 1) return
+  const backendId = savedSheetIds.value[index]
+  layoutSheets.value.splice(index, 1)
+  sheetTypes.value.splice(index, 1)
+
+  if (activeSheetIndex.value >= layoutSheets.value.length) {
+    activeSheetIndex.value = layoutSheets.value.length - 1
+  }
+
+  // Delete from backend + re-save
+  try {
+    if (backendId) await deleteSheet(draftId.value, backendId)
+    const sheetsToSave = layoutSheets.value.map((sheet, i) => ({
+      sheetNumber: i + 1,
+      sheetType: sheetTypes.value[i] || "genealogy",
+      layoutData: JSON.stringify(sheet),
+    }))
+    const saved = await saveSheets(draftId.value, sheetsToSave)
+    savedSheetIds.value = saved.map(s => s.id)
+  } catch { /* silent */ }
+}
+
+function handleSelectSheet(index: number) {
+  activeSheetIndex.value = index
 }
 
 const totalPages = computed(() => layoutSheets.value.length || 1)
@@ -79,8 +166,9 @@ const currentLayout = computed(() => layoutSheets.value[activeSheetIndex.value] 
       <PageThumbnailBar
         :sheetCount="totalPages" :activeSheetIndex="activeSheetIndex"
         :sheetTypes="sheetTypes"
-        @selectSheet="(i: number) => (activeSheetIndex = i)"
-        @addSheet="() => {}"
+        @selectSheet="handleSelectSheet"
+        @addSheet="handleAddSheet"
+        @deleteSheet="handleDeleteSheet"
       />
 
       <PageCanvas
@@ -100,9 +188,9 @@ const currentLayout = computed(() => layoutSheets.value[activeSheetIndex.value] 
 </template>
 
 <style scoped>
-.publishing-studio { display:flex; flex-direction:column; height:100vh; background:#f5f0e8; }
+.publishing-studio { display:flex; flex-direction:column; height:100vh; background:var(--color-neutral-2); }
 .studio-body { display:flex; flex:1; overflow:hidden; }
-.studio-loading { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; color:#999; font-size:16px; }
-.btn-back-link { margin-top:12px; background:transparent; border:none; color:#c43a31; font-size:14px; cursor:pointer; }
+.studio-loading { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; color:var(--color-neutral-6); font-size:16px; }
+.btn-back-link { margin-top:12px; background:transparent; border:none; color:var(--color-accent); font-size:14px; cursor:pointer; }
 .btn-back-link:hover { text-decoration:underline; }
 </style>
