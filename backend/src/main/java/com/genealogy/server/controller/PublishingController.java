@@ -2,6 +2,7 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.*;
 import com.genealogy.server.service.PublishingService;
+import com.genealogy.server.service.VrainExportService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,9 +14,11 @@ import java.util.List;
 public class PublishingController {
 
     private final PublishingService publishingService;
+    private final VrainExportService vrainExportService;
 
-    public PublishingController(PublishingService publishingService) {
+    public PublishingController(PublishingService publishingService, VrainExportService vrainExportService) {
         this.publishingService = publishingService;
+        this.vrainExportService = vrainExportService;
     }
 
     private Long resolveUserId(@RequestAttribute("userId") Long userId) {
@@ -96,6 +99,15 @@ public class PublishingController {
             @PathVariable Long draftId) {
         DraftSyncStatusResponse response = publishingService.getSyncStatus(draftId);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+
+    // -- Export --
+
+    @PostMapping("/drafts/{draftId}/export")
+    public ResponseEntity<ApiResponse<String>> exportPdf(@PathVariable Long draftId) {
+        java.nio.file.Path pdfPath = vrainExportService.exportPdf(draftId);
+        return ResponseEntity.ok(ApiResponse.success("PDF 已生成: " + pdfPath.getFileName().toString()));
     }
 
     // -- Sheet CRUD --
