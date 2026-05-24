@@ -1,4 +1,4 @@
-﻿export interface BookDraft {
+export interface BookDraft {
   id: number
   publicationId: number
   publicationTitle?: string
@@ -121,4 +121,18 @@ export interface DraftSyncEntry {
   personName: string
   changeType: "added" | "removed" | "updated"
   acknowledged: boolean
+}
+
+export interface LineageEntry {
+  personId: string
+  personName: string
+  formattedText: string
+  generation: number
+  gender: "male" | "female" | "unknown"
+}
+
+export interface LineagePage {
+  pageNumber: number
+  entries: LineageEntry[]
+  rootPersonIds: string[]
 }

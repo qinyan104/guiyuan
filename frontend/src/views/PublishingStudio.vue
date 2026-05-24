@@ -9,7 +9,7 @@ import { usePublishingStudio } from "../composables/usePublishingStudio"
 import { getPublication } from "../api/publication"
 import { saveSheets, listSheets, deleteSheet, updateDraft } from "../api/publishing"
 import type { PublicationData } from "../types/family"
-import type { BookSheetLayout } from "../types/publishing"
+import type { BookSheetLayout, LineagePage } from "../types/publishing"
 import StudioToolbar from "../components/publishing/StudioToolbar.vue"
 import PageThumbnailBar from "../components/publishing/PageThumbnailBar.vue"
 import PageCanvas from "../components/publishing/PageCanvas.vue"
@@ -26,8 +26,9 @@ const {
 } = usePublishingStudio(draftId)
 
 const pubData = ref<PublicationData | null>(null)
-const sheetTypes = ref<string[]>([])
+const layoutPages = ref<LineagePage[]>([])
 const layoutSheets = ref<BookSheetLayout[]>([])
+const sheetTypes = ref<string[]>([])
 const savedSheetIds = ref<number[]>([]) // backend IDs for each sheet index
 
 onMounted(async () => {
@@ -43,14 +44,13 @@ onMounted(async () => {
     try {
       const saved = await listSheets(draftId.value)
       if (saved.length > 0) {
-        layoutSheets.value = saved.map(s => {
-          try { return JSON.parse(s.layoutData) as BookSheetLayout }
+        layoutPages.value = saved.map(s => {
+          try { return JSON.parse(s.layoutData) as LineagePage }
           catch { return null }
-        }).filter(Boolean) as BookSheetLayout[]
+        }).filter(Boolean) as LineagePage[]
         savedSheetIds.value = saved.map(s => s.id)
         sheetTypes.value = saved.map(s => s.sheetType)
       } else {
-        // Fallback: use draft sheetCount
         const count = draft.value.sheetCount || 1
         sheetTypes.value = Array.from({ length: count }, () => "genealogy")
       }
@@ -66,16 +66,18 @@ function handleBack() { router.push("/publishing") }
 async function handleAutoLayout() {
   if (!pubData.value) { feedback.errorMessage.value = "请先加载族谱数据"; return }
   try {
-    const { computeTraditionalLayout } = await import("../lib/traditionalLayout")
-    layoutSheets.value = computeTraditionalLayout(pubData.value)
-    sheetTypes.value = layoutSheets.value.map(() => "genealogy")
+    // Use text-based lineage layout instead of card layout
+    const { computeLineageText } = await import("../lib/lineageText")
+    const pages = computeLineageText(pubData.value)
+    layoutPages.value = pages
+    sheetTypes.value = pages.map(() => "genealogy")
     activeSheetIndex.value = 0
 
     // Save to backend
-    const sheetsToSave = layoutSheets.value.map((sheet, i) => ({
+    const sheetsToSave = pages.map((page, i) => ({
       sheetNumber: i + 1,
-      sheetType: sheetTypes.value[i] || "genealogy",
-      layoutData: JSON.stringify(sheet),
+      sheetType: "genealogy",
+      layoutData: JSON.stringify(page),
     }))
     const saved = await saveSheets(draftId.value, sheetsToSave)
     savedSheetIds.value = saved.map(s => s.id)
@@ -83,30 +85,27 @@ async function handleAutoLayout() {
     // Update draft sheetCount
     await updateDraft(draftId.value, { publicationId: draft.value!.publicationId, title: draft.value!.title })
 
-    feedback.statusMessage.value = `排版完成，共 ${layoutSheets.value.length} 页，已保存`
+    feedback.statusMessage.value = `排版完成，共 ${pages.length} 页，已保存`
   } catch (e: any) {
     feedback.errorMessage.value = "自动排版失败: " + (e.message || e)
   }
 }
 
 async function handleAddSheet() {
-  const newSheet: BookSheetLayout = {
-    sheetNumber: layoutSheets.value.length + 1,
-    sheetType: "genealogy",
-    dimensions: { width: 210, height: 297 },
+  const newPage: LineagePage = {
+    pageNumber: layoutPages.value.length + 1,
+    entries: [],
     rootPersonIds: [],
-    elements: { personCards: [], connectionLines: [], anchors: [] },
   }
-  layoutSheets.value.push(newSheet)
+  layoutPages.value.push(newPage)
   sheetTypes.value.push("genealogy")
-  activeSheetIndex.value = layoutSheets.value.length - 1
+  activeSheetIndex.value = layoutPages.value.length - 1
 
-  // Save the new sheet
   try {
-    const sheetsToSave = layoutSheets.value.map((sheet, i) => ({
+    const sheetsToSave = layoutPages.value.map((page, i) => ({
       sheetNumber: i + 1,
       sheetType: sheetTypes.value[i] || "genealogy",
-      layoutData: JSON.stringify(sheet),
+      layoutData: JSON.stringify(page),
     }))
     const saved = await saveSheets(draftId.value, sheetsToSave)
     savedSheetIds.value = saved.map(s => s.id)
@@ -114,22 +113,21 @@ async function handleAddSheet() {
 }
 
 async function handleDeleteSheet(index: number) {
-  if (layoutSheets.value.length <= 1) return
+  if (layoutPages.value.length <= 1) return
   const backendId = savedSheetIds.value[index]
-  layoutSheets.value.splice(index, 1)
+  layoutPages.value.splice(index, 1)
   sheetTypes.value.splice(index, 1)
 
-  if (activeSheetIndex.value >= layoutSheets.value.length) {
-    activeSheetIndex.value = layoutSheets.value.length - 1
+  if (activeSheetIndex.value >= layoutPages.value.length) {
+    activeSheetIndex.value = layoutPages.value.length - 1
   }
 
-  // Delete from backend + re-save
   try {
     if (backendId) await deleteSheet(draftId.value, backendId)
-    const sheetsToSave = layoutSheets.value.map((sheet, i) => ({
+    const sheetsToSave = layoutPages.value.map((page, i) => ({
       sheetNumber: i + 1,
       sheetType: sheetTypes.value[i] || "genealogy",
-      layoutData: JSON.stringify(sheet),
+      layoutData: JSON.stringify(page),
     }))
     const saved = await saveSheets(draftId.value, sheetsToSave)
     savedSheetIds.value = saved.map(s => s.id)
@@ -140,9 +138,9 @@ function handleSelectSheet(index: number) {
   activeSheetIndex.value = index
 }
 
-const totalPages = computed(() => layoutSheets.value.length || 1)
+const totalPages = computed(() => layoutPages.value.length || 1)
 const currentPage = computed(() => activeSheetIndex.value + 1)
-const currentLayout = computed(() => layoutSheets.value[activeSheetIndex.value] || null)
+const currentPageData = computed(() => layoutPages.value[activeSheetIndex.value] || null)
 </script>
 
 <template>
