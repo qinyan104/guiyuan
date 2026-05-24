@@ -208,6 +208,14 @@ public class VrainExportService {
             "-f", "1"
         );
         pb.directory(VRAIN_DIR.toFile());
+
+        // Strawberry Perl DLLs need to be on PATH
+        String perlBin = java.nio.file.Path.of(perlExe).getParent().toString();
+        String perlCBin = java.nio.file.Path.of(perlExe).getParent().getParent().resolve("c").resolve("bin").toString();
+        String currentPath = System.getenv("PATH");
+        String newPath = perlBin + ";" + perlCBin + ";" + (currentPath != null ? currentPath : "");
+        pb.environment().put("PATH", newPath);
+        log.info("vRain PATH: {}", newPath);
         pb.redirectErrorStream(true);
 
         log.info("Running vRain: perl {} -b {}", vrainScript, bookId);
