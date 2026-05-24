@@ -13,13 +13,23 @@ RUN mvn package -DskipTests -DskipITs -q && \
 # ─── Stage 2: Runtime ───
 FROM eclipse-temurin:17-jre-alpine
 
-RUN apk add --no-cache curl
+# Perl + ImageMagick + CPAN modules for vRain typesetting engine
+RUN apk add --no-cache \
+    curl \
+    perl perl-dev perl-app-cpanminus \
+    imagemagick imagemagick-perl \
+    build-base \
+    && cpanm --notest PDF::Builder Font::FreeType Encode::HanConvert \
+    && apk del build-base
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
 COPY --from=build /build/app.jar app.jar
+
+# vRain typesetting engine
+COPY backend/vrain/ vrain/
 
 RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app
 
