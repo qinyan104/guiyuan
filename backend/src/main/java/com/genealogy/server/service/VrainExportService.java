@@ -165,14 +165,45 @@ public class VrainExportService {
             """.formatted(draft.getTitle());
     }
 
+
+    /**
+     * Find perl executable. Tries common locations for Strawberry Perl on Windows.
+     */
+    private static String findPerl() {
+        // 1. Try PATH via cmd.exe
+        try {
+            Process p = new ProcessBuilder("cmd.exe", "/c", "where", "perl").start();
+            String out = new String(p.getInputStream().readAllBytes()).trim();
+            if (!out.isEmpty() && p.waitFor() == 0) {
+                String first = out.lines().findFirst().orElse("");
+                if (!first.isEmpty()) return first;
+            }
+        } catch (Exception ignored) {}
+
+        // 2. Check common Strawberry Perl locations
+        String[] candidates = {
+            "D:\\code_tools\\strawberry-perl-5.42.2.1-64bit\\perl\\bin\\perl.exe",
+            "C:\\Strawberry\\perl\\bin\\perl.exe",
+            "C:\\Strawberry-perl\\perl\\bin\\perl.exe",
+        };
+        for (String c : candidates) {
+            if (java.nio.file.Files.exists(java.nio.file.Path.of(c))) return c;
+        }
+
+        // 3. Fallback: hope it is on PATH
+        return "perl";
+    }
     private Path runVrain(String bookId) throws IOException, InterruptedException {
         Path vrainScript = VRAIN_DIR.resolve("vrain_mr.pl");
         Path pdfDir = VRAIN_DIR.resolve("pdf");
 
         Files.createDirectories(pdfDir);
 
+        String perlExe = findPerl();
+        log.info("Using perl: {}", perlExe);
+
         ProcessBuilder pb = new ProcessBuilder(
-            "perl", vrainScript.toString(),
+            perlExe, vrainScript.toString(),
             "-b", bookId,
             "-f", "1"
         );
