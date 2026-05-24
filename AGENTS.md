@@ -1,4 +1,4 @@
-﻿<claude-mem-context>
+<claude-mem-context>
 # Memory Context
 
 # [族谱管理系统] recent context, 2026-05-08 10:35pm GMT+8
@@ -139,3 +139,16 @@ Access 580k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>
 
 
+
+### May 24, 2026 — 出版引擎 (publishing engine) 开发记录
+1575 10:30p 🟣 出版引擎 phase 1 — 文字世系录 + vRain 集成
+1576 " ✅ 后端：修复 JwtAuthenticationFilter 缺少 userId 属性 → 解决创建草稿 500
+1577 " ✅ 前端：PublishingDashboard 硬编码 publicationId=1 → 动态族谱选择器
+1578 " ✅ 前端：traditionalLayout.ts(卡片坐标) → lineageText.ts(文字世系录)
+1579 " ✅ 前端：PageCanvas.vue 重写 — 传统书版(版框/鱼尾/中缝) + 世系录条目
+1580 " ✅ 集成：vRain v1.4 multirows 放入 backend/vrain/（88MB 字体）
+1581 " ✅ 后端：VrainExportService — 世系录→vRain文本→book.cfg→perl→PDF
+1582 " ✅ 前端：StudioToolbar 加「付梓导出」按钮
+1583 " ✅ 后端：Windows Perl 环境适配（PATH/DLL/配置字段/中文文件名）
+1584 " 🎯 效果：自动排版→世系录文字→点付梓导出→古籍刻本 PDF（55MB）
+1585 " 🔵 踩坑记录见 docs/troubleshooting/vrain-integration-pitfalls.md
