@@ -97,4 +97,28 @@ public class PublishingController {
         DraftSyncStatusResponse response = publishingService.getSyncStatus(draftId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-}
+
+    // -- Sheet CRUD --
+
+    @PostMapping("/drafts/{draftId}/sheets")
+    public ResponseEntity<ApiResponse<List<SheetResponse>>> saveSheets(
+            @PathVariable Long draftId,
+            @RequestBody List<SheetSaveRequest> sheets) {
+        List<SheetResponse> responses = publishingService.saveSheets(draftId, sheets);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @GetMapping("/drafts/{draftId}/sheets")
+    public ResponseEntity<ApiResponse<List<SheetResponse>>> listSheets(
+            @PathVariable Long draftId) {
+        List<SheetResponse> responses = publishingService.listSheets(draftId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @DeleteMapping("/drafts/{draftId}/sheets/{sheetId}")
+    public ResponseEntity<ApiResponse<Void>> deleteSheet(
+            @PathVariable Long draftId,
+            @PathVariable Long sheetId) {
+        publishingService.deleteSheet(draftId, sheetId);
+        return ResponseEntity.ok(ApiResponse.success(null, null));
+    }}
