@@ -128,6 +128,8 @@ public class VrainExportService {
     }
 
     private String generateBookCfg(BookDraft draft) {
+        String title = draft.getTitle();
+        if (title == null || title.isBlank()) title = "族谱";
         return """
             title=%s
             author=归源族谱管理系统
@@ -137,6 +139,9 @@ public class VrainExportService {
             row_delta_y=8
 
             multirows_horizontal_layout=1
+
+            if_nocomma=0
+            if_onlyperiod=0
 
             font1=qiji-combo.ttf
             font2=HanaMinA.ttf
@@ -162,7 +167,7 @@ public class VrainExportService {
             comment_fonts_array=12
             comment_font1_size=28
             comment_font2_size=24
-            """.formatted(draft.getTitle());
+            """.formatted(title);
     }
 
 
