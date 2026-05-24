@@ -1,7 +1,8 @@
-﻿<script setup lang="ts">
-import { ref, onMounted } from "vue"
+<script setup lang="ts">
+import { ref, onMounted, watch } from "vue"
 import { useRouter } from "vue-router"
 import { listDrafts, createDraft, deleteDraft } from "../api/publishing"
+import { listPublications, type PublicationSummary } from "../api/publication"
 import type { BookDraft } from "../types/publishing"
 import { useFeedback } from '../composables/useFeedback'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
@@ -12,7 +13,9 @@ const drafts = ref<BookDraft[]>([])
 const loading = ref(false)
 const showCreateDialog = ref(false)
 const newDraftTitle = ref("")
-const selectedPublicationId = ref(1)
+const publications = ref<PublicationSummary[]>([])
+const publicationsLoading = ref(false)
+const selectedPublicationId = ref<number | null>(null)
 
 async function loadDrafts() {
   loading.value = true
@@ -55,8 +58,22 @@ async function handleDelete(draft: BookDraft) {
   }
 }
 
-onMounted(() => {
-  loadDrafts()
+watch(selectedPublicationId, () => { if (selectedPublicationId.value != null) loadDrafts() })
+
+onMounted(async () => {
+  publicationsLoading.value = true
+  try {
+    publications.value = await listPublications()
+    if (publications.value.length > 0) {
+      selectedPublicationId.value = publications.value[0].id
+      await loadDrafts()
+    }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "加载族谱列表失败"
+    feedback.errorMessage.value = msg
+  } finally {
+    publicationsLoading.value = false
+  }
 })
 </script>
 
@@ -86,12 +103,27 @@ export function formatTime(iso: string): string {
   <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
   <div class="publishing-dashboard">
     <header class="dashboard-header">
-      <h1 class="dashboard-title">出版工作室</h1>
-      <button class="btn-create" @click="showCreateDialog = true">+ 新建草稿</button>
+      <div class="header-left">
+        <h1 class="dashboard-title">出版工作室</h1>
+        <select v-if="publications.length > 0" v-model.number="selectedPublicationId" class="pub-selector">
+          <option v-for="p in publications" :key="p.id" :value="p.id">{{ p.title }}</option>
+        </select>
+      </div>
+      <button class="btn-create" :disabled="selectedPublicationId == null" @click="showCreateDialog = true">+ 新建草稿</button>
     </header>
 
     <div v-if="loading" class="dashboard-state">
       <p>加载中…</p>
+    </div>
+
+    <div v-else-if="publicationsLoading" class="dashboard-state">
+      <p>加载族谱列表…</p>
+    </div>
+
+    <div v-else-if="publications.length === 0" class="dashboard-state dashboard-empty">
+      <div class="empty-icon">📚</div>
+      <p>还没有族谱</p>
+      <p class="empty-hint">请先在族谱管理页面创建一个族谱，再回到这里编排出版</p>
     </div>
 
     <div v-else-if="drafts.length === 0" class="dashboard-state dashboard-empty">
@@ -165,11 +197,32 @@ export function formatTime(iso: string): string {
   margin-bottom: 32px;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .dashboard-title {
   font-size: 24px;
   font-weight: 500;
   color: #c43a31;
   margin: 0;
+}
+
+.pub-selector {
+  padding: 6px 12px;
+  border: 1px solid #e8e0d5;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+  background: #fffdf8;
+  outline: none;
+  cursor: pointer;
+  min-width: 180px;
+}
+.pub-selector:focus {
+  border-color: #c43a31;
 }
 
 .btn-create {
@@ -184,6 +237,10 @@ export function formatTime(iso: string): string {
 }
 .btn-create:hover {
   background: #a8322a;
+}
+.btn-create:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .dashboard-state {
@@ -367,5 +424,3 @@ export function formatTime(iso: string): string {
   background: #a8322a;
 }
 </style>
-
-
