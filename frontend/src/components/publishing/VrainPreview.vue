@@ -28,10 +28,12 @@ const canvasRefs = ref<HTMLCanvasElement[]>([])
 const pdfUrl = ref<string | null>(null)
 
 async function loadPreview() {
+  if (loading.value) return
   loading.value = true
   error.value = null
+  numPages.value = 0
+  canvasRefs.value = []
 
-  // Cleanup old URL
   if (pdfUrl.value) {
     URL.revokeObjectURL(pdfUrl.value)
     pdfUrl.value = null
@@ -41,13 +43,21 @@ async function loadPreview() {
     const blob = await generatePreview(props.draftId, props.canvasId)
     pdfUrl.value = URL.createObjectURL(blob)
 
-    const loadingTask = pdfjsLib.getDocument(pdfUrl.value)
+    const loadingTask = pdfjsLib.getDocument({
+      url: pdfUrl.value,
+      cMapUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/cmaps/",
+      cMapPacked: true,
+    })
+    
     pdfDoc.value = await loadingTask.promise
     numPages.value = pdfDoc.value.numPages
     emit("pagesLoaded", numPages.value)
 
     await nextTick()
-    renderAllPages()
+    // Sequence rendering to avoid overwhelming the browser
+    for (let i = 0; i < numPages.value; i++) {
+      await renderPage(i)
+    }
   } catch (e: any) {
     console.error("PDF load error:", e)
     error.value = e.message || "预览加载失败"
@@ -57,40 +67,51 @@ async function loadPreview() {
 }
 
 async function renderPage(index: number) {
-  if (!pdfDoc.value || !canvasRefs.value[index]) return
+  if (!pdfDoc.value) return
+  
+  // Retry a few times if canvas ref isn't ready yet
+  let retry = 0
+  while (!canvasRefs.value[index] && retry < 5) {
+    await new Promise(r => setTimeout(r, 100))
+    retry++
+  }
 
-  const page = await pdfDoc.value.getPage(index + 1)
   const canvas = canvasRefs.value[index]
-  const context = canvas.getContext("2d")
-  if (!context) return
+  if (!canvas) return
 
-  const viewport = page.getViewport({ scale: 1.5 }) // Higher scale for clarity
-  canvas.height = viewport.height
-  canvas.width = viewport.width
+  try {
+    const page = await pdfDoc.value.getPage(index + 1)
+    const context = canvas.getContext("2d")
+    if (!context) return
 
-  const renderContext = {
-    canvasContext: context,
-    viewport: viewport,
+    // Scale logic: aim for ~1200px width for preview quality
+    const unscaledViewport = page.getViewport({ scale: 1 })
+    const scale = 1200 / unscaledViewport.width
+    const viewport = page.getViewport({ scale })
+
+    canvas.height = viewport.height
+    canvas.width = viewport.width
+
+    const renderContext = {
+      canvasContext: context,
+      viewport: viewport,
+    }
+    await page.render(renderContext).promise
+  } catch (err) {
+    console.warn(`Failed to render page ${index + 1}:`, err)
   }
-  await page.render(renderContext).promise
 }
 
-async function renderAllPages() {
-  for (let i = 0; i < numPages.value; i++) {
-    renderPage(i)
-  }
-}
+// Remove automatic onMounted load to prevent double-triggering
+// The parent or a manual button should trigger the first load
+// onMounted(loadPreview) 
 
-onMounted(loadPreview)
 onUnmounted(() => {
   if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value)
+  if (pdfDoc.value) pdfDoc.value.destroy()
 })
 
 watch(() => props.canvasId, loadPreview)
-watch(() => props.activePageIndex, (newIdx) => {
-  // Ensure the active page is rendered if it wasn't already
-  renderPage(newIdx)
-})
 
 defineExpose({ reload: loadPreview })
 </script>
