@@ -79,7 +79,7 @@ public class VrainExportService {
                 }
 
                 // Page break after each sheet
-                sb.append("^\n");
+                sb.append("%\n");
 
             } catch (IOException e) {
                 log.warn("Failed to parse layoutData for sheet {}: {}", sheet.getId(), e.getMessage());
