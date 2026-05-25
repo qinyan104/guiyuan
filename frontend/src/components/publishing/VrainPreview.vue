@@ -2,9 +2,10 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from "vue"
 import { generatePreview } from "../../api/publishing"
 import * as pdfjsLib from "pdfjs-dist"
+import PDFWorker from "pdfjs-dist/build/pdf.worker.mjs?url"
 
-// Initialize PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+// Initialize PDF.js worker using local bundled file
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWorker
 
 const props = defineProps<{
   draftId: number
