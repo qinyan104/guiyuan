@@ -4,10 +4,15 @@ import com.genealogy.server.dto.*;
 import com.genealogy.server.service.PublishingService;
 import com.genealogy.server.service.VrainExportService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/publishing")
@@ -102,7 +107,27 @@ public class PublishingController {
     }
 
 
-    // -- Export --
+
+    // -- Preview (vRain + PDF.js ready stream) --
+
+    @PostMapping("/drafts/{draftId}/preview")
+    public ResponseEntity<?> generatePreview(
+            @PathVariable Long draftId,
+            @RequestParam(defaultValue = "mr_5") String canvasId) {
+        try {
+            java.nio.file.Path pdfPath = vrainExportService.exportPdf(draftId, canvasId);
+            byte[] content = Files.readAllBytes(pdfPath);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"preview.pdf\"")
+                    .body(content);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("预览生成失败: " + e.getMessage()));
+        }
+    }
+        // -- Export --
 
     @PostMapping("/drafts/{draftId}/export")
     public ResponseEntity<ApiResponse<String>> exportPdf(@PathVariable Long draftId) {
