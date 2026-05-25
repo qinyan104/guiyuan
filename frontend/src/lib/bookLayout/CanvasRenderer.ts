@@ -180,38 +180,40 @@ export class CanvasRenderer {
     ctx: CanvasRenderingContext2D,
     layer: import("./types").BackgroundLayer,
   ): void {
-    ctx.save()
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    const W = ctx.canvas.width
-    const H = ctx.canvas.height
+    const pw = layer.pageWidth
+    const ph = layer.pageHeight
 
-    // 底色
-    ctx.fillStyle = layer.color
-    ctx.fillRect(0, 0, W, H)
+    if (pw && ph) {
+      // 纸页底色 + 纹理 — 页坐标系，跟随 zoom/pan 同步缩放
+      ctx.fillStyle = layer.color
+      ctx.fillRect(0, 0, pw, ph)
 
-    // 纸张纹理叠加
-    if (layer.textureUrl) {
-      const img = this.imageCache.get(layer.textureUrl)
-      if (img && img.complete) {
-        const opacity = layer.textureOpacity ?? 0.25
-        ctx.globalAlpha = opacity
-
-        // 用 Canvas pattern 铺满纹理
-        try {
-          const pattern = ctx.createPattern(img, "repeat")
-          if (pattern) {
-            ctx.fillStyle = pattern
-            ctx.fillRect(0, 0, W, H)
+      if (layer.textureUrl) {
+        const img = this.imageCache.get(layer.textureUrl)
+        if (img && img.complete) {
+          ctx.save()
+          ctx.globalAlpha = layer.textureOpacity ?? 0.25
+          try {
+            const pattern = ctx.createPattern(img, "repeat")
+            if (pattern) {
+              ctx.fillStyle = pattern
+              ctx.fillRect(0, 0, pw, ph)
+            }
+          } catch {
+            ctx.drawImage(img, 0, 0, pw, ph)
           }
-        } catch {
-          // pattern 创建失败时直接画一张拉伸的图
-          ctx.drawImage(img, 0, 0, W, H)
+          ctx.globalAlpha = 1
+          ctx.restore()
         }
-        ctx.globalAlpha = 1
       }
+    } else {
+      // 回退：无页面尺寸时填满整个 canvas
+      ctx.save()
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.fillStyle = layer.color
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+      ctx.restore()
     }
-
-    ctx.restore()
   }
 
   private renderFrame(

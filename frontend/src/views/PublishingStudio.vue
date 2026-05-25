@@ -13,7 +13,7 @@ import { getPublication } from "../api/publication"
 import { deleteSheet, exportPdfV2, listSheets, saveSheets, updateDraft } from "../api/publishing"
 import { useFeedback } from "../composables/useFeedback"
 import { usePublishingStudio } from "../composables/usePublishingStudio"
-import { computeLineageText, type LayoutOptions } from "../lib/lineageText"
+import { computeLineageText, paginate, type LayoutOptions } from "../lib/lineageText"
 import { CANVAS_TEMPLATES } from "../lib/vrainTemplates"
 import type { PublicationData } from "../types/family"
 import type { LineagePage } from "../types/publishing"
@@ -46,6 +46,8 @@ const relayouting = ref(false)
 const canvasNotice = ref("")
 const canvasRef = ref<InstanceType<typeof PageCanvas> | null>(null)
 const pubLoadError = ref("")
+/** Canvas 点击条目 → EntryEditor 高亮对应的 personId */
+const highlightedPersonId = ref<string | null>(null)
 
 let canvasNoticeTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -268,9 +270,46 @@ async function runLayout(skipNotice = true) {
   }
 }
 
+/** 防抖重排版（不保存后端），微调参数变化后 400ms 自动重分页 */
+let tweakDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
 function handleTweakUpdate(key: string, value: number | string) {
   layoutTweaks.value = { ...layoutTweaks.value, [key]: value }
   showCanvasNotice(getTweakLabel(key) + '已更新')
+
+  // 持久化微调参数到草稿
+  void updateDraft(draftId.value, {
+    publicationId: draft.value!.publicationId,
+    title: draft.value!.title,
+    styleConfig: JSON.stringify({
+      ...draftStyleConfig.value,
+      paper: paper.value,
+      canvasId: canvasId.value,
+      fontSize: layoutTweaks.value.fontSize,
+    }),
+  })
+
+  // 防抖：400ms 无操作后重新分页（保留用户编辑内容）
+  if (tweakDebounceTimer) clearTimeout(tweakDebounceTimer)
+  tweakDebounceTimer = setTimeout(() => {
+    if (!pubData.value) return
+    const allEntries = layoutPages.value.flatMap(p => p.entries)
+    const rootIds = layoutPages.value[0]?.rootPersonIds ?? []
+    const opts: LayoutOptions = {
+      fontSize: layoutTweaks.value.fontSize,
+      lineHeight: layoutTweaks.value.lineHeight,
+      columns: layoutTweaks.value.columns,
+      marginPreset: layoutTweaks.value.marginPreset,
+      paper: paper.value,
+    }
+    const repaginated = paginate(allEntries, rootIds, opts)
+    layoutPages.value = repaginated
+    sheetTypes.value = repaginated.map(() => "genealogy")
+    if (activeSheetIndex.value >= repaginated.length) {
+      activeSheetIndex.value = Math.max(0, repaginated.length - 1)
+    }
+    showCanvasNotice('版面已更新')
+  }, 400)
 }
 
 function getTweakLabel(key: string): string {
@@ -355,6 +394,7 @@ function handleNavigateToPage(index: number) {
 function handleUpdateEntry(index: number, text: string) {
   if (!currentPageData.value) return
   currentPageData.value.entries[index].formattedText = text
+  canvasRef.value?.reloadPreview()
 }
 
 function handleMoveEntry(from: number, to: number) {
@@ -362,17 +402,44 @@ function handleMoveEntry(from: number, to: number) {
   const entries = currentPageData.value.entries
   const [moved] = entries.splice(from, 1)
   entries.splice(to, 0, moved)
+  canvasRef.value?.reloadPreview()
 }
 
 function handleDeleteEntry(index: number) {
   if (!currentPageData.value) return
   currentPageData.value.entries.splice(index, 1)
+  canvasRef.value?.reloadPreview()
 }
 
 function handleMoveToPage(entryIndex: number, targetPageIndex: number) {
   if (!currentPageData.value || targetPageIndex >= layoutPages.value.length) return
   const entry = currentPageData.value.entries.splice(entryIndex, 1)[0]
   layoutPages.value[targetPageIndex].entries.push(entry)
+  canvasRef.value?.reloadPreview()
+}
+
+function handleCanvasFocusEntry(personId: string) {
+  highlightedPersonId.value = personId
+  // 如果当前页面没有该条目，自动跳转到对应页面
+  if (currentPageData.value && !currentPageData.value.entries.some(e => e.personId === personId)) {
+    const targetPageIndex = layoutPages.value.findIndex(p => p.entries.some(e => e.personId === personId))
+    if (targetPageIndex !== -1) {
+      activeSheetIndex.value = targetPageIndex
+    }
+  }
+}
+
+/** Canvas 内联编辑 → 回写到 layoutPages */
+function handleCanvasEditEntry(personId: string, newText: string) {
+  for (const page of layoutPages.value) {
+    const idx = page.entries.findIndex(e => e.personId === personId)
+    if (idx !== -1) {
+      page.entries[idx].formattedText = newText
+      canvasRef.value?.reloadPreview()
+      showCanvasNotice('已保存编辑')
+      return
+    }
+  }
 }
 
 async function handleSaveAndRelayout() {
@@ -390,6 +457,8 @@ async function handleSaveAndRelayout() {
 const totalPages = computed(() => layoutPages.value.length || 1)
 const currentPage = computed(() => activeSheetIndex.value + 1)
 const currentPageData = computed(() => layoutPages.value[activeSheetIndex.value] || null)
+/** 展平所有页面的条目，传给 PageCanvas 用于排版渲染 */
+const allEntries = computed(() => layoutPages.value.flatMap(p => p.entries))
 const currentEntryCount = computed(() => currentPageData.value?.entries?.length ?? 0)
 const currentTemplateName = computed(() => {
   const match = CANVAS_TEMPLATES.find((item) => item.id === canvasId.value)
@@ -482,6 +551,7 @@ const statusText = computed(() => {
             ref="canvasRef"
             :sheetNumber="currentPage"
             :pageData="currentPageData"
+            :entries="allEntries"
             :publicationData="pubData"
             :draftId="draftId"
             :canvasId="canvasId"
@@ -493,6 +563,8 @@ const statusText = computed(() => {
             :columns="layoutTweaks.columns"
             :relayouting="relayouting"
             @navigateToPage="handleNavigateToPage"
+            @editEntry="handleCanvasEditEntry"
+            @focusEntry="handleCanvasFocusEntry"
           />
 
           <Transition name="notice-fade">
@@ -509,6 +581,7 @@ const statusText = computed(() => {
           :totalPages="totalPages"
           :templateName="currentTemplateName"
           :relayouting="relayouting"
+          :highlightedPersonId="highlightedPersonId"
           @close="editorOpen = false"
           @updateEntry="handleUpdateEntry"
           @moveEntry="handleMoveEntry"
@@ -557,7 +630,7 @@ const statusText = computed(() => {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: var(--color-neutral-1);
+  background: #e8e0d4;
 }
 
 .studio-side {
@@ -574,6 +647,10 @@ const statusText = computed(() => {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e0d4;
 }
 
 .tweaks-dock {

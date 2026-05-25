@@ -152,6 +152,8 @@ function createBackground(config: CanvasConfig): BackgroundLayer {
       ? `/vrain/canvas/${config.backgroundImage}`
       : undefined,
     textureOpacity: config.backgroundImage ? 0.3 : 0,
+    pageWidth: config.width,
+    pageHeight: config.height,
   }
 }
 

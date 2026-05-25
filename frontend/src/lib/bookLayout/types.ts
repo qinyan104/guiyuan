@@ -126,6 +126,10 @@ export interface BackgroundLayer {
   textureUrl?: string
   /** 背景图不透明度 0-1 */
   textureOpacity?: number
+  /** 页面宽度（页坐标系，和文字/边框共用同一坐标空间） */
+  pageWidth?: number
+  /** 页面高度 */
+  pageHeight?: number
 }
 
 export interface FrameLayer {

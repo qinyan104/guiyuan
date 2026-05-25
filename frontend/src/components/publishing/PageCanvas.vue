@@ -10,7 +10,7 @@
  *  - 翻页导航
  */
 import { computed, onMounted, onUnmounted, ref, watch, nextTick } from "vue"
-import type { LineagePage } from "../../types/publishing"
+import type { LineageEntry, LineagePage } from "../../types/publishing"
 import type { PublicationData } from "../../types/family"
 import type { ComposedPage, HitRegion } from "../../lib/bookLayout/types"
 import { getBookLayoutEngine } from "../../lib/bookLayout/BookLayoutEngine"
@@ -23,6 +23,8 @@ import { CANVAS_TEMPLATES } from "../../lib/vrainTemplates"
 const props = defineProps<{
   sheetNumber: number
   pageData?: LineagePage | null
+  /** 外部传入的全部条目（已编辑的优先），替代内部 computeLineageText */
+  entries?: LineageEntry[]
   publicationData?: PublicationData | null
   draftId: number
   canvasId: string
@@ -39,6 +41,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   navigateToPage: [index: number]
   editEntry: [personId: string, newText: string]
+  focusEntry: [personId: string]
 }>()
 
 const engine = getBookLayoutEngine()
@@ -57,7 +60,31 @@ const layoutReady = ref(false)
 const editingRegion = ref<HitRegion | null>(null)
 const editText = ref("")
 const showInlineEditor = ref(false)
-const editorPos = ref({ x: 0, y: 0 })
+/** 当前渲染参数，编辑器定位 & 缩放计算需要（renderCanvas 中更新） */
+const currentTotalScale = ref(1)
+const currentFitScale = ref(1)
+const currentDpr = ref(window.devicePixelRatio || 1)
+const currentCenterX = ref(0)
+const currentCenterY = ref(0)
+const currentContainerW = ref(800)
+const currentContainerH = ref(600)
+const currentPageWidth = ref(800)
+const currentPageHeight = ref(600)
+
+/** 内联编辑器屏幕坐标 — 跟随 zoom/pan 实时更新 */
+const editorPos = computed(() => {
+  const region = editingRegion.value
+  const canvas = canvasRef.value
+  if (!region || !canvas) return { x: 0, y: 0 }
+  const rect = canvas.getBoundingClientRect()
+  const dpr = window.devicePixelRatio || 1
+  const ts = currentTotalScale.value
+  // 匹配 renderCanvas：页坐标 * totalScale + pan/dpr + center → CSS 像素
+  return {
+    x: rect.left + (region.rect.x + region.rect.width) * ts + panX.value / dpr + currentCenterX.value + 10,
+    y: rect.top + region.rect.y * ts + panY.value / dpr + currentCenterY.value,
+  }
+})
 
 // ── 缩放 & 拖拽 ──
 const zoom = ref(1)
@@ -87,19 +114,26 @@ const displayPage = computed(() => Math.min(Math.max(props.sheetNumber - 1, 0), 
 // ── 排版 ──
 
 function runLayout() {
-  if (!props.publicationData) return
+  // 优先使用父组件传入的条目（含用户编辑），否则从 publicationData 生成
+  let allEntries: LineageEntry[]
 
-  // 生成 LineageEntry[]（复用现有的 lineageText）
-  const lineageOpts: LineageLayoutOptions = {
-    fontSize: props.fontSize ?? 18,
-    lineHeight: props.lineHeight ?? 1.9,
-    columns: props.columns ?? 1,
-    marginPreset: "standard",
+  if (props.entries && props.entries.length > 0) {
+    allEntries = props.entries
+  } else if (props.publicationData) {
+    const lineageOpts: LineageLayoutOptions = {
+      fontSize: props.fontSize ?? 18,
+      lineHeight: props.lineHeight ?? 1.9,
+      columns: props.columns ?? 1,
+      marginPreset: "standard",
+    }
+    const computed = computeLineageText(props.publicationData, lineageOpts)
+    allEntries = computed.flatMap(p => p.entries)
+  } else {
+    composedPages.value = []
+    layoutReady.value = false
+    return
   }
-  const entries = computeLineageText(props.publicationData, lineageOpts)
 
-  // 展平所有页面的条目
-  const allEntries = entries.flatMap(p => p.entries)
   if (allEntries.length === 0) {
     composedPages.value = []
     layoutReady.value = false
@@ -126,26 +160,41 @@ function renderCanvas() {
   const page = composedPages.value[displayPage.value]
   if (!page) return
 
-  const viewport = canvas.closest('.page-canvas__viewport') as HTMLElement | null
-
-  // 沉浸模式用整个窗口，普通模式用 viewport
+  // 容器尺寸
   let containerW: number, containerH: number
   if (immersive.value) {
     containerW = window.innerWidth - 32
     containerH = window.innerHeight - 80
   } else {
-    containerW = (viewport?.clientWidth ?? canvas.parentElement?.clientWidth ?? 800) - 24
-    containerH = (viewport?.clientHeight ?? canvas.parentElement?.clientHeight ?? 600) - 24
+    const parent = canvas.parentElement
+    containerW = parent?.clientWidth ?? 800
+    containerH = parent?.clientHeight ?? 600
   }
 
   const dpr = window.devicePixelRatio || 1
   const fitScale = renderer.getFitScale(page, containerW, containerH, props.fontSize ?? 18)
   const totalScale = fitScale * zoom.value
+  currentTotalScale.value = totalScale
+  currentFitScale.value = fitScale
+  currentDpr.value = dpr
+  currentContainerW.value = containerW
+  currentContainerH.value = containerH
+  currentPageWidth.value = page.width
+  currentPageHeight.value = page.height
 
-  canvas.width = page.width * totalScale * dpr
-  canvas.height = page.height * totalScale * dpr
-  canvas.style.width = `${page.width * totalScale}px`
-  canvas.style.height = `${page.height * totalScale}px`
+  // canvas 填满容器，避免周围露出白色背景
+  canvas.style.width = containerW + "px"
+  canvas.style.height = containerH + "px"
+  canvas.width = containerW * dpr
+  canvas.height = containerH * dpr
+
+  // 页面在 canvas 中的居中偏移
+  const pageCssW = page.width * totalScale
+  const pageCssH = page.height * totalScale
+  const centerX = (containerW - pageCssW) / 2
+  const centerY = (containerH - pageCssH) / 2
+  currentCenterX.value = centerX
+  currentCenterY.value = centerY
 
   const ctx = canvas.getContext("2d")
   if (!ctx) return
@@ -153,8 +202,8 @@ function renderCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
-  // 应用平移
-  ctx.translate(panX.value, panY.value)
+  // 居中 + 用户平移
+  ctx.translate(panX.value + centerX * dpr, panY.value + centerY * dpr)
 
   renderer.render(ctx, page, totalScale)
 
@@ -172,18 +221,24 @@ function handleCanvasClick(e: MouseEvent) {
   if (!canvas) return
 
   const rect = canvas.getBoundingClientRect()
-  // canvas 物理像素 → CSS 像素比率 → 页面坐标（考虑缩放和平移）
-  const px2css = canvas.width / rect.width
   const hitPage = composedPages.value[displayPage.value]
   if (!hitPage) return
-  const fitScale = renderer.getFitScale(hitPage, canvas.parentElement?.clientWidth ?? 800, canvas.parentElement?.clientHeight ?? 600, props.fontSize ?? 18)
-  const totalScale = fitScale * zoom.value
-  const mouseX = ((e.clientX - rect.left) * px2css - panX.value * (window.devicePixelRatio || 1)) / totalScale
-  const mouseY = ((e.clientY - rect.top) * px2css - panY.value * (window.devicePixelRatio || 1)) / totalScale
+  const dpr = currentDpr.value
+  const ts = currentTotalScale.value
+  const cx = currentCenterX.value
+  const cy = currentCenterY.value
+  // 屏幕坐标 → 页面坐标：screen = page*ts + pan/dpr + center
+  const mouseX = (e.clientX - rect.left - panX.value / dpr - cx) / ts
+  const mouseY = (e.clientY - rect.top - panY.value / dpr - cy) / ts
 
   const hit = renderer.hitTest(mouseX, mouseY, hitPage, 1)
-  if (hit && hit.action === "edit") {
-    startInlineEdit(hit)
+  if (hit) {
+    emit("focusEntry", hit.entry.personId)
+    if (hit.action === "edit") {
+      startInlineEdit(hit)
+    } else {
+      cancelInlineEdit()
+    }
   } else {
     cancelInlineEdit()
   }
@@ -193,17 +248,7 @@ function startInlineEdit(region: HitRegion) {
   editingRegion.value = region
   editText.value = region.entry.formattedText
   showInlineEditor.value = true
-
-  // 计算编辑器位置（Canvas 坐标 → 屏幕坐标）
-  const canvas = canvasRef.value
-  if (canvas) {
-    const rect = canvas.getBoundingClientRect()
-    editorPos.value = {
-      x: rect.left + region.rect.x + region.rect.width + 10,
-      y: rect.top + region.rect.y,
-    }
-  }
-
+  // editorPos 是 computed，跟随 zoom/pan 自动更新，无需手动计算
   renderCanvas()
 }
 
@@ -224,9 +269,40 @@ function confirmInlineEdit() {
 
 function handleWheel(e: WheelEvent) {
   e.preventDefault()
+  const canvas = canvasRef.value
+  if (!canvas || composedPages.value.length === 0) return
+
+  const oldZoom = zoom.value
   const delta = e.deltaY > 0 ? -0.08 : 0.08
-  zoom.value = Math.max(0.3, Math.min(3, zoom.value + delta))
-  nextTick(() => renderCanvas())
+  const newZoom = Math.max(0.3, Math.min(3, oldZoom + delta))
+  if (oldZoom === newZoom) return
+
+  // 缩放以光标为中心：调整平移使鼠标下的页面点保持不动
+  const rect = canvas.getBoundingClientRect()
+  const mouseX = e.clientX - rect.left
+  const mouseY = e.clientY - rect.top
+  const fs = currentFitScale.value
+  const dpr = currentDpr.value
+  const pw = currentPageWidth.value
+  const ph = currentPageHeight.value
+  const cw = currentContainerW.value
+  const ch = currentContainerH.value
+  const oldCx = currentCenterX.value
+  const oldCy = currentCenterY.value
+
+  // 页面上光标所指的点（旧坐标系）
+  const ppX = (mouseX - panX.value / dpr - oldCx) / (fs * oldZoom)
+  const ppY = (mouseY - panY.value / dpr - oldCy) / (fs * oldZoom)
+
+  // 新缩放后的居中偏移
+  const newCx = (cw - pw * fs * newZoom) / 2
+  const newCy = (ch - ph * fs * newZoom) / 2
+
+  // 调整 pan 使同一页面点保持在光标下
+  panX.value = (mouseX - ppX * fs * newZoom - newCx) * dpr
+  panY.value = (mouseY - ppY * fs * newZoom - newCy) * dpr
+  zoom.value = newZoom
+  renderCanvas()
 }
 
 function handleMouseDown(e: MouseEvent) {
@@ -263,8 +339,12 @@ onUnmounted(() => {
 })
 
 watch(
-  () => [props.publicationData, props.canvasId, props.fontSize, props.lineHeight, props.columns],
+  () => [props.publicationData, props.entries, props.canvasId, props.fontSize, props.lineHeight, props.columns] as const,
   () => {
+    // 重置缩放/平移
+    zoom.value = 1
+    panX.value = 0
+    panY.value = 0
     runLayout()
     nextTick(() => renderCanvas())
   },
@@ -283,160 +363,81 @@ defineExpose({
 </script>
 
 <template>
-  <div :class="['page-canvas', { immersive }]">
-    <div class="page-canvas__stage">
-      <div class="page-canvas__toolbar">
-        <div>
-          <span class="page-canvas__eyebrow">当前画布</span>
-          <h3 class="page-canvas__title">版面预览</h3>
-        </div>
-        <div class="page-canvas__meta">
-          <span>{{ templateName || '默认模板' }}</span>
-          <span>{{ paper || 'A4' }}</span>
-          <span>第 {{ sheetNumber }} 页</span>
-          <button class="immersive-btn" @click="toggleImmersive" :title="immersive ? '退出沉浸' : '沉浸预览'">
-            {{ immersive ? '✕ 退出' : '⛶ 沉浸' }}
-          </button>
-          <span v-if="statusText">{{ statusText }}</span>
-          <span v-if="!layoutReady" class="meta-warn">排版中…</span>
-          <template v-if="layoutReady">
-            <span class="meta-zoom" @click="zoom = 1; panX = 0; panY = 0; renderCanvas()" title="点击重置">
-              {{ Math.round(zoom * 100) }}%
-            </span>
-          </template>
-        </div>
-      </div>
+  <canvas
+    ref="canvasRef"
+    :class="['page-canvas', { immersive }]"
+    @click="handleCanvasClick"
+    @wheel="handleWheel"
+    @mousedown="handleMouseDown"
+    @mousemove="handleMouseMove"
+    @mouseup="handleMouseUp"
+    @mouseleave="handleMouseUp"
+  />
 
-      <div class="page-canvas__viewport">
-        <div v-if="relayouting" class="page-canvas__overlay">正在刷新预览...</div>
+  <div v-if="relayouting" class="page-canvas__overlay">正在刷新预览...</div>
 
-        <!-- Canvas 渲染层 -->
-        <div
-          class="canvas-container"
-          @click="handleCanvasClick"
-          @wheel="handleWheel"
-          @mousedown="handleMouseDown"
-          @mousemove="handleMouseMove"
-          @mouseup="handleMouseUp"
-          @mouseleave="handleMouseUp"
-        >
-          <canvas ref="canvasRef" class="page-canvas__canvas"></canvas>
-        </div>
-
-        <!-- 翻页按钮 -->
-        <div v-if="composedPages.length > 0" class="page-nav">
-          <button
-            class="nav-btn"
-            :disabled="displayPage <= 0"
-            @click="$emit('navigateToPage', displayPage - 1)"
-          >上一页</button>
-          <span class="nav-info">{{ displayPage + 1 }} / {{ composedPages.length }}</span>
-          <button
-            class="nav-btn"
-            :disabled="displayPage >= composedPages.length - 1"
-            @click="$emit('navigateToPage', displayPage + 1)"
-          >下一页</button>
-        </div>
-
-        <!-- 内联编辑器 -->
-        <Teleport to="body">
-          <div
-            v-if="showInlineEditor"
-            class="inline-editor"
-            :style="{ left: editorPos.x + 'px', top: editorPos.y + 'px' }"
-          >
-            <textarea
-              v-model="editText"
-              class="inline-editor__input"
-              rows="4"
-              @keydown.escape="cancelInlineEdit"
-              @keydown.ctrl.enter="confirmInlineEdit"
-            ></textarea>
-            <div class="inline-editor__actions">
-              <span class="inline-editor__hint">Ctrl+Enter 确认 · Esc 取消</span>
-              <button class="btn-confirm" @click="confirmInlineEdit">确认</button>
-            </div>
-          </div>
-        </Teleport>
-      </div>
-    </div>
+  <!-- 浮动控件：缩放 + 沉浸 -->
+  <div v-if="layoutReady" class="page-canvas__float">
+    <span class="meta-zoom" @click="zoom = 1; panX = 0; panY = 0; renderCanvas()" title="重置缩放">
+      {{ Math.round(zoom * 100) }}%
+    </span>
+    <button class="immersive-btn" @click="toggleImmersive" :title="immersive ? '退出沉浸' : '沉浸预览'">
+      {{ immersive ? '✕' : '⛶' }}
+    </button>
   </div>
 
+  <Teleport to="body">
+    <div
+      v-if="showInlineEditor"
+      class="inline-editor"
+      :style="{ left: editorPos.x + 'px', top: editorPos.y + 'px' }"
+    >
+      <textarea
+        v-model="editText"
+        class="inline-editor__input"
+        rows="4"
+        @keydown.escape="cancelInlineEdit"
+        @keydown.ctrl.enter="confirmInlineEdit"
+      ></textarea>
+      <div class="inline-editor__actions">
+        <span class="inline-editor__hint">Ctrl+Enter 确认 · Esc 取消</span>
+        <button class="btn-confirm" @click="confirmInlineEdit">确认</button>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
 .page-canvas {
-  display: flex;
-  min-width: 0;
-  height: 100%;
-  padding: 6px;
-  background:
-    radial-gradient(circle at 50% 0%, var(--color-neutral-2), transparent 55%),
-    var(--color-canvas-bg);
+  display: block;
+  cursor: crosshair;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.10);
+  border-radius: 2px;
 }
 
-.page-canvas__stage {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 0;
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-xl);
-  background: var(--color-neutral-1);
-  box-shadow: var(--shadow-whisper);
-  overflow: hidden;
-}
-
-.page-canvas__toolbar {
+/* 浮动控件 */
+.page-canvas__float {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 3;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--color-card-stroke);
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
   background: var(--color-panel-bg);
-  flex-shrink: 0;
-}
-
-.page-canvas__eyebrow {
-  display: block;
-  margin-bottom: 1px;
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-accent);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.page-canvas__title {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-neutral-10);
-}
-
-.page-canvas__meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px 12px;
-  font-size: 12px;
-  color: var(--color-neutral-6);
-}
-
-.meta-warn {
-  color: var(--color-accent);
-  font-weight: 500;
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-card-stroke);
 }
 
 .meta-zoom {
   cursor: pointer;
   user-select: none;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  background: var(--color-neutral-2);
+  font-size: 11px;
+  color: var(--color-neutral-7);
   font-variant-numeric: tabular-nums;
   transition: background 0.15s;
 }
@@ -445,16 +446,23 @@ defineExpose({
   color: #fff;
 }
 
-.page-canvas__viewport {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
+.immersive-btn {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: var(--color-neutral-6);
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 12px;
+  transition: all 0.15s;
+}
+.immersive-btn:hover {
+  background: var(--color-accent);
+  color: #fff;
 }
 
 .page-canvas__overlay {
@@ -470,61 +478,6 @@ defineExpose({
   color: var(--color-neutral-6);
   font-size: 12px;
   font-weight: 500;
-}
-
-.canvas-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
-  cursor: crosshair;
-  overflow: hidden;
-}
-
-.page-canvas__canvas {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  border-radius: 2px;
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.page-nav {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-  flex-shrink: 0;
-}
-
-.nav-btn {
-  padding: 6px 20px;
-  border: 1px solid var(--color-card-stroke);
-  border-radius: 6px;
-  background: var(--color-neutral-1);
-  color: var(--color-neutral-7);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.nav-btn:hover:not(:disabled) {
-  background: var(--color-neutral-2);
-  color: var(--color-neutral-9);
-}
-
-.nav-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.nav-info {
-  font-size: 12px;
-  color: var(--color-neutral-5);
-  font-variant-numeric: tabular-nums;
-  min-width: 60px;
-  text-align: center;
 }
 
 /* ── 内联编辑器 ── */
@@ -596,19 +549,8 @@ defineExpose({
   background: rgba(0, 0, 0, 0.92);
 }
 
-.page-canvas.immersive .page-canvas__stage {
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-}
-
-.page-canvas.immersive .page-canvas__toolbar {
+.page-canvas.immersive .page-canvas__float {
   display: none;
-}
-
-.page-canvas.immersive .page-canvas__viewport {
-  padding: 0;
 }
 
 .page-canvas.immersive .page-canvas__overlay {

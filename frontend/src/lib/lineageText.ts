@@ -167,7 +167,7 @@ function calcEntriesPerPage(opts: LayoutOptions): number {
 
 // ── Pagination ──
 
-function paginate(entries: LineageEntry[], rootIds: string[], opts: LayoutOptions): LineagePage[] {
+export function paginate(entries: LineageEntry[], rootIds: string[], opts: LayoutOptions): LineagePage[] {
   const perPage = calcEntriesPerPage(opts)
   const pages: LineagePage[] = []
   for (let i = 0; i < entries.length; i += perPage) {

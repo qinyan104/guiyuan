@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from "vue"
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from "vue"
 import type { LineagePage } from "../../types/publishing"
 
 const props = defineProps<{
@@ -10,6 +10,8 @@ const props = defineProps<{
   templateName?: string
   statusText?: string
   relayouting?: boolean
+  /** Canvas 点击条目 → 高亮对应卡片 */
+  highlightedPersonId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -24,6 +26,29 @@ const emit = defineEmits<{
 // --- editing ---
 const editingIndex = ref<number | null>(null)
 const editText = ref("")
+
+// --- highlight sync from Canvas ---
+const highlightedEntryIndex = ref<number | null>(null)
+const editorListRef = ref<HTMLElement | null>(null)
+
+watch(() => props.highlightedPersonId, (personId) => {
+  if (!personId || !props.pageData?.entries) {
+    highlightedEntryIndex.value = null
+    return
+  }
+  const idx = props.pageData.entries.findIndex(e => e.personId === personId)
+  highlightedEntryIndex.value = idx !== -1 ? idx : null
+  if (idx !== -1 && editorListRef.value) {
+    // 展开对应世代分组
+    const gen = props.pageData.entries[idx].generation
+    collapsedGroups.value.delete(gen)
+    // 滚动到可见区域
+    nextTick(() => {
+      const card = editorListRef.value?.querySelector(`[data-entry-index="${idx}"]`) as HTMLElement | null
+      card?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    })
+  }
+})
 
 const entryCount = computed(() => props.pageData?.entries?.length ?? 0)
 
@@ -243,7 +268,7 @@ onUnmounted(() => window.removeEventListener("keydown", handleKeydown))
         </div>
 
         <!-- entry list with generation groups -->
-        <div class="editor-list">
+        <div ref="editorListRef" class="editor-list">
           <template v-for="group in generationGroups" :key="group.generation">
             <button class="gen-header" @click="toggleGroup(group.generation)">
               <span class="gen-arrow">{{ collapsedGroups.has(group.generation) ? '▸' : '▾' }}</span>
@@ -255,11 +280,13 @@ onUnmounted(() => window.removeEventListener("keydown", handleKeydown))
               <div
                 v-for="(entry, gi) in group.entries"
                 :key="entry.personId"
+                :data-entry-index="gi"
                 :class="[
                   'entry-card',
                   { 'entry-card--dragging': dragEntryIndex === gi,
                     'entry-card--drag-over': dragOverEntryIndex === gi && dragOverEntryIndex !== dragEntryIndex,
-                    'entry-card--selected': selectedEntries.has(gi)
+                    'entry-card--selected': selectedEntries.has(gi),
+                    'entry-card--highlighted': highlightedEntryIndex === gi
                   }
                 ]"
                 draggable="true"
@@ -534,6 +561,18 @@ onUnmounted(() => window.removeEventListener("keydown", handleKeydown))
 .entry-card--selected {
   border-color: var(--color-accent);
   background: var(--color-accent-muted);
+}
+
+.entry-card--highlighted {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent), 0 8px 24px rgba(196, 58, 49, 0.12);
+  animation: highlight-pulse 0.6s ease;
+}
+
+@keyframes highlight-pulse {
+  0% { box-shadow: 0 0 0 0px var(--color-accent), 0 8px 24px rgba(196, 58, 49, 0.06); }
+  50% { box-shadow: 0 0 0 4px var(--color-accent), 0 8px 24px rgba(196, 58, 49, 0.18); }
+  100% { box-shadow: 0 0 0 2px var(--color-accent), 0 8px 24px rgba(196, 58, 49, 0.12); }
 }
 
 .entry-card--dragging { opacity: 0.5; }
