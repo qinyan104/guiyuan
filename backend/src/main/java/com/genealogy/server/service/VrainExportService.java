@@ -215,7 +215,7 @@ public class VrainExportService {
             cover_author_font_size=32
             cover_author_y=200
             cover_font_color=black
-            """.formatted(title);
+            """.formatted(title, canvasId);
     }
 
 
