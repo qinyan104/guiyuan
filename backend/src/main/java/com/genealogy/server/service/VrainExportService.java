@@ -16,6 +16,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 
 @Service
 public class VrainExportService {
@@ -36,6 +42,22 @@ public class VrainExportService {
         this.sheetRepo = sheetRepo;
         this.publishingService = publishingService;
         this.objectMapper = objectMapper;
+    }
+
+    public List<String> generatePreviewImages(Long draftId, String canvasId) throws IOException, InterruptedException {
+        Path pdfPath = exportPdf(draftId, canvasId);
+        if (!Files.exists(pdfPath)) throw new RuntimeException("预览生成失败");
+        List<String> images = new ArrayList<>();
+        try (PDDocument document = Loader.loadPDF(pdfPath.toFile())) {
+            PDFRenderer renderer = new PDFRenderer(document);
+            for (int i = 0; i < document.getNumberOfPages(); i++) {
+                BufferedImage image = renderer.renderImageWithDPI(i, 150);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(image, "png", baos);
+                images.add("data:image/png;base64," + Base64.getEncoder().encodeToString(baos.toByteArray()));
+            }
+        }
+        return images;
     }
 
     /**
@@ -110,7 +132,7 @@ public class VrainExportService {
             Files.writeString(textDir.resolve("01.txt"), text, StandardCharsets.UTF_8);
 
             // Generate book.cfg
-            String cfg = generateBookCfg(draft);
+            String cfg = generateBookCfg(draft, "mr_5"); // Default for export without canvasId specified
             Files.writeString(bookDir.resolve("book.cfg"), cfg, StandardCharsets.UTF_8);
 
             // Run vRain
@@ -127,14 +149,39 @@ public class VrainExportService {
         }
     }
 
-    private String generateBookCfg(BookDraft draft) {
+    public Path exportPdf(Long draftId, String canvasId) {
+        BookDraft draft = draftRepo.findById(draftId)
+                .orElseThrow(() -> new BadRequestException("草稿不存在"));
+
+        String bookId = "gy_" + draftId;
+        Path bookDir = VRAIN_DIR.resolve("books_mr").resolve(bookId);
+        Path textDir = bookDir.resolve("text");
+
+        try {
+            Files.createDirectories(textDir);
+            String text = generateTextFromLineageData(draftId);
+            Files.writeString(textDir.resolve("01.txt"), text, StandardCharsets.UTF_8);
+            String cfg = generateBookCfg(draft, canvasId);
+            Files.writeString(bookDir.resolve("book.cfg"), cfg, StandardCharsets.UTF_8);
+            Path pdfPath = runVrain(bookId);
+            return pdfPath;
+        } catch (IOException e) {
+            log.error("vRain export failed for draft {}", draftId, e);
+            throw new RuntimeException("古籍排版导出失败: " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("排版进程被中断", e);
+        }
+    }
+
+    private String generateBookCfg(BookDraft draft, String canvasId) {
         String title = draft.getTitle();
         if (title == null || title.isBlank()) title = "族谱";
         return """
             title=%s
             author=归源族谱管理系统
 
-            canvas_id=mr_5
+            canvas_id=%s
             row_num=35
             row_delta_y=8
 
@@ -198,17 +245,7 @@ public class VrainExportService {
      * Find perl executable. Tries common locations for Strawberry Perl on Windows.
      */
     private static String findPerl() {
-        // 1. Try PATH via cmd.exe
-        try {
-            Process p = new ProcessBuilder("cmd.exe", "/c", "where", "perl").start();
-            String out = new String(p.getInputStream().readAllBytes()).trim();
-            if (!out.isEmpty() && p.waitFor() == 0) {
-                String first = out.lines().findFirst().orElse("");
-                if (!first.isEmpty()) return first;
-            }
-        } catch (Exception ignored) {}
-
-        // 2. Check common Strawberry Perl locations
+        // 1. Check common Strawberry Perl locations first (has PDF::Builder)
         String[] candidates = {
             "D:\\code_tools\\strawberry-perl-5.42.2.1-64bit\\perl\\bin\\perl.exe",
             "C:\\Strawberry\\perl\\bin\\perl.exe",
@@ -217,6 +254,16 @@ public class VrainExportService {
         for (String c : candidates) {
             if (java.nio.file.Files.exists(java.nio.file.Path.of(c))) return c;
         }
+
+        // 2. Try PATH via cmd.exe (Git Bash perl may lack PDF::Builder)
+        try {
+            Process p = new ProcessBuilder("cmd.exe", "/c", "where", "perl").start();
+            String out = new String(p.getInputStream().readAllBytes()).trim();
+            if (!out.isEmpty() && p.waitFor() == 0) {
+                String first = out.lines().findFirst().orElse("");
+                if (!first.isEmpty()) return first;
+            }
+        } catch (Exception ignored) {}
 
         // 3. Fallback: hope it is on PATH
         return "perl";
