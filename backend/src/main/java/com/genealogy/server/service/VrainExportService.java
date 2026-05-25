@@ -193,7 +193,9 @@ public class VrainExportService {
             comment_font1_size=28
             comment_font2_size=24
 
+            text_comma_90=
             text_comma_nop=
+            comment_comma_90=
             comment_comma_nop=
 
             title_font_size=42
