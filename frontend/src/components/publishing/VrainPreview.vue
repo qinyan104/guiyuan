@@ -2,10 +2,12 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from "vue"
 import { generatePreview } from "../../api/publishing"
 import * as pdfjsLib from "pdfjs-dist"
-import PDFWorker from "pdfjs-dist/build/pdf.worker.mjs?url"
 
-// Initialize PDF.js worker using local bundled file
-pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWorker
+// Initialize PDF.js worker using a more robust Vite-compatible way
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString()
 
 const props = defineProps<{
   draftId: number
