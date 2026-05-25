@@ -89,6 +89,17 @@ export async function getSyncStatus(draftId: number): Promise<DraftSyncStatus> {
   return resp.data.data
 }
 
+// -- Preview (PDF Stream) --
+
+export async function generatePreview(draftId: number, canvasId = "mr_5"): Promise<Blob> {
+  const resp = await http.post(
+    `/publishing/drafts/${draftId}/preview?canvasId=${canvasId}`,
+    null,
+    { responseType: "blob" },
+  )
+  return resp.data as Blob
+}
+
 // -- Sheet CRUD --
 
 export interface SheetResponse {
