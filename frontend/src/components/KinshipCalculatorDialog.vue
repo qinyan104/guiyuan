@@ -356,7 +356,7 @@ function avatarLetter(name: string): string {
               </span>
               <span v-if="relationshipPath" class="kinship-chip">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="12" rx="2"/><line x1="5" y1="2" x2="5" y2="14"/></svg>
-                {{ relationshipPath.isPatrilineal ? '父系' : '母系' }}亲属 · {{ result.generationGap === 0 ? '同辈' : Math.abs(result.generationGap) + '代差' }}
+                {{ relationshipPath.bloodPath?.isPatrilineal ? '父系' : '母系' }}亲属 · {{ result.generationGap === 0 ? '同辈' : Math.abs(result.generationGap) + '代差' }}
               </span>
             </div>
           </div>

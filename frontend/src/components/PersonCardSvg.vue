@@ -9,9 +9,9 @@ const props = defineProps<{
   card: PositionedCard
   settings: PublicationSettings
   selected: boolean
-  kinshipNote?: string | null  // 当前查看者与此人的亲属关系称谓
-}>()
-
+  kinshipNote?: string | null  // 当前查看者与此人的亲属关系称谓
+}>()
+
 const emit = defineEmits<{
   (event: 'select', personId: string): void
   (event: 'hover', personId: string | null): void
@@ -152,23 +152,6 @@ const detailStartY = computed(() => {
 })
 
 const noteY = computed(() => props.card.height * 0.47)
-
-const hoverInfo = computed(() => {
-  const lines: string[] = []
-  if (props.person.birth) lines.push(`生: ${props.person.birth}`)
-  if (props.settings.showDeath && props.person.death) lines.push(`卒: ${props.person.death}`)
-  if (props.settings.showAge) {
-    if (props.person.age) {
-      lines.push(`${personIsDeceased.value ? '享年' : '今年'} ${normalizeAge(props.person.age)}`)
-    } else {
-      const by = findYear(props.person.birth)
-      const dy = findYear(props.person.death)
-      if (by !== undefined && dy !== undefined && dy >= by) lines.push(`享年 ${dy - by}岁`)
-      else if (by !== undefined && dy === undefined && !personIsDeceased.value) lines.push(`今年 ${new Date().getFullYear() - by}岁`)
-    }
-  }
-  return lines
-})
 
 const currentTheme = computed(() => document.documentElement.getAttribute('data-theme'))
 const isSu = computed(() => currentTheme.value === 'su-style')
@@ -426,32 +409,6 @@ function handleMouseLeave() {
           </tspan>
         </text>
       </g>
-    <!-- Compact Mode Hover Overlay -->
-    <g class="compact-hover-overlay" :transform="`translate(${card.width + 8}, 12)`">
-      <rect
-        class="compact-hover-overlay__panel"
-        x="0" y="0"
-        :width="140 * settings.fontScale"
-        :height="Math.max(36, 12 + hoverInfo.length * 16) * settings.fontScale"
-        rx="8" ry="8"
-      />
-      <text
-        class="compact-hover-overlay__name"
-        x="70"
-        y="18"
-        text-anchor="middle"
-        :style="{ fontSize: `${14 * settings.fontScale}px` }"
-      >{{ person.name }}</text>
-      <text
-        v-for="(line, i) in hoverInfo"
-        :key="i"
-        class="compact-hover-overlay__detail"
-        x="70"
-        :y="34 + i * 16"
-        text-anchor="middle"
-        :style="{ fontSize: `${11 * settings.fontScale}px` }"
-      >{{ line }}</text>
-    </g>
     </g>
 
     <text

@@ -93,6 +93,13 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/publishing/publication/:publicationId',
+    name: 'publishing-publication',
+    component: () => import('../views/PublishingDashboard.vue'),
+    props: (route) => ({ publicationId: Number(route.params.publicationId) }),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/publishing/:draftId',
     name: 'publishing-studio',
     component: () => import('../views/PublishingStudio.vue'),

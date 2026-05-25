@@ -1,6 +1,5 @@
 ﻿<script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { calculateRevealPan, type RevealPersonOptions } from '../lib/canvasViewport'
 import type { KinshipTerm } from '../lib/kinship'
 import type { Person, PublicationData, PublicationLayout, PublicationSettings } from '../types/family'
@@ -200,8 +199,6 @@ function drawMinimapCanvas() {
   })
 }
 
-import { watch } from 'vue'
-
 watch(
   () => [props.layout.cards, props.selectedPersonId, minimapData.value.scale],
   () => {
@@ -210,8 +207,8 @@ watch(
   { immediate: true, deep: true },
 )
 
-function resolvePerson(personId: string): Person {
-  return props.publication.people[personId]
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
 }
 
 function handleSelect(personId: string) {
@@ -222,9 +219,43 @@ function handleHoverPerson(personId: string | null) {
   emit('hover-person', personId)
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
+function resolvePerson(personId: string): Person {
+  return props.publication.people[personId]
 }
+
+const CARD_TO_SCREEN_RATIO = 1
+
+function getCardScreenPosition(personId: string) {
+  const card = props.layout.cards.find((item) => item.personId === personId)
+  if (!card) return null
+  return {
+    x: (card.x + card.width / 2) * props.settings.zoom * CARD_TO_SCREEN_RATIO + props.panX,
+    y: (card.y + card.height / 2) * props.settings.zoom * CARD_TO_SCREEN_RATIO + props.panY,
+  }
+}
+
+function revealPerson(personId: string, options: RevealPersonOptions = {}) {
+  const card = props.layout.cards.find((item) => item.personId === personId)
+  if (!card || !viewportRef.value) return false
+
+  const result = calculateRevealPan({
+    viewportWidth: viewportRef.value.clientWidth,
+    viewportHeight: viewportRef.value.clientHeight,
+    layoutWidth: props.layout.width,
+    layoutHeight: props.layout.height,
+    zoom: props.settings.zoom,
+    panX: props.panX,
+    panY: props.panY,
+    card,
+    ...options,
+  })
+  if (!result.changed) return false
+  emit('update:panX', result.panX)
+  emit('update:panY', result.panY)
+  return true
+}
+
+defineExpose({ getSvgElement: () => svgRef.value, resetView, revealPerson, getCardScreenPosition })
 
 function updateViewportSize() {
   if (!viewportRef.value) {
@@ -352,7 +383,7 @@ function handleWheel(event: WheelEvent) {
 
   const nextPanX = pointerX - rect.width / 2 - (worldX - props.layout.width / 2) * nextZoom
   const nextPanY = pointerY - rect.height / 2 - (worldY - props.layout.height / 2) * nextZoom
-  
+
   setPan(nextPanX, nextPanY)
 
   emit('update-zoom', nextZoom)
@@ -442,57 +473,20 @@ function handleMinimapPointerUp(event: PointerEvent) {
 }
 
 function resetView() {
-  setPan(0, 0)
-}
-
-function revealPerson(personId: string, options: RevealPersonOptions = {}) {
-  updateViewportSize()
-
-  const card = props.layout.cards.find((item) => item.personId === personId)
-  if (!card || !viewportRef.value) {
+  if (!props.layout.cards.length) {
+    setPan(0, 0)
     return
   }
-
-  const nextPan = calculateRevealPan({
-    viewportWidth: viewportWidth.value,
-    viewportHeight: viewportHeight.value,
-    layoutWidth: props.layout.width,
-    layoutHeight: props.layout.height,
-    zoom: props.settings.zoom,
-    panX: props.panX,
-    panY: props.panY,
-    card,
-    ...options,
-  })
-
-  if (!nextPan.changed) {
-    return
-  }
-
-  setPan(nextPan.panX, nextPan.panY)
+  // 找到始祖（y 最小的卡片）并居中到屏幕正中央
+  const rootCard = props.layout.cards.reduce((min, card) => card.y < min.y ? card : min)
+  const cx = rootCard.x + rootCard.width / 2
+  const cy = rootCard.y + rootCard.height / 2
+  setPan(
+    (props.layout.width / 2 - cx) * props.settings.zoom,
+    (props.layout.height / 2 - cy) * props.settings.zoom
+  )
 }
 
-onMounted(() => {
-  updateViewportSize()
-
-  if (viewportRef.value) {
-    resizeObserver = new ResizeObserver(() => updateViewportSize())
-    resizeObserver.observe(viewportRef.value)
-  }
-
-})
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect()
-  cancelInertia()
-  if (rafId) cancelAnimationFrame(rafId)
-})
-
-defineExpose({
-  getSvgElement: () => svgRef.value,
-  resetView,
-  revealPerson,
-})
 </script>
 
 <template>

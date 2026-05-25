@@ -15,14 +15,14 @@
 
 **现象**：`CreateProcess error=2, 系统找不到指定的文件`
 
-**根因**：Java `ProcessBuilder` 不继承 Windows 系统 PATH，即使 Strawberry Perl 已安装。
+**根因**：Java `ProcessBuilder` 不继承 Windows 系统 PATH，即使 Strawberry Perl 已安装。且 Git Bash 自带的 Perl（`/usr/bin/perl`）缺少 `PDF::Builder` 模块。
 
-**解决**：通过 `cmd.exe /c where perl` 获取 perl 完整路径，再检查常见安装位置作为兜底。
+**解决**：优先检查 Strawberry Perl 路径，再 fallback 到 PATH 自动发现。
 
 ```java
 // VrainExportService.findPerl()
-1. cmd.exe /c where perl  → 自动发现
-2. 常见路径枚举（如 D:\code_tools\strawberry-perl-xxx\perl\bin\perl.exe）
+1. 常见路径枚举（D:\code_tools\strawberry-perl-xxx\perl\bin\perl.exe）
+2. cmd.exe /c where perl  → 自动发现（注意：Git Bash Perl 可能缺乏 PDF::Builder）
 3. 兜底："perl"
 ```
 
@@ -117,3 +117,128 @@ VrainExportService.java
 | 背景图 | `backend/vrain/canvas/` |
 | 生成的书稿 | `backend/vrain/books_mr/gy_{draftId}/` |
 | PDF 输出 | `backend/vrain/books_mr/gy_{draftId}/gy_{draftId}_vrain.pdf` |
+---
+
+## 2026-05-24 补充：出版工作室开发踩坑
+
+### 坑 6：PDFBox 版本选择与 API 变更
+
+**现象**：使用 PDFBox 2.0.29 渲染 vRain 生成的 PDF 时，非 `mr_5` 模板的页面出现空白图像或 `Format 14 cmap table is not supported` 警告。
+
+**根因**：
+- vRain 使用 39MB 的 `qiji-combo.ttf` 字体，其中包含 Format 14 cmap table（Unicode Variation Sequences）
+- PDFBox 2.x 对 CJK 字体支持有限，2.0.29 虽然比早期版本好，但仍无法处理部分字体表
+- 升级到 PDFBox 3.0.4 可获得更好的 CJK 字体兼容性
+
+**API 变更**（2.x → 3.x）：
+```java
+// PDFBox 2.x
+PDDocument.load(file);
+
+// PDFBox 3.x
+Loader.loadPDF(file);  // 需要 import org.apache.pdfbox.Loader;
+```
+
+**教训**：
+- PDFBox 3.x 的 CJK 字体支持显著优于 2.x
+- 如果之前用了 3.0.3 但有问题，应尝试最新版（3.0.4+）而非降级到 2.x
+- `fontbox` 在 3.x 中作为传递依赖自动包含，无需单独声明
+
+### 坑 7：PowerShell 编码破坏
+
+**现象**：使用 `Set-Content` 或 `Out-File -NoNewline` 写入 Java/Vue 文件后，中文字符变成乱码（`�`），导致编译错误。
+
+**根因**：
+- PowerShell 的 `Set-Content` 默认使用 UTF-16 LE 或系统代码页编码，而非 UTF-8
+- `Out-File -NoNewline` 会将所有换行符合并成单行
+- `[regex]::Escape()` 在匹配含中文的文本块时容易匹配失败
+
+**正确做法**：
+```powershell
+# 读取
+$content = [System.IO.File]::ReadAllText($file, [System.Text.Encoding]::UTF8)
+
+# 修改后写入（无 BOM）
+[System.IO.File]::WriteAllBytes($file, [System.Text.Encoding]::UTF8.GetBytes($content))
+
+# 或使用 Out-File（保留换行，不带 -NoNewline）
+git show HEAD:path/to/file | Out-File -FilePath $dest -Encoding utf8
+```
+
+**备份方案**：修改前先用 `git stash` 或手动备份原文件。如果 git checkout 被锁，可用 `git show HEAD:path > file` 恢复。
+
+### 坑 8：模板切换需要 canvasId 全链路传递
+
+**现象**：前端切换模板后，预览/导出的 PDF 仍然是默认模板样式。
+
+**根因**：canvasId 需要在以下链路中完整传递：
+```
+前端 canvasId → API ?canvasId= → VrainExportService.exportPdf(draftId, canvasId)
+  → generateBookCfg(draft, canvasId) → 读取 canvas/{canvasId}.cfg
+  → 动态设置 multirows_horizontal_layout 和 row_num
+```
+
+**修改清单**：
+1. `publishing.ts`：`generatePreview(draftId, canvasId)` 添加 canvasId 参数
+2. `PublishingController.java`：`POST /preview?canvasId=` 接收参数
+3. `VrainExportService.java`：
+   - 添加 `exportPdf(Long, String)` 重载
+   - 添加 `generateBookCfg(BookDraft, String)` 重载
+   - 读取 `canvas/{id}.cfg` 获取 `if_multirows` 和 `multirows_num`
+   - 动态计算 `row_num`：非多栏=35，多栏=(35/栏数)*栏数
+
+### 坑 9：Git index.lock 被 Java 进程占用
+
+**现象**：`git checkout` 始终报 `Unable to create '.git/index.lock': Permission denied`。
+
+**根因**：后台运行的 Java 进程（Spring Boot 后端）可能持有文件句柄。
+
+**解决**：
+```powershell
+# 强制停止所有 Java 进程
+Get-Process -Name java | Stop-Process -Force
+
+# 清理残留锁文件
+Remove-Item -Force .git/index.lock -ErrorAction SilentlyContinue
+```
+
+**替代方案**：当 git checkout 不可用时，使用 `git show <commit>:<path>` 获取文件内容并手动写入。
+
+### 坑 10：PublishingStudio.vue 的 EntryEditor 集成
+
+**常见遗漏**：
+- `StudioToolbar` 缺少 `:editorOpen="editorOpen"` 和 `@toggleEditor="toggleEditor"` 属性
+- `<EntryEditor>` 组件未在模板中渲染
+- `handleUpdateEntry`、`handleMoveEntry`、`handleDeleteEntry`、`handleMoveToPage`、`handleSaveAndRelayout` 等处理函数未定义
+
+**完整集成清单**：
+```vue
+<!-- StudioToolbar 需要传递 -->
+<StudioToolbar
+  :editorOpen="editorOpen"
+  @toggleEditor="toggleEditor"
+  ...
+/>
+
+<!-- EntryEditor 放在 studio-body 内 -->
+<EntryEditor
+  :open="editorOpen"
+  :pageData="currentPageData"
+  :pageNumber="currentPage"
+  :totalPages="totalPages"
+  @close="editorOpen = false"
+  @updateEntry="handleUpdateEntry"
+  @moveEntry="handleMoveEntry"
+  @deleteEntry="handleDeleteEntry"
+  @moveToPage="handleMoveToPage"
+  @saveAndRelayout="handleSaveAndRelayout"
+/>
+```
+
+### 当前已知限制
+
+- **模板渲染**：PDFBox 3.0.4 可能无法完美渲染所有 12 个 vRain 模板（部分模板使用特殊颜色/纹理），如遇空白页可考虑：
+  1. 安装 Ghostscript 替代 PDFBox 做 PDF→图像转换
+  2. 使用 ImageMagick (`magick convert`)
+  3. 让 vRain 直接输出图像而非 PDF
+- **字体**：`qiji-combo.ttf` (39MB) 的 Format 14 cmap table 警告在 PDFBox 3.x 中已降级为可忽略警告，不影响基本渲染

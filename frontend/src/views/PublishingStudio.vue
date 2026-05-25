@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import FeedbackStrip from "../components/FeedbackStrip.vue"
@@ -64,7 +64,10 @@ onMounted(async () => {
   if (!draft.value) return
 
   try {
-    const parsed = JSON.parse((draft.value as any).styleConfig || "{}")
+    let parsed = JSON.parse((draft.value as any).styleConfig || "{}")
+    if (typeof parsed === "string") {
+      parsed = JSON.parse(parsed)
+    }
     draftStyleConfig.value = parsed
     if (parsed.paper === "A3") paper.value = "A3"
     if (parsed.fontSize) layoutTweaks.value.fontSize = parsed.fontSize
@@ -86,7 +89,11 @@ onMounted(async () => {
       layoutPages.value = saved
         .map((sheet) => {
           try {
-            return JSON.parse(sheet.layoutData) as LineagePage
+            let data = JSON.parse(sheet.layoutData)
+            if (typeof data === "string") {
+              data = JSON.parse(data)
+            }
+            return data as LineagePage
           } catch {
             return null
           }
@@ -408,6 +415,7 @@ const statusText = computed(() => {
       <span>{{ pubLoadError }}</span>
       <button class="btn-retry" @click="retryLoadPublication">重试加载</button>
     </div>
+
     <StudioToolbar
       :draftTitle="draft?.title || ''"
       :draftStatus="draft?.status || 'draft'"
@@ -420,7 +428,10 @@ const statusText = computed(() => {
       :templateName="currentTemplateName"
       :exporting="exporting"
       :autoLayouting="autoLayouting"
-
+      :tweakFontSize="layoutTweaks.fontSize"
+      :tweakLineHeight="layoutTweaks.lineHeight"
+      :tweakColumns="layoutTweaks.columns"
+      :tweakMarginPreset="layoutTweaks.marginPreset"
       @back="handleBack"
       @autoLayout="handleAutoLayout"
       @export="handleExport"
@@ -428,16 +439,11 @@ const statusText = computed(() => {
       @paperChange="handlePaperChange"
       @toggleTweaks="toggleTweaks"
       @toggleEditor="toggleEditor"
-    
-    :tweakFontSize="layoutTweaks.fontSize"
-    :tweakLineHeight="layoutTweaks.lineHeight"
-    :tweakColumns="layoutTweaks.columns"
-    :tweakMarginPreset="layoutTweaks.marginPreset"
-    @updateTweakFontSize="(v) => handleTweakUpdate('fontSize', v)"
-    @updateTweakLineHeight="(v) => handleTweakUpdate('lineHeight', v)"
-    @updateTweakColumns="(v) => handleTweakUpdate('columns', v)"
-    @updateTweakMarginPreset="(v) => handleTweakUpdate('marginPreset', v)"
-  />
+      @updateTweakFontSize="(v) => handleTweakUpdate('fontSize', v)"
+      @updateTweakLineHeight="(v) => handleTweakUpdate('lineHeight', v)"
+      @updateTweakColumns="(v) => handleTweakUpdate('columns', v)"
+      @updateTweakMarginPreset="(v) => handleTweakUpdate('marginPreset', v)"
+    />
 
     <div class="studio-workbench">
       <PageThumbnailBar
@@ -454,7 +460,6 @@ const statusText = computed(() => {
       />
 
       <div class="studio-main">
-
         <div class="canvas-stage">
           <PageCanvas
             ref="canvasRef"
@@ -465,18 +470,17 @@ const statusText = computed(() => {
             :canvasId="canvasId"
             :paper="paper"
             :templateName="currentTemplateName"
-      
+            :fontSize="layoutTweaks.fontSize"
+            :lineHeight="layoutTweaks.lineHeight"
+            :columns="layoutTweaks.columns"
             :relayouting="relayouting"
             @navigateToPage="handleNavigateToPage"
           />
-
-          
 
           <Transition name="notice-fade">
             <div v-if="canvasNotice" class="canvas-notice">{{ canvasNotice }}</div>
           </Transition>
         </div>
-
       </div>
 
       <div class="studio-side">
@@ -486,7 +490,6 @@ const statusText = computed(() => {
           :pageNumber="currentPage"
           :totalPages="totalPages"
           :templateName="currentTemplateName"
-    
           :relayouting="relayouting"
           @close="editorOpen = false"
           @updateEntry="handleUpdateEntry"
@@ -503,7 +506,6 @@ const statusText = computed(() => {
       :totalPages="totalPages"
       :paper="paper"
       :templateName="currentTemplateName"
-
     />
   </div>
 </template>
@@ -514,9 +516,8 @@ const statusText = computed(() => {
   flex-direction: column;
   height: 100vh;
   background:
-    radial-gradient(circle at top, rgba(255,255,255,0.15), transparent 40%),
-    var(--color-neutral-1),
-    var(--color-neutral-2);
+    radial-gradient(circle at 50% 0%, var(--color-neutral-2), transparent 60%),
+    var(--color-neutral-1);
 }
 
 .studio-workbench {
@@ -547,6 +548,7 @@ const statusText = computed(() => {
   min-height: 0;
   overflow: hidden;
   background: var(--color-neutral-1);
+  border-left: 1px solid var(--color-card-stroke);
 }
 
 .canvas-stage {
@@ -596,13 +598,17 @@ const statusText = computed(() => {
   top: 18px;
   right: 20px;
   padding: 10px 14px;
-  border: 1px solid rgba(183, 92, 54, 0.18);
-  border-radius: 12px;
-  background: var(--color-neutral-1);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-lg);
+  background: var(--color-panel-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: var(--shadow-whisper);
   color: var(--color-neutral-8);
   font-size: 12px;
+  font-weight: 500;
   z-index: 4;
+  pointer-events: none;
 }
 
 .tweaks-drop-enter-active,
@@ -636,6 +642,7 @@ const statusText = computed(() => {
     grid-template-columns: 208px minmax(0, 1fr) minmax(280px, 320px);
   }
 }
+
 .studio-error-banner {
   display: flex;
   align-items: center;
@@ -660,6 +667,7 @@ const statusText = computed(() => {
   background: var(--color-accent);
   color: #fff;
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
   transition: opacity 0.14s ease;
 }
@@ -667,6 +675,4 @@ const statusText = computed(() => {
 .btn-retry:hover {
   opacity: 0.85;
 }
-
 </style>
-

@@ -1,7 +1,15 @@
-import type { LineageEntry, LineagePage } from "../types/publishing"
+﻿import type { LineageEntry, LineagePage } from "../types/publishing"
 import type { FamilyUnit, Gender, Person, PublicationData } from "../types/family"
 
 interface GenNode { pid: string; spId?: string; gen: number; kids: GenNode[] }
+
+export interface LayoutOptions {
+  fontSize?: number
+  lineHeight?: number
+  columns?: number
+  marginPreset?: "compact" | "standard" | "loose"
+  paper?: "A4" | "A3"
+}
 
 // ── Tree building ──
 
@@ -53,7 +61,6 @@ function formatEntry(
 
   const parts: string[] = []
 
-  // Name line
   if (p.gender === "male") {
     if (p.titleName) {
       parts.push(`${p.titleName}公，讳${p.name}`)
@@ -66,17 +73,12 @@ function formatEntry(
     parts.push(`${p.name}`)
   }
 
-  // Birth / Death / Age
   const bio: string[] = []
   if (p.birth) bio.push(`生于${p.birth}`)
   if (p.death) bio.push(`卒于${p.death}`)
   if (p.age) bio.push(`享年${p.age}`)
-  if (!p.death && p.deceased && !p.age) {
-    // deceased but no death date
-  }
   if (bio.length > 0) parts.push(bio.join("，") + "。")
 
-  // Spouse
   const fams = Object.values(families).filter(f => f.adults.includes(pid))
   const spouses: string[] = []
   for (const f of fams) {
@@ -90,7 +92,6 @@ function formatEntry(
     parts.push(`${label}${spouses.join("、")}。`)
   }
 
-  // Children
   const children = fams.flatMap(f => f.children).filter(c => people[c])
   if (children.length > 0) {
     const sons = children.filter(c => people[c]?.gender === "male")
@@ -102,13 +103,10 @@ function formatEntry(
     if (daughters.length > 0) {
       kidParts.push(`生女${daughters.length}：${daughters.map(d => people[d].name).join("、")}`)
     }
-    if (kidParts.length > 0) parts.push(kidParts.join("；") + "。")
+    if (kidParts.length > 0) parts.push(kidParts.join("，") + "。")
   }
 
-  // Note
   if (p.note) parts.push(p.note)
-
-  // Clan
   if (p.clan) parts.push(`族系：${p.clan}。`)
 
   return {
@@ -120,7 +118,7 @@ function formatEntry(
   }
 }
 
-// ── Flatten tree into ordered entries ──
+// ── Flatten tree ──
 
 function collectEntries(
   node: GenNode,
@@ -137,16 +135,45 @@ function collectEntries(
   }
 }
 
+// ── Dynamic entries per page ──
+
+function calcEntriesPerPage(opts: LayoutOptions): number {
+  const fontSize = opts.fontSize ?? 12
+  const lineHeight = opts.lineHeight ?? 1.9
+  const columns = opts.columns ?? 1
+  const paper = opts.paper ?? "A4"
+  const margin = opts.marginPreset ?? "standard"
+
+  // Base: A4, 12pt, 1.9lh, 1 column, standard margins → 15 entries
+  const base = 15
+
+  // Paper area ratio (A3 ≈ 2× A4, but usable area scales ~1.8×)
+  const paperRatio = paper === "A3" ? 1.8 : 1
+
+  // Font size: larger → fewer entries (inverse square-ish because both width & height affected)
+  const fontFactor = Math.pow(12 / fontSize, 1.6)
+
+  // Line height: larger → fewer entries
+  const lineFactor = 1.9 / lineHeight
+
+  // Columns: more → more entries
+  const colFactor = columns
+
+  // Margin: compact +15%, loose -15%
+  const marginFactor = margin === "compact" ? 1.15 : margin === "loose" ? 0.85 : 1
+
+  return Math.max(5, Math.round(base * paperRatio * fontFactor * lineFactor * colFactor * marginFactor))
+}
+
 // ── Pagination ──
 
-const ENTRIES_PER_PAGE = 15
-
-function paginate(entries: LineageEntry[], rootIds: string[]): LineagePage[] {
+function paginate(entries: LineageEntry[], rootIds: string[], opts: LayoutOptions): LineagePage[] {
+  const perPage = calcEntriesPerPage(opts)
   const pages: LineagePage[] = []
-  for (let i = 0; i < entries.length; i += ENTRIES_PER_PAGE) {
+  for (let i = 0; i < entries.length; i += perPage) {
     pages.push({
       pageNumber: pages.length + 1,
-      entries: entries.slice(i, i + ENTRIES_PER_PAGE),
+      entries: entries.slice(i, i + perPage),
       rootPersonIds: rootIds,
     })
   }
@@ -155,15 +182,14 @@ function paginate(entries: LineageEntry[], rootIds: string[]): LineagePage[] {
 
 // ── Main export ──
 
-export function computeLineageText(data: PublicationData): LineagePage[] {
+export function computeLineageText(data: PublicationData, opts: LayoutOptions = {}): LineagePage[] {
   const { people, families } = data
   if (Object.keys(people).length === 0) return []
 
-  // Solo person
   if (Object.keys(families).length === 0 && Object.keys(people).length === 1) {
     const pid = Object.keys(people)[0]
     const entry = formatEntry(pid, 0, people, families)
-    return paginate([entry], [pid])
+    return paginate([entry], [pid], opts)
   }
 
   const roots = findRoots(people, families)
@@ -178,5 +204,5 @@ export function computeLineageText(data: PublicationData): LineagePage[] {
     collectEntries(rootNode, people, families, allEntries, globalVisited)
   }
 
-  return paginate(allEntries, roots)
+  return paginate(allEntries, roots, opts)
 }

@@ -1,6 +1,8 @@
 package com.genealogy.server.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,6 +22,7 @@ public class BookSheet {
     @Column(name = "sheet_type", length = 20)
     private String sheetType = "genealogy";
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "layout_data", columnDefinition = "JSON")
     private String layoutData;
 

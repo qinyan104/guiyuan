@@ -1,4 +1,4 @@
-# 族谱管理系统 (Genealogy Management System) - 架构设计与开发手册
+﻿# 族谱管理系统 (Genealogy Management System) - 架构设计与开发手册
 
 ## 1. 项目愿景
 打造一个高性能、高美学价值的数字化族谱编修与协作平台，支持分布式协作、矢量化出版以及安全的数据分享。
@@ -44,6 +44,15 @@
 - **卡片渲染**：`PublicationCanvas` → `PersonCardSvg` 通过 `kinshipNote` prop 在卡片 note 区域优先显示称谓（如"爷爷"），Ego 自身显示"本人"并附加 `person-card--ego` 金色发光描边样式。
 - **自动定位**：`WorkbenchView` 监听 `viewerPersonId` 首次非空，600ms 延迟后调用 `revealPersonInCanvas()` 滚动画布至 Ego 位置。
 
+
+### 3.7 出版引擎 (Publishing Engine)
+- **文字世系录**：`lineageText.ts` 替代旧 `traditionalLayout.ts`，Token 化排版输出（行号/世代/姓名/生卒/配偶/子女）。
+- **传统书版渲染**：`PageCanvas.vue` 重写为书版模式（版框/版心/鱼尾/中缝），SVG 渲染世系录条目。
+- **vRain 集成**：`VrainExportService.java` 将世系录文本→vRain 格式→`book.cfg`→Perl 脚本→古籍刻本 PDF。
+- **模板系统**：12 个 vRain 画布模板（`canvas/{id}.cfg`），`canvasId` 参数动态选择排版样式。
+- **字体**：`qiji-combo.ttf` (39MB CJK)，PDFBox 3.0.4 渲染。
+- **环境依赖**：Strawberry Perl 5.40 + ImageMagick。
+
 ## 4. 数据库设计要点
 - **对象级权限**: `publication_access` 表存储用户与族谱的 `OWNER/EDITOR/VIEWER` 关系，并存储 `redaction_profile` JSON 脱敏配置。
 - **照片存储**: `photos` 表采用二进制存储（或文件映射），支持 Base64、URL 引用等多种导入模式。
@@ -51,16 +60,19 @@
 
 ## 5. 开发约定
 - **状态管理**: 优先使用 Composable (`usePublicationState`)。
-- **历史记录**: 使用 `structuredClone()` 进行快照，严禁使用 `JSON.parse`。
+- **历史记录**: 创建快照时使用 `JSON.parse(JSON.stringify())`（`structuredClone` 会因 Vue reactive 代理的 `[[ProxyHandler]]` 内部插槽抛出 `DataCloneError`）。
 - **性能优化**: `PublicationAuthorizationService` 使用 **Request-Level Caching** 缓存权限对象，避免单次请求内重复查询数据库。
 - **编译优化**: 已启用 `skipLibCheck` 和 `incremental` 模式，前端构建时间约 28s。
 
 ## 6. 后续路线图
-- [x] **字段级权限**: 引入更细粒度的“字段级”隐私控制。
+
+- [x] **字段级权限**: 引入更细粒度的"字段级"隐私控制。
 - [x] **按子树合并**: 支持物理合并时仅选择分支的某个子树。
 - [x] **并发冲突处理**: 后端引入乐观锁（ETag/Version）防止多人同时编辑导致的覆盖。
+- [x] **Ego-Centered 亲属视图**: 登录族人自动定位+亲属称谓实时显示。
+- [x] **出版引擎**: vRain 古籍刻本 PDF 生成（文字世系录→传统书版→付梓导出）。
 - [ ] **多端适配**: 进一步优化移动端沉浸式阅读体验。
 
 
 ---
-*最后更新日期: 2026-05-10*
+*最后更新日期: 2026-05-24*

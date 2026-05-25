@@ -28,6 +28,39 @@ cd frontend && npm run build
 cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 ```
 
+
+## 出版引擎 (Publishing Engine)
+
+vRain 集成：基于 Perl 的中文古籍刻本 PDF 生成工具，用于族谱的「付梓导出」功能。
+
+```bash
+# 后端编译（含 PDFBox 3.0.4 依赖）
+cd backend && ./mvnw compile
+
+# 确认 vRain 环境
+where perl                              # 应输出 Strawberry Perl 路径
+dir backend\vrain\fonts\qiji-combo.ttf  # 39MB CJK 字体
+dir backend\vrain\canvas\*.cfg          # 12 个模板配置
+```
+
+**关键文件**：
+| 文件 | 作用 |
+|------|------|
+| `backend/vrain/vrain_mr.pl` | vRain 主脚本（已修改：ASCII PDF 文件名） |
+| `backend/vrain/canvas/*.cfg` | 12 个画布模板配置 |
+| `backend/.../VrainExportService.java` | Java → vRain 集成服务 |
+| `frontend/src/lib/vrainTemplates.ts` | 前端模板定义（ID/名称/缩略图） |
+| `frontend/src/components/publishing/VrainPreview.vue` | PDF 预览（垂直滚动） |
+| `frontend/src/components/publishing/EntryEditor.vue` | 内容编辑侧面板 |
+
+**模板系统**：`canvasId` 从 `StudioToolbar` 选择 → API `?canvasId=` → `generateBookCfg(draft, canvasId)` → 读取 `canvas/{id}.cfg` 动态配置 `multirows_horizontal_layout` 和 `row_num`。
+
+**字体**：所有模板使用 `qiji-combo.ttf` (39MB)，PDF 渲染使用 PDFBox 3.0.4（`Loader.loadPDF()` API）。
+
+**Perl 路径优先级**：`VrainExportService.findPerl()` 优先检查 Strawberry Perl 特定路径，再 fallback 到 `PATH` 查找（Git Bash 自带的 Perl 缺少 `PDF::Builder` 模块）。
+
+## 测试
+
 ## 测试
 
 ```bash
@@ -123,7 +156,7 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 
 - 草稿设置值有范围限制，导入时自动 clamp：cardWidth [142,176]、zoom [0.10,1.35]、fontScale [0.88,1.18] ···
 - localStorage 操作必须包 try/catch（隐私模式可能不可用）
-- 撤销/重做历史：使用 `structuredClone()` 进行状态深拷贝以确保性能，严禁使用 `JSON.parse(JSON.stringify())` 以防大型族谱卡顿。
+- 撤销/重做历史：创建快照时使用 `JSON.parse(JSON.stringify())`（不宜用 `structuredClone` — Vue `reactive()` 代理带有 `[[ProxyHandler]]` 内部插槽，`structuredClone` 规范明确对此抛出 `DataCloneError`）。`structuredClone` 仅适用于纯非响应式对象。
 - 撤销/重做历史不记录 zoom 变化（zoom 被视为视图状态，非编辑历史）
 - 打印导出标题必须经 HTML 转义（`escapeHtml()` 已在 `publicationExport.ts` 中实现）
 - 跨机器迁移优先使用“便携式 JSON 导出”；若草稿里仍保留旧版 `/uploads/...` 引用，只有源文件仍在 `backend/uploads/` 时才能在导入阶段补写入数据库
@@ -133,24 +166,3 @@ cd frontend && npm run test:e2e:ui  # UI 交互模式
 ## 已知限制
 
 - JWT 密钥（`app.jwt.secret`）无默认值，必须通过 `JWT_SECRET` 环境变量配置。`JwtService` 启动时会校验，未设置则直接报错退出，不再静默失败。
-
-## Skill routing
-
-When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
-
-Key routing rules:
-- Product ideas/brainstorming → invoke /office-hours
-- Strategy/scope → invoke /plan-ceo-review
-- Architecture → invoke /plan-eng-review
-- Design system/plan review → invoke /design-consultation or /plan-design-review
-- Full review pipeline → invoke /autoplan
-- Bugs/errors → invoke /investigate
-- QA/testing site behavior → invoke /qa or /qa-only
-- Code review/diff check → invoke /review
-- Visual polish → invoke /design-review
-- Ship/deploy/PR → invoke /ship or /land-and-deploy
-- Save progress → invoke /context-save
-- Resume context → invoke /context-restore
-
-
-

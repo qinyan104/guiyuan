@@ -898,10 +898,6 @@ textarea {
   right: 16px;
 }
 
-.floating-panel--history {
-  width: 360px;
-}
-
 .floating-panel__header {
   display: flex;
   justify-content: space-between;
@@ -1146,91 +1142,6 @@ select {
 
 .task-row--calm .task-row__head span {
   color: var(--task-calm, #55624f);
-}
-
-.history-panel__summary {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 12px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(255, 252, 247, 0.9);
-  border: 1px solid rgba(124, 98, 69, 0.12);
-}
-
-.history-panel__summary strong {
-  color: var(--text-main);
-  font-size: 14px;
-}
-
-.history-panel__summary span {
-  color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.history-panel__actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.history-panel__hint,
-.history-empty {
-  margin: 0;
-  color: var(--text-sub);
-  font-size: 12px;
-  line-height: 1.7;
-}
-
-.history-empty {
-  padding: 14px;
-  border-radius: 16px;
-  background: rgba(255, 252, 247, 0.9);
-  border: 1px solid rgba(124, 98, 69, 0.12);
-}
-
-.history-list {
-  display: grid;
-  gap: 4px;
-  margin-top: 12px;
-}
-
-.history-entry {
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: var(--bg-panel-strong, rgba(255, 252, 247, 0.9));
-  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.12));
-}
-
-.history-entry strong {
-  display: block;
-  color: var(--text-main);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.history-entry__meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.history-entry__meta span {
-  color: var(--text-soft);
-  font-size: 12px;
-}
-
-.history-entry__meta em {
-  font-style: normal;
-  color: var(--accent-amber);
-  font-size: 12px;
-  font-weight: 800;
 }
 
 .editor-overlay {
@@ -2133,33 +2044,6 @@ select {
 }
 
 
-.compact-hover-overlay {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.18s ease;
-}
-
-.person-card:hover .compact-hover-overlay {
-  opacity: 1;
-}
-
-.compact-hover-overlay__panel {
-  fill: var(--bg-panel-strong, #fff);
-  stroke: var(--color-neutral-4);
-  stroke-width: 1;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
-}
-
-.compact-hover-overlay__name {
-  fill: var(--color-neutral-10);
-  font-family: var(--font-serif);
-  font-weight: 600;
-}
-
-.compact-hover-overlay__detail {
-  fill: var(--color-neutral-7);
-  font-family: var(--font-sans);
-}
 .person-card__seal-impression {
   pointer-events: none;
 }

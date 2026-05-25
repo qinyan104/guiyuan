@@ -34,9 +34,13 @@ const viewerPersonId = ref<string | null>(null)
 const pub = usePublicationState({ title: '', subtitle: '', people: {}, families: {}, focusFamilyId: '' }, defaultSettings, viewerPersonId.value)
 
 function createEditorSnapshot(): EditorSnapshot {
+  // 使用 JSON 序列化而非 structuredClone:
+  // Vue reactive 代理(P<0x>xy)有 [[ProxyHandler]] 内部插槽，
+  // structuredClone 规范明确对此抛出 DataCloneError。
+  const raw = pub.publication as unknown as PublicationData
   return {
-    publication: structuredClone(pub.publication) as PublicationData,
-    settings: structuredClone(pub.settings) as PublicationSettings,
+    publication: JSON.parse(JSON.stringify(raw)) as PublicationData,
+    settings: JSON.parse(JSON.stringify(pub.settings)) as PublicationSettings,
     selectedPersonId: pub.selectedPersonId.value,
   }
 }

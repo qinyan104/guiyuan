@@ -358,3 +358,20 @@ Java 桥接:   VrainExportService (数据转换 + ProcessBuilder 调用)
 - [ ] 封面自定义
 - [ ] 预览直接看 PDF（目前 PDF 生成后需手动打开）
 - [ ] 多栏族谱格式（vRain 的 multirows 特性）
+
+---
+## 2026-05-24 实施状态更新
+
+### 已完成
+- [x] 前后端模板系统：12 个 vRain canvas 模板可选，canvasId 全链路传递
+- [x] 单视图架构：VrainPreview 垂直滚动预览 + 编辑功能集成
+- [x] EntryEditor 侧面板：条目文本编辑、排序、跨页移动、删除
+- [x] PDFBox 3.0.4 集成：PDF→PNG 预览渲染
+- [x] 后端 canvasId 感知：动态读取 canvas/{id}.cfg 生成正确的 book.cfg
+- [x] Perl 环境适配：Windows Strawberry Perl PATH/DLL 配置
+- [x] book.cfg 字段补全：title/pager/cover/comma 等必备字段
+
+### 已知限制
+- [ ] PDF 渲染：部分模板（如 18_blue/18_red 有色版框）的 PDF→图像可能不完全准确
+- [ ] 字体回退：qiji-combo.ttf 的 Format 14 cmap 在 PDFBox 3.x 中仍会触发 warning
+- [ ] Ghostscript 备选：未安装，可作为更可靠的 PDF→图像方案

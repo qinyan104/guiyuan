@@ -44,6 +44,8 @@ const previewSettings: PublicationSettings = {
   showDeath: true,
   showAge: true,
   showNote: false,
+  showStatus: true,
+  showLineage: true,
   showPhoto: false,
   paddingX: 28,
   paddingY: 36,

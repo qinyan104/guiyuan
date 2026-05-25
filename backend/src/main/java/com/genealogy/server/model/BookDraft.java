@@ -1,6 +1,8 @@
 package com.genealogy.server.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,6 +28,7 @@ public class BookDraft {
     @Column(columnDefinition = "TEXT")
     private String epilogue;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "style_config", columnDefinition = "JSON")
     private String styleConfig;
 

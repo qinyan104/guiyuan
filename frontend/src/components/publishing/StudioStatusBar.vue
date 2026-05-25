@@ -2,41 +2,33 @@
 defineProps<{
   currentPage: number
   totalPages: number
-  hasPendingSync: boolean
+  paper: "A4" | "A3"
+  templateName: string
 }>()
 </script>
 
 <template>
-  <div class="studio-status-bar">
-    <span class="status-page">页 {{ currentPage }} / {{ totalPages }}</span>
-    <div class="status-spacer" />
-    <span v-if="hasPendingSync" class="status-sync-warning">⚠ 主数据有更新</span>
-    <span class="status-version-label">传统出版引擎 v1.0</span>
+  <div class="bar">
+    <span class="chip">{{ currentPage }} / {{ totalPages }}</span>
+    <span class="chip">{{ templateName }}</span>
+    <span class="chip">{{ paper }}</span>
   </div>
 </template>
 
 <style scoped>
-.studio-status-bar {
-  display: flex;
-  align-items: center;
+.bar {
+  display: flex; align-items: center; gap: 8px;
   padding: 6px 20px;
-  border-top: 1px solid var(--color-neutral-3);
-  background: var(--color-neutral-1);
-  font-size: 12px;
-  color: var(--color-neutral-6);
+  border-top: 1px solid var(--color-card-stroke);
+  background: var(--color-panel-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 11px; color: var(--color-neutral-6);
   flex-shrink: 0;
 }
-
-.status-spacer {
-  flex: 1;
-}
-
-.status-sync-warning {
-  color: var(--color-warning);
-  margin-right: 16px;
-}
-
-.status-version-label {
-  color: var(--color-neutral-5);
+.chip {
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--color-neutral-2); color: var(--color-neutral-6);
+  font-weight: 500;
 }
 </style>
