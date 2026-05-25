@@ -289,6 +289,12 @@ public class VrainExportService {
         }
 
         // Find generated PDF
+        // vRain script generates [bookId]_vrain.pdf
+        Path vrainPdf = VRAIN_DIR.resolve("books_mr").resolve(bookId).resolve(bookId + "_vrain.pdf");
+        if (Files.exists(vrainPdf)) {
+            return vrainPdf;
+        }
+
         Path expectedPdf = VRAIN_DIR.resolve("books_mr").resolve(bookId).resolve(bookId + ".pdf");
         if (Files.exists(expectedPdf)) {
             return expectedPdf;
