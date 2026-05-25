@@ -59,7 +59,7 @@ function openTpl() {
 
     <!-- left: back + title + template selector -->
     <div class="tb-left">
-      <button class="tb-back" @click="emit('back')">← 返回画布</button>
+      <button class="tb-back" @click="emit('back')">← 返回编辑工作室</button>
       <div class="tb-title">{{ draftTitle }}</div>
 
       <!-- template selector -->
@@ -89,7 +89,7 @@ function openTpl() {
         </Teleport>
       </div>
       <button class="tb-act" :disabled="autoLayouting" @click="emit('autoLayout')">
-        {{ autoLayouting ? '正在排版...' : '自动排版' }}
+        {{ autoLayouting ? '检索中...' : '检索数据' }}
       </button>
       <button class="tb-act tb-act--primary" :disabled="exporting" @click="emit('export')">
         {{ exporting ? '正在导出...' : '付梓导出' }}
@@ -101,10 +101,6 @@ function openTpl() {
       <button :class="['tb-tgl', { on: tweaksOpen }]" @click="emit('toggleTweaks')" title="排版微调">
         微调
       </button>
-      <select class="tb-paper" :value="paper" @change="emit('paperChange', ($event.target as HTMLSelectElement).value as 'A4'|'A3')">
-        <option value="A4">A4</option>
-        <option value="A3">A3</option>
-      </select>
       <span class="tb-page">第 {{ currentPage }}/{{ totalPages }} 页</span>
     </div>
   </header>
@@ -143,38 +139,49 @@ function openTpl() {
 <style scoped>
 /* ---- toolbar ---- */
 .toolbar {
-  display: flex; align-items: center; gap: 16px;
-  padding: 10px 20px;
-  background: var(--color-panel-bg);
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 16px;
+  background: var(--color-neutral-1);
   border-bottom: 1px solid var(--color-card-stroke);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   flex-shrink: 0;
 }
-.tb-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.tb-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+.tb-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.tb-right { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0; }
+
+.tb-right .tb-act,
+.tb-right .tb-tgl,
+.tb-right .tpl-btn {
+  border-radius: 999px;
+}
 
 .tb-back {
   font-size: 12px; color: var(--color-neutral-6);
   background: none; border: none; cursor: pointer;
-  white-space: nowrap; padding: 4px 8px; border-radius: 6px;
+  white-space: nowrap; padding: 5px 10px; border-radius: 999px;
   transition: all 0.14s ease;
+  font-family: var(--font-sans);
 }
 .tb-back:hover { color: var(--color-accent); background: var(--color-neutral-2); }
-.tb-title { font-size: 14px; font-weight: 500; color: var(--color-neutral-9); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+.tb-title {
+  font-size: 14px; font-weight: 600; color: var(--color-neutral-9);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 240px;
+  font-family: var(--font-sans);
+}
 
 /* ---- template selector ---- */
 .tpl-wrap { position: relative; }
 .tpl-btn {
   display: flex; align-items: center; gap: 4px;
-  padding: 6px 10px;
-  background: var(--color-neutral-1);
+  padding: 5px 12px;
+  background: var(--color-neutral-2);
   border: 1px solid var(--color-card-stroke);
-  border-radius: 8px;
+  border-radius: 999px;
   color: var(--color-neutral-8); font-size: 12px; cursor: pointer;
   white-space: nowrap;
   transition: all 0.14s ease;
+  font-family: var(--font-sans);
 }
-.tpl-btn:hover { background: var(--color-neutral-2); border-color: var(--color-accent); }
+.tpl-btn:hover { background: var(--color-neutral-3); border-color: var(--color-accent); }
 .tpl-caret { font-size: 8px; color: var(--color-neutral-5); margin-left: 2px; }
 
 .tpl-backdrop { position: fixed; inset: 0; z-index: 998; }
@@ -213,30 +220,32 @@ function openTpl() {
 
 /* ---- action buttons ---- */
 .tb-act {
-  padding: 6px 14px; font-size: 12px; font-weight: 500;
-  border: 1px solid var(--color-card-stroke); border-radius: 8px;
+  padding: 5px 14px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--color-card-stroke); border-radius: 999px;
   background: var(--color-neutral-1); color: var(--color-neutral-7);
   cursor: pointer; white-space: nowrap;
   transition: all 0.14s ease;
+  font-family: var(--font-sans);
 }
-.tb-act:hover:not(:disabled) { background: var(--color-neutral-2); transform: translateY(-1px); box-shadow: var(--shadow-whisper); }
+.tb-act:hover:not(:disabled) { background: var(--color-neutral-2); }
 .tb-act:disabled { opacity: 0.4; cursor: default; }
-.tb-act--primary { background: var(--color-accent); color: #fff; border-color: var(--color-accent); box-shadow: 0 6px 16px rgba(196,58,49,0.16); }
-.tb-act--primary:hover:not(:disabled) { background: var(--color-accent); opacity: 0.9; box-shadow: 0 8px 24px rgba(196,58,49,0.22); }
+.tb-act--primary { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+.tb-act--primary:hover:not(:disabled) { opacity: 0.9; }
 .tb-sep { width: 1px; height: 22px; background: var(--color-card-stroke); margin: 0 4px; }
 
 .tb-tgl {
-  padding: 6px 12px; font-size: 12px;
-  border: 1px solid var(--color-card-stroke); border-radius: 8px;
+  padding: 5px 12px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--color-card-stroke); border-radius: 999px;
   background: var(--color-neutral-1); color: var(--color-neutral-6);
   cursor: pointer; white-space: nowrap; transition: all 0.14s ease;
+  font-family: var(--font-sans);
 }
 .tb-tgl:hover { background: var(--color-neutral-2); }
 .tb-tgl.on { border-color: var(--color-accent); color: var(--color-accent); background: var(--color-accent-muted); }
 
 .tb-paper {
-  padding: 5px 6px; font-size: 11px;
-  border: 1px solid var(--color-card-stroke); border-radius: 8px;
+  padding: 5px 8px; font-size: 11px;
+  border: 1px solid var(--color-card-stroke); border-radius: 999px;
   background: var(--color-neutral-1); color: var(--color-neutral-7);
   cursor: pointer; outline: none;
 }
@@ -244,11 +253,9 @@ function openTpl() {
 
 /* ---- tweaks bar ---- */
 .tweak-bar {
-  display: flex; align-items: center; gap: 20px;
-  padding: 8px 20px;
-  background: var(--color-panel-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; gap: 16px;
+  padding: 6px 16px;
+  background: var(--color-neutral-1);
   border-bottom: 1px solid var(--color-card-stroke);
 }
 .tweak-row { display: flex; align-items: center; gap: 6px; }

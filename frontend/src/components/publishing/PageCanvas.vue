@@ -15,6 +15,7 @@ import type { PublicationData } from "../../types/family"
 import type { ComposedPage, HitRegion } from "../../lib/bookLayout/types"
 import { getBookLayoutEngine } from "../../lib/bookLayout/BookLayoutEngine"
 import { getCanvasRenderer } from "../../lib/bookLayout/CanvasRenderer"
+import { getCanvasConfig } from "../../lib/bookLayout/CanvasConfig"
 import { computeLineageText } from "../../lib/lineageText"
 import type { LayoutOptions as LineageLayoutOptions } from "../../lib/lineageText"
 import type { LayoutOptions } from "../../lib/bookLayout/types"
@@ -37,6 +38,7 @@ const props = defineProps<{
   lineHeight?: number
   columns?: number
   fontFamily?: string
+  hoveredPersonId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -94,7 +96,7 @@ const editorPos = computed(() => {
 })
 
 // ── 缩放 & 拖拽 ──
-const zoom = ref(1)
+const zoom = ref(0.3)
 const panX = ref(0)
 const panY = ref(0)
 const isDragging = ref(false)
@@ -121,32 +123,7 @@ const displayPage = computed(() => Math.min(Math.max(props.sheetNumber - 1, 0), 
 // ── 排版 ──
 
 function runLayout() {
-  // 优先使用父组件传入的条目（含用户编辑），否则从 publicationData 生成
-  let allEntries: LineageEntry[]
-
-  if (props.entries && props.entries.length > 0) {
-    allEntries = props.entries
-  } else if (props.publicationData) {
-    const lineageOpts: LineageLayoutOptions = {
-      fontSize: props.fontSize ?? 48,
-      lineHeight: props.lineHeight ?? 1.4,
-      columns: props.columns ?? 1,
-      marginPreset: "standard",
-    }
-    const computed = computeLineageText(props.publicationData, lineageOpts)
-    allEntries = computed.flatMap(p => p.entries)
-  } else {
-    composedPages.value = []
-    layoutReady.value = false
-    return
-  }
-
-  if (allEntries.length === 0) {
-    composedPages.value = []
-    layoutReady.value = false
-    return
-  }
-
+  const canvasCfg = getCanvasConfig(props.canvasId)
   const opts: LayoutOptions = {
     fontSize: props.fontSize ?? 48,
     lineHeight: props.lineHeight ?? 1.4,
@@ -154,12 +131,71 @@ function runLayout() {
     marginPreset: "standard",
     fontFamily: props.fontFamily,
   }
-  if (props.fontFamily) {
-    renderer.setBodyFont(props.fontFamily)
+  if (props.fontFamily) renderer.setBodyFont(props.fontFamily)
+
+  // 获取当前页面的条目
+  const entries = props.pageData?.entries
+  if (entries && entries.length > 0) {
+    // 仅渲染当前页条目
+    composedPages.value = engine.layoutSync(entries, props.canvasId, opts)
+    layoutReady.value = true
+    return
   }
 
-  composedPages.value = engine.layoutSync(allEntries, props.canvasId, opts)
-  layoutReady.value = true
+  // 空白页 → 渲染完整空白纸页（底色+纹理+版框+鱼尾+书口）
+  if (props.pageData && entries?.length === 0) {
+    const f = canvasCfg.frame
+    const m = canvasCfg.margins
+    const margin = Math.max(f.inlineWidth, f.outlineWidth) + f.outlineHMargin
+    const textArea = {
+      x: m.left + margin, y: m.top + margin,
+      width: canvasCfg.width - m.left - m.right - margin * 2,
+      height: canvasCfg.height - m.top - m.bottom - margin * 2,
+    }
+    const layers: any[] = [
+      { kind: "background", color: canvasCfg.backgroundColor, textureUrl: canvasCfg.backgroundImage ? `/vrain/canvas/${canvasCfg.backgroundImage}` : undefined, textureOpacity: canvasCfg.backgroundImage ? 0.3 : 0, pageWidth: canvasCfg.width, pageHeight: canvasCfg.height },
+    ]
+    if (f.inlineWidth > 0) {
+      layers.push({ kind: "frame", inline: { x: textArea.x, y: textArea.y, width: textArea.width, height: textArea.height, lineWidth: f.inlineWidth, color: f.inlineColor }, outline: null })
+    }
+    // 鱼尾
+    const ft = canvasCfg.fishTail
+    if (ft) {
+      layers.push({ kind: "fishTail", position: "top", centerX: canvasCfg.width / 2, rectY: ft.topY, rectHeight: ft.topRectHeight, triaHeight: ft.topTriaHeight, triaDirection: "up" as const, color: ft.topColor, lineWidth: ft.topLineWidth, isFlower: ft.isFlower, flowerImageUrl: ft.isFlower ? `/vrain/canvas/${ft.flowerImage}` : undefined })
+    }
+    // 书口标题
+    layers.push({ kind: "header", title: `世系錄 · ${props.sheetNumber}`, x: canvasCfg.width / 2, y: textArea.y - 8, fontFamily: "Noto Serif SC", fontSize: 24, color: f.inlineColor || "#8b7355" })
+    composedPages.value = [{
+      pageNumber: props.sheetNumber,
+      width: canvasCfg.width,
+      height: canvasCfg.height,
+      layers,
+      hitRegions: [],
+      glyphs: { pageNumber: props.sheetNumber, generationHeaders: [] },
+    }]
+    layoutReady.value = true
+    return
+  }
+
+  // 首次加载无页面数据 → 从 publicationData 生成全部
+  if (props.publicationData) {
+    const lineageOpts: LineageLayoutOptions = {
+      fontSize: props.fontSize ?? 48,
+      lineHeight: props.lineHeight ?? 1.4,
+      columns: props.columns ?? 1,
+      marginPreset: "standard",
+    }
+    const computed = computeLineageText(props.publicationData, lineageOpts)
+    const allEntries = computed.flatMap(p => p.entries)
+    if (allEntries.length > 0) {
+      composedPages.value = engine.layoutSync(allEntries, props.canvasId, opts)
+      layoutReady.value = true
+      return
+    }
+  }
+
+  composedPages.value = []
+  layoutReady.value = false
 }
 
 // ── 渲染 ──
@@ -219,9 +255,17 @@ function renderCanvas() {
 
   renderer.render(ctx, page, totalScale)
 
-  // 绘制编辑光标
-  if (editingRegion.value) {
-    renderer.renderCursor(ctx, editingRegion.value, totalScale)
+  // 悬停高亮
+  if (props.hoveredPersonId) {
+    for (const region of page.hitRegions) {
+      if (region.entry.personId === props.hoveredPersonId) {
+        ctx.save()
+        if (totalScale !== 1) ctx.scale(totalScale, totalScale)
+        ctx.fillStyle = "rgba(196, 58, 49, 0.12)"
+        ctx.fillRect(region.rect.x, region.rect.y, region.rect.width, region.rect.height)
+        ctx.restore()
+      }
+    }
   }
 }
 
@@ -246,13 +290,6 @@ function handleCanvasClick(e: MouseEvent) {
   const hit = renderer.hitTest(mouseX, mouseY, hitPage, 1)
   if (hit) {
     emit("focusEntry", hit.entry.personId)
-    if (hit.action === "edit") {
-      startInlineEdit(hit)
-    } else {
-      cancelInlineEdit()
-    }
-  } else {
-    cancelInlineEdit()
   }
 }
 
@@ -356,7 +393,7 @@ onUnmounted(() => {
 watch(
   () => [props.publicationData, props.canvasId] as const,
   () => {
-    zoom.value = 1
+    zoom.value = 0.3
     panX.value = 0
     panY.value = 0
     currentFitScale.value = 0
@@ -379,13 +416,19 @@ watch(
 )
 
 watch(
-  () => props.sheetNumber,
+  () => [props.sheetNumber, props.pageData] as const,
+  () => { runLayout(); nextTick(() => renderCanvas()) },
+)
+
+watch(
+  () => props.hoveredPersonId,
   () => nextTick(() => renderCanvas()),
 )
 
 defineExpose({
   reloadPreview: () => { runLayout(); nextTick(() => renderCanvas()) },
   composedPages,
+  zoom,
 })
 </script>
 
@@ -403,35 +446,12 @@ defineExpose({
 
   <div v-if="relayouting" class="page-canvas__overlay">正在刷新预览...</div>
 
-  <!-- 浮动控件：缩放 + 沉浸 -->
-  <div v-if="layoutReady" class="page-canvas__float">
-    <span class="meta-zoom" @click="zoom = 1; panX = 0; panY = 0; renderCanvas()" title="重置缩放">
-      {{ Math.round(zoom * 100) }}%
-    </span>
-    <button class="immersive-btn" @click="toggleImmersive" :title="immersive ? '退出沉浸' : '沉浸预览'">
-      {{ immersive ? '✕' : '⛶' }}
-    </button>
-  </div>
+  <!-- 沉浸按钮 -->
+  <button v-if="layoutReady" class="immersive-btn" @click="toggleImmersive" :title="immersive ? '退出沉浸' : '沉浸预览'">
+    {{ immersive ? '✕' : '⛶' }}
+  </button>
 
-  <Teleport to="body">
-    <div
-      v-if="showInlineEditor"
-      class="inline-editor"
-      :style="{ left: editorPos.x + 'px', top: editorPos.y + 'px' }"
-    >
-      <textarea
-        v-model="editText"
-        class="inline-editor__input"
-        rows="4"
-        @keydown.escape="cancelInlineEdit"
-        @keydown.ctrl.enter="confirmInlineEdit"
-      ></textarea>
-      <div class="inline-editor__actions">
-        <span class="inline-editor__hint">Ctrl+Enter 确认 · Esc 取消</span>
-        <button class="btn-confirm" @click="confirmInlineEdit">确认</button>
-      </div>
-    </div>
-  </Teleport>
+
 </template>
 
 <style scoped>
@@ -442,55 +462,7 @@ defineExpose({
   border-radius: 2px;
 }
 
-/* 浮动控件 */
-.page-canvas__float {
-  position: absolute;
-  bottom: 16px;
-  right: 16px;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: var(--color-panel-bg);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--color-card-stroke);
-}
 
-.meta-zoom {
-  cursor: pointer;
-  user-select: none;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 11px;
-  color: var(--color-neutral-7);
-  font-variant-numeric: tabular-nums;
-  transition: background 0.15s;
-}
-.meta-zoom:hover {
-  background: var(--color-accent);
-  color: #fff;
-}
-
-.immersive-btn {
-  width: 26px;
-  height: 26px;
-  border: none;
-  background: transparent;
-  color: var(--color-neutral-6);
-  font-size: 14px;
-  cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-}
-.immersive-btn:hover {
-  background: var(--color-accent);
-  color: #fff;
-}
 
 .page-canvas__overlay {
   position: absolute;
@@ -507,67 +479,10 @@ defineExpose({
   font-weight: 500;
 }
 
-/* ── 内联编辑器 ── */
 
-.inline-editor {
-  position: fixed;
-  z-index: 9999;
-  background: var(--color-neutral-1);
-  border: 1px solid var(--color-accent);
-  border-radius: 10px;
-  padding: 12px;
-  min-width: 260px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(12px);
-}
-
-.inline-editor__input {
-  width: 100%;
-  min-height: 80px;
-  border: 1px solid var(--color-card-stroke);
-  border-radius: 6px;
-  padding: 8px 10px;
-  font-family: "Noto Serif SC", serif;
-  font-size: 13px;
-  line-height: 1.8;
-  color: var(--color-neutral-9);
-  background: var(--color-neutral-1);
-  resize: vertical;
-  outline: none;
-}
-
-.inline-editor__input:focus {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(196, 58, 49, 0.1);
-}
-
-.inline-editor__actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 8px;
-}
-
-.inline-editor__hint {
-  font-size: 10px;
-  color: var(--color-neutral-4);
-}
-
-.btn-confirm {
-  padding: 4px 16px;
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.btn-confirm:hover {
-  opacity: 0.9;
-}
 
 /* ── 沉浸预览模式 ── */
+.immersive-btn { position: absolute; top: 8px; right: 8px; z-index: 3; }
 .page-canvas.immersive {
   position: fixed;
   inset: 0;

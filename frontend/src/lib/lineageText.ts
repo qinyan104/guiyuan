@@ -30,18 +30,28 @@ function buildNode(pid: string, families: Record<string, FamilyUnit>, gen: numbe
   const node: GenNode = { pid, gen, kids: [] }
   if (visited.has(pid)) return node
   visited.add(pid)
+  // 此人作为 adults[0] 的所有家庭
   const myFams = Object.values(families).filter(f => f.adults[0] === pid)
   const allKids: string[] = []
   for (const f of myFams) {
     if (f.adults.length > 1) node.spId = f.adults[1]
+    // 外嫁女：子女不入本族世系
+    if (f.branchMode === "married-out") continue
     for (const c of f.children) allKids.push(c)
   }
+  // 此人作为 adults[1] 的家庭（配偶关系）
   for (const f of Object.values(families)) {
     if (f.adults.length > 1 && f.adults[1] === pid) {
-      for (const c of f.children) allKids.push(c)
+      // 招婿：子女归入女方（adults[0]）的世系
+      if (f.branchMode === "uxorilocal") {
+        // 子女已在 adults[0] 的 myFams 中处理
+      } else {
+        for (const c of f.children) allKids.push(c)
+      }
       if (!node.spId) node.spId = f.adults[0]
     }
   }
+  // 子女递归
   for (const kid of [...new Set(allKids)]) {
     node.kids.push(buildNode(kid, families, gen + 1, visited))
   }
@@ -51,68 +61,145 @@ function buildNode(pid: string, families: Record<string, FamilyUnit>, gen: numbe
 
 // ── Text generation ──
 
+/** 排行前缀 */
+const ORDINALS = ["長", "次", "三", "四", "五", "六", "七", "八", "九", "十"]
+
+function ordinal(i: number): string {
+  return ORDINALS[i] || `${i + 1}`
+}
+
+/** 阿拉伯数字 → 汉字（支持 0–9999） */
+function numToCn(n: number): string {
+  if (n === 0) return "零"
+  const digits = "零一二三四五六七八九"
+  const units = ["", "十", "百", "千"]
+  let s = ""
+  let u = 0
+  let hasContent = false
+  while (n > 0) {
+    const d = n % 10
+    if (d > 0) {
+      s = (u > 0 && d === 1 && u === 1 && !hasContent ? "" : digits[d]) + units[u] + s
+      hasContent = true
+    } else if (hasContent && u === 0) {
+      s = digits[0] + s
+    }
+    n = Math.floor(n / 10)
+    u++
+  }
+  // 去除末尾多余的零
+  s = s.replace(/零+$/, "")
+  return s
+}
+
+/** 去掉文本中的地点信息 */
+function stripLocation(s: string): string {
+  // 括号内容
+  s = s.replace(/[（(][^)）]*[)）]/g, "")
+  // 常见省市区县
+  s = s.replace(/[省市区县乡镇村]{1,2}/g, "")
+  // 常见方位词+地名模式
+  s = s.replace(/[东西南北]?[京津沪渝苏浙皖闽赣鲁豫鄂湘粤桂琼川黔滇藏陕甘青宁蒙新台港][\w]{0,4}/g, "")
+  // 常见地名后缀词
+  s = s.replace(/[東西南北]?[京津滬渝蘇浙皖閩贛魯豫鄂湘粵桂瓊川黔滇藏陝甘青寧蒙新臺港][\w]{0,4}/g, "")
+  // 清理多余空格和标点
+  s = s.replace(/\s+/g, "")
+  s = s.replace(/，+/g, "，")
+  s = s.replace(/。。/g, "。")
+  s = s.replace(/^[，。]/, "")
+  return s
+}
+
 function formatEntry(
   pid: string, gen: number,
   people: Record<string, Person>,
   families: Record<string, FamilyUnit>,
+  s?: LineageSettings,
 ): LineageEntry {
   const p = people[pid]
   if (!p) return { personId: pid, personName: pid, formattedText: pid, generation: gen, gender: "unknown" as const }
 
   const parts: string[] = []
 
+  // ── 姓名 ──
   if (p.gender === "male") {
     if (p.titleName) {
-      parts.push(`${p.titleName}公，讳${p.name}`)
+      parts.push(`${p.titleName}公，諱${p.name}`)
     } else {
-      parts.push(`公讳${p.name}`)
+      parts.push(`公諱${p.name}`)
     }
   } else if (p.gender === "female") {
-    parts.push(`${p.name}`)
+    // 女性有姓氏则标某氏
+    const clanName = p.clan || p.name
+    parts.push(`${clanName}`)
   } else {
     parts.push(`${p.name}`)
   }
 
+  // ── 生卒（已过滤地名） ──
   const bio: string[] = []
-  if (p.birth) bio.push(`生于${p.birth}`)
-  if (p.death) bio.push(`卒于${p.death}`)
-  if (p.age) bio.push(`享年${p.age}`)
-  if (bio.length > 0) parts.push(bio.join("，") + "。")
+  if (p.birth) bio.push(`生於${stripLocation(p.birth)}`)
+  if (p.death) bio.push(`卒於${stripLocation(p.death)}`)
+  if (p.age) {
+    const ageWord = p.gender === "male" ? "享壽" : "享年"
+    bio.push(`${ageWord}${p.age}`)
+  }
+  if (bio.length > 0) parts.push("。" + bio.join("，") + "。")
 
+  // ── 配偶（含生卒信息） ──
   const fams = Object.values(families).filter(f => f.adults.includes(pid))
-  const spouses: string[] = []
-  for (const f of fams) {
+  const spouseEntries: string[] = []
+  for (let i = 0; i < fams.length; i++) {
+    const f = fams[i]
     const spouseId = f.adults.find(a => a !== pid)
     if (spouseId && people[spouseId]) {
-      spouses.push(people[spouseId].name)
+      const s = people[spouseId]
+      // 招婿：女为主，男为"贅"；外嫁：女"適"男
+      const isUxori = f.branchMode === "uxorilocal"
+      const prefix = p.gender === "female"
+        ? (isUxori ? "招" : "適")
+        : (isUxori ? "贅" : i === 0 ? "元配" : "繼配")
+      const sParts: string[] = [prefix + s.name]
+      if (s.birth) sParts.push(`生於${stripLocation(s.birth)}`)
+      if (s.death) sParts.push(`卒於${stripLocation(s.death)}`)
+      if (s.age) sParts.push(`享年${s.age}`)
+      spouseEntries.push(sParts.join("，"))
     }
   }
-  if (spouses.length > 0) {
-    const label = p.gender === "female" ? "适" : "配"
-    parts.push(`${label}${spouses.join("、")}。`)
-  }
+  if (spouseEntries.length > 0) parts.push("。" + spouseEntries.join("，") + "。")
 
+  // ── 子女 ──
   const children = fams.flatMap(f => f.children).filter(c => people[c])
   if (children.length > 0) {
     const sons = children.filter(c => people[c]?.gender === "male")
     const daughters = children.filter(c => people[c]?.gender === "female")
     const kidParts: string[] = []
     if (sons.length > 0) {
-      kidParts.push(`生子${sons.length}：${sons.map(s => people[s].name).join("、")}`)
+      kidParts.push(`子${sons.length}：${sons.map((s, i) => `${ordinal(i)}${people[s].name}`).join("、")}`)
     }
     if (daughters.length > 0) {
-      kidParts.push(`生女${daughters.length}：${daughters.map(d => people[d].name).join("、")}`)
+      kidParts.push(`女${daughters.length}：${daughters.map((d, i) => `${ordinal(i)}${people[d].name}`).join("、")}`)
     }
-    if (kidParts.length > 0) parts.push(kidParts.join("，") + "。")
+    if (kidParts.length > 0) parts.push("。" + kidParts.join("，") + "。")
   }
 
-  if (p.note) parts.push(p.note)
-  if (p.clan) parts.push(`族系：${p.clan}。`)
+  // ── 備註 ──
+  if (p.note) parts.push("。" + p.note)
+
+  let text = parts.join("")
+  // 阿拉伯数字 → 汉字（可关闭）
+  if (s?.cnNumeral !== false) {
+    text = text.replace(/\d+/g, (m) => numToCn(parseInt(m)))
+  }
+  // 去掉地点（可关闭）
+  if (s?.hideLocation !== false) {
+    text = stripLocation(text)
+  }
 
   return {
     personId: pid,
     personName: p.name,
-    formattedText: parts.join(""),
+    formattedText: text,
     generation: gen,
     gender: p.gender,
   }
@@ -120,19 +207,70 @@ function formatEntry(
 
 // ── Flatten tree ──
 
-function collectEntries(
+/** 按世代分层收集：同一世代内按支系长幼排列 */
+function collectByGeneration(
+  roots: GenNode[],
+  people: Record<string, Person>,
+  families: Record<string, FamilyUnit>,
+  s: LineageSettings,
+): LineageEntry[] {
+  const entries: LineageEntry[] = []
+  const visited = new Set<string>()
+  // BFS：世代优先
+  let currentGen: GenNode[] = roots
+  while (currentGen.length > 0) {
+    const nextGen: GenNode[] = []
+    for (const node of currentGen) {
+      if (visited.has(node.pid)) continue
+      visited.add(node.pid)
+      entries.push(formatEntry(node.pid, node.gen, people, families, s))
+      // 子女按数组中顺序（即长幼序）入下一世代
+      for (const kid of node.kids) {
+        if (!visited.has(kid.pid)) nextGen.push(kid)
+      }
+    }
+    currentGen = nextGen
+  }
+  return entries
+}
+
+/** DFS：按支系深度优先（父→子→孙一条线走到底） */
+function collectDFS(
+  roots: GenNode[],
+  people: Record<string, Person>,
+  families: Record<string, FamilyUnit>,
+  s: LineageSettings,
+): LineageEntry[] {
+  const entries: LineageEntry[] = []
+  const visited = new Set<string>()
+  function walk(node: GenNode) {
+    if (visited.has(node.pid)) return
+    visited.add(node.pid)
+    entries.push(formatEntry(node.pid, node.gen, people, families, s))
+    for (const kid of node.kids) walk(kid)
+  }
+  for (const r of roots) walk(r)
+  return entries
+}
+
+/** 收集配偶为独立条目 */
+function addSpouseEntries(
   node: GenNode,
   people: Record<string, Person>,
   families: Record<string, FamilyUnit>,
   entries: LineageEntry[],
   visited: Set<string>,
+  s: LineageSettings,
 ) {
-  if (visited.has(node.pid)) return
-  visited.add(node.pid)
-  entries.push(formatEntry(node.pid, node.gen, people, families))
-  for (const kid of node.kids) {
-    collectEntries(kid, people, families, entries, visited)
+  const myFams = Object.values(families).filter(f => f.adults.includes(node.pid))
+  for (const f of myFams) {
+    const spouseId = f.adults.find(a => a !== node.pid)
+    if (spouseId && people[spouseId] && !visited.has(spouseId)) {
+      visited.add(spouseId)
+      entries.push(formatEntry(spouseId, node.gen, people, families, s))
+    }
   }
+  for (const kid of node.kids) addSpouseEntries(kid, people, families, entries, visited, s)
 }
 
 // ── Dynamic entries per page ──
@@ -182,26 +320,52 @@ export function paginate(entries: LineageEntry[], rootIds: string[], opts: Layou
 
 // ── Main export ──
 
-export function computeLineageText(data: PublicationData, opts: LayoutOptions = {}): LineagePage[] {
-  const { people, families } = data
+export interface LineageSettings {
+  sortGenFirst?: boolean
+  showSpouses?: boolean
+  hideLocation?: boolean
+  cnNumeral?: boolean
+}
+
+export function computeLineageText(data: PublicationData, opts: LayoutOptions = {}, settings: LineageSettings = {}): LineagePage[] {
+  const { people, families, info } = data
+  const pubInfo = info ? { ancestralOrigin: info.ancestralOrigin, hallName: info.hallName } : undefined
+  const s = { sortGenFirst: true, showSpouses: false, hideLocation: true, cnNumeral: true, ...settings }
+
   if (Object.keys(people).length === 0) return []
 
   if (Object.keys(families).length === 0 && Object.keys(people).length === 1) {
     const pid = Object.keys(people)[0]
-    const entry = formatEntry(pid, 0, people, families)
+    const entry = formatEntry(pid, 0, people, families, s)
     return paginate([entry], [pid], opts)
   }
 
   const roots = findRoots(people, families)
   if (roots.length === 0) return []
 
-  const allEntries: LineageEntry[] = []
-  const globalVisited = new Set<string>()
-
+  // 构建所有根节点的树
+  const rootNodes: GenNode[] = []
   for (const rid of roots) {
     const visited = new Set<string>()
-    const rootNode = buildNode(rid, families, 0, visited)
-    collectEntries(rootNode, people, families, allEntries, globalVisited)
+    rootNodes.push(buildNode(rid, families, 0, visited))
+  }
+
+  // BFS（按世代）或 DFS（按支系）
+  const allEntries = s.sortGenFirst
+    ? collectByGeneration(rootNodes, people, families, s)
+    : collectDFS(rootNodes, people, families, s)
+
+  // 女性独立条目
+  if (s.showSpouses) {
+    const spouseEntries: LineageEntry[] = []
+    const spouseVisited = new Set(allEntries.map(e => e.personId))
+    for (const r of rootNodes) addSpouseEntries(r, people, families, spouseEntries, spouseVisited, s)
+    // 按世代插入
+    for (const se of spouseEntries) {
+      const idx = allEntries.findIndex(e => e.generation > se.generation)
+      if (idx === -1) allEntries.push(se)
+      else allEntries.splice(idx, 0, se)
+    }
   }
 
   return paginate(allEntries, roots, opts)

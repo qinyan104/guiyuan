@@ -36,6 +36,7 @@ export function layoutMultiRows(input: LayoutInput): PageGlyphs[] {
   const rawTextArea = getTextArea(canvas)
   const colWidth = getColumnWidthInternal(canvas)
   const { fontSize, lineHeight } = options
+  const pxFontSize = fontSize * 4 / 3
   const fontFamily = options.fontFamily || "qiji-combo"
   // 边距缩放
   const marginScale = options.marginPreset === "compact" ? 0.7 : options.marginPreset === "loose" ? 1.3 : 1.0
@@ -49,7 +50,7 @@ export function layoutMultiRows(input: LayoutInput): PageGlyphs[] {
   }
   const rowCount = canvas.multiRows.rowCount
   const rowHeight = textArea.height / rowCount
-  const lineStep = fontSize * lineHeight
+  const lineStep = pxFontSize * lineHeight
 
   const pages: PageGlyphs[] = []
   let currentPage = createMultiRowPage(0, canvas)

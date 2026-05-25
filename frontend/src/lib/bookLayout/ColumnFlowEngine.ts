@@ -44,7 +44,8 @@ export function layoutColumns(input: LayoutInput): PageGlyphs[] {
   const rawTextArea = getTextArea(canvas)
   const colWidth = getColumnWidthInternal(canvas)
   const { fontSize, lineHeight } = options
-  const lineStep = fontSize * lineHeight
+  const pxFontSize = fontSize * 4 / 3 // pt → px
+  const lineStep = pxFontSize * lineHeight
   const fontFamily = options.fontFamily || "qiji-combo"
 
   // 边距缩放
@@ -85,20 +86,44 @@ export function layoutColumns(input: LayoutInput): PageGlyphs[] {
     // ── 逐条目排版 ──
     for (const entry of genEntries) {
       const text = buildEntryText(entry)
+      let i = 0
 
-      for (const char of text) {
-        // 确保当前列有空间
+      while (i < text.length) {
+        const ch = text[i]
+
+        // ── 排版控制：换行符 ──
+        if (ch === "\n") { i++; continue }
+
+        // ── 排版控制：¶ = 换列 ──
+        if (ch === "\u00B6") {
+          i++
+          state.cursor.cursorY = textArea.y
+          if (!advanceCol(state, canvas)) {
+            pages.push(state.page)
+            state = createPage(pages.length, canvas)
+          }
+          continue
+        }
+
+        // ── 排版控制：§ = 换页 ──
+        if (ch === "\u00A7") {
+          i++
+          pages.push(state.page)
+          state = createPage(pages.length, canvas)
+          continue
+        }
+
         if (!advanceCursor(lineStep, state, canvas, lineStep)) {
           pages.push(state.page)
           state = createPage(pages.length, canvas)
         }
 
-        const m = metrics.measure(char, fontFamily, fontSize)
+        const m = metrics.measure(ch, fontFamily, fontSize)
         const col = state.columns[state.cursor.colIndex]
 
         const glyph: Glyph = {
-          char,
-          x: col.x + colWidth / 2 - m.width / 2, // 列内居中
+          char: ch,
+          x: col.x + colWidth / 2 - m.width / 2,
           y: state.cursor.cursorY,
           fontIndex: 0,
           fontSize,
@@ -110,6 +135,7 @@ export function layoutColumns(input: LayoutInput): PageGlyphs[] {
 
         col.glyphs.push(glyph)
         state.cursor.cursorY += lineStep
+        i++
       }
 
       // 条目间留一个空行
@@ -235,5 +261,16 @@ function advanceCursor(
   }
 
   // 所有列用完，需要新页
+  return false
+}
+
+/** 强制换到下一列（排版控制 ¶ 使用） */
+function advanceCol(state: PageState, config: CanvasConfig): boolean {
+  const nextColIndex = state.cursor.colIndex + 1
+  if (nextColIndex < config.leafCol) {
+    state.cursor.colIndex = nextColIndex
+    state.cursor.cursorY = getTextArea(config).y
+    return true
+  }
   return false
 }

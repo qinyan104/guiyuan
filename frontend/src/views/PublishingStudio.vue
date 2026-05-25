@@ -4,7 +4,6 @@ import { useRoute, useRouter } from "vue-router"
 import FeedbackStrip from "../components/FeedbackStrip.vue"
 import EntryEditor from "../components/publishing/EntryEditor.vue"
 import PageCanvas from "../components/publishing/PageCanvas.vue"
-import PageThumbnailBar from "../components/publishing/PageThumbnailBar.vue"
 import StudioStatusBar from "../components/publishing/StudioStatusBar.vue"
 import StudioToolbar from "../components/publishing/StudioToolbar.vue"
 import TweaksPanel from "../components/publishing/TweaksPanel.vue"
@@ -14,6 +13,7 @@ import { deleteSheet, exportPdfV2, listSheets, saveSheets, updateDraft } from ".
 import { useFeedback } from "../composables/useFeedback"
 import { usePublishingStudio } from "../composables/usePublishingStudio"
 import { computeLineageText, paginate, type LayoutOptions } from "../lib/lineageText"
+import { getBookLayoutEngine } from "../lib/bookLayout/BookLayoutEngine"
 import { CANVAS_TEMPLATES } from "../lib/vrainTemplates"
 import type { PublicationData } from "../types/family"
 import type { LineagePage } from "../types/publishing"
@@ -46,10 +46,23 @@ const relayouting = ref(false)
 const canvasNotice = ref("")
 const canvasRef = ref<InstanceType<typeof PageCanvas> | null>(null)
 const pubLoadError = ref("")
+
+// ── 拖拽分割线 ──
+const resizing = ref(false)
+const leftPanelWidth = ref(420)
+function handleResizeStart(e: MouseEvent) { resizing.value = true }
+function handleResizeMove(e: MouseEvent) {
+  if (!resizing.value) return
+  leftPanelWidth.value = Math.max(300, Math.min(600, e.clientX))
+}
+function handleResizeUp() { resizing.value = false }
 /** Canvas 点击条目 → EntryEditor 高亮对应的 personId */
 const highlightedPersonId = ref<string | null>(null)
+const hoveredPersonId = ref<string | null>(null)
 
 let canvasNoticeTimer: ReturnType<typeof setTimeout> | null = null
+let entryIdCounter = 0
+function newEntryId() { return `new-${Date.now()}-${entryIdCounter++}` }
 
 const layoutTweaks = ref<LayoutTweaks>({
   fontSize: 48,
@@ -58,6 +71,14 @@ const layoutTweaks = ref<LayoutTweaks>({
   marginPreset: "standard",
 })
 const fontFamily = ref("qiji-combo")
+
+// ── 世系录设置 ──
+const lineageSettings = ref({
+  sortGenFirst: true,
+  showSpouses: false,
+  hideLocation: true,
+  cnNumeral: true,
+})
 
 const draftStyleConfig = ref<Record<string, unknown>>({})
 
@@ -188,9 +209,8 @@ function showCanvasNotice(message: string, duration = 2400) {
 }
 
 async function handleExport() {
-  const composedPages = canvasRef.value?.composedPages
-  if (!composedPages || composedPages.length === 0) {
-    feedback.errorMessage.value = "请先执行「自动排版」生成书页"
+  if (layoutPages.value.length === 0 || !layoutPages.value.some(p => p.entries.length > 0)) {
+    feedback.errorMessage.value = "请先「检索数据」生成内容"
     return
   }
 
@@ -199,6 +219,17 @@ async function handleExport() {
     feedback.statusMessage.value = "正在生成古籍 PDF..."
     showCanvasNotice("正在生成 PDF...", 1800)
 
+    // 用全部页面的条目统一排版，生成完整 PDF
+    const allEntries = layoutPages.value.flatMap(p => p.entries)
+    const engine = getBookLayoutEngine()
+    const opts = {
+      fontSize: layoutTweaks.value.fontSize,
+      lineHeight: layoutTweaks.value.lineHeight,
+      columns: layoutTweaks.value.columns,
+      marginPreset: layoutTweaks.value.marginPreset,
+      fontFamily: fontFamily.value,
+    }
+    const composedPages = engine.layoutSync(allEntries, canvasId.value, opts)
     const pagesJson = JSON.stringify(composedPages)
     const blob = await exportPdfV2(draftId.value, pagesJson)
 
@@ -241,7 +272,7 @@ async function runLayout(skipNotice = true) {
       marginPreset: layoutTweaks.value.marginPreset,
       paper: paper.value,
     }
-    const pages = computeLineageText(pubData.value, opts)
+    const pages = computeLineageText(pubData.value, opts, lineageSettings.value)
     layoutPages.value = pages
     sheetTypes.value = pages.map(() => "genealogy")
     activeSheetIndex.value = 0
@@ -262,7 +293,7 @@ async function runLayout(skipNotice = true) {
         fontSize: layoutTweaks.value.fontSize,
       }),
     })
-    feedback.statusMessage.value = `排版完成，共 ${pages.length} 页`
+    feedback.statusMessage.value = `检索完成，共 ${pages.length} 页`
     showCanvasNotice(`已生成 ${pages.length} 页版面`)
   } catch (e: any) {
     feedback.errorMessage.value = "自动排版失败: " + (e.message || e)
@@ -419,10 +450,23 @@ function handleMoveToPage(entryIndex: number, targetPageIndex: number) {
   canvasRef.value?.reloadPreview()
 }
 
+function handleSettingChange(key: string, value: boolean) {
+  (lineageSettings.value as any)[key] = value
+  // 重新检索数据
+  if (pubData.value) {
+    runLayout().then(() => canvasRef.value?.reloadPreview())
+  }
+}
+
 function handleFontChange(fontId: string) {
   fontFamily.value = fontId
   showCanvasNotice(`字体已切换`)
   canvasRef.value?.reloadPreview()
+}
+
+function handleNavigateToEntry(pageIndex: number, personId: string) {
+  activeSheetIndex.value = pageIndex
+  highlightedPersonId.value = personId
 }
 
 function handleCanvasFocusEntry(personId: string) {
@@ -539,19 +583,40 @@ const statusText = computed(() => {
       @updateFont="handleFontChange"
     />
 
-    <div class="studio-workbench">
-      <PageThumbnailBar
-        :sheetCount="totalPages"
-        :activeSheetIndex="activeSheetIndex"
-        :sheetTypes="sheetTypes"
-        :pages="layoutPages"
-        :currentPage="currentPage"
-        :templateName="currentTemplateName"
-        :canvasId="canvasId"
-        @selectSheet="handleSelectSheet"
-        @addSheet="handleAddSheet"
-        @deleteSheet="handleDeleteSheet"
-        @reorderSheets="handleReorderSheets"
+    <div class="studio-workbench" :style="{ gridTemplateColumns: editorOpen ? leftPanelWidth + 'px 6px 1fr' : '1fr' }" @mousemove="handleResizeMove" @mouseup="handleResizeUp" @mouseleave="handleResizeUp">
+      <div v-if="editorOpen" class="studio-side">
+        <EntryEditor
+          :open="editorOpen"
+          :pageData="currentPageData"
+          :pageNumber="currentPage"
+          :totalPages="totalPages"
+          :templateName="currentTemplateName"
+          :relayouting="relayouting"
+          :highlightedPersonId="highlightedPersonId"
+          :allPages="layoutPages"
+          :sortGenFirst="lineageSettings.sortGenFirst"
+          :showSpouses="lineageSettings.showSpouses"
+          :hideLocation="lineageSettings.hideLocation"
+          :cnNumeral="lineageSettings.cnNumeral"
+          @close="editorOpen = false"
+          @updateEntry="handleUpdateEntry"
+          @moveEntry="handleMoveEntry"
+          @deleteEntry="handleDeleteEntry"
+          @moveToPage="handleMoveToPage"
+          @saveAndRelayout="handleSaveAndRelayout"
+          @navigateToEntry="handleNavigateToEntry"
+          @updateEntryAt="(pi, ei, t) => { if (layoutPages[pi]) { layoutPages[pi].entries[ei].formattedText = t; canvasRef?.reloadPreview(); } }"
+          @addEntry="(pi, name, text) => { layoutPages[pi].entries.push({ personId: newEntryId(), personName: name, formattedText: text, generation: 0, gender: 'male' as const }); canvasRef?.reloadPreview(); }"
+          @updateSetting="handleSettingChange"
+          @hoverEntry="(id) => hoveredPersonId = id"
+        />
+      </div>
+
+      <div
+        v-if="editorOpen"
+        class="studio-resize-handle"
+        :class="{ dragging: resizing }"
+        @mousedown="handleResizeStart"
       />
 
       <div class="studio-main">
@@ -571,34 +636,26 @@ const statusText = computed(() => {
             :lineHeight="layoutTweaks.lineHeight"
             :columns="layoutTweaks.columns"
             :fontFamily="fontFamily"
+            :hoveredPersonId="hoveredPersonId"
             :relayouting="relayouting"
             @navigateToPage="handleNavigateToPage"
             @editEntry="handleCanvasEditEntry"
             @focusEntry="handleCanvasFocusEntry"
           />
-
           <Transition name="notice-fade">
             <div v-if="canvasNotice" class="canvas-notice">{{ canvasNotice }}</div>
           </Transition>
-        </div>
-      </div>
 
-      <div class="studio-side">
-        <EntryEditor
-          :open="editorOpen"
-          :pageData="currentPageData"
-          :pageNumber="currentPage"
-          :totalPages="totalPages"
-          :templateName="currentTemplateName"
-          :relayouting="relayouting"
-          :highlightedPersonId="highlightedPersonId"
-          @close="editorOpen = false"
-          @updateEntry="handleUpdateEntry"
-          @moveEntry="handleMoveEntry"
-          @deleteEntry="handleDeleteEntry"
-          @moveToPage="handleMoveToPage"
-          @saveAndRelayout="handleSaveAndRelayout"
-        />
+          <!-- 页导航（右侧） -->
+          <div class="canvas-page-nav">
+            <button :disabled="currentPage <= 1" @click="activeSheetIndex--">◀</button>
+            <span>第 {{ currentPage }} / {{ totalPages }} 页</span>
+            <button :disabled="currentPage >= totalPages" @click="activeSheetIndex++">▶</button>
+            <span class="zoom-pct" @click="canvasRef?.reloadPreview()" title="点击重置">{{ Math.round((canvasRef?.zoom ?? 0.3) * 100) }}%</span>
+            <button class="btn-add" @click="handleAddSheet" title="新增页面">+</button>
+            <button v-if="totalPages > 1" class="btn-del" @click="handleDeleteSheet(activeSheetIndex)" title="删除当前页">−</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -616,22 +673,35 @@ const statusText = computed(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background:
-    radial-gradient(circle at 50% 0%, var(--color-neutral-2), transparent 60%),
-    var(--color-neutral-1);
+  background: var(--color-neutral-1);
 }
 
 .studio-workbench {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 0;
   gap: 0;
   flex: 1;
   min-height: 0;
-  transition: grid-template-columns 0.2s ease;
 }
 
-.studio-workbench:has(.entry-editor) {
-  grid-template-columns: 240px minmax(0, 1fr) minmax(316px, 360px);
+.studio-resize-handle {
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.studio-resize-handle:hover,
+.studio-resize-handle.dragging {
+  background: var(--color-accent);
+  opacity: 0.5;
+}
+
+.studio-side {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-neutral-1);
+  border-right: 1px solid var(--color-card-stroke);
 }
 
 .studio-main {
@@ -640,16 +710,6 @@ const statusText = computed(() => {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: #e8e0d4;
-}
-
-.studio-side {
-  position: relative;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  background: var(--color-neutral-1);
-  border-left: 1px solid var(--color-card-stroke);
 }
 
 .canvas-stage {
@@ -660,8 +720,44 @@ const statusText = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e8e0d4;
+  background: var(--color-canvas-bg);
 }
+
+.canvas-page-nav {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--color-neutral-1);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-card-stroke);
+  font-size: 11px;
+  color: var(--color-neutral-7);
+}
+
+.canvas-page-nav button {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-neutral-6);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+}
+.canvas-page-nav button:hover:not(:disabled) { background: var(--color-neutral-2); }
+.canvas-page-nav button:disabled { opacity: 0.3; cursor: default; }
+.canvas-page-nav .btn-add { color: var(--color-accent); }
+.canvas-page-nav .btn-del:hover:not(:disabled) { color: var(--color-accent); border-color: var(--color-accent); }
 
 .tweaks-dock {
   position: absolute;
