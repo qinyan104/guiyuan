@@ -16,12 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.rendering.PDFRenderer;
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 
 @Service
 public class VrainExportService {
@@ -42,22 +36,6 @@ public class VrainExportService {
         this.sheetRepo = sheetRepo;
         this.publishingService = publishingService;
         this.objectMapper = objectMapper;
-    }
-
-    public List<String> generatePreviewImages(Long draftId, String canvasId) throws IOException, InterruptedException {
-        Path pdfPath = exportPdf(draftId, canvasId);
-        if (!Files.exists(pdfPath)) throw new RuntimeException("预览生成失败");
-        List<String> images = new ArrayList<>();
-        try (PDDocument document = Loader.loadPDF(pdfPath.toFile())) {
-            PDFRenderer renderer = new PDFRenderer(document);
-            for (int i = 0; i < document.getNumberOfPages(); i++) {
-                BufferedImage image = renderer.renderImageWithDPI(i, 150);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(image, "png", baos);
-                images.add("data:image/png;base64," + Base64.getEncoder().encodeToString(baos.toByteArray()));
-            }
-        }
-        return images;
     }
 
     /**
