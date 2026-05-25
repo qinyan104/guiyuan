@@ -41,11 +41,22 @@ interface PageState {
 export function layoutColumns(input: LayoutInput): PageGlyphs[] {
   const { entries, canvas, options } = input
   const metrics = getFontMetricsEngine()
-  const textArea = getTextArea(canvas)
+  const rawTextArea = getTextArea(canvas)
   const colWidth = getColumnWidthInternal(canvas)
   const { fontSize, lineHeight } = options
   const lineStep = fontSize * lineHeight
-  const fontFamily = "Noto Serif SC" // 主字体
+  const fontFamily = options.fontFamily || "qiji-combo"
+
+  // 边距缩放
+  const marginScale = options.marginPreset === "compact" ? 0.7 : options.marginPreset === "loose" ? 1.3 : 1.0
+  const marginPadX = (rawTextArea.width * (1 - marginScale)) / 2
+  const marginPadY = (rawTextArea.height * (1 - marginScale)) / 2
+  const textArea = {
+    x: rawTextArea.x + marginPadX,
+    y: rawTextArea.y + marginPadY,
+    width: rawTextArea.width * marginScale,
+    height: rawTextArea.height * marginScale,
+  }
 
   const pages: PageGlyphs[] = []
   let state = createPage(pages.length, canvas)

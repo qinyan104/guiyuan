@@ -136,7 +136,10 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
 ]
 
 export const FONT_OPTIONS = [
-  { id: "qiji-combo.ttf", name: "奇迹 combo", description: "书法楷体风格（默认）" },
-  { id: "HanaMinA.ttf", name: "花園明朝 A", description: "CJK 基本字符" },
-  { id: "HanaMinB.ttf", name: "花園明朝 B", description: "CJK 扩展字符" },
+  { id: "qiji-combo", name: "奇迹 combo", description: "书法楷体风格（默认）" },
+  { id: "HanaMinA", name: "花園明朝 A", description: "CJK 基本字符区" },
+  { id: "HanaMinB", name: "花園明朝 B", description: "CJK 扩展字符区" },
+  { id: "XiaolaiMonoSC", name: "小赖等宽宋体", description: "等宽宋体" },
+  { id: "WenYue-GuTiFangSong", name: "文悦古体仿宋", description: "古典仿宋风格" },
+  { id: "PingXianZhenSong", name: "苹线真宋", description: "细线宋体" },
 ]

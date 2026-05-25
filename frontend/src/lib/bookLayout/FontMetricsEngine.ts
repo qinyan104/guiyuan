@@ -116,17 +116,18 @@ export class FontMetricsEngine {
     this.ensureCanvas()
 
     const ctx = this.ctx!
-    ctx.font = `${fontSize}pt "${fontFamily}"`
+    ctx.font = `${Math.round(fontSize * 4 / 3)}px "${fontFamily}", "SimSun", "STSong", "Songti SC", serif`
 
     for (const char of allChars) {
       const key = this.cacheKey(fontFamily, fontSize, char)
       if (!this.cache.has(key)) {
         const metrics = ctx.measureText(char)
+        const actualH = (metrics as any).actualBoundingBoxAscent + (metrics as any).actualBoundingBoxDescent || 0
         const metric: FontMetric = {
           width: metrics.width,
-          height: fontSize,
-          ascender: fontSize * 0.8,
-          descender: fontSize * 0.2,
+          height: actualH > 0 ? actualH : fontSize,
+          ascender: (metrics as any).actualBoundingBoxAscent || fontSize * 0.8,
+          descender: (metrics as any).actualBoundingBoxDescent || fontSize * 0.2,
         }
         this.setCache(key, metric)
       }
@@ -196,15 +197,17 @@ export class FontMetricsEngine {
     this.ensureCanvas()
 
     const ctx = this.ctx!
-    ctx.font = `${fontSize}pt "${fontFamily}"`
+    ctx.font = `${Math.round(fontSize * 4 / 3)}px "${fontFamily}", "SimSun", "STSong", "Songti SC", serif`
 
     const metrics = ctx.measureText(char)
 
+    // 有浏览器支持时使用真实字形边界
+    const actualH = (metrics as any).actualBoundingBoxAscent + (metrics as any).actualBoundingBoxDescent || 0
     return {
       width: metrics.width,
-      height: fontSize,
-      ascender: fontSize * 0.8,
-      descender: fontSize * 0.2,
+      height: actualH > 0 ? actualH : fontSize,
+      ascender: (metrics as any).actualBoundingBoxAscent || fontSize * 0.8,
+      descender: (metrics as any).actualBoundingBoxDescent || fontSize * 0.2,
     }
   }
 

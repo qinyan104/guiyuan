@@ -19,9 +19,16 @@ export class CanvasRenderer {
   private imageCache = new Map<string, HTMLImageElement>()
   /** 已加载的字体 */
   private loadedFonts = new Set<string>()
+  /** 当前正文字体（排版引擎传入） */
+  private bodyFont = "qiji-combo"
 
   constructor(dpr?: number) {
     this.dpr = dpr ?? (typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1)
+  }
+
+  /** 设置正文字体 */
+  setBodyFont(family: string): void {
+    this.bodyFont = family
   }
 
   /** 预加载字体 */
@@ -58,6 +65,9 @@ export class CanvasRenderer {
    */
   render(ctx: CanvasRenderingContext2D, page: ComposedPage, scale = 1): void {
     ctx.save()
+
+    // 禁用平滑，避免非整数倍缩放时文字发虚
+    ctx.imageSmoothingEnabled = false
 
     if (scale !== 1) {
       ctx.scale(scale, scale)
@@ -166,12 +176,11 @@ export class CanvasRenderer {
    * - comfortScale:   让文字达到舒适可读大小（目标 ~11pt 视觉）
    * - 取两者中较大的，但不超过 2x
    */
-  getFitScale(page: ComposedPage, containerWidth: number, containerHeight: number, fontSize = 14): number {
+  getFitScale(page: ComposedPage, containerWidth: number, containerHeight: number): number {
     const usableW = containerWidth * 0.92
     const usableH = containerHeight * 0.92
     const containerScale = Math.min(usableW / page.width, usableH / page.height)
-    const comfortScale = 11 / fontSize // 目标视觉 11pt
-    return Math.max(containerScale, Math.min(comfortScale, 2))
+    return Math.max(containerScale, 1.0)
   }
 
   // ── 各图层绘制 ──
@@ -304,7 +313,7 @@ export class CanvasRenderer {
     layer: import("./types").HeaderLayer,
   ): void {
     ctx.fillStyle = layer.color
-    ctx.font = `${layer.fontSize}pt "${layer.fontFamily}"`
+    ctx.font = `${Math.round(layer.fontSize * 4 / 3)}px "${layer.fontFamily}"`
     ctx.textAlign = "center"
     ctx.textBaseline = "top"
     ctx.fillText(layer.title, layer.x, layer.y)
@@ -316,7 +325,7 @@ export class CanvasRenderer {
   ): void {
     if (layer.logoText) {
       ctx.fillStyle = layer.color
-      ctx.font = `${layer.fontSize}pt "${layer.fontFamily}"`
+      ctx.font = `${Math.round(layer.fontSize * 4 / 3)}px "${layer.fontFamily}"`
       ctx.textAlign = "center"
       ctx.textBaseline = "bottom"
       ctx.fillText(layer.logoText, layer.x, layer.logoY ?? layer.y)
@@ -346,7 +355,8 @@ export class CanvasRenderer {
   ): void {
     for (const glyph of layer.glyphs) {
       ctx.fillStyle = glyph.color
-      ctx.font = `${glyph.fontSize}pt "qiji-combo", "Noto Serif SC", serif`
+      const bf = this.bodyFont
+      ctx.font = `${Math.round(glyph.fontSize * 4 / 3)}px "${bf}", "SimSun", "STSong", "Songti SC", "Noto Serif SC", serif`
       ctx.textAlign = "left"
       ctx.textBaseline = "alphabetic"
       ctx.fillText(glyph.char, glyph.x, glyph.y)

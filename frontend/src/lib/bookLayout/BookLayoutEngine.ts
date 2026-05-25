@@ -30,6 +30,7 @@ export const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {
   lineHeight: 1.9,
   columns: 1,
   marginPreset: "standard",
+  fontFamily: "qiji-combo",
 }
 
 export class BookLayoutEngine {

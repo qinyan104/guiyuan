@@ -281,7 +281,7 @@ function createHeader(
     x: config.width / 2,
     y: textArea.y - 8,
     fontFamily: "Noto Serif SC",
-    fontSize: 10,
+    fontSize: 24,
     color: config.frame.inlineColor || "#8b7355",
   }
 }

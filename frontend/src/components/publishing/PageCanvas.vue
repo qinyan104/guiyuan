@@ -36,6 +36,7 @@ const props = defineProps<{
   fontSize?: number
   lineHeight?: number
   columns?: number
+  fontFamily?: string
 }>()
 
 const emit = defineEmits<{
@@ -48,7 +49,13 @@ const engine = getBookLayoutEngine()
 const renderer = getCanvasRenderer()
 
 // 预加载字体 + 纹理
+// 预加载所有可用字体
 renderer.preloadFont("qiji-combo", "/vrain/fonts/qiji-combo.ttf")
+renderer.preloadFont("HanaMinA", "/vrain/fonts/HanaMinA.ttf")
+renderer.preloadFont("HanaMinB", "/vrain/fonts/HanaMinB.ttf")
+renderer.preloadFont("XiaolaiMonoSC", "/vrain/fonts/XiaolaiMonoSC-Regular.ttf")
+renderer.preloadFont("WenYue-GuTiFangSong", "/vrain/fonts/WenYue-GuTiFangSong-JRFC-2.otf")
+renderer.preloadFont("PingXianZhenSong", "/vrain/fonts/PingXianZhenSong.ttf")
 renderer.preloadImages([
   "/vrain/canvas/paper.jpg",
   "/vrain/canvas/3leaves.png",
@@ -62,7 +69,7 @@ const editText = ref("")
 const showInlineEditor = ref(false)
 /** 当前渲染参数，编辑器定位 & 缩放计算需要（renderCanvas 中更新） */
 const currentTotalScale = ref(1)
-const currentFitScale = ref(1)
+const currentFitScale = ref(0)
 const currentDpr = ref(window.devicePixelRatio || 1)
 const currentCenterX = ref(0)
 const currentCenterY = ref(0)
@@ -121,8 +128,8 @@ function runLayout() {
     allEntries = props.entries
   } else if (props.publicationData) {
     const lineageOpts: LineageLayoutOptions = {
-      fontSize: props.fontSize ?? 18,
-      lineHeight: props.lineHeight ?? 1.9,
+      fontSize: props.fontSize ?? 48,
+      lineHeight: props.lineHeight ?? 1.4,
       columns: props.columns ?? 1,
       marginPreset: "standard",
     }
@@ -141,10 +148,14 @@ function runLayout() {
   }
 
   const opts: LayoutOptions = {
-    fontSize: props.fontSize ?? 18,
-    lineHeight: props.lineHeight ?? 1.9,
+    fontSize: props.fontSize ?? 48,
+    lineHeight: props.lineHeight ?? 1.4,
     columns: props.columns ?? 1,
     marginPreset: "standard",
+    fontFamily: props.fontFamily,
+  }
+  if (props.fontFamily) {
+    renderer.setBodyFont(props.fontFamily)
   }
 
   composedPages.value = engine.layoutSync(allEntries, props.canvasId, opts)
@@ -172,10 +183,13 @@ function renderCanvas() {
   }
 
   const dpr = window.devicePixelRatio || 1
-  const fitScale = renderer.getFitScale(page, containerW, containerH, props.fontSize ?? 18)
+  // fitScale 仅首次计算，之后保持不变（除非容器尺寸变化）
+  if (currentFitScale.value === 0 || currentContainerW.value !== containerW || currentContainerH.value !== containerH) {
+    currentFitScale.value = renderer.getFitScale(page, containerW, containerH)
+  }
+  const fitScale = currentFitScale.value
   const totalScale = fitScale * zoom.value
   currentTotalScale.value = totalScale
-  currentFitScale.value = fitScale
   currentDpr.value = dpr
   currentContainerW.value = containerW
   currentContainerH.value = containerH
@@ -188,13 +202,11 @@ function renderCanvas() {
   canvas.width = containerW * dpr
   canvas.height = containerH * dpr
 
-  // 页面在 canvas 中的居中偏移
+  // 页面居中偏移 — 使用缓存值，仅在缩放/容器变化时更新
   const pageCssW = page.width * totalScale
   const pageCssH = page.height * totalScale
-  const centerX = (containerW - pageCssW) / 2
-  const centerY = (containerH - pageCssH) / 2
-  currentCenterX.value = centerX
-  currentCenterY.value = centerY
+  const centerX = currentCenterX.value || (containerW - pageCssW) / 2
+  const centerY = currentCenterY.value || (containerH - pageCssH) / 2
 
   const ctx = canvas.getContext("2d")
   if (!ctx) return
@@ -301,6 +313,8 @@ function handleWheel(e: WheelEvent) {
   // 调整 pan 使同一页面点保持在光标下
   panX.value = (mouseX - ppX * fs * newZoom - newCx) * dpr
   panY.value = (mouseY - ppY * fs * newZoom - newCy) * dpr
+  currentCenterX.value = newCx
+  currentCenterY.value = newCy
   zoom.value = newZoom
   renderCanvas()
 }
@@ -338,13 +352,26 @@ onUnmounted(() => {
   document.removeEventListener("keydown", onKeydown)
 })
 
+// 模板 / 族谱数据变化 → 完整重置（entries 变化不重置，避免微调时跳动）
 watch(
-  () => [props.publicationData, props.entries, props.canvasId, props.fontSize, props.lineHeight, props.columns] as const,
+  () => [props.publicationData, props.canvasId] as const,
   () => {
-    // 重置缩放/平移
     zoom.value = 1
     panX.value = 0
     panY.value = 0
+    currentFitScale.value = 0
+    currentCenterX.value = 0
+    currentCenterY.value = 0
+    runLayout()
+    nextTick(() => renderCanvas())
+  },
+  { deep: false },
+)
+
+// 字号 / 行距 / 栏数 / 字体微调 → 保留 zoom/pan 位置
+watch(
+  () => [props.fontSize, props.lineHeight, props.columns, props.fontFamily] as const,
+  () => {
     runLayout()
     nextTick(() => renderCanvas())
   },

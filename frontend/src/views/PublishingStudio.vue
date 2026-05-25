@@ -52,11 +52,12 @@ const highlightedPersonId = ref<string | null>(null)
 let canvasNoticeTimer: ReturnType<typeof setTimeout> | null = null
 
 const layoutTweaks = ref<LayoutTweaks>({
-  fontSize: 18,
-  lineHeight: 1.9,
+  fontSize: 48,
+  lineHeight: 1.4,
   columns: 1,
   marginPreset: "standard",
 })
+const fontFamily = ref("qiji-combo")
 
 const draftStyleConfig = ref<Record<string, unknown>>({})
 
@@ -418,6 +419,12 @@ function handleMoveToPage(entryIndex: number, targetPageIndex: number) {
   canvasRef.value?.reloadPreview()
 }
 
+function handleFontChange(fontId: string) {
+  fontFamily.value = fontId
+  showCanvasNotice(`字体已切换`)
+  canvasRef.value?.reloadPreview()
+}
+
 function handleCanvasFocusEntry(personId: string) {
   highlightedPersonId.value = personId
   // 如果当前页面没有该条目，自动跳转到对应页面
@@ -517,6 +524,7 @@ const statusText = computed(() => {
       :tweakLineHeight="layoutTweaks.lineHeight"
       :tweakColumns="layoutTweaks.columns"
       :tweakMarginPreset="layoutTweaks.marginPreset"
+      :selectedFont="fontFamily"
       @back="handleBack"
       @autoLayout="handleAutoLayout"
       @export="handleExport"
@@ -528,6 +536,7 @@ const statusText = computed(() => {
       @updateTweakLineHeight="(v) => handleTweakUpdate('lineHeight', v)"
       @updateTweakColumns="(v) => handleTweakUpdate('columns', v)"
       @updateTweakMarginPreset="(v) => handleTweakUpdate('marginPreset', v)"
+      @updateFont="handleFontChange"
     />
 
     <div class="studio-workbench">
@@ -561,6 +570,7 @@ const statusText = computed(() => {
             :fontSize="layoutTweaks.fontSize"
             :lineHeight="layoutTweaks.lineHeight"
             :columns="layoutTweaks.columns"
+            :fontFamily="fontFamily"
             :relayouting="relayouting"
             @navigateToPage="handleNavigateToPage"
             @editEntry="handleCanvasEditEntry"

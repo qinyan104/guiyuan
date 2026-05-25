@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, ref } from "vue"
-import { CANVAS_TEMPLATES, type CanvasTemplate } from "../../lib/vrainTemplates"
+import { CANVAS_TEMPLATES, FONT_OPTIONS, type CanvasTemplate } from "../../lib/vrainTemplates"
 
 const props = defineProps<{
   draftTitle: string
@@ -18,6 +18,7 @@ const props = defineProps<{
   tweakLineHeight: number
   tweakColumns: number
   tweakMarginPreset: "compact" | "standard" | "loose"
+  selectedFont: string
 }>()
 
 const emit = defineEmits<{
@@ -32,6 +33,7 @@ const emit = defineEmits<{
   updateTweakLineHeight: [value: number]
   updateTweakColumns: [value: number]
   updateTweakMarginPreset: [value: "compact" | "standard" | "loose"]
+  updateFont: [fontId: string]
 }>()
 
 const tplOpen = ref(false)
@@ -111,18 +113,23 @@ function openTpl() {
   <Transition name="tweak-slide">
     <div v-if="tweaksOpen" class="tweak-bar">
       <div class="tweak-row"><span class="tweak-label">字号</span>
-        <button class="tweak-btn" @click="emit('updateTweakFontSize', Math.max(10, tweakFontSize - 1))">−</button>
+        <button class="tweak-btn" @click="emit('updateTweakFontSize', Math.max(14, tweakFontSize - 1))">−</button>
         <span class="tweak-val">{{ tweakFontSize }}pt</span>
-        <button class="tweak-btn" @click="emit('updateTweakFontSize', Math.min(16, tweakFontSize + 1))">+</button>
+        <button class="tweak-btn" @click="emit('updateTweakFontSize', Math.min(72, tweakFontSize + 1))">+</button>
       </div>
       <div class="tweak-row"><span class="tweak-label">行距</span>
-        <button class="tweak-btn" @click="emit('updateTweakLineHeight', Math.round(Math.max(1.5, tweakLineHeight - 0.1) * 10) / 10)">−</button>
+        <button class="tweak-btn" @click="emit('updateTweakLineHeight', Math.round(Math.max(1.0, tweakLineHeight - 0.1) * 10) / 10)">−</button>
         <span class="tweak-val">{{ tweakLineHeight.toFixed(1) }}</span>
-        <button class="tweak-btn" @click="emit('updateTweakLineHeight', Math.round(Math.min(2.5, tweakLineHeight + 0.1) * 10) / 10)">+</button>
+        <button class="tweak-btn" @click="emit('updateTweakLineHeight', Math.round(Math.min(4.0, tweakLineHeight + 0.1) * 10) / 10)">+</button>
       </div>
       <div class="tweak-row"><span class="tweak-label">栏数</span>
         <button :class="['tweak-seg', { on: tweakColumns === 1 }]" @click="emit('updateTweakColumns', 1)">1</button>
         <button :class="['tweak-seg', { on: tweakColumns === 2 }]" @click="emit('updateTweakColumns', 2)">2</button>
+      </div>
+      <div class="tweak-row"><span class="tweak-label">字体</span>
+        <select class="tweak-select" :value="selectedFont" @change="emit('updateFont', ($event.target as HTMLSelectElement).value)">
+          <option v-for="f in FONT_OPTIONS" :key="f.id" :value="f.id">{{ f.name }}</option>
+        </select>
       </div>
       <div class="tweak-row"><span class="tweak-label">边距</span>
         <button :class="['tweak-seg', { on: tweakMarginPreset === 'compact' }]" @click="emit('updateTweakMarginPreset', 'compact')">紧凑</button>
@@ -263,6 +270,17 @@ function openTpl() {
 .tweak-seg:last-child { border-radius: 0 6px 6px 0; }
 .tweak-seg + .tweak-seg { border-left: none; }
 .tweak-seg.on { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+
+.tweak-select {
+  padding: 3px 6px;
+  border: 1px solid var(--color-card-stroke);
+  border-radius: 6px;
+  background: var(--color-neutral-1);
+  color: var(--color-neutral-8);
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+}
 
 .tweak-slide-enter-active, .tweak-slide-leave-active { transition: all 0.2s ease; overflow: hidden; }
 .tweak-slide-enter-from, .tweak-slide-leave-to { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }

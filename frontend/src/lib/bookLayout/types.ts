@@ -413,4 +413,6 @@ export interface LayoutOptions {
   columns: number
   /** 边距预设 */
   marginPreset: "compact" | "standard" | "loose"
+  /** 正文字体 */
+  fontFamily?: string
 }
