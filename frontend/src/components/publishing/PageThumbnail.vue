@@ -1,12 +1,22 @@
 ﻿<script setup lang="ts">
+/**
+ * PageThumbnail — 页面缩略图（Canvas 渲染版）
+ *
+ * 用 Canvas 绘制迷你古籍页面预览：
+ * - 纸张底色 + 边框
+ * - 竖排条目名（最多 12 条）
+ * - 页码水印
+ */
 import type { LineageEntry } from "../../types/publishing"
+import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 
-defineProps<{
+const props = defineProps<{
   sheetNumber: number
   sheetType: string
   active: boolean
   dragOver: boolean
   entries?: LineageEntry[]
+  canvasId?: string
 }>()
 
 const emit = defineEmits<{
@@ -18,11 +28,90 @@ const emit = defineEmits<{
   dragEnd: []
 }>()
 
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+const W = 160
+const H = 200
+const DPR = 2
+
+// 按模板选纸张色
+const paperColor = computed(() => {
+  const map: Record<string, string> = {
+    mr_5: "#f5edd6", mr_4: "#f4ecd3",
+    "24_paper": "#f3ead0", "28_paper": "#f1e8cc",
+    "24_black": "#333", "18_blue": "#1e2a3a", "18_red": "#3a1e1e",
+    "20_paper": "#f6eede", vintage: "#e8dab8", bamboo: "#e5d9b8",
+    simple: "#faf8f4",
+  }
+  return map[props.canvasId ?? ""] || "#f5edd6"
+})
+
 function chineseNum(n: number): string {
   const map = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
     '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十']
   return map[n] || String(n)
 }
+
+function renderThumb() {
+  const canvas = canvasRef.value
+  if (!canvas) return
+
+  canvas.width = W * DPR
+  canvas.height = H * DPR
+  canvas.style.width = `${W}px`
+  canvas.style.height = `${H}px`
+
+  const ctx = canvas.getContext("2d")
+  if (!ctx) return
+
+  ctx.scale(DPR, DPR)
+
+  // 底色
+  ctx.fillStyle = paperColor.value
+  ctx.fillRect(0, 0, W, H)
+
+  // 内框
+  ctx.strokeStyle = "rgba(0,0,0,0.15)"
+  ctx.lineWidth = 1
+  ctx.strokeRect(8, 8, W - 16, H - 16)
+
+  // 页码水印
+  ctx.fillStyle = "rgba(0,0,0,0.08)"
+  ctx.font = '36px "Noto Serif SC", serif'
+  ctx.textAlign = "right"
+  ctx.fillText(chineseNum(props.sheetNumber), W - 16, 42)
+
+  // 条目名（竖排，右→左）
+  const names = (props.entries ?? []).slice(0, 12).map(e => e.personName)
+  if (names.length > 0) {
+    ctx.fillStyle = "rgba(0,0,0,0.35)"
+    ctx.font = '6px "Noto Serif SC", serif'
+    ctx.textAlign = "start"
+
+    const colX = W - 28 // 从右开始
+    let rowY = 56
+    let col = 0
+    for (const name of names) {
+      ctx.fillText(name, colX - col * 28, rowY)
+      rowY += 10
+      if (rowY > H - 28) {
+        rowY = 56
+        col++
+      }
+    }
+  }
+
+  // 底栏
+  ctx.fillStyle = "rgba(0,0,0,0.04)"
+  ctx.fillRect(8, H - 24, W - 16, 16)
+  ctx.fillStyle = "rgba(0,0,0,0.25)"
+  ctx.font = '8px sans-serif'
+  ctx.textAlign = "center"
+  const count = props.entries?.length ?? 0
+  ctx.fillText(`${count} 条`, W / 2, H - 11)
+}
+
+watch(() => [props.entries, props.canvasId], renderThumb, { deep: false })
+onMounted(() => renderThumb())
 </script>
 
 <template>
@@ -37,25 +126,7 @@ function chineseNum(n: number): string {
     @dragend="emit('dragEnd')"
   >
     <div class="thumb-preview">
-      <span class="thumb-watermark">{{ chineseNum(sheetNumber) }}</span>
-
-      <template v-if="entries && entries.length > 0">
-        <div class="thumb-mini-text">
-          <span
-            v-for="(entry, i) in entries.slice(0, 6)"
-            :key="entry.personId"
-            class="thumb-line"
-          >{{ entry.personName }}</span>
-        </div>
-      </template>
-      <template v-else>
-        <span class="thumb-empty">空页</span>
-      </template>
-
-      <div class="thumb-footer">
-        <span class="thumb-count">{{ entries?.length ?? 0 }} 条</span>
-        <span class="thumb-type">{{ sheetType === 'genealogy' ? '世系' : sheetType }}</span>
-      </div>
+      <canvas ref="canvasRef" class="thumb-canvas"></canvas>
     </div>
     <span class="thumb-label">第 {{ sheetNumber }} 页</span>
   </div>
@@ -73,14 +144,13 @@ function chineseNum(n: number): string {
 .page-thumbnail:active { cursor: grabbing; }
 
 .page-thumbnail:hover .thumb-preview {
-  box-shadow: var(--shadow-whisper);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   transform: translateY(-1px);
-  border-color: var(--color-neutral-5);
 }
 
 .page-thumbnail.active .thumb-preview {
-  border-color: rgba(196, 58, 49, 0.3);
-  background: var(--color-accent-muted);
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
 }
 
 .page-thumbnail.active::after {
@@ -95,86 +165,24 @@ function chineseNum(n: number): string {
 }
 
 .page-thumbnail.drag-over .thumb-preview {
-  border-color: var(--color-accent);
-  border-width: 2px;
-  border-style: dashed;
+  outline: 2px dashed var(--color-accent);
 }
 
 .thumb-preview {
-  position: relative;
+  width: 160px;
   height: 200px;
   background: var(--color-neutral-1);
   border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
+  border-radius: 10px;
   overflow: hidden;
-  transition: all var(--duration-fast) var(--ease-breath);
+  transition: all 0.15s ease;
   user-select: none;
-  box-shadow: var(--shadow-whisper);
 }
 
-.thumb-watermark {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  font-size: 40px;
-  font-family: var(--font-serif);
-  color: var(--color-neutral-3);
-  line-height: 1;
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-.thumb-mini-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 44px 10px 30px;
-  width: 100%;
-  box-sizing: border-box;
-  flex: 1;
-}
-
-.thumb-line {
-  font-size: 8px;
-  color: var(--color-neutral-7);
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-serif);
-}
-
-.thumb-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  color: var(--color-neutral-4);
-  border: 1.5px dashed var(--color-neutral-3);
-  margin: 16px;
-  border-radius: var(--radius-md);
-}
-
-.thumb-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 5px 10px;
-  border-top: 1px solid var(--color-card-stroke);
-  font-size: 9px;
-}
-
-.thumb-count { color: var(--color-neutral-5); }
-
-.thumb-type {
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--color-neutral-2);
-  color: var(--color-neutral-6);
-  font-size: 8px;
+.thumb-canvas {
+  width: 160px;
+  height: 200px;
+  display: block;
 }
 
 .thumb-label {

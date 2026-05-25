@@ -9,10 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/publishing")
@@ -108,14 +106,14 @@ public class PublishingController {
 
 
 
-    // -- Preview (vRain + PDF.js ready stream) --
+    // -- Preview & Export (pdf-lib via Node.js) --
 
-    @PostMapping("/drafts/{draftId}/preview")
-    public ResponseEntity<?> generatePreview(
+    @PostMapping("/drafts/{draftId}/preview-v2")
+    public ResponseEntity<?> generatePreviewV2(
             @PathVariable Long draftId,
-            @RequestParam(defaultValue = "mr_5") String canvasId) {
+            @RequestBody String pagesJson) {
         try {
-            java.nio.file.Path pdfPath = vrainExportService.exportPdf(draftId, canvasId);
+            java.nio.file.Path pdfPath = vrainExportService.exportPdfFromJson(pagesJson, draftId);
             byte[] content = Files.readAllBytes(pdfPath);
 
             return ResponseEntity.ok()
@@ -127,11 +125,12 @@ public class PublishingController {
                     .body(ApiResponse.error("预览生成失败: " + e.getMessage()));
         }
     }
-        // -- Export --
 
-    @PostMapping("/drafts/{draftId}/export")
-    public ResponseEntity<ApiResponse<String>> exportPdf(@PathVariable Long draftId) {
-        java.nio.file.Path pdfPath = vrainExportService.exportPdf(draftId);
+    @PostMapping("/drafts/{draftId}/export-v2")
+    public ResponseEntity<ApiResponse<String>> exportPdfV2(
+            @PathVariable Long draftId,
+            @RequestBody String pagesJson) {
+        java.nio.file.Path pdfPath = vrainExportService.exportPdfFromJson(pagesJson, draftId);
         return ResponseEntity.ok(ApiResponse.success("PDF 已生成: " + pdfPath.getFileName().toString()));
     }
 

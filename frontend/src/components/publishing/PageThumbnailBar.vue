@@ -10,6 +10,7 @@ const props = defineProps<{
   pages: LineagePage[]
   currentPage: number
   templateName: string
+  canvasId?: string
 }>()
 
 const emit = defineEmits<{
@@ -61,6 +62,7 @@ function handleDragEnd() {
         :active="i - 1 === activeSheetIndex"
         :dragOver="i - 1 === dragOverIndex && i - 1 !== dragFromIndex"
         :entries="pages[i - 1]?.entries"
+        :canvasId="canvasId"
         @select="emit('selectSheet', i - 1)"
         @delete="emit('deleteSheet', i - 1)"
         @dragStart="handleDragStart"

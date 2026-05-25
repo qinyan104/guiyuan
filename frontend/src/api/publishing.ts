@@ -89,17 +89,6 @@ export async function getSyncStatus(draftId: number): Promise<DraftSyncStatus> {
   return resp.data.data
 }
 
-// -- Preview (PDF Stream) --
-
-export async function generatePreview(draftId: number, canvasId = "mr_5"): Promise<Blob> {
-  const resp = await http.post(
-    `/publishing/drafts/${draftId}/preview?canvasId=${canvasId}`,
-    null,
-    { responseType: "blob" },
-  )
-  return resp.data as Blob
-}
-
 // -- Sheet CRUD --
 
 export interface SheetResponse {
@@ -135,4 +124,14 @@ export async function listSheets(draftId: number): Promise<SheetResponse[]> {
 
 export async function deleteSheet(draftId: number, sheetId: number): Promise<void> {
   await http.delete(`/publishing/drafts/${draftId}/sheets/${sheetId}`)
+}
+
+/** Export PDF via pdf-lib (v2) — sends ComposedPage[] JSON */
+export async function exportPdfV2(draftId: number, pagesJson: string): Promise<Blob> {
+  const resp = await http.post(
+    `/publishing/drafts/${draftId}/preview-v2`,
+    pagesJson,
+    { responseType: "blob" },
+  )
+  return resp.data
 }

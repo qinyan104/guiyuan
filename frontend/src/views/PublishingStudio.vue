@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, nextTick } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import FeedbackStrip from "../components/FeedbackStrip.vue"
 import EntryEditor from "../components/publishing/EntryEditor.vue"
@@ -51,7 +51,7 @@ const pubLoadError = ref("")
 let canvasNoticeTimer: ReturnType<typeof setTimeout> | null = null
 
 const layoutTweaks = ref<LayoutTweaks>({
-  fontSize: 12,
+  fontSize: 18,
   lineHeight: 1.9,
   columns: 1,
   marginPreset: "standard",
@@ -101,6 +101,8 @@ onMounted(async () => {
         .filter(Boolean) as LineagePage[]
       savedSheetIds.value = saved.map((sheet) => sheet.id)
       sheetTypes.value = saved.map((sheet) => sheet.sheetType)
+      await nextTick()
+      canvasRef.value?.reloadPreview()
       return
     }
   } catch {}
@@ -453,6 +455,7 @@ const statusText = computed(() => {
         :pages="layoutPages"
         :currentPage="currentPage"
         :templateName="currentTemplateName"
+        :canvasId="canvasId"
         @selectSheet="handleSelectSheet"
         @addSheet="handleAddSheet"
         @deleteSheet="handleDeleteSheet"
@@ -468,6 +471,7 @@ const statusText = computed(() => {
             :publicationData="pubData"
             :draftId="draftId"
             :canvasId="canvasId"
+            :totalPages="totalPages"
             :paper="paper"
             :templateName="currentTemplateName"
             :fontSize="layoutTweaks.fontSize"

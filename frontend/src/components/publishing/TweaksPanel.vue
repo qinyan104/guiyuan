@@ -15,7 +15,7 @@ const emit = defineEmits<{
 }>()
 
 function updateFontSize(d: number) {
-  const next = clamp(props.modelValue.fontSize + d, 10, 16)
+  const next = clamp(props.modelValue.fontSize + d, 12, 24)
   emit("update:modelValue", { ...props.modelValue, fontSize: next })
 }
 

@@ -1,6 +1,5 @@
 ﻿/**
- * vRain canvas template definitions.
- * Maps to vrain/canvas/*.cfg files.
+ * Canvas template definitions — 12 classic Chinese book formats.
  */
 export interface CanvasTemplate {
   id: string

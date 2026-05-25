@@ -3,7 +3,7 @@
  * BookPageRenderer — 前端古籍版面渲染器
  *
  * 根据 canvasId（画布模板）和 lineage entries 数据，在前端直接渲染
- * 传统竖排书版版面，无需依赖后端 vRain Perl 引擎。
+ * 传统竖排书版版面，前端直接渲染。
  *
  * 支持：
  *  - 12 种画布模板的视觉差异化渲染（纸张纹理、鱼尾、配色等）
@@ -322,8 +322,19 @@ const pageLabel = computed(() => chineseNum(props.pageNumber))
   --bpr-text: #2c2418;
   --bpr-frame-color: #8b7355;
   --bpr-accent: #6b4c30;
-  background-image:
-    url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='60' height='60' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background:
+    var(--bpr-bg),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(139,115,85,0.04) 1px,
+      rgba(139,115,85,0.04) 2px
+    ),
+    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 20% 80%, rgba(139,115,85,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(139,115,85,0.04) 0%, transparent 50%);
+
 }
 
 /* — mr_4 宣纸鱼尾·四栏 — */
@@ -332,6 +343,19 @@ const pageLabel = computed(() => chineseNum(props.pageNumber))
   --bpr-text: #2c2418;
   --bpr-frame-color: #907a5e;
   --bpr-accent: #705838;
+  background:
+    var(--bpr-bg),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(139,115,85,0.04) 1px,
+      rgba(139,115,85,0.04) 2px
+    ),
+    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 20% 80%, rgba(139,115,85,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(139,115,85,0.04) 0%, transparent 50%);
+
 }
 
 /* — 24_paper 宣纸·五栏 — */
@@ -340,6 +364,19 @@ const pageLabel = computed(() => chineseNum(props.pageNumber))
   --bpr-text: #33291c;
   --bpr-frame-color: #9a8466;
   --bpr-accent: #6e5434;
+  background:
+    var(--bpr-bg),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(139,115,85,0.04) 1px,
+      rgba(139,115,85,0.04) 2px
+    ),
+    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 20% 80%, rgba(139,115,85,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(139,115,85,0.04) 0%, transparent 50%);
+
 }
 
 /* — 28_paper 宣纸·密栏 — */
@@ -348,6 +385,19 @@ const pageLabel = computed(() => chineseNum(props.pageNumber))
   --bpr-text: #33291c;
   --bpr-frame-color: #9a8466;
   --bpr-accent: #6e5434;
+  background:
+    var(--bpr-bg),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(139,115,85,0.04) 1px,
+      rgba(139,115,85,0.04) 2px
+    ),
+    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 20% 80%, rgba(139,115,85,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(139,115,85,0.04) 0%, transparent 50%);
+
 }
 
 /* — vintage 复古旧纸 — */
@@ -440,6 +490,19 @@ const pageLabel = computed(() => chineseNum(props.pageNumber))
   --bpr-frame-color: #a08868;
   --bpr-accent: #705838;
   aspect-ratio: 4 / 3;
+  background:
+    var(--bpr-bg),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(139,115,85,0.04) 1px,
+      rgba(139,115,85,0.04) 2px
+    ),
+    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 20% 80%, rgba(139,115,85,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(139,115,85,0.04) 0%, transparent 50%);
+
 }
 
 /* — simple 极简竖版 — */
@@ -468,5 +531,18 @@ const pageLabel = computed(() => chineseNum(props.pageNumber))
   --bpr-accent: #705838;
   aspect-ratio: 2796 / 1290;
   border-radius: 16px;
+  background:
+    var(--bpr-bg),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(139,115,85,0.04) 1px,
+      rgba(139,115,85,0.04) 2px
+    ),
+    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 20% 80%, rgba(139,115,85,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(139,115,85,0.04) 0%, transparent 50%);
+
 }
 </style>
