@@ -45,25 +45,21 @@ async function main() {
     process.exit(1)
   }
 
+  // ── 创建 PDF ──
+  const doc = await PDFDocument.create()
+  doc.registerFontkit(fontkit)
+
   // ── 加载字体 ──
   /** @type {import('pdf-lib').PDFFont} */
   let font
   try {
     const fontBytes = fs.readFileSync(fontPath)
-    // 临时创建文档只是为了嵌入字体
-    const tmpDoc = await PDFDocument.create()
-    tmpDoc.registerFontkit(fontkit)
-    font = await tmpDoc.embedFont(fontBytes)
+    font = await doc.embedFont(fontBytes)
     console.log(`Font loaded: ${fontPath}`)
   } catch (e) {
     console.warn(`Font not found at ${fontPath}, falling back to Helvetica (no Chinese support):`, e.message)
-    const tmpDoc = await PDFDocument.create()
-    font = await tmpDoc.embedFont(StandardFonts.Helvetica)
+    font = await doc.embedFont(StandardFonts.Helvetica)
   }
-
-  // ── 创建 PDF ──
-  const doc = await PDFDocument.create()
-  doc.registerFontkit(fontkit)
 
   for (const page of pages) {
     await renderPage(doc, page, font)
