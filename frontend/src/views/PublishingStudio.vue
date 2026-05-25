@@ -10,8 +10,7 @@ import StudioToolbar from "../components/publishing/StudioToolbar.vue"
 import TweaksPanel from "../components/publishing/TweaksPanel.vue"
 import type { LayoutTweaks } from "../components/publishing/TweaksPanel.vue"
 import { getPublication } from "../api/publication"
-import { deleteSheet, listSheets, saveSheets, updateDraft } from "../api/publishing"
-import http from "../api/http"
+import { deleteSheet, exportPdfV2, listSheets, saveSheets, updateDraft } from "../api/publishing"
 import { useFeedback } from "../composables/useFeedback"
 import { usePublishingStudio } from "../composables/usePublishingStudio"
 import { computeLineageText, type LayoutOptions } from "../lib/lineageText"
@@ -186,17 +185,32 @@ function showCanvasNotice(message: string, duration = 2400) {
 }
 
 async function handleExport() {
+  const composedPages = canvasRef.value?.composedPages
+  if (!composedPages || composedPages.length === 0) {
+    feedback.errorMessage.value = "请先执行「自动排版」生成书页"
+    return
+  }
+
   exporting.value = true
   try {
     feedback.statusMessage.value = "正在生成古籍 PDF..."
-    showCanvasNotice("正在提交导出任务...", 1800)
-    const resp = await http.post(`/publishing/drafts/${draftId.value}/export`)
-    if (resp.data.code === 200) {
-      canvasNotice.value = "导出任务已提交"
-      feedback.statusMessage.value = resp.data.data || "PDF 导出成功"
-    } else {
-      feedback.errorMessage.value = resp.data.message || "导出失败"
-    }
+    showCanvasNotice("正在生成 PDF...", 1800)
+
+    const pagesJson = JSON.stringify(composedPages)
+    const blob = await exportPdfV2(draftId.value, pagesJson)
+
+    // Trigger browser download
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${draft.value?.title || "族谱"}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    feedback.statusMessage.value = "PDF 导出成功"
+    showCanvasNotice("PDF 已下载")
   } catch (e: any) {
     feedback.errorMessage.value = "导出失败: " + (e.message || e)
   } finally {

@@ -127,11 +127,22 @@ public class PublishingController {
     }
 
     @PostMapping("/drafts/{draftId}/export-v2")
-    public ResponseEntity<ApiResponse<String>> exportPdfV2(
+    public ResponseEntity<?> exportPdfV2(
             @PathVariable Long draftId,
             @RequestBody String pagesJson) {
-        java.nio.file.Path pdfPath = vrainExportService.exportPdfFromJson(pagesJson, draftId);
-        return ResponseEntity.ok(ApiResponse.success("PDF 已生成: " + pdfPath.getFileName().toString()));
+        try {
+            java.nio.file.Path pdfPath = vrainExportService.exportPdfFromJson(pagesJson, draftId);
+            byte[] content = Files.readAllBytes(pdfPath);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"export-" + draftId + ".pdf\"")
+                    .body(content);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("导出失败: " + e.getMessage()));
+        }
     }
 
     // -- Sheet CRUD --
