@@ -80,7 +80,7 @@ const mr_5 = define({
   multiRows: {
     enabled: true, rowCount: 5, lineWidth: 1, lineColor: "#333333",
   },
-  logo: { image: "logo.png", text: "兀雨书屋", y: 1680, color: "white", fontFamily: "qiji-combo.ttf", fontSize: 40 },
+  logo: { image: "logo.png", text: "兀雨书屋", y: 1680, color: "white", fontFamily: "qiji-combo", fontSize: 40 },
 })
 
 /**
@@ -109,7 +109,7 @@ const mr_4 = define({
   multiRows: {
     enabled: true, rowCount: 4, lineWidth: 2, lineColor: "#f5f5f5",
   },
-  logo: { image: "logo.png", text: "兀雨书屋", y: 1680, color: "white", fontFamily: "qiji-combo.ttf", fontSize: 40 },
+  logo: { image: "logo.png", text: "兀雨书屋", y: 1680, color: "white", fontFamily: "qiji-combo", fontSize: 40 },
 })
 
 /**
@@ -138,7 +138,7 @@ const _24_paper = define({
   multiRows: {
     enabled: false, rowCount: 5, lineWidth: 2, lineColor: "#f5f5f5",
   },
-  logo: { image: "logo.png", text: "", y: 1680, color: "white", fontFamily: "qiji-combo.ttf", fontSize: 40 },
+  logo: { image: "logo.png", text: "", y: 1680, color: "white", fontFamily: "qiji-combo", fontSize: 40 },
 })
 
 /**
@@ -167,7 +167,7 @@ const _28_paper = define({
   multiRows: {
     enabled: false, rowCount: 5, lineWidth: 2, lineColor: "#f5f5f5",
   },
-  logo: { image: "logo.png", text: "", y: 1680, color: "white", fontFamily: "qiji-combo.ttf", fontSize: 40 },
+  logo: { image: "logo.png", text: "", y: 1680, color: "white", fontFamily: "qiji-combo", fontSize: 40 },
 })
 
 /**
@@ -196,7 +196,7 @@ const _24_black = define({
   multiRows: {
     enabled: false, rowCount: 5, lineWidth: 2, lineColor: "#f5f5f5",
   },
-  logo: { image: "logo.png", text: "", y: 1680, color: "white", fontFamily: "qiji-combo.ttf", fontSize: 40 },
+  logo: { image: "logo.png", text: "", y: 1680, color: "white", fontFamily: "qiji-combo", fontSize: 40 },
 })
 
 /**
@@ -223,7 +223,7 @@ const _18_blue = define({
     lineColor: "#0e6696", lineWidth: 1, lineMargin: 5,
   },
   multiRows: NO_MULTI_ROWS,
-  logo: { image: "", text: "兀雨書屋", y: 1680, color: "white", fontFamily: "qiji-combo.ttf", fontSize: 40 },
+  logo: { image: "", text: "兀雨書屋", y: 1680, color: "white", fontFamily: "qiji-combo", fontSize: 40 },
 })
 
 /**
@@ -250,7 +250,7 @@ const _18_red = define({
     lineColor: "rgb(233,49,62)", lineWidth: 1, lineMargin: 5,
   },
   multiRows: NO_MULTI_ROWS,
-  logo: { image: "logo.png", text: "", y: 1680, color: "white", fontFamily: "qiji-combo.ttf", fontSize: 40 },
+  logo: { image: "logo.png", text: "", y: 1680, color: "white", fontFamily: "qiji-combo", fontSize: 40 },
 })
 
 /**
@@ -277,7 +277,7 @@ const _20_paper = define({
     lineColor: "black", lineWidth: 1, lineMargin: 5,
   },
   multiRows: NO_MULTI_ROWS,
-  logo: { image: "logo.png", text: "", y: 1680, color: "white", fontFamily: "qiji-combo.ttf", fontSize: 40 },
+  logo: { image: "logo.png", text: "", y: 1680, color: "white", fontFamily: "qiji-combo", fontSize: 40 },
 })
 
 /**
@@ -304,7 +304,7 @@ const vintage = define({
     lineColor: "black", lineWidth: 1, lineMargin: 5,
   },
   multiRows: NO_MULTI_ROWS,
-  logo: { image: "", text: "兀雨书屋", y: 1680, color: "white", fontFamily: "qiji-combo.ttf", fontSize: 40 },
+  logo: { image: "", text: "兀雨书屋", y: 1680, color: "white", fontFamily: "qiji-combo", fontSize: 40 },
 })
 
 /**
@@ -377,7 +377,7 @@ const iphone15pm = define({
   multiRows: {
     enabled: false, rowCount: 5, lineWidth: 2, lineColor: "#f5f5f5",
   },
-  logo: { image: "logo.png", text: "", y: 1100, color: "white", fontFamily: "qiji-combo.ttf", fontSize: 30 },
+  logo: { image: "logo.png", text: "", y: 1100, color: "white", fontFamily: "qiji-combo", fontSize: 30 },
 })
 
 // ═══════════════════════════════════════════════════════════

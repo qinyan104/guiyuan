@@ -271,6 +271,7 @@ async function runLayout(skipNotice = true) {
       columns: layoutTweaks.value.columns,
       marginPreset: layoutTweaks.value.marginPreset,
       paper: paper.value,
+      canvasId: canvasId.value,
     }
     const pages = computeLineageText(pubData.value, opts, lineageSettings.value)
     layoutPages.value = pages
@@ -635,8 +636,6 @@ const statusText = computed(() => {
             :fontSize="layoutTweaks.fontSize"
             :lineHeight="layoutTweaks.lineHeight"
             :columns="layoutTweaks.columns"
-            :fontFamily="fontFamily"
-            :hoveredPersonId="hoveredPersonId"
             :relayouting="relayouting"
             @navigateToPage="handleNavigateToPage"
             @editEntry="handleCanvasEditEntry"

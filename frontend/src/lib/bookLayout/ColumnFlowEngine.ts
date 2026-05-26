@@ -169,12 +169,8 @@ function groupByGeneration(
 }
 
 function buildEntryText(entry: LineageEntry): string {
-  // 格式：姓名 + 正文
-  // 这里使用 lineageText.ts 中已格式化的 formattedText
-  // 如果 formattedText 已包含姓名，直接用；否则在前面加姓名
-  const text = entry.formattedText
-  if (text.startsWith(entry.personName)) return text
-  return entry.personName + text
+  // formattedText 已由 formatEntry 生成完整古文（含姓名、生卒、配偶、子女），直接使用
+  return entry.formattedText
 }
 
 function genToChineseText(gen: number): string {

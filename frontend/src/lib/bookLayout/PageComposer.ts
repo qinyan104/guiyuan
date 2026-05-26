@@ -134,8 +134,8 @@ function createColumnLines(config: CanvasConfig): RowLineLayer | null {
     lines.push({
       x1: x, y1: textArea.y,
       x2: x, y2: textArea.y + textArea.height,
-      lineWidth: 0.5,
-      color: "#d0c8b8",
+      lineWidth: 1,
+      color: "#c8b898",
     })
   }
 

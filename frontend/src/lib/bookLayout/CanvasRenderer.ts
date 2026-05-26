@@ -201,7 +201,7 @@ export class CanvasRenderer {
         const img = this.imageCache.get(layer.textureUrl)
         if (img && img.complete) {
           ctx.save()
-          ctx.globalAlpha = layer.textureOpacity ?? 0.25
+          ctx.globalAlpha = (layer.textureOpacity ?? 0.25) + 0.05
           try {
             const pattern = ctx.createPattern(img, "repeat")
             if (pattern) {
@@ -215,6 +215,7 @@ export class CanvasRenderer {
           ctx.restore()
         }
       }
+
     } else {
       // 回退：无页面尺寸时填满整个 canvas
       ctx.save()
@@ -229,15 +230,15 @@ export class CanvasRenderer {
     ctx: CanvasRenderingContext2D,
     layer: import("./types").FrameLayer,
   ): void {
-    // 外框
+    // 外框（粗线）
     if (layer.outline) {
       const o = layer.outline
       ctx.strokeStyle = o.color
-      ctx.lineWidth = o.lineWidth
+      ctx.lineWidth = o.lineWidth + 1
       ctx.strokeRect(o.x, o.y, o.width, o.height)
     }
 
-    // 内框
+    // 内框（细线）
     {
       const i = layer.inline
       if (i.lineWidth > 0) {
@@ -341,11 +342,13 @@ export class CanvasRenderer {
     rectHeight: number,
     triaY: number,
   ): void {
+    const baseY = triaDirection === "up" ? rectY : rectY + rectHeight
     ctx.beginPath()
-    ctx.moveTo(centerX - halfW - 6, triaDirection === "up" ? rectY : rectY + rectHeight)
+    ctx.moveTo(centerX - halfW - 8, baseY)
     ctx.lineTo(centerX, triaY)
-    ctx.lineTo(centerX + halfW + 6, triaDirection === "up" ? rectY : rectY + rectHeight)
+    ctx.lineTo(centerX + halfW + 8, baseY)
     ctx.closePath()
+    ctx.fill()
     ctx.stroke()
   }
 

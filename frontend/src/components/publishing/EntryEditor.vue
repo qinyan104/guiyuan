@@ -15,7 +15,6 @@ const props = defineProps<{
   /** 全部页面（跨页搜索用） */
   allPages?: LineagePage[]
   /** 设置 */
-  sortGenFirst?: boolean
   showSpouses?: boolean
   hideLocation?: boolean
   cnNumeral?: boolean
@@ -38,6 +37,8 @@ const emit = defineEmits<{
   updateSetting: [key: string, value: boolean]
   /** 悬停高亮 */
   hoverEntry: [personId: string | null]
+  /** 整篇文档解析 */
+  parseDocument: [text: string]
 }>()
 
 /** 中文数字 */
@@ -45,16 +46,47 @@ const CN_NUMS = ["", "一", "二", "三", "四", "五", "六", "七", "八", "�
   "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"]
 function cnGen(g: number): string { return CN_NUMS[g] || `${g}` }
 
-/** 按世代合并全部条目为连续文本 */
+/** 整篇文档文本 */
+const fullDocument = computed(() => {
+  const pages = props.allPages || []
+  // 始终按世代排列
+  const genMap = new Map<number, string[]>()
+    for (const page of pages) {
+      for (const entry of page.entries || []) {
+        if (!genMap.has(entry.generation)) genMap.set(entry.generation, [])
+        genMap.get(entry.generation)!.push(entry.formattedText)
+      }
+    }
+    const lines: string[] = []
+    const gens = [...genMap.keys()].sort((a, b) => a - b)
+    for (const g of gens) {
+      lines.push(`## 第${cnGen(g + 1)}世`)
+      for (const t of genMap.get(g)!) { lines.push(t); lines.push("") }
+    }
+    return lines.join("\n")
+  })
+
+/** 整篇文档输入 → 解析拆分 */
+const fullDocTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+function onFullDocInput(e: Event) {
+  const text = (e.target as HTMLTextAreaElement).value
+  if (fullDocTimer.value) clearTimeout(fullDocTimer.value)
+  fullDocTimer.value = setTimeout(() => {
+    emit("parseDocument", text)
+  }, 400)
+}
+
+/** 按世代合并全部条目，标记当前页归属（保留给其他用途） */
 const lineageDocument = computed(() => {
   const pages = props.allPages || (props.pageData ? [props.pageData] : [])
-  const genMap = new Map<number, { entryIndex: number; pageIndex: number; personId: string; text: string }[]>()
+  const curPage = props.pageNumber - 1
+  const genMap = new Map<number, { entryIndex: number; pageIndex: number; personId: string; text: string; isCurrentPage: boolean }[]>()
   for (let pi = 0; pi < pages.length; pi++) {
     const page = pages[pi]
     for (let ei = 0; ei < (page.entries || []).length; ei++) {
       const entry = page.entries![ei]
       if (!genMap.has(entry.generation)) genMap.set(entry.generation, [])
-      genMap.get(entry.generation)!.push({ entryIndex: ei, pageIndex: pi, personId: entry.personId, text: entry.formattedText })
+      genMap.get(entry.generation)!.push({ entryIndex: ei, pageIndex: pi, personId: entry.personId, text: entry.formattedText, isCurrentPage: pi === curPage })
     }
   }
   const gens = [...genMap.keys()].sort((a, b) => a - b)
@@ -107,6 +139,31 @@ function addNewEntry(e: KeyboardEvent) {
   ta.value = ""
 }
 
+/** 世代大文本块输入 → 拆分回条目并更新 */
+const genInputTimers = new Map<number, ReturnType<typeof setTimeout>>()
+function onGenInput(gen: { generation: number; items: { entryIndex: number; pageIndex: number }[] }, e: Event) {
+  const text = (e.target as HTMLTextAreaElement).value
+  const lines = text.split("\n")
+  const key = gen.generation
+  if (genInputTimers.has(key)) clearTimeout(genInputTimers.get(key))
+  genInputTimers.set(key, setTimeout(() => {
+    for (let i = 0; i < gen.items.length; i++) {
+      const item = gen.items[i]
+      const newText = lines[i] ?? ""
+      if (newText !== "") {
+        emit("updateEntryAt", item.pageIndex, item.entryIndex, newText)
+      }
+    }
+    // 多余的行作为新条目追加
+    for (let i = gen.items.length; i < lines.length; i++) {
+      if (lines[i].trim()) {
+        emit("addEntry", gen.items[0]?.pageIndex ?? 0, "", lines[i])
+      }
+    }
+    genInputTimers.delete(key)
+  }, 300))
+}
+
 function onEntryInput(pi: number, ei: number, e: Event) {
   const text = (e.target as HTMLTextAreaElement).value
   const key = `${pi}-${ei}`
@@ -115,6 +172,30 @@ function onEntryInput(pi: number, ei: number, e: Event) {
     emit("updateEntryAt", pi, ei, text)
     inputTimers.delete(key)
   }, 200))
+}
+
+// ── 弹层编辑 ──
+const editing = ref(false)
+const editText = ref("")
+const editTarget = ref<{ pageIndex: number; entryIndex: number } | null>(null)
+const editTA = ref<HTMLTextAreaElement | null>(null)
+
+function startEdit(item: { pageIndex: number; entryIndex: number; text: string }) {
+  editTarget.value = { pageIndex: item.pageIndex, entryIndex: item.entryIndex }
+  editText.value = item.text
+  editing.value = true
+  nextTick(() => editTA.value?.focus())
+}
+
+function commitEdit() {
+  if (editTarget.value) {
+    emit("updateEntryAt", editTarget.value.pageIndex, editTarget.value.entryIndex, editText.value)
+  }
+  editing.value = false
+}
+
+function cancelEdit() {
+  editing.value = false
 }
 
 function showUndoNotice() {
@@ -144,8 +225,6 @@ function showUndoNotice() {
 
       <!-- 设置栏 -->
       <div class="settings-bar">
-        <span class="setting-label">编排</span>
-        <button :class="['setting-btn', { on: sortGenFirst }]" @click="$emit('updateSetting', 'sortGenFirst', !sortGenFirst)">按世代</button>
         <span class="setting-label">女</span>
         <button :class="['setting-btn', { on: showSpouses }]" @click="$emit('updateSetting', 'showSpouses', !showSpouses)">独立</button>
         <span class="setting-label">地</span>
@@ -167,14 +246,14 @@ function showUndoNotice() {
         ></textarea>
       </div>
 
-      <!-- 文本视图（连续世系录，可编辑） -->
+      <!-- 文档视图（可编辑） -->
       <div v-if="allPages && pageData && pageData.entries.length > 0" class="text-document">
         <template v-for="gen in lineageDocument" :key="gen.generation">
           <h3 class="text-gen-header">{{ gen.label }}</h3>
           <textarea
             v-for="(item, i) in gen.items"
             :key="i"
-            class="text-entry-edit"
+            :class="['text-entry-edit', { 'text-entry--current': item.isCurrentPage, 'text-entry--other': !item.isCurrentPage }]"
             :value="item.text"
             rows="3"
             @focus="trackFocus"
@@ -481,6 +560,24 @@ function showUndoNotice() {
 
 .text-gen-header:first-child { margin-top: 0; }
 
+.text-gen-block {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: "Noto Serif SC", "SimSun", "STSong", serif;
+  font-size: 14px;
+  line-height: 2.2;
+  color: var(--color-neutral-9);
+  background: transparent;
+  resize: vertical;
+  outline: none;
+  min-height: 120px;
+  transition: border-color 0.15s, background 0.15s;
+}
 .text-entry-edit {
   display: block;
   width: 100%;
@@ -488,7 +585,7 @@ function showUndoNotice() {
   margin-bottom: 10px;
   padding: 8px 12px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-family: "Noto Serif SC", "SimSun", "STSong", serif;
   font-size: 14px;
   line-height: 2;
@@ -500,6 +597,16 @@ function showUndoNotice() {
 }
 .text-entry-edit:hover { border-color: var(--color-card-stroke); background: var(--color-neutral-1); }
 .text-entry-edit:focus { border-color: var(--color-accent); background: var(--color-neutral-1); box-shadow: 0 0 0 2px var(--color-accent-muted); }
+
+/* 当前页条目 — 突出 */
+.text-entry--current {
+  border-color: var(--color-card-stroke);
+  background: var(--color-neutral-1);
+}
+/* 其他页条目 — 淡化 */
+.text-entry--other {
+  color: var(--color-neutral-5);
+}
 
 /* footer */
 .editor-footer {
@@ -557,4 +664,16 @@ function showUndoNotice() {
 .empty-hint { text-align: center; color: var(--color-neutral-5); font-size: 13px; margin-bottom: 16px; }
 .new-entry-input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--color-card-stroke); border-radius: var(--radius-md); font-family: var(--font-serif); font-size: 14px; line-height: 2; color: var(--color-neutral-9); background: var(--color-neutral-1); resize: vertical; outline: none; }
 .new-entry-input:focus { border-color: var(--color-accent); }
+.full-doc-editor { flex: 1; width: 100%; box-sizing: border-box; padding: 16px 20px; border: none; resize: none; outline: none; font-family: "Noto Serif SC", "SimSun", "STSong", serif; font-size: 14px; line-height: 2.2; color: var(--color-neutral-9); background: var(--color-neutral-1); }
+.full-doc-editor::placeholder { color: var(--color-neutral-4); }
+.text-entry-para { margin: 0 0 8px; padding: 6px 10px; font-family: "Noto Serif SC","SimSun","STSong",serif; font-size: 14px; line-height: 2; color: var(--color-neutral-9); border-radius: var(--radius-md); cursor: pointer; transition: background 0.15s; }
+.text-entry-para:hover { background: var(--color-neutral-2); }
+.text-entry--current { background: var(--color-neutral-1); border: 1px solid var(--color-card-stroke); }
+.text-entry--other { color: var(--color-neutral-5); }
+.edit-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
+.edit-overlay-ta { width: 600px; max-width: 90vw; min-height: 200px; padding: 16px 20px; border: 1px solid var(--color-accent); border-radius: var(--radius-xl); background: var(--color-neutral-1); font-family: "Noto Serif SC","SimSun",serif; font-size: 14px; line-height: 2.2; color: var(--color-neutral-9); resize: vertical; outline: none; box-shadow: 0 16px 48px rgba(0,0,0,0.18); }
+.edit-overlay-ta:focus { border-color: var(--color-accent); box-shadow: 0 16px 48px rgba(0,0,0,0.18), 0 0 0 3px var(--color-accent-muted); }
+.text-document { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.text-gen-header { margin: 20px 0 10px; padding-bottom: 4px; border-bottom: 1px solid var(--color-card-stroke); font-family: "Noto Serif SC",serif; font-size: 15px; font-weight: 600; color: var(--color-accent); text-align: center; letter-spacing: 0.3em; }
+.text-gen-header:first-child { margin-top: 0; }
 </style>

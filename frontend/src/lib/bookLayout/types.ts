@@ -415,4 +415,6 @@ export interface LayoutOptions {
   marginPreset: "compact" | "standard" | "loose"
   /** 正文字体 */
   fontFamily?: string
+  /** 画布模板 ID */
+  canvasId?: string
 }

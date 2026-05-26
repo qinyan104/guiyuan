@@ -1,5 +1,6 @@
 ﻿import type { LineageEntry, LineagePage } from "../types/publishing"
 import type { FamilyUnit, Gender, Person, PublicationData } from "../types/family"
+import { getCanvasConfig, getTextArea } from "./bookLayout/CanvasConfig"
 
 interface GenNode { pid: string; spId?: string; gen: number; kids: GenNode[] }
 
@@ -9,6 +10,7 @@ export interface LayoutOptions {
   columns?: number
   marginPreset?: "compact" | "standard" | "loose"
   paper?: "A4" | "A3"
+  canvasId?: string
 }
 
 // ── Tree building ──
@@ -68,10 +70,15 @@ function ordinal(i: number): string {
   return ORDINALS[i] || `${i + 1}`
 }
 
-/** 阿拉伯数字 → 汉字（支持 0–9999） */
+/** 阿拉伯数字 → 汉字（年份用逐位法，普通数字用进位法） */
 function numToCn(n: number): string {
   if (n === 0) return "零"
   const digits = "零一二三四五六七八九"
+  // 1000–2099 的年份：逐位转换（一九三一、二零零一）
+  if (n >= 1000 && n <= 2099) {
+    return String(n).split("").map(d => digits[+d]).join("")
+  }
+  // 普通数字：进位法（八十、二百五）
   const units = ["", "十", "百", "千"]
   let s = ""
   let u = 0
@@ -87,9 +94,7 @@ function numToCn(n: number): string {
     n = Math.floor(n / 10)
     u++
   }
-  // 去除末尾多余的零
-  s = s.replace(/零+$/, "")
-  return s
+  return s.replace(/零+$/, "")
 }
 
 /** 去掉文本中的地点信息 */
@@ -275,38 +280,35 @@ function addSpouseEntries(
 
 // ── Dynamic entries per page ──
 
-function calcEntriesPerPage(opts: LayoutOptions): number {
+function calcEntriesPerPage(opts: LayoutOptions, canvasId?: string): number {
   const fontSize = opts.fontSize ?? 12
   const lineHeight = opts.lineHeight ?? 1.9
   const columns = opts.columns ?? 1
-  const paper = opts.paper ?? "A4"
-  const margin = opts.marginPreset ?? "standard"
 
-  // Base: A4, 12pt, 1.9lh, 1 column, standard margins → 15 entries
-  const base = 15
+  // 有模板时按实际文本区计算
+  if (canvasId) {
+    try {
+      const { getCanvasConfig } = require("./CanvasConfig")
+      const cfg = getCanvasConfig(canvasId)
+      const ta = getTextArea(cfg)
+      const pxFontSize = fontSize * 4 / 3
+      const charsPerCol = Math.floor(ta.height / (pxFontSize * lineHeight))
+      const colsUsed = Math.min(columns, cfg.leafCol)
+      return Math.max(5, charsPerCol * colsUsed)
+    } catch { /* fall through */ }
+  }
 
-  // Paper area ratio (A3 ≈ 2× A4, but usable area scales ~1.8×)
-  const paperRatio = paper === "A3" ? 1.8 : 1
-
-  // Font size: larger → fewer entries (inverse square-ish because both width & height affected)
-  const fontFactor = Math.pow(12 / fontSize, 1.6)
-
-  // Line height: larger → fewer entries
+  // 回退：经验公式
   const lineFactor = 1.9 / lineHeight
-
-  // Columns: more → more entries
   const colFactor = columns
-
-  // Margin: compact +15%, loose -15%
-  const marginFactor = margin === "compact" ? 1.15 : margin === "loose" ? 0.85 : 1
-
-  return Math.max(5, Math.round(base * paperRatio * fontFactor * lineFactor * colFactor * marginFactor))
+  const fontFactor = Math.pow(12 / fontSize, 1.6)
+  return Math.max(5, Math.round(15 * fontFactor * lineFactor * colFactor))
 }
 
 // ── Pagination ──
 
-export function paginate(entries: LineageEntry[], rootIds: string[], opts: LayoutOptions): LineagePage[] {
-  const perPage = calcEntriesPerPage(opts)
+export function paginate(entries: LineageEntry[], rootIds: string[], opts: LayoutOptions, canvasId?: string): LineagePage[] {
+  const perPage = calcEntriesPerPage(opts, canvasId)
   const pages: LineagePage[] = []
   for (let i = 0; i < entries.length; i += perPage) {
     pages.push({
@@ -368,5 +370,5 @@ export function computeLineageText(data: PublicationData, opts: LayoutOptions = 
     }
   }
 
-  return paginate(allEntries, roots, opts)
+  return paginate(allEntries, roots, opts, opts.canvasId)
 }

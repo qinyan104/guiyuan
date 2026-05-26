@@ -136,8 +136,19 @@ function runLayout() {
   // 获取当前页面的条目
   const entries = props.pageData?.entries
   if (entries && entries.length > 0) {
-    // 仅渲染当前页条目
-    composedPages.value = engine.layoutSync(entries, props.canvasId, opts)
+    const raw = engine.layoutSync(entries, props.canvasId, opts)
+    // 溢出多页 → 合并为一张高页
+    if (raw.length > 1) {
+      composedPages.value = [{
+        ...raw[0],
+        height: raw.reduce((s, p) => s + p.height, 0),
+        layers: raw.flatMap(p => p.layers),
+        hitRegions: raw.flatMap(p => p.hitRegions),
+        glyphs: { ...raw[0].glyphs, generationHeaders: raw.flatMap(p => p.glyphs.generationHeaders) },
+      }]
+    } else {
+      composedPages.value = raw
+    }
     layoutReady.value = true
     return
   }
