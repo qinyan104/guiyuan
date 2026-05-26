@@ -2,14 +2,10 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.*;
 import com.genealogy.server.service.PublishingService;
-import com.genealogy.server.service.VrainExportService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.Files;
 import java.util.List;
 
 @RestController
@@ -17,11 +13,9 @@ import java.util.List;
 public class PublishingController {
 
     private final PublishingService publishingService;
-    private final VrainExportService vrainExportService;
 
-    public PublishingController(PublishingService publishingService, VrainExportService vrainExportService) {
+    public PublishingController(PublishingService publishingService) {
         this.publishingService = publishingService;
-        this.vrainExportService = vrainExportService;
     }
 
     private Long resolveUserId(@RequestAttribute("userId") Long userId) {
@@ -105,45 +99,6 @@ public class PublishingController {
     }
 
 
-
-    // -- Preview & Export (pdf-lib via Node.js) --
-
-    @PostMapping("/drafts/{draftId}/preview-v2")
-    public ResponseEntity<?> generatePreviewV2(
-            @PathVariable Long draftId,
-            @RequestBody String pagesJson) {
-        try {
-            java.nio.file.Path pdfPath = vrainExportService.exportPdfFromJson(pagesJson, draftId);
-            byte[] content = Files.readAllBytes(pdfPath);
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"preview.pdf\"")
-                    .body(content);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("预览生成失败: " + e.getMessage()));
-        }
-    }
-
-    @PostMapping("/drafts/{draftId}/export-v2")
-    public ResponseEntity<?> exportPdfV2(
-            @PathVariable Long draftId,
-            @RequestBody String pagesJson) {
-        try {
-            java.nio.file.Path pdfPath = vrainExportService.exportPdfFromJson(pagesJson, draftId);
-            byte[] content = Files.readAllBytes(pdfPath);
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"export-" + draftId + ".pdf\"")
-                    .body(content);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("导出失败: " + e.getMessage()));
-        }
-    }
 
     // -- Sheet CRUD --
 

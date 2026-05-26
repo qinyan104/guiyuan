@@ -3,10 +3,11 @@ dist/
 .DS_Store
 Thumbs.db
 
-.worktrees/
-.claude/worktrees/
+# IDE
 .vscode/
+.idea/
 
+# Frontend build
 frontend/node_modules/
 frontend/dist/
 frontend/*.tsbuildinfo
@@ -14,6 +15,7 @@ frontend/e2e/.auth/
 frontend/test-results/
 frontend/playwright-report/
 
+# Backend build
 backend/target/
 backend/.mvn-local/
 backend/.idea/
@@ -24,10 +26,24 @@ backend/.env.local
 backend/.env.*
 !backend/.env.example
 backend/src/main/resources/application.properties
-.alma-snapshots
-.gstack/
-.codex/
+backend/src/main/resources/static/
+backend/vrain_py/
+
+# Docker deployment
+release/.env
+
+# AI tool artifacts
+.claude/
+.codex/
+.github/
 .superpowers/
+.antigravitycli/
+.alma-snapshots/
+.gstack/
+AGENTS.md
+CLAUDE.md
+DESIGN.md
+docs/
 
 # Temp debug scripts
 tmp_*.cjs

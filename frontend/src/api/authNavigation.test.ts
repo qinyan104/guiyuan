@@ -8,6 +8,6 @@ describe('navigateAfterLogin', () => {
 
     navigateAfterLogin({ replace })
 
-    expect(replace).toHaveBeenCalledWith('/')
+    expect(replace).toHaveBeenCalledWith('/dashboard')
   })
 })

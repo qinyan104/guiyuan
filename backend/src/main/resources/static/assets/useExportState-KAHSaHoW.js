@@ -1,1 +1,0 @@
-import{k as l}from"./index-DG5IjEjj.js";const t=l(null);function f(){function a(r,u,o){t.value={base64Image:r,options:u,svgMarkup:o}}function e(){return t.value}function n(){t.value=null}return{setExportData:a,getExportData:e,clearExportData:n}}export{f as u};

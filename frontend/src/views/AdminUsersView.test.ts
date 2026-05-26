@@ -2,7 +2,6 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import AdminUsersView from './AdminUsersView.vue'
-import AppSelect from '../components/AppSelect.vue'
 import { adminChangeRole, adminDeleteUser, adminListUsers } from '../api/admin'
 
 vi.mock('../api/auth', () => ({
@@ -39,14 +38,7 @@ describe('AdminUsersView', () => {
 
   it('requires confirmation before deleting a user', async () => {
     const wrapper = mount(AdminUsersView, {
-      global: {
-        components: { AppSelect },
-        stubs: {
-          Teleport: {
-            template: '<div><slot /></div>',
-          },
-        },
-      },
+      attachTo: document.body,
     })
 
     await flushPromises()
@@ -56,7 +48,7 @@ describe('AdminUsersView', () => {
     expect(adminDeleteUser).not.toHaveBeenCalled()
     expect(document.body.textContent).toContain('确认删除编委')
 
-    const confirmButton = document.querySelector('.glass-dialog.danger-mode .bento-btn.danger') as HTMLButtonElement
+    const confirmButton = document.body.querySelector('.glass-dialog.danger-mode .bento-btn.danger') as HTMLButtonElement
     confirmButton.click()
     await flushPromises()
 
@@ -66,31 +58,26 @@ describe('AdminUsersView', () => {
   it('requires confirmation before changing a user role', async () => {
     const wrapper = mount(AdminUsersView, {
       attachTo: document.body,
-      global: {
-        components: { AppSelect },
-        stubs: {
-          Teleport: {
-            template: '<div><slot /></div>',
-          },
-        },
-      },
     })
 
     await flushPromises()
 
-    // Open AppSelect dropdown and pick "协修"
-    const trigger = document.querySelector('.app-select__trigger') as HTMLElement | null
-    expect(trigger).not.toBeNull()
-    trigger!.click()
+    // Click the role badge to open the role-switcher popover
+    const roleBadge = wrapper.find('.role-badge--clickable')
+    expect(roleBadge.exists()).toBe(true)
+    await roleBadge.trigger('click')
     await flushPromises()
-    const option = document.querySelector('.app-select__option:last-child') as HTMLElement | null
-    option?.click()
+
+    // Click the "协修" (ADMIN) option which triggers requestRoleChange
+    const adminOption = document.body.querySelector('.role-option:last-child') as HTMLElement | null
+    expect(adminOption).not.toBeNull()
+    adminOption!.click()
     await flushPromises()
 
     expect(adminChangeRole).not.toHaveBeenCalled()
     expect(document.body.textContent).toContain('确认调整系统角色')
 
-    const confirmButton = document.querySelector('button[data-role="confirm"]') as HTMLButtonElement
+    const confirmButton = document.body.querySelector('button[data-role="confirm"]') as HTMLButtonElement
     confirmButton.click()
     await flushPromises()
 

@@ -32,13 +32,7 @@ describe('ShareLinkManager', () => {
   it('requires explicit confirmation before revoking a share link', async () => {
     const wrapper = mount(ShareLinkManager, {
       props: { publicationId: 7 },
-      global: {
-        stubs: {
-          Teleport: {
-            template: '<div><slot /></div>',
-          },
-        },
-      },
+      attachTo: document.body,
     })
 
     await flushPromises()

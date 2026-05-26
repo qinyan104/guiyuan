@@ -7,9 +7,10 @@ import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import PublicationActivityView from './PublicationActivityView.vue'
 
 const push = vi.fn()
+const back = vi.fn()
 
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, back }),
 }))
 
 vi.mock('../api/publication', () => ({
@@ -98,6 +99,6 @@ describe('PublicationActivityView', () => {
     await flushPromises()
     await wrapper.get('[data-testid="activity-back"]').trigger('click')
 
-    expect(push).toHaveBeenCalledWith({ name: 'workbench', params: { id: 7 } })
+    expect(back).toHaveBeenCalled()
   })
 })

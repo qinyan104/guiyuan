@@ -1,64 +1,46 @@
-# 族谱管理系统
+# 归源 · 族谱管理系统
 
-家族族谱的创建、编辑与出版预览工具。
+数字化家族族谱的创建、编辑与出版预览工具。现代界面，无限画布，所见即所得。
+
+> 🖼️ *截图即将添加 — 请将截图放入仓库后替换此处*
 
 ## 功能
 
-- 可视化族谱树编辑器，支持添加配偶、子女、父母关系
-- 双模式主题（浅色 / 暗色），基于 Yohaku 设计令牌体系，一键适配明暗
-- **便携式 JSON 导入/导出**：导出时自动将 `/api/photos/...` 与旧版 `/uploads/...` 人物头像转换为 Base64 嵌入，支持跨环境完整迁移
-- JSON 草稿导入/导出，支持 File System Access API 原生文件操作
-- SVG 导出，支持保留当前工作台视图的矢量结果
-- **雅致吊线图 (Literary Lineage)**：1.0 增强特性。支持一键切换至极致紧凑模式，隐藏卡片边框，将姓名转为垂直书法排列，并辅以朱砂血脉结与金石印章视觉效果，还原传统木刻本族谱神韵。
-- **自包含 HTML 快照分享**：导出独立 HTML 文件，无需服务器即可在任何浏览器查看交互式族谱，支持 AES-256-GCM 可选密码保护
-- 族谱信息管理（简介、起源地、堂号、家训）
-- 数据分析与可视化（世代分布、寿命统计、家族大事时间线）
-- 用户登录、管理员后台（用户管理、审计日志）
-- **站内协作与分支合并**：支持 `OWNER` / `EDITOR` / `VIEWER` 协作者授权；主谱可把人物设为挂载点，选择目标族谱。支持**精细化子树加载与合并**：可通过地图点选特定支系起点，仅合并该支系数据及照片关系。
-- **全局搜索**：在顶栏搜索人物或族谱标题，前缀优先匹配，按族谱分组展示结果
-- **以我为中心的亲属关系视图**：族人登录后自动定位到自己的卡片（金色高亮），所有其他人物卡片上实时显示亲戚称谓（爷爷、堂哥、外甥等），无需手动选择对比。管理员视角不触发。
-- **空状态引导**：Dashboard 和主要视图在无数据时显示引导卡片和操作入口
-- **头像设置**：个人设置页支持上传自定义头像
-- **出版工作室**：世系录自动排版 → 传统书版页面预览（版框/版心/鱼尾）→ vRain 引擎生成仿古刻本 PDF
-- **数据备份**：超级管理员可在设置页一键备份并下载数据库
-
-## 并发编辑与冲突处理
-
-- Publication 保存现在携带服务器版本号（revision）。
-- 如果两个协作者同时编辑同一族谱，后保存的一方如果基于过期版本提交，会被拒绝（HTTP 409）而非静默覆盖。
-- 遇到冲突时，系统会弹出全屏模态框提示版本冲突，并强制用户点击“立即刷新”以同步最新数据，有效防止误操作导致的数据覆盖。
+- **可视化族谱编辑** — 无限画布树形图，支持添加配偶、子女、父母关系，拖拽平移缩放
+- **双模式主题** — 浅色 / 暗色，一键切换
+- **雅致吊线图** — 紧凑模式，隐藏卡片边框，姓名垂直书法排列，朱砂血脉结与金石印章
+- **以我为中心** — 族人登录后自动定位，所有卡片实时显示亲戚称谓（爷爷、堂哥、外甥等）
+- **站内协作** — OWNER / EDITOR / VIEWER 权限，分支挂载与合并，乐观锁冲突处理
+- **字段级隐私** — 为 VIEWER 配置脱敏规则，支持生卒年、生平笔记、照片三组字段
+- **全局搜索** — 搜索人物或族谱标题，前缀优先匹配
+- **出版工作室** — 世系录自动排版，传统书版预览（版框/版心/鱼尾），Canvas 2D + pdf-lib 生成仿古刻本 PDF
+- **自包含 HTML 分享** — 导出独立 HTML 文件，支持 AES-256-GCM 可选密码保护
+- **便携式 JSON 导入/导出** — 头像自动内联 Base64，跨环境完整迁移
+- **SVG 导出** — 保留矢量结构，适合排版、审阅
+- **数据分析** — 世代分布、寿命统计、家族大事时间线
+- **数据备份** — 一键备份并下载数据库
 
 ## 环境要求
 
 - Java 17+
 - Node.js 18+
 - MySQL 8+
-- Perl 5.40+（出版 PDF 导出需要）
-- ImageMagick（出版 PDF 导出需要）
 
-## 1.0 最终版说明
-
-- 1.0 正式保留的稳定导出能力为 `JSON`、`SVG` 与 `分享网页`。
-- `单页矢量 PDF`、`谱书 PDF` 与独立人物详情页已移出 1.0 正式入口面，人物详情统一回到工作台上下文中查看与编辑。
-
-## 快速开始
+## 快速开始（开发）
 
 ### 1. 数据库
-
-创建 MySQL 数据库：
 
 ```sql
 CREATE DATABASE genealogy CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-默认连接 `localhost:3306/genealogy`，用户名 `root`（均可通过环境变量覆盖）。后端环境变量模板在 `backend/.env.example`，本机真实值放在 `backend/.env.local`（已被 Git 忽略，不要提交）。
+默认连接 `localhost:3306/genealogy`。复制环境变量模板：
 
 ```bash
 cd backend
 cp .env.example .env.local
+# 编辑 .env.local 填写数据库连接信息
 ```
-
-Spring Boot 不会自动读取 `.env.local`。使用 IDEA 启动时，请把 `backend/.env.local` 里的键值复制到 Run Configuration 的 Environment variables，或使用 EnvFile 插件加载该文件。命令行启动前也需要把这些变量注入当前 shell。
 
 ### 2. 启动后端
 
@@ -67,7 +49,7 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-后端运行在 `http://localhost:8080`，首次启动由 Flyway 自动执行数据库迁移（`baseline-on-migrate=true`，已有 schema 自动基线化）。
+后端运行在 `http://localhost:8080`，首次启动由 Flyway 自动建表。
 
 ### 3. 启动前端
 
@@ -77,42 +59,55 @@ npm install
 npm run dev
 ```
 
-前端运行在 `http://localhost:5173`，打开浏览器访问即可。API 请求将自动代理至 `localhost:8080`。如需更改后端地址，可修改 `frontend/.env.development` 中的 `VITE_API_BASE_URL`。
+前端运行在 `http://localhost:5173`，API 自动代理至后端。
 
-**前端结构约束：** 作为 `router-view` 直接承载的页面组件如果内部使用了 `Teleport`（例如弹窗、浮层），必须保持**单一根节点**。不要再用额外的路由过渡层去包裹这类页面，否则可能出现“登录后接口已成功、左侧导航正常、但中间内容区空白”的假性认证问题。
-
-### 4. 运行 E2E 测试
-
-需后端 + MySQL 运行中：
+### 4. 运行测试
 
 ```bash
-cd frontend
-npm run test:e2e
+# 前端单元测试
+cd frontend && npm test
+
+# 后端测试
+cd backend && ./mvnw test
+
+# E2E 测试（需后端+MySQL 运行中）
+cd frontend && npm run test:e2e
 ```
 
-测试用户 `e2e_test` / `test1234` 自动创建。11 个测试覆盖登录/登出、谱书 CRUD、全局搜索、分享链接。
+## Docker 部署
 
-发布前最小检查：尝试导出 `JSON`、`SVG` 或分享网页。
+支持 Docker Compose 一键部署，详见 [`release/README.md`](./release/README.md)。
 
-### 5. 导出说明
-
-- **JSON**：适合跨环境迁移、备份与草稿交换，导出时会尽量将可访问头像内联为 Base64。
-- **SVG**：保留族谱树的矢量结构，适合继续排版、审阅或外部设计加工。
-- **分享网页**：生成一个独立的自包含 HTML 文件，内嵌 SVG 族谱树、人物照片（Base64）和交互脚本（缩放/平移/点击详情）。可选 AES-256-GCM 密码保护（PBKDF2 10 万次迭代派生密钥）。无需服务器，直接用浏览器打开即可查看。
-
-### 6. 导入导出照片说明
-
-- 便携式 JSON 导出会优先把可访问的人物头像内联为 Base64，包括数据库照片接口 `/api/photos/{id}` 和旧版上传目录 `/uploads/...`。
-- 导入 JSON 时，后端支持三类头像来源：Base64、当前库内的 `/api/photos/{id}` 引用、旧版 `/uploads/...` 文件路径。
-- 若导入文件里的头像仍指向旧版 `/uploads/...`，则对应源文件必须仍存在于后端 `backend/uploads/` 目录，导入时才可迁移进 `photos` 表。
+```bash
+cp release/.env.example release/.env
+# 编辑 release/.env 填写密钥和密码
+docker compose --env-file release/.env -f release/docker-compose.yml up --build -d
+```
 
 ## 技术栈
 
 | 层 | 技术 |
 |---|---|
-| 前端 | Vue 3, Vite 6, TypeScript, vue-router, axios |
-| 后端 | Spring Boot 3.3, Spring Data JPA, Spring Security, iText 7 |
+| 前端 | Vue 3, Vite 6, TypeScript, Canvas 2D, pdf-lib |
+| 后端 | Spring Boot 3.3, Spring Data JPA, Spring Security, Flyway |
 | 数据库 | MySQL 8 |
-| 构建 | Maven (后端), Vite (前端) |
-| E2E 测试 | Playwright 1.59 + Chromium |
+| 测试 | Vitest, Playwright, JUnit |
+| 部署 | Docker, Nginx |
 
+## 导出说明
+
+- **JSON** — 跨环境迁移与备份，头像自动内联 Base64
+- **SVG** — 矢量族谱树，适合排版与外部设计加工
+- **分享网页** — 自包含 HTML 文件，内嵌族谱树与交互，支持可选密码保护
+- **PDF** — 客户端排版引擎生成古籍刻本风格 PDF
+
+## 开源协议
+
+本项目采用 **GNU Affero General Public License v3 (AGPL v3)** 开源。
+
+- ✅ 个人使用、学习、修改：完全自由
+- ✅ 自己部署使用：完全自由
+- ❌ 将修改后的代码作为闭源 SaaS 服务提供：必须开源修改
+- 💼 商业授权（闭源使用）：请联系作者获取商业许可
+
+详见 [LICENSE](./LICENSE)。

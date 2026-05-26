@@ -61,7 +61,7 @@ describe('DashboardView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('陈氏宗谱')
-    expect(wrapper.text()).toContain('进入画布')
+    expect(wrapper.text()).toContain('继续编撰')
   })
 
   it('renders publication count stat card', async () => {
@@ -77,7 +77,7 @@ describe('DashboardView', () => {
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('卷宗')
+    expect(wrapper.text()).toContain('馆藏总卷数')
   })
 
   it('shows empty state when no publications', async () => {
@@ -95,7 +95,6 @@ describe('DashboardView', () => {
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('归源')
     expect(wrapper.text()).toContain('创建第一个族谱')
   })
 })
