@@ -34,37 +34,69 @@ cd backend && ./mvnw spring-boot:run   # → http://localhost:8080
 
 ## 出版引擎
 
-vRain Perl 古籍刻本 PDF 引擎。关键文件：
+**客户端排版引擎**（2026-05-25 重构，替代 vRain Perl/Python 管线）。
+
+### 核心文件
 
 | 文件 | 作用 |
 |------|------|
-| `backend/vrain/vrain_mr.pl` | vRain 主脚本 |
-| `backend/vrain/canvas/*.cfg` | 12 个画布模板 |
-| `backend/.../VrainExportService.java` | Java → vRain 集成 |
-| `frontend/src/lib/vrainTemplates.ts` | 前端模板定义 |
-| `frontend/src/components/publishing/EntryEditor.vue` | 内容编辑侧面板 |
+| `frontend/src/lib/bookLayout/BookLayoutEngine.ts` | 排版引擎入口，`layoutSync()` 同步排版 |
+| `frontend/src/lib/bookLayout/ColumnFlowEngine.ts` | 竖排列流算法（右→左，上→下） |
+| `frontend/src/lib/bookLayout/CanvasRenderer.ts` | Canvas 2D 渲染器（背景/版框/鱼尾/字形） |
+| `frontend/src/lib/bookLayout/PageComposer.ts` | 页面合成（装饰元素 + 交互区域） |
+| `frontend/src/lib/bookLayout/FontMetricsEngine.ts` | 字体度量（CJK 字符宽度/高度缓存） |
+| `frontend/src/lib/bookLayout/types.ts` | 类型定义（Glyph/ComposedPage/LayoutOptions 等） |
+| `frontend/src/lib/lineageText.ts` | 世系录文本生成（`computeLineageText` → `formatEntry` 古典格式化） |
+| `frontend/src/lib/vrainTemplates.ts` | 12 个画布模板定义 + FONT_OPTIONS |
+| `frontend/src/components/publishing/PageCanvas.vue` | Canvas 纸张预览组件（缩放/拖拽/双击编辑） |
+| `frontend/src/components/publishing/EntryEditor.vue` | 左侧内容面板（编辑/设置/空白页添加） |
+| `frontend/src/components/publishing/BookPageRenderer.vue` | DOM 竖排渲染器（备用，writing-mode: vertical-rl） |
+| `frontend/src/components/publishing/StudioToolbar.vue` | 顶部工具栏（模板选择/检索数据/付梓导出/检查器/微调） |
 
-模板系统：`canvasId` → `generateBookCfg(draft, canvasId)` → 读取 `canvas/{id}.cfg`。
+### 排版参数
 
-## 关键约定
+| 参数 | 默认值 | 范围 |
+|------|--------|------|
+| 字号 | 48pt | 14–72pt |
+| 行距 | 1.4 | 1.0–4.0（步长 0.1） |
+| 栏数 | 1 | 1–2 |
+| 边距 | standard | compact/standard/loose |
+| 默认缩放 | 60% | 10%–200%（滚轮调节） |
 
-- 撤销/重做快照使用 `JSON.parse(JSON.stringify())`（`structuredClone` 对 Vue `reactive()` 代理抛出 `DataCloneError`，不得用于快照创建）
-- 撤销历史不记录 zoom 变化
-- localStorage 操作必须包 try/catch
-- 性能/UI 重构采用增量提交策略
-- 登录后空白页：先查路由结构+Teleport，再查接口与认证
+### 设置栏开关
+
+| 开关 | 说明 |
+|------|------|
+| 女:独立 | 女性配偶独立成条目（开启）/ 附于主条目（关闭） |
+| 地:隐藏 | 过滤地名信息 |
+| 数:汉字 | 阿拉伯数字→汉字（1931→一九三一） |
+
+### 排版控制符
+
+| 字符 | 作用 |
+|------|------|
+| `\n`（回车） | 换行 |
+| `¶`（Pilcrow） | 换列 |
+| `§`（Section） | 换页 |
+
+### 文本格式（formatEntry）
+
+古典族谱体例：諱/享壽/元配繼配/長次排行。`branchMode: "uxorilocal"` 时显示"招/贅"。
+
+### 字体
+
+`frontend/public/vrain/fonts/` 下 6 款预加载字体：qiji-combo、HanaMinA/B、小赖等宽宋体、文悦古体仿宋、苹线真宋。
+
+### 关键约定
+
+- 缩放锁定：调字号/行距时 fitScale+center 不变，页面不跳
+- Canvas 只渲染当前页条目，溢出自动合并为高页
+- 左侧编辑 200ms 去抖后触发右侧刷新
+- 双击 Canvas 文字弹出编辑浮层
+- PDF 导出使用全部页面条目统一排版
 
 ## 测试
 
 - 后端 122 测试（H2 内存库，全通过）
 - 前端 115 单元测试（vitest，0 失败）
 - 前端 11 E2E 测试（Playwright，需后端+MySQL）
-
-## 出版引擎开发记录（2026-05-24）
-
-- ✅ 后端：修复 JwtAuthenticationFilter 缺少 userId → 解决创建草稿 500
-- ✅ 前端：PublishingDashboard 动态族谱选择器
-- ✅ 前端：lineageText.ts 文字世系录 + PageCanvas.vue 传统书版渲染
-- ✅ 集成：vRain v1.4 multirows → 世系录→perl→古籍刻本 PDF
-- ✅ Windows Perl 环境适配（PATH/DLL/中文文件名）
-- 🔵 踩坑记录：`docs/troubleshooting/vrain-integration-pitfalls.md`

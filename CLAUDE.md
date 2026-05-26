@@ -31,33 +31,38 @@ cd backend && ./mvnw spring-boot:run   # 启动后端 → http://localhost:8080
 
 ## 出版引擎 (Publishing Engine)
 
-vRain 集成：基于 Perl 的中文古籍刻本 PDF 生成工具，用于族谱的「付梓导出」功能。
+**客户端排版引擎**（2026-05-25 重构，替代 vRain Perl/Python 管线）。Canvas 2D 渲染古籍刻本版面，PDF 导出使用 pdf-lib。
 
-```bash
-# 后端编译（含 PDFBox 3.0.4 依赖）
-cd backend && ./mvnw compile
+### 核心文件
 
-# 确认 vRain 环境
-where perl                              # 应输出 Strawberry Perl 路径
-dir backend\vrain\fonts\qiji-combo.ttf  # 39MB CJK 字体
-dir backend\vrain\canvas\*.cfg          # 12 个模板配置
-```
-
-**关键文件**：
 | 文件 | 作用 |
 |------|------|
-| `backend/vrain/vrain_mr.pl` | vRain 主脚本（已修改：ASCII PDF 文件名） |
-| `backend/vrain/canvas/*.cfg` | 12 个画布模板配置 |
-| `backend/.../VrainExportService.java` | Java → vRain 集成服务 |
-| `frontend/src/lib/vrainTemplates.ts` | 前端模板定义（ID/名称/缩略图） |
-| `frontend/src/components/publishing/VrainPreview.vue` | PDF 预览（垂直滚动） |
-| `frontend/src/components/publishing/EntryEditor.vue` | 内容编辑侧面板 |
+| `frontend/src/lib/bookLayout/BookLayoutEngine.ts` | 排版引擎入口 |
+| `frontend/src/lib/bookLayout/ColumnFlowEngine.ts` | 竖排列流（右→左，上→下） |
+| `frontend/src/lib/bookLayout/CanvasRenderer.ts` | Canvas 2D 渲染（背景/版框/鱼尾/字形） |
+| `frontend/src/lib/bookLayout/PageComposer.ts` | 页面合成 |
+| `frontend/src/lib/bookLayout/FontMetricsEngine.ts` | CJK 字体度量缓存 |
+| `frontend/src/lib/bookLayout/PdfExporter.ts` | PDF 导出 |
+| `frontend/src/lib/lineageText.ts` | 世系录古典文本生成 |
+| `frontend/src/lib/vrainTemplates.ts` | 12 模板定义 + 6 字体选项 |
+| `frontend/src/components/publishing/PageCanvas.vue` | Canvas 纸张预览（缩放/拖拽/双击编辑） |
+| `frontend/src/components/publishing/EntryEditor.vue` | 左侧内容面板 |
+| `frontend/src/components/publishing/StudioToolbar.vue` | 顶部工具栏 |
 
-**模板系统**：`canvasId` 从 `StudioToolbar` 选择 → API `?canvasId=` → `generateBookCfg(draft, canvasId)` → 读取 `canvas/{id}.cfg` 动态配置 `multirows_horizontal_layout` 和 `row_num`。
+### 排版参数
 
-**字体**：所有模板使用 `qiji-combo.ttf` (39MB)，PDF 渲染使用 PDFBox 3.0.4（`Loader.loadPDF()` API）。
+字号 48pt 默认（14–72pt），行距 1.4（1.0–4.0, step 0.1），默认缩放 60%。
 
-**Perl 路径优先级**：`VrainExportService.findPerl()` 优先检查 Strawberry Perl 特定路径，再 fallback 到 `PATH` 查找（Git Bash 自带的 Perl 缺少 `PDF::Builder` 模块）。
+### 字体
+
+`public/vrain/fonts/` 预加载 6 款：qiji-combo、HanaMinA/B、小赖等宽宋体、文悦古体仿宋、苹线真宋。
+
+### 关键约定
+
+- 调字号/行距时缩放锁定不跳
+- Canvas 只渲染当前页，溢出合并为高页
+- 左侧编辑 200ms 去抖触发右侧刷新
+- 双击 Canvas 弹出编辑浮层
 
 ## 测试
 
