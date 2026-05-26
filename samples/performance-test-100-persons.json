@@ -1,0 +1,1281 @@
+{
+  "version": 1,
+  "savedAt": "2026-05-26T13:08:13.590Z",
+  "publication": {
+    "title": "性能测试 - 100人",
+    "subtitle": "自动生成，共 100 人",
+    "focusFamilyId": "f1",
+    "people": {
+      "p1": {
+        "id": "p1",
+        "dbId": 86367,
+        "name": "李军子",
+        "gender": "male",
+        "birth": "1900年07月26日",
+        "death": "1970年",
+        "deceased": true,
+        "age": "70"
+      },
+      "p10": {
+        "id": "p10",
+        "dbId": 86368,
+        "name": "罗芳甫",
+        "gender": "female",
+        "birth": "1878年05月05日"
+      },
+      "p100": {
+        "id": "p100",
+        "dbId": 86369,
+        "name": "唐蓉甫",
+        "gender": "female",
+        "birth": "1804年12月19日",
+        "death": "1858年",
+        "deceased": true
+      },
+      "p11": {
+        "id": "p11",
+        "dbId": 86370,
+        "name": "韩志",
+        "gender": "male",
+        "birth": "1863年05月08日",
+        "death": "1947年",
+        "deceased": true
+      },
+      "p12": {
+        "id": "p12",
+        "dbId": 86371,
+        "name": "胡琳甫",
+        "gender": "female",
+        "birth": "1861年03月01日",
+        "death": "1915年",
+        "deceased": true
+      },
+      "p13": {
+        "id": "p13",
+        "dbId": 86372,
+        "name": "张云",
+        "gender": "female",
+        "birth": "1856年03月08日",
+        "death": "1937年",
+        "deceased": true
+      },
+      "p14": {
+        "id": "p14",
+        "dbId": 86373,
+        "name": "马斌",
+        "gender": "male",
+        "birth": "1862年05月20日",
+        "death": "1933年",
+        "deceased": true
+      },
+      "p15": {
+        "id": "p15",
+        "dbId": 86374,
+        "name": "赵华",
+        "gender": "female",
+        "birth": "1864年12月19日"
+      },
+      "p16": {
+        "id": "p16",
+        "dbId": 86375,
+        "name": "周华",
+        "gender": "male",
+        "birth": "1859年02月16日",
+        "death": "1931年",
+        "deceased": true
+      },
+      "p17": {
+        "id": "p17",
+        "dbId": 86376,
+        "name": "邓敏",
+        "gender": "female",
+        "birth": "1852年10月28日"
+      },
+      "p18": {
+        "id": "p18",
+        "dbId": 86377,
+        "name": "韩龙",
+        "gender": "male",
+        "birth": "1856年12月02日",
+        "death": "1921年",
+        "deceased": true
+      },
+      "p19": {
+        "id": "p19",
+        "dbId": 86378,
+        "name": "李兰",
+        "gender": "female",
+        "birth": "1864年02月24日",
+        "death": "1941年",
+        "deceased": true
+      },
+      "p2": {
+        "id": "p2",
+        "dbId": 86379,
+        "name": "韩慧",
+        "gender": "female",
+        "birth": "1909年02月17日",
+        "death": "1978年",
+        "deceased": true
+      },
+      "p20": {
+        "id": "p20",
+        "dbId": 86380,
+        "name": "吴刚",
+        "gender": "male",
+        "birth": "1861年11月27日",
+        "death": "1926年",
+        "deceased": true
+      },
+      "p21": {
+        "id": "p21",
+        "dbId": 86381,
+        "name": "孙玲",
+        "gender": "female",
+        "birth": "1854年09月28日"
+      },
+      "p22": {
+        "id": "p22",
+        "dbId": 86382,
+        "name": "唐杰",
+        "gender": "male",
+        "birth": "1855年11月09日"
+      },
+      "p23": {
+        "id": "p23",
+        "dbId": 86383,
+        "name": "刘婷之",
+        "gender": "female",
+        "birth": "1855年12月14日",
+        "death": "1907年",
+        "deceased": true
+      },
+      "p24": {
+        "id": "p24",
+        "dbId": 86384,
+        "name": "高素",
+        "gender": "female",
+        "birth": "1855年04月24日",
+        "death": "1937年",
+        "deceased": true
+      },
+      "p25": {
+        "id": "p25",
+        "dbId": 86385,
+        "name": "邓凤",
+        "gender": "female",
+        "birth": "1859年07月03日",
+        "death": "1914年",
+        "deceased": true
+      },
+      "p26": {
+        "id": "p26",
+        "dbId": 86386,
+        "name": "王海子",
+        "gender": "male",
+        "birth": "1850年07月11日",
+        "death": "1910年",
+        "deceased": true
+      },
+      "p27": {
+        "id": "p27",
+        "dbId": 86387,
+        "name": "吴燕生",
+        "gender": "female",
+        "birth": "1862年04月08日",
+        "death": "1923年",
+        "deceased": true
+      },
+      "p28": {
+        "id": "p28",
+        "dbId": 86388,
+        "name": "胡国生",
+        "gender": "male",
+        "birth": "1852年08月26日"
+      },
+      "p29": {
+        "id": "p29",
+        "dbId": 86389,
+        "name": "何萍子",
+        "gender": "female",
+        "birth": "1862年05月12日"
+      },
+      "p3": {
+        "id": "p3",
+        "dbId": 86390,
+        "name": "谢涛之",
+        "gender": "male",
+        "birth": "1877年01月26日",
+        "death": "1939年",
+        "deceased": true
+      },
+      "p30": {
+        "id": "p30",
+        "dbId": 86391,
+        "name": "黄涛",
+        "gender": "male",
+        "birth": "1864年05月16日",
+        "death": "1944年",
+        "deceased": true
+      },
+      "p31": {
+        "id": "p31",
+        "dbId": 86392,
+        "name": "萧莉",
+        "gender": "female",
+        "birth": "1850年09月25日",
+        "death": "1904年",
+        "deceased": true
+      },
+      "p32": {
+        "id": "p32",
+        "dbId": 86393,
+        "name": "梁辉",
+        "gender": "male",
+        "birth": "1834年12月03日"
+      },
+      "p33": {
+        "id": "p33",
+        "dbId": 86394,
+        "name": "杨素",
+        "gender": "female",
+        "birth": "1830年04月13日",
+        "death": "1897年",
+        "deceased": true
+      },
+      "p34": {
+        "id": "p34",
+        "dbId": 86395,
+        "name": "宋琴",
+        "gender": "female",
+        "birth": "1829年04月20日"
+      },
+      "p35": {
+        "id": "p35",
+        "dbId": 86396,
+        "name": "陈伟生",
+        "gender": "male",
+        "birth": "1833年06月25日",
+        "death": "1895年",
+        "deceased": true
+      },
+      "p36": {
+        "id": "p36",
+        "dbId": 86397,
+        "name": "陈蓉甫",
+        "gender": "female",
+        "birth": "1832年12月07日"
+      },
+      "p37": {
+        "id": "p37",
+        "dbId": 86398,
+        "name": "高威",
+        "gender": "male",
+        "birth": "1830年07月16日"
+      },
+      "p38": {
+        "id": "p38",
+        "dbId": 86399,
+        "name": "郭洁",
+        "gender": "female",
+        "birth": "1827年07月16日"
+      },
+      "p39": {
+        "id": "p39",
+        "dbId": 86400,
+        "name": "高飞",
+        "gender": "male",
+        "birth": "1828年03月18日",
+        "death": "1898年",
+        "deceased": true
+      },
+      "p4": {
+        "id": "p4",
+        "dbId": 86401,
+        "name": "许英",
+        "gender": "female",
+        "birth": "1887年03月17日"
+      },
+      "p40": {
+        "id": "p40",
+        "dbId": 86402,
+        "name": "李敏儿",
+        "gender": "female",
+        "birth": "1830年11月13日",
+        "death": "1906年",
+        "deceased": true
+      },
+      "p41": {
+        "id": "p41",
+        "dbId": 86403,
+        "name": "胡辉生",
+        "gender": "male",
+        "birth": "1835年12月15日"
+      },
+      "p42": {
+        "id": "p42",
+        "dbId": 86404,
+        "name": "郭丽",
+        "gender": "female",
+        "birth": "1826年11月28日",
+        "death": "1903年",
+        "deceased": true
+      },
+      "p43": {
+        "id": "p43",
+        "dbId": 86405,
+        "name": "郭海",
+        "gender": "male",
+        "birth": "1830年08月28日"
+      },
+      "p44": {
+        "id": "p44",
+        "dbId": 86406,
+        "name": "萧静",
+        "gender": "female",
+        "birth": "1833年06月06日"
+      },
+      "p45": {
+        "id": "p45",
+        "dbId": 86407,
+        "name": "韩俊",
+        "gender": "male",
+        "birth": "1830年03月14日"
+      },
+      "p46": {
+        "id": "p46",
+        "dbId": 86408,
+        "name": "何莉儿",
+        "gender": "female",
+        "birth": "1837年11月08日"
+      },
+      "p47": {
+        "id": "p47",
+        "dbId": 86409,
+        "name": "林伟",
+        "gender": "male",
+        "birth": "1826年11月01日",
+        "death": "1908年",
+        "deceased": true
+      },
+      "p48": {
+        "id": "p48",
+        "dbId": 86410,
+        "name": "李洁",
+        "gender": "female",
+        "birth": "1833年03月12日"
+      },
+      "p49": {
+        "id": "p49",
+        "dbId": 86411,
+        "name": "林敏",
+        "gender": "female",
+        "birth": "1831年11月16日",
+        "death": "1905年",
+        "deceased": true
+      },
+      "p5": {
+        "id": "p5",
+        "dbId": 86412,
+        "name": "曹磊",
+        "gender": "male",
+        "birth": "1875年03月09日",
+        "death": "1955年",
+        "deceased": true
+      },
+      "p50": {
+        "id": "p50",
+        "dbId": 86413,
+        "name": "周军",
+        "gender": "male",
+        "birth": "1836年09月24日",
+        "death": "1918年",
+        "deceased": true
+      },
+      "p51": {
+        "id": "p51",
+        "dbId": 86414,
+        "name": "宋莲",
+        "gender": "female",
+        "birth": "1827年08月06日",
+        "death": "1896年",
+        "deceased": true
+      },
+      "p52": {
+        "id": "p52",
+        "dbId": 86415,
+        "name": "赵凯之",
+        "gender": "male",
+        "birth": "1825年11月08日",
+        "death": "1900年",
+        "deceased": true
+      },
+      "p53": {
+        "id": "p53",
+        "dbId": 86416,
+        "name": "谢凤儿",
+        "gender": "female",
+        "birth": "1835年12月07日"
+      },
+      "p54": {
+        "id": "p54",
+        "dbId": 86417,
+        "name": "韩峰儿",
+        "gender": "male",
+        "birth": "1837年12月09日"
+      },
+      "p55": {
+        "id": "p55",
+        "dbId": 86418,
+        "name": "吴静儿",
+        "gender": "female",
+        "birth": "1834年02月20日",
+        "death": "1914年",
+        "deceased": true
+      },
+      "p56": {
+        "id": "p56",
+        "dbId": 86419,
+        "name": "何军",
+        "gender": "male",
+        "birth": "1834年10月05日",
+        "death": "1903年",
+        "deceased": true
+      },
+      "p57": {
+        "id": "p57",
+        "dbId": 86420,
+        "name": "赵玉",
+        "gender": "female",
+        "birth": "1825年01月25日"
+      },
+      "p58": {
+        "id": "p58",
+        "dbId": 86421,
+        "name": "吴玉",
+        "gender": "female",
+        "birth": "1827年04月14日"
+      },
+      "p59": {
+        "id": "p59",
+        "dbId": 86422,
+        "name": "马浩",
+        "gender": "male",
+        "birth": "1827年05月21日",
+        "death": "1907年",
+        "deceased": true
+      },
+      "p6": {
+        "id": "p6",
+        "dbId": 86423,
+        "name": "陈萍",
+        "gender": "female",
+        "birth": "1875年01月28日",
+        "death": "1943年",
+        "deceased": true
+      },
+      "p60": {
+        "id": "p60",
+        "dbId": 86424,
+        "name": "宋霞",
+        "gender": "female",
+        "birth": "1837年09月09日"
+      },
+      "p61": {
+        "id": "p61",
+        "dbId": 86425,
+        "name": "周国",
+        "gender": "male",
+        "birth": "1829年05月13日"
+      },
+      "p62": {
+        "id": "p62",
+        "dbId": 86426,
+        "name": "杨芳",
+        "gender": "female",
+        "birth": "1835年05月27日",
+        "death": "1900年",
+        "deceased": true
+      },
+      "p63": {
+        "id": "p63",
+        "dbId": 86427,
+        "name": "徐超臣",
+        "gender": "male",
+        "birth": "1830年08月23日",
+        "death": "1887年",
+        "deceased": true
+      },
+      "p64": {
+        "id": "p64",
+        "dbId": 86428,
+        "name": "梁婷",
+        "gender": "female",
+        "birth": "1836年02月12日"
+      },
+      "p65": {
+        "id": "p65",
+        "dbId": 86429,
+        "name": "萧凤",
+        "gender": "female",
+        "birth": "1838年10月01日",
+        "death": "1918年",
+        "deceased": true
+      },
+      "p66": {
+        "id": "p66",
+        "dbId": 86430,
+        "name": "黄波",
+        "gender": "male",
+        "birth": "1833年08月25日",
+        "death": "1888年",
+        "deceased": true
+      },
+      "p67": {
+        "id": "p67",
+        "dbId": 86431,
+        "name": "徐芳生",
+        "gender": "female",
+        "birth": "1831年06月03日",
+        "death": "1903年",
+        "deceased": true
+      },
+      "p68": {
+        "id": "p68",
+        "dbId": 86432,
+        "name": "朱萍生",
+        "gender": "female",
+        "birth": "1839年04月03日",
+        "death": "1907年",
+        "deceased": true
+      },
+      "p69": {
+        "id": "p69",
+        "dbId": 86433,
+        "name": "韩海",
+        "gender": "male",
+        "birth": "1836年05月02日"
+      },
+      "p7": {
+        "id": "p7",
+        "dbId": 86434,
+        "name": "萧强生",
+        "gender": "male",
+        "birth": "1880年02月26日"
+      },
+      "p70": {
+        "id": "p70",
+        "dbId": 86435,
+        "name": "陈霞",
+        "gender": "female",
+        "birth": "1832年11月23日",
+        "death": "1898年",
+        "deceased": true
+      },
+      "p71": {
+        "id": "p71",
+        "dbId": 86436,
+        "name": "韩龙臣",
+        "gender": "male",
+        "birth": "1833年07月12日",
+        "death": "1891年",
+        "deceased": true
+      },
+      "p72": {
+        "id": "p72",
+        "dbId": 86437,
+        "name": "周燕",
+        "gender": "female",
+        "birth": "1837年01月03日"
+      },
+      "p73": {
+        "id": "p73",
+        "dbId": 86438,
+        "name": "林萍",
+        "gender": "female",
+        "birth": "1833年10月06日",
+        "death": "1899年",
+        "deceased": true
+      },
+      "p74": {
+        "id": "p74",
+        "dbId": 86439,
+        "name": "曹鑫儿",
+        "gender": "male",
+        "birth": "1834年09月16日",
+        "death": "1907年",
+        "deceased": true
+      },
+      "p75": {
+        "id": "p75",
+        "dbId": 86440,
+        "name": "黄莲",
+        "gender": "female",
+        "birth": "1837年09月08日",
+        "death": "1901年",
+        "deceased": true
+      },
+      "p76": {
+        "id": "p76",
+        "dbId": 86441,
+        "name": "胡伟",
+        "gender": "male",
+        "birth": "1838年03月18日",
+        "death": "1893年",
+        "deceased": true
+      },
+      "p77": {
+        "id": "p77",
+        "dbId": 86442,
+        "name": "罗英",
+        "gender": "female",
+        "birth": "1825年02月17日",
+        "death": "1891年",
+        "deceased": true,
+        "age": "66"
+      },
+      "p78": {
+        "id": "p78",
+        "dbId": 86443,
+        "name": "罗军",
+        "gender": "male",
+        "birth": "1811年08月20日",
+        "death": "1861年",
+        "deceased": true
+      },
+      "p79": {
+        "id": "p79",
+        "dbId": 86444,
+        "name": "韩萍",
+        "gender": "female",
+        "birth": "1812年03月12日"
+      },
+      "p8": {
+        "id": "p8",
+        "dbId": 86445,
+        "name": "张芳",
+        "gender": "female",
+        "birth": "1880年04月21日"
+      },
+      "p80": {
+        "id": "p80",
+        "dbId": 86446,
+        "name": "杨燕",
+        "gender": "female",
+        "birth": "1802年06月07日",
+        "death": "1858年",
+        "deceased": true
+      },
+      "p81": {
+        "id": "p81",
+        "dbId": 86447,
+        "name": "曹波",
+        "gender": "male",
+        "birth": "1814年02月14日"
+      },
+      "p82": {
+        "id": "p82",
+        "dbId": 86448,
+        "name": "唐秀",
+        "gender": "female",
+        "birth": "1807年08月10日"
+      },
+      "p83": {
+        "id": "p83",
+        "dbId": 86449,
+        "name": "徐莉臣",
+        "gender": "female",
+        "birth": "1811年06月18日",
+        "death": "1891年",
+        "deceased": true
+      },
+      "p84": {
+        "id": "p84",
+        "dbId": 86450,
+        "name": "张斌",
+        "gender": "male",
+        "birth": "1812年07月20日"
+      },
+      "p85": {
+        "id": "p85",
+        "dbId": 86451,
+        "name": "刘玉",
+        "gender": "female",
+        "birth": "1800年09月05日",
+        "death": "1877年",
+        "deceased": true
+      },
+      "p86": {
+        "id": "p86",
+        "dbId": 86452,
+        "name": "徐斌",
+        "gender": "male",
+        "birth": "1810年05月13日",
+        "death": "1884年",
+        "deceased": true
+      },
+      "p87": {
+        "id": "p87",
+        "dbId": 86453,
+        "name": "张香",
+        "gender": "female",
+        "birth": "1810年01月20日",
+        "death": "1881年",
+        "deceased": true
+      },
+      "p88": {
+        "id": "p88",
+        "dbId": 86454,
+        "name": "陈香",
+        "gender": "female",
+        "birth": "1809年12月09日",
+        "death": "1886年",
+        "deceased": true
+      },
+      "p89": {
+        "id": "p89",
+        "dbId": 86455,
+        "name": "韩海",
+        "gender": "male",
+        "birth": "1813年11月25日",
+        "death": "1872年",
+        "deceased": true
+      },
+      "p9": {
+        "id": "p9",
+        "dbId": 86456,
+        "name": "何威生",
+        "gender": "male",
+        "birth": "1882年03月04日",
+        "death": "1935年",
+        "deceased": true
+      },
+      "p90": {
+        "id": "p90",
+        "dbId": 86457,
+        "name": "林琳甫",
+        "gender": "female",
+        "birth": "1810年01月08日"
+      },
+      "p91": {
+        "id": "p91",
+        "dbId": 86458,
+        "name": "孙威",
+        "gender": "male",
+        "birth": "1805年02月27日",
+        "death": "1882年",
+        "deceased": true
+      },
+      "p92": {
+        "id": "p92",
+        "dbId": 86459,
+        "name": "高霞",
+        "gender": "female",
+        "birth": "1813年06月18日"
+      },
+      "p93": {
+        "id": "p93",
+        "dbId": 86460,
+        "name": "唐磊",
+        "gender": "male",
+        "birth": "1805年02月18日",
+        "death": "1883年",
+        "deceased": true
+      },
+      "p94": {
+        "id": "p94",
+        "dbId": 86461,
+        "name": "徐琴",
+        "gender": "female",
+        "birth": "1802年11月05日",
+        "death": "1871年",
+        "deceased": true
+      },
+      "p95": {
+        "id": "p95",
+        "dbId": 86462,
+        "name": "黄勇",
+        "gender": "male",
+        "birth": "1809年11月08日",
+        "death": "1864年",
+        "deceased": true
+      },
+      "p96": {
+        "id": "p96",
+        "dbId": 86463,
+        "name": "唐梅",
+        "gender": "female",
+        "birth": "1801年06月08日"
+      },
+      "p97": {
+        "id": "p97",
+        "dbId": 86464,
+        "name": "唐辉子",
+        "gender": "male",
+        "birth": "1804年05月03日"
+      },
+      "p98": {
+        "id": "p98",
+        "dbId": 86465,
+        "name": "何娟",
+        "gender": "female",
+        "birth": "1807年07月05日",
+        "death": "1858年",
+        "deceased": true
+      },
+      "p99": {
+        "id": "p99",
+        "dbId": 86466,
+        "name": "邓国之",
+        "gender": "male",
+        "birth": "1811年04月12日",
+        "death": "1868年",
+        "deceased": true
+      }
+    },
+    "families": {
+      "f1": {
+        "id": "f1",
+        "adults": [
+          "p1",
+          "p2"
+        ],
+        "children": [
+          "p3",
+          "p5",
+          "p7",
+          "p9"
+        ]
+      },
+      "f10": {
+        "id": "f10",
+        "adults": [
+          "p20",
+          "p21"
+        ],
+        "children": [
+          "p52",
+          "p54",
+          "p56",
+          "p58"
+        ]
+      },
+      "f11": {
+        "id": "f11",
+        "adults": [
+          "p22",
+          "p23"
+        ],
+        "children": [
+          "p59",
+          "p61",
+          "p63",
+          "p65"
+        ]
+      },
+      "f12": {
+        "id": "f12",
+        "adults": [
+          "p26",
+          "p27"
+        ],
+        "children": [
+          "p66",
+          "p68",
+          "p69"
+        ]
+      },
+      "f13": {
+        "id": "f13",
+        "adults": [
+          "p28",
+          "p29"
+        ],
+        "children": [
+          "p71",
+          "p73"
+        ]
+      },
+      "f14": {
+        "id": "f14",
+        "adults": [
+          "p30",
+          "p31"
+        ],
+        "children": [
+          "p74",
+          "p76"
+        ]
+      },
+      "f15": {
+        "id": "f15",
+        "adults": [
+          "p32",
+          "p33"
+        ],
+        "children": [
+          "p78",
+          "p80",
+          "p81",
+          "p83"
+        ]
+      },
+      "f16": {
+        "id": "f16",
+        "adults": [
+          "p35",
+          "p36"
+        ],
+        "children": [
+          "p84",
+          "p86",
+          "p88",
+          "p89"
+        ]
+      },
+      "f17": {
+        "id": "f17",
+        "adults": [
+          "p37",
+          "p38"
+        ],
+        "children": [
+          "p91",
+          "p93"
+        ]
+      },
+      "f18": {
+        "id": "f18",
+        "adults": [
+          "p39",
+          "p40"
+        ],
+        "children": [
+          "p95",
+          "p97",
+          "p99",
+          "p100"
+        ]
+      },
+      "f19": {
+        "id": "f19",
+        "adults": [
+          "p41",
+          "p42"
+        ],
+        "children": []
+      },
+      "f2": {
+        "id": "f2",
+        "adults": [
+          "p3",
+          "p4"
+        ],
+        "children": [
+          "p11",
+          "p13",
+          "p14"
+        ]
+      },
+      "f20": {
+        "id": "f20",
+        "adults": [
+          "p43",
+          "p44"
+        ],
+        "children": []
+      },
+      "f21": {
+        "id": "f21",
+        "adults": [
+          "p45",
+          "p46"
+        ],
+        "children": []
+      },
+      "f22": {
+        "id": "f22",
+        "adults": [
+          "p47",
+          "p48"
+        ],
+        "children": []
+      },
+      "f23": {
+        "id": "f23",
+        "adults": [
+          "p50",
+          "p51"
+        ],
+        "children": []
+      },
+      "f24": {
+        "id": "f24",
+        "adults": [
+          "p52",
+          "p53"
+        ],
+        "children": []
+      },
+      "f25": {
+        "id": "f25",
+        "adults": [
+          "p54",
+          "p55"
+        ],
+        "children": []
+      },
+      "f26": {
+        "id": "f26",
+        "adults": [
+          "p56",
+          "p57"
+        ],
+        "children": []
+      },
+      "f27": {
+        "id": "f27",
+        "adults": [
+          "p59",
+          "p60"
+        ],
+        "children": []
+      },
+      "f28": {
+        "id": "f28",
+        "adults": [
+          "p61",
+          "p62"
+        ],
+        "children": []
+      },
+      "f29": {
+        "id": "f29",
+        "adults": [
+          "p63",
+          "p64"
+        ],
+        "children": []
+      },
+      "f3": {
+        "id": "f3",
+        "adults": [
+          "p5",
+          "p6"
+        ],
+        "children": [
+          "p16",
+          "p18",
+          "p20"
+        ]
+      },
+      "f30": {
+        "id": "f30",
+        "adults": [
+          "p66",
+          "p67"
+        ],
+        "children": []
+      },
+      "f31": {
+        "id": "f31",
+        "adults": [
+          "p69",
+          "p70"
+        ],
+        "children": []
+      },
+      "f32": {
+        "id": "f32",
+        "adults": [
+          "p71",
+          "p72"
+        ],
+        "children": []
+      },
+      "f33": {
+        "id": "f33",
+        "adults": [
+          "p74",
+          "p75"
+        ],
+        "children": []
+      },
+      "f34": {
+        "id": "f34",
+        "adults": [
+          "p76",
+          "p77"
+        ],
+        "children": []
+      },
+      "f35": {
+        "id": "f35",
+        "adults": [
+          "p78",
+          "p79"
+        ],
+        "children": []
+      },
+      "f36": {
+        "id": "f36",
+        "adults": [
+          "p81",
+          "p82"
+        ],
+        "children": []
+      },
+      "f37": {
+        "id": "f37",
+        "adults": [
+          "p84",
+          "p85"
+        ],
+        "children": []
+      },
+      "f38": {
+        "id": "f38",
+        "adults": [
+          "p86",
+          "p87"
+        ],
+        "children": []
+      },
+      "f39": {
+        "id": "f39",
+        "adults": [
+          "p89",
+          "p90"
+        ],
+        "children": []
+      },
+      "f4": {
+        "id": "f4",
+        "adults": [
+          "p7",
+          "p8"
+        ],
+        "children": [
+          "p22",
+          "p24",
+          "p25",
+          "p26"
+        ]
+      },
+      "f40": {
+        "id": "f40",
+        "adults": [
+          "p91",
+          "p92"
+        ],
+        "children": []
+      },
+      "f41": {
+        "id": "f41",
+        "adults": [
+          "p93",
+          "p94"
+        ],
+        "children": []
+      },
+      "f42": {
+        "id": "f42",
+        "adults": [
+          "p95",
+          "p96"
+        ],
+        "children": []
+      },
+      "f43": {
+        "id": "f43",
+        "adults": [
+          "p97",
+          "p98"
+        ],
+        "children": []
+      },
+      "f5": {
+        "id": "f5",
+        "adults": [
+          "p9",
+          "p10"
+        ],
+        "children": [
+          "p28",
+          "p30"
+        ]
+      },
+      "f6": {
+        "id": "f6",
+        "adults": [
+          "p11",
+          "p12"
+        ],
+        "children": [
+          "p32",
+          "p34"
+        ]
+      },
+      "f7": {
+        "id": "f7",
+        "adults": [
+          "p14",
+          "p15"
+        ],
+        "children": [
+          "p35",
+          "p37",
+          "p39"
+        ]
+      },
+      "f8": {
+        "id": "f8",
+        "adults": [
+          "p16",
+          "p17"
+        ],
+        "children": [
+          "p41",
+          "p43"
+        ]
+      },
+      "f9": {
+        "id": "f9",
+        "adults": [
+          "p18",
+          "p19"
+        ],
+        "children": [
+          "p45",
+          "p47",
+          "p49",
+          "p50"
+        ]
+      }
+    },
+    "info": {
+      "description": "性能测试用族谱 - 100人规模"
+    },
+    "revision": 11
+  },
+  "settings": {
+    "paper": "A4",
+    "layoutMode": "ou",
+    "cardWidth": 142,
+    "generationGap": 130,
+    "siblingGap": 56,
+    "partnerGap": 72,
+    "fontScale": 1,
+    "zoom": 0.32,
+    "showCard": false,
+    "showBirth": true,
+    "showDeath": true,
+    "showAge": true,
+    "showNote": true,
+    "showStatus": true,
+    "showLineage": true,
+    "showPhoto": true,
+    "paddingX": 80,
+    "paddingY": 80
+  }
+}
