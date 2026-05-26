@@ -306,6 +306,19 @@ export class PdfExporter {
     })
   }
 
+  /** 全角符号 → 半角回退 */
+  private fallbackChar(ch: string): string {
+    const map: Record<string, string> = {
+      "\uFF0C": ",", "\u3001": ",",  // ，、→,
+      "\uFF1A": ":",                 // ：→:
+      "\u3002": ".", "\uFF0E": ".",  // 。．→.
+      "\uFF08": "(", "\uFF09": ")",  // （）→()
+      "\u201C": "\"", "\u201D": "\"", // ""→"
+      "\u2018": "'", "\u2019": "'",  // ''→'
+    }
+    return map[ch] || ch
+  }
+
   private renderGlyphs(
     pdfPage: PDFPage,
     layer: import("./types").GlyphLayer,
@@ -329,7 +342,13 @@ export class PdfExporter {
           color: rgb(c.r, c.g, c.b),
         })
       } catch {
-        // 跳过字体中不存在的字符
+        // 全角符号回退为半角
+        const fb = this.fallbackChar(glyph.char)
+        if (fb !== glyph.char) {
+          try {
+            pdfPage.drawText(fb, { x: glyph.x, y: pdfY, font, size: fontSize, color: rgb(c.r, c.g, c.b) })
+          } catch { /* both failed, skip */ }
+        }
       }
     }
   }

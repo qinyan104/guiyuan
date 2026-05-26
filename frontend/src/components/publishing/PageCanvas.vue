@@ -12,10 +12,11 @@
 import { computed, onMounted, onUnmounted, ref, watch, nextTick } from "vue"
 import type { LineageEntry, LineagePage } from "../../types/publishing"
 import type { PublicationData } from "../../types/family"
-import type { ComposedPage, HitRegion } from "../../lib/bookLayout/types"
+import type { ComposedPage } from "../../lib/bookLayout/types"
 import { getBookLayoutEngine } from "../../lib/bookLayout/BookLayoutEngine"
 import { getCanvasRenderer } from "../../lib/bookLayout/CanvasRenderer"
 import { getCanvasConfig } from "../../lib/bookLayout/CanvasConfig"
+import { composePages } from "../../lib/bookLayout/PageComposer"
 import { computeLineageText } from "../../lib/lineageText"
 import type { LayoutOptions as LineageLayoutOptions } from "../../lib/lineageText"
 import type { LayoutOptions } from "../../lib/bookLayout/types"
@@ -43,7 +44,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   navigateToPage: [index: number]
-  editEntry: [personId: string, newText: string]
   focusEntry: [personId: string]
 }>()
 
@@ -66,10 +66,7 @@ renderer.preloadImages([
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const composedPages = ref<ComposedPage[]>([])
 const layoutReady = ref(false)
-const editingRegion = ref<HitRegion | null>(null)
-const editText = ref("")
-const showInlineEditor = ref(false)
-/** 当前渲染参数，编辑器定位 & 缩放计算需要（renderCanvas 中更新） */
+/** 当前渲染参数（renderCanvas 中更新） */
 const currentTotalScale = ref(1)
 const currentFitScale = ref(0)
 const currentDpr = ref(window.devicePixelRatio || 1)
@@ -79,21 +76,6 @@ const currentContainerW = ref(800)
 const currentContainerH = ref(600)
 const currentPageWidth = ref(800)
 const currentPageHeight = ref(600)
-
-/** 内联编辑器屏幕坐标 — 跟随 zoom/pan 实时更新 */
-const editorPos = computed(() => {
-  const region = editingRegion.value
-  const canvas = canvasRef.value
-  if (!region || !canvas) return { x: 0, y: 0 }
-  const rect = canvas.getBoundingClientRect()
-  const dpr = window.devicePixelRatio || 1
-  const ts = currentTotalScale.value
-  // 匹配 renderCanvas：页坐标 * totalScale + pan/dpr + center → CSS 像素
-  return {
-    x: rect.left + (region.rect.x + region.rect.width) * ts + panX.value / dpr + currentCenterX.value + 10,
-    y: rect.top + region.rect.y * ts + panY.value / dpr + currentCenterY.value,
-  }
-})
 
 // ── 缩放 & 拖拽 ──
 const zoom = ref(0.3)
@@ -137,53 +119,16 @@ function runLayout() {
   const entries = props.pageData?.entries
   if (entries && entries.length > 0) {
     const raw = engine.layoutSync(entries, props.canvasId, opts)
-    // 溢出多页 → 合并为一张高页
-    if (raw.length > 1) {
-      composedPages.value = [{
-        ...raw[0],
-        height: raw.reduce((s, p) => s + p.height, 0),
-        layers: raw.flatMap(p => p.layers),
-        hitRegions: raw.flatMap(p => p.hitRegions),
-        glyphs: { ...raw[0].glyphs, generationHeaders: raw.flatMap(p => p.glyphs.generationHeaders) },
-      }]
-    } else {
-      composedPages.value = raw
-    }
+    composedPages.value = raw
     layoutReady.value = true
     return
   }
 
   // 空白页 → 渲染完整空白纸页（底色+纹理+版框+鱼尾+书口）
   if (props.pageData && entries?.length === 0) {
-    const f = canvasCfg.frame
-    const m = canvasCfg.margins
-    const margin = Math.max(f.inlineWidth, f.outlineWidth) + f.outlineHMargin
-    const textArea = {
-      x: m.left + margin, y: m.top + margin,
-      width: canvasCfg.width - m.left - m.right - margin * 2,
-      height: canvasCfg.height - m.top - m.bottom - margin * 2,
-    }
-    const layers: any[] = [
-      { kind: "background", color: canvasCfg.backgroundColor, textureUrl: canvasCfg.backgroundImage ? `/vrain/canvas/${canvasCfg.backgroundImage}` : undefined, textureOpacity: canvasCfg.backgroundImage ? 0.3 : 0, pageWidth: canvasCfg.width, pageHeight: canvasCfg.height },
-    ]
-    if (f.inlineWidth > 0) {
-      layers.push({ kind: "frame", inline: { x: textArea.x, y: textArea.y, width: textArea.width, height: textArea.height, lineWidth: f.inlineWidth, color: f.inlineColor }, outline: null })
-    }
-    // 鱼尾
-    const ft = canvasCfg.fishTail
-    if (ft) {
-      layers.push({ kind: "fishTail", position: "top", centerX: canvasCfg.width / 2, rectY: ft.topY, rectHeight: ft.topRectHeight, triaHeight: ft.topTriaHeight, triaDirection: "up" as const, color: ft.topColor, lineWidth: ft.topLineWidth, isFlower: ft.isFlower, flowerImageUrl: ft.isFlower ? `/vrain/canvas/${ft.flowerImage}` : undefined })
-    }
-    // 书口标题
-    layers.push({ kind: "header", title: `世系錄 · ${props.sheetNumber}`, x: canvasCfg.width / 2, y: textArea.y - 8, fontFamily: "Noto Serif SC", fontSize: 24, color: f.inlineColor || "#8b7355" })
-    composedPages.value = [{
-      pageNumber: props.sheetNumber,
-      width: canvasCfg.width,
-      height: canvasCfg.height,
-      layers,
-      hitRegions: [],
-      glyphs: { pageNumber: props.sheetNumber, generationHeaders: [] },
-    }]
+    // 用 composePages 生成真正的空白页（和引擎渲染完全一致）
+    const emptyGlyphs = { pageNumber: props.sheetNumber, generationHeaders: [] as any[] }
+    composedPages.value = composePages([emptyGlyphs], canvasCfg)
     layoutReady.value = true
     return
   }
@@ -302,27 +247,6 @@ function handleCanvasClick(e: MouseEvent) {
   if (hit) {
     emit("focusEntry", hit.entry.personId)
   }
-}
-
-function startInlineEdit(region: HitRegion) {
-  editingRegion.value = region
-  editText.value = region.entry.formattedText
-  showInlineEditor.value = true
-  // editorPos 是 computed，跟随 zoom/pan 自动更新，无需手动计算
-  renderCanvas()
-}
-
-function cancelInlineEdit() {
-  editingRegion.value = null
-  showInlineEditor.value = false
-  renderCanvas()
-}
-
-function confirmInlineEdit() {
-  if (editingRegion.value && editText.value !== editingRegion.value.entry.formattedText) {
-    emit("editEntry", editingRegion.value.entry.personId, editText.value)
-  }
-  cancelInlineEdit()
 }
 
 // ── 滚动缩放 ──

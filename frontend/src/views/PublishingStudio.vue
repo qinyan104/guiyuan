@@ -6,13 +6,17 @@ import EntryEditor from "../components/publishing/EntryEditor.vue"
 import PageCanvas from "../components/publishing/PageCanvas.vue"
 import StudioStatusBar from "../components/publishing/StudioStatusBar.vue"
 import StudioToolbar from "../components/publishing/StudioToolbar.vue"
-import TweaksPanel from "../components/publishing/TweaksPanel.vue"
-import type { LayoutTweaks } from "../components/publishing/TweaksPanel.vue"
+interface LayoutTweaks {
+  fontSize: number
+  lineHeight: number
+  columns: number
+  marginPreset: "compact" | "standard" | "loose"
+}
 import { getPublication } from "../api/publication"
 import { deleteSheet, exportPdfV2, listSheets, saveSheets, updateDraft } from "../api/publishing"
 import { useFeedback } from "../composables/useFeedback"
 import { usePublishingStudio } from "../composables/usePublishingStudio"
-import { computeLineageText, paginate, type LayoutOptions } from "../lib/lineageText"
+import { computeLineageText, type LayoutOptions } from "../lib/lineageText"
 import { getBookLayoutEngine } from "../lib/bookLayout/BookLayoutEngine"
 import { CANVAS_TEMPLATES } from "../lib/vrainTemplates"
 import type { PublicationData } from "../types/family"
@@ -273,11 +277,18 @@ async function runLayout(skipNotice = true) {
       paper: paper.value,
       canvasId: canvasId.value,
     }
-    const pages = computeLineageText(pubData.value, opts, lineageSettings.value)
-    layoutPages.value = pages
-    sheetTypes.value = pages.map(() => "genealogy")
+    // 全部条目放在第一页，用户自行分页
+    const entryPages = computeLineageText(pubData.value, opts, lineageSettings.value)
+    const allEntries = entryPages.flatMap(p => p.entries)
+    const firstPage: LineagePage = { pageNumber: 1, entries: allEntries, rootPersonIds: entryPages[0]?.rootPersonIds ?? [] }
+    layoutPages.value = [firstPage]
+    sheetTypes.value = ["genealogy"]
     activeSheetIndex.value = 0
-    const sheetsToSave = pages.map((page, index) => ({
+    await nextTick()
+    canvasRef.value?.reloadPreview()
+    await nextTick()
+    handlePageOverflow(0)
+    const sheetsToSave = layoutPages.value.map((page, index) => ({
       sheetNumber: index + 1,
       sheetType: "genealogy",
       layoutData: JSON.stringify(page),
@@ -294,8 +305,8 @@ async function runLayout(skipNotice = true) {
         fontSize: layoutTweaks.value.fontSize,
       }),
     })
-    feedback.statusMessage.value = `检索完成，共 ${pages.length} 页`
-    showCanvasNotice(`已生成 ${pages.length} 页版面`)
+    feedback.statusMessage.value = `检索完成，共 ${layoutPages.value.length} 页`
+    showCanvasNotice(`内容已加载到第 1 页，可手动分页`)
   } catch (e: any) {
     feedback.errorMessage.value = "自动排版失败: " + (e.message || e)
   } finally {
@@ -304,8 +315,6 @@ async function runLayout(skipNotice = true) {
 }
 
 /** 防抖重排版（不保存后端），微调参数变化后 400ms 自动重分页 */
-let tweakDebounceTimer: ReturnType<typeof setTimeout> | null = null
-
 function handleTweakUpdate(key: string, value: number | string) {
   layoutTweaks.value = { ...layoutTweaks.value, [key]: value }
   showCanvasNotice(getTweakLabel(key) + '已更新')
@@ -322,27 +331,8 @@ function handleTweakUpdate(key: string, value: number | string) {
     }),
   })
 
-  // 防抖：400ms 无操作后重新分页（保留用户编辑内容）
-  if (tweakDebounceTimer) clearTimeout(tweakDebounceTimer)
-  tweakDebounceTimer = setTimeout(() => {
-    if (!pubData.value) return
-    const allEntries = layoutPages.value.flatMap(p => p.entries)
-    const rootIds = layoutPages.value[0]?.rootPersonIds ?? []
-    const opts: LayoutOptions = {
-      fontSize: layoutTweaks.value.fontSize,
-      lineHeight: layoutTweaks.value.lineHeight,
-      columns: layoutTweaks.value.columns,
-      marginPreset: layoutTweaks.value.marginPreset,
-      paper: paper.value,
-    }
-    const repaginated = paginate(allEntries, rootIds, opts)
-    layoutPages.value = repaginated
-    sheetTypes.value = repaginated.map(() => "genealogy")
-    if (activeSheetIndex.value >= repaginated.length) {
-      activeSheetIndex.value = Math.max(0, repaginated.length - 1)
-    }
-    showCanvasNotice('版面已更新')
-  }, 400)
+  // 调字号/行距时不改变分页
+  showCanvasNotice(getTweakLabel(key) + '已更新')
 }
 
 function getTweakLabel(key: string): string {
@@ -482,6 +472,35 @@ function handleCanvasFocusEntry(personId: string) {
 }
 
 /** Canvas 内联编辑 → 回写到 layoutPages */
+/** 内容溢出时自动创建新页 */
+function handlePageOverflow(pageIndex: number) {
+  nextTick(() => {
+    const cps = canvasRef.value?.composedPages
+    if (!cps || cps.length <= 1) return
+    const curPage = layoutPages.value[pageIndex]
+    if (!curPage) return
+    // 每页的条目由 hitRegions 确定
+    for (let i = 1; i < cps.length; i++) {
+      const entrySet = new Set(cps[i].hitRegions.map((r: any) => r.entry.personId))
+      const overflowEntries = curPage.entries.filter(e => entrySet.has(e.personId))
+      if (overflowEntries.length > 0) {
+        // 从当前页移除溢出条目
+        curPage.entries = curPage.entries.filter(e => !entrySet.has(e.personId))
+        // 插入新页
+        layoutPages.value.splice(pageIndex + i, 0, {
+          pageNumber: 0, // will be renumbered
+          entries: overflowEntries,
+          rootPersonIds: curPage.rootPersonIds,
+        })
+      }
+    }
+    // 重新编号
+    layoutPages.value.forEach((p, i) => p.pageNumber = i + 1)
+    sheetTypes.value = layoutPages.value.map(() => "genealogy")
+    canvasRef.value?.reloadPreview()
+  })
+}
+
 function handleCanvasEditEntry(personId: string, newText: string) {
   for (const page of layoutPages.value) {
     const idx = page.entries.findIndex(e => e.personId === personId)
@@ -606,7 +625,7 @@ const statusText = computed(() => {
           @moveToPage="handleMoveToPage"
           @saveAndRelayout="handleSaveAndRelayout"
           @navigateToEntry="handleNavigateToEntry"
-          @updateEntryAt="(pi, ei, t) => { if (layoutPages[pi]) { layoutPages[pi].entries[ei].formattedText = t; canvasRef?.reloadPreview(); } }"
+          @updateEntryAt="(pi, ei, t) => { if (layoutPages[pi]) { layoutPages[pi].entries[ei].formattedText = t; canvasRef?.reloadPreview(); handlePageOverflow(pi); } }"
           @addEntry="(pi, name, text) => { layoutPages[pi].entries.push({ personId: newEntryId(), personName: name, formattedText: text, generation: 0, gender: 'male' as const }); canvasRef?.reloadPreview(); }"
           @updateSetting="handleSettingChange"
           @hoverEntry="(id) => hoveredPersonId = id"
