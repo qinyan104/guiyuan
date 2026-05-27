@@ -49,7 +49,7 @@ public class WebConfig implements WebMvcConfigurer {
         return builder -> builder.postConfigurer(objectMapper ->
                 objectMapper.getFactory().setStreamReadConstraints(
                         StreamReadConstraints.builder()
-                                .maxStringLength(500_000_000)
+                                .maxStringLength(1_000_000) // 1 MB - ample for genealogy data
                                 .build()
                 )
         );
