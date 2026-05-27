@@ -107,6 +107,19 @@ function buildGraph(publication: PublicationData): KinshipGraph {
   return graph
 }
 
+// Module-level cache: avoids rebuilding the graph on every kinship call.
+// Invalidates when publication.revision changes.
+let _cachedGraph: KinshipGraph | null = null
+let _cachedRevision = -1
+
+function getCachedGraph(publication: PublicationData): KinshipGraph {
+  const rev = publication.revision ?? 0
+  if (_cachedGraph && _cachedRevision === rev) return _cachedGraph
+  _cachedGraph = buildGraph(publication)
+  _cachedRevision = rev
+  return _cachedGraph
+}
+
 function findAncestors(graph: KinshipGraph, personId: string, maxDepth: number = 50): AncestorEntry[] {
   const result: AncestorEntry[] = []
   const visited = new Set<string>()
@@ -455,7 +468,7 @@ function resolveYoungerMultiGeneration(generationGap: number, alterGender: Gende
 
 export function findRelationshipPath(publication: PublicationData, personAId: string, personBId: string): KinshipPath | null {
   if (personAId === personBId) return null
-  const graph = buildGraph(publication)
+  const graph = getCachedGraph(publication)
   if (!graph.people.has(personAId) || !graph.people.has(personBId)) return null
   const ancestorsA = findAncestors(graph, personAId)
   const ancestorsB = findAncestors(graph, personBId)
@@ -532,7 +545,7 @@ interface BfsStep {
 /** BFS traversing parents + children + spouses to find any connection */
 function findAnyConnection(publication: PublicationData, fromId: string, toId: string): { path: string[]; edges: EdgeType[]; spousesUsed: string[] } | null {
   if (fromId === toId) return { path: [fromId], edges: [], spousesUsed: [] }
-  const graph = buildGraph(publication)
+  const graph = getCachedGraph(publication)
   const visited = new Set<string>()
   const queue: BfsStep[] = [{ personId: fromId, edge: "parent", path: [] }]
 
@@ -639,7 +652,7 @@ export function resolveKinshipTermExtended(
   if (personAId === personBId) return { term: "本人", description: "自己", generationGap: 0, isElder: false }
   const blood = resolveKinshipTerm(publication, personAId, personBId)
   if (blood) return blood
-  const graph = buildGraph(publication)
+  const graph = getCachedGraph(publication)
   return classifyInLaw(publication, personAId, personBId, graph)
 }
 
