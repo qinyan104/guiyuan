@@ -82,32 +82,32 @@ class PublicationServiceTest {
 
     private PublicationService publicationService;
 
-    private PersonDiffService personDiffService;
-    private BranchMergeService branchMergeService;
-
-    @BeforeEach
-    void setUp() {
-        personDiffService = new PersonDiffService(new ObjectMapper());
-        branchMergeService = new BranchMergeService(
-                personRepository, familyRepository, familyMemberRepository,
-                photoService, authorizationService
-        );
-
-        publicationService = new PublicationService(
-                publicationRepository,
-                personRepository,
-                familyRepository,
-                familyMemberRepository,
-                photoRepository,
-                new ObjectMapper(),
-                publicationAccessRepository,
-                shareLinkRepository,
-                auditLogRepository,
-                authorizationService,
-                treeLoader,
-                photoService,
-                personDiffService,
-                branchMergeService
+    private PersonDiffService personDiffService;
+    private BranchMergeService branchMergeService;
+
+    @BeforeEach
+    void setUp() {
+        personDiffService = new PersonDiffService(new ObjectMapper());
+        branchMergeService = new BranchMergeService(
+                personRepository, familyRepository, familyMemberRepository,
+                photoService, authorizationService
+        );
+
+        publicationService = new PublicationService(
+                publicationRepository,
+                personRepository,
+                familyRepository,
+                familyMemberRepository,
+                photoRepository,
+                new ObjectMapper(),
+                publicationAccessRepository,
+                shareLinkRepository,
+                auditLogRepository,
+                authorizationService,
+                treeLoader,
+                photoService,
+                personDiffService,
+                branchMergeService
         );
     }
 
@@ -227,12 +227,12 @@ class PublicationServiceTest {
         when(publicationAccessRepository.findByUserId(1L)).thenReturn(List.of());
         when(publicationRepository.findByUserIdOrderByUpdatedAtDesc(1L)).thenReturn(List.of(publication));
         when(publicationRepository.findAllById(any())).thenReturn(List.of(publication));
-        when(auditLogRepository.findTopByTargetTypeAndTargetIdAndActionInOrderByCreatedAtDesc(
+        when(auditLogRepository.findLatestByTargetIds(
                 eq("publication"),
-                eq(7L),
+                any(),
                 any()
         ))
-                .thenReturn(Optional.of(latestLog));
+                .thenReturn(List.of(latestLog));
 
         List<Map<String, Object>> result = publicationService.listPublications(1L);
 

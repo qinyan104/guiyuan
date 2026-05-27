@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +16,10 @@ import java.util.Optional;
 public interface PersonRepository extends JpaRepository<Person, Long> {
     List<Person> findByPublicationId(Long publicationId);
     Optional<Person> findByPublicationIdAndPersonId(Long publicationId, String personId);
+
+    @Query("SELECT p FROM Person p WHERE p.publicationId IN :pubIds AND LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%'))")
+    List<Person> searchByNameInPublications(@Param("pubIds") Collection<Long> pubIds, @Param("query") String query);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM Person p WHERE p.publicationId = :publicationId")

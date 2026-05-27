@@ -46,20 +46,27 @@ public class SearchService {
         List<SearchResult.PersonHit> personHits = new ArrayList<>();
         String lowerQuery = query.toLowerCase();
 
+        // Collect all accessible publication IDs
+        List<Long> pubIds = userPubs.stream().map(Publication::getId).toList();
+
+        // Match publication titles in memory (small list)
         for (Publication pub : userPubs) {
-            // Match publication title
             if (pub.getTitle() != null && pub.getTitle().toLowerCase().contains(lowerQuery)) {
                 pubHits.add(new SearchResult.PublicationHit(
                         pub.getId(), pub.getTitle(), pub.getSubtitle()));
             }
+        }
 
-            // Search persons within this publication
-            List<Person> persons = personRepository.findByPublicationId(pub.getId());
-            for (Person person : persons) {
-                if (person.getName() != null && person.getName().toLowerCase().contains(lowerQuery)) {
-                    personHits.add(new SearchResult.PersonHit(
-                            person.getPersonId(), person.getName(), pub.getId(), pub.getTitle()));
-                }
+        // Search persons via a single database query instead of N queries
+        if (!pubIds.isEmpty()) {
+            List<Person> matchedPersons = personRepository.searchByNameInPublications(pubIds, query);
+            // Build a pubId→title map for the hit results
+            java.util.Map<Long, String> pubTitleMap = userPubs.stream()
+                    .collect(java.util.stream.Collectors.toMap(Publication::getId, Publication::getTitle));
+            for (Person person : matchedPersons) {
+                String pubTitle = pubTitleMap.getOrDefault(person.getPublicationId(), "");
+                personHits.add(new SearchResult.PersonHit(
+                        person.getPersonId(), person.getName(), person.getPublicationId(), pubTitle));
             }
         }
 

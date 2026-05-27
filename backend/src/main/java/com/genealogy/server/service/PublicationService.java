@@ -7,6 +7,7 @@ import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ConflictException;
 import com.genealogy.server.exception.NotFoundException;
+import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.Family;
 import com.genealogy.server.model.FamilyMember;
 import com.genealogy.server.model.Person;
@@ -128,6 +129,17 @@ public class PublicationService {
         publications.sort(Comparator.comparing(Publication::getUpdatedAt,
                 Comparator.nullsLast(Comparator.reverseOrder())));
 
+        // Batch-fetch latest audit logs instead of N individual queries
+        Map<Long, AuditLog> latestAuditByPubId = new HashMap<>();
+        if (!accessibleIds.isEmpty()) {
+            List<AuditLog> auditLogs = auditLogRepository
+                    .findLatestByTargetIds("publication", accessibleIds, PUBLICATION_MUTATION_ACTIONS);
+            for (AuditLog logEntry : auditLogs) {
+                latestAuditByPubId.merge(logEntry.getTargetId(), logEntry,
+                        (a, b) -> a.getCreatedAt().isAfter(b.getCreatedAt()) ? a : b);
+            }
+        }
+
         return publications.stream().map(publication -> {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("id", publication.getId());
@@ -137,16 +149,12 @@ public class PublicationService {
             result.put("createdAt", publication.getCreatedAt());
             result.put("updatedAt", publication.getUpdatedAt());
             result.put("accessRole", roleMap.getOrDefault(publication.getId(), "OWNER"));
-            auditLogRepository
-                    .findTopByTargetTypeAndTargetIdAndActionInOrderByCreatedAtDesc(
-                            "publication",
-                            publication.getId(),
-                            PUBLICATION_MUTATION_ACTIONS
-                    )
-                    .ifPresent(auditLog -> {
-                        result.put("lastUpdatedBy", auditLog.getUsername());
-                        result.put("lastActivityAction", auditLog.getAction());
-                    });
+
+            AuditLog auditLog = latestAuditByPubId.get(publication.getId());
+            if (auditLog != null) {
+                result.put("lastUpdatedBy", auditLog.getUsername());
+                result.put("lastActivityAction", auditLog.getAction());
+            }
 
             if (publication.getPublicationInfoJson() != null) {
                 try {
