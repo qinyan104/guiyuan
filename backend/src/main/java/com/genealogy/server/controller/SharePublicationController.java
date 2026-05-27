@@ -4,8 +4,12 @@ import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.ShareSubject;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.interceptor.ShareTokenResolver;
+import com.genealogy.server.exception.ForbiddenException;
+import com.genealogy.server.exception.NotFoundException;
+import com.genealogy.server.model.Person;
 import com.genealogy.server.model.Photo;
 import com.genealogy.server.model.PublicationShareLink;
+import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PhotoRepository;
 import com.genealogy.server.repository.PublicationRepository;
 import com.genealogy.server.service.PublicationAuthorizationService;
@@ -29,6 +33,7 @@ public class SharePublicationController {
     private final PublicationViewProjector viewProjector;
     private final PublicationAuthorizationService authorizationService;
     private final PhotoRepository photoRepository;
+    private final PersonRepository personRepository;
     private final PublicationRepository publicationRepository;
 
     public SharePublicationController(ShareTokenResolver shareTokenResolver,
@@ -37,6 +42,7 @@ public class SharePublicationController {
                                        PublicationViewProjector viewProjector,
                                        PublicationAuthorizationService authorizationService,
                                        PhotoRepository photoRepository,
+                                       PersonRepository personRepository,
                                        PublicationRepository publicationRepository) {
         this.shareTokenResolver = shareTokenResolver;
         this.shareLinkService = shareLinkService;
@@ -44,6 +50,7 @@ public class SharePublicationController {
         this.viewProjector = viewProjector;
         this.authorizationService = authorizationService;
         this.photoRepository = photoRepository;
+        this.personRepository = personRepository;
         this.publicationRepository = publicationRepository;
     }
 
@@ -76,11 +83,19 @@ public class SharePublicationController {
 
     @GetMapping("/photos/{photoId}")
     public ResponseEntity<byte[]> getPhoto(@PathVariable String token, @PathVariable Long photoId) {
-        shareTokenResolver.resolveSubject(token);
-        return photoRepository.findById(photoId)
-                .map(photo -> ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_TYPE, photo.getMimeType())
-                        .body(photo.getData()))
-                .orElse(ResponseEntity.notFound().build());
+        ShareSubject subject = shareTokenResolver.resolveSubject(token);
+        Long sharedPubId = subject.getSharePublicationId();
+
+        Photo photo = photoRepository.findById(photoId)
+                .orElseThrow(() -> new NotFoundException("照片不存在"));
+        Person person = personRepository.findById(photo.getPersonDbId())
+                .orElse(null);
+        if (person == null || !sharedPubId.equals(person.getPublicationId())) {
+            throw new ForbiddenException("无权访问该照片");
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, photo.getMimeType())
+                .body(photo.getData());
     }
 }
