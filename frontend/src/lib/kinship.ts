@@ -477,7 +477,7 @@ export function resolveKinshipTerm(publication: PublicationData, personAId: stri
   const alterGender = personB?.gender ?? "unknown"
 
   // Direct line (generationGap != 0, path length is direct)
-  if (generationGap !== 0 && path.upSteps === 0 || path.downSteps === 0) {
+  if (generationGap !== 0 && (path.upSteps === 0 || path.downSteps === 0)) {
     const direct = resolveDirectLine(generationGap, alterGender)
     if (direct) return direct
   }
