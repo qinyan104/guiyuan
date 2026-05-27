@@ -58,7 +58,6 @@ const context = inject(PUBLICATION_CONTEXT_KEY)!
 // ─── Core Composables ───────────────────────────────────────────
 const panels = usePanelState()
 const feedback = useFeedback()
-const personEditor = usePersonEditor(context.pub)
 const canvasRef = ref<InstanceType<typeof PublicationCanvas> | null>(null)
 
 // ─── Canvas Controls ────────────────────────────────────────────
@@ -84,6 +83,7 @@ function resetCanvasView() {
 function adjustZoom(delta: number) {
   const nextValue = Number((context.pub.settings.zoom + delta).toFixed(2))
   context.pub.settings.zoom = Math.min(1.35, Math.max(0.10, nextValue))
+  fileOps.hasUnsavedFileChanges.value = true
 }
 
 let egoScrolled = false
@@ -141,6 +141,10 @@ const relActions = useRelationshipActions({
   confirmFn: confirmAsync,
 })
 
+const personEditor = usePersonEditor(context.pub, () => {
+  fileOps.hasUnsavedFileChanges.value = true
+})
+
 // ─── UI Action Handlers ─────────────────────────────────────────
 function handleSelectPerson(personId: string) {
   if (context.pub.selectedPersonId.value === personId) {
@@ -162,6 +166,7 @@ function closeEditor() {
 
 function updateSettings(patch: Partial<PublicationSettings>) {
   Object.assign(context.pub.settings, patch)
+  fileOps.hasUnsavedFileChanges.value = true
 }
 
 function revealSelectedPerson() {
@@ -194,16 +199,6 @@ watch(
       panels.editorOpen.value = false
     }
   },
-)
-
-watch(
-  () => [context.pub.publication, context.pub.settings],
-  () => {
-    if (!fileOps.getIsApplyingFileDraft()) {
-      fileOps.hasUnsavedFileChanges.value = true
-    }
-  },
-  { deep: true },
 )
 </script>
 

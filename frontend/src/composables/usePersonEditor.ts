@@ -3,7 +3,7 @@ import { computed, markRaw } from 'vue'
 import { hasPersonLifeRecord, isPersonDeceased } from '../lib/personStatus'
 import type { PublicationStateReturn } from './usePublicationState'
 
-export function usePersonEditor(pub: PublicationStateReturn) {
+export function usePersonEditor(pub: PublicationStateReturn, onMutate?: () => void) {
   const {
     publication,
     selectedPerson,
@@ -121,8 +121,8 @@ export function usePersonEditor(pub: PublicationStateReturn) {
   function updateSelectedPersonField(payload: { field: EditablePersonField; value: string }) {
     const person = selectedPerson.value
     if (person) {
-      // 方案五兼容: markRaw 对象不能就地 mutate，必须替换整个对象引用以触发响应式更新
       publication.people[person.id] = markRaw({ ...person, [payload.field]: payload.value })
+      onMutate?.()
     }
   }
 
@@ -130,6 +130,7 @@ export function usePersonEditor(pub: PublicationStateReturn) {
     const person = selectedPerson.value
     if (person) {
       publication.people[person.id] = markRaw({ ...person, gender })
+      onMutate?.()
     }
   }
 
