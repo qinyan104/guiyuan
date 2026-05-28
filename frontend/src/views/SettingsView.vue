@@ -118,31 +118,26 @@ async function handleChangeNickname() {
 
     <header class="hero">
       <h1>偏好设置</h1>
-      <p class="hero-sub">管理账户信息、安全凭证与系统维护。</p>
+      <p class="hero-sub">管理账户信息、安全凭证与数据维护。</p>
     </header>
 
     <!-- Profile -->
-    <section class="card card--profile">
-      <div class="profile-avatar" @click="fileInputRef?.click()" :title="avatarUploading ? '上传中…' : '点击更换头像'">
+    <section class="card profile-card">
+      <div class="profile-avatar" @click="fileInputRef?.click()">
         <img v-if="avatarUrl" :src="avatarUrl" class="avatar-img" />
-        <span v-else class="avatar-fallback">{{ userInitials }}</span>
-        <div class="avatar-overlay">更换</div>
+        <div v-else class="avatar-fallback">{{ userInitials }}</div>
       </div>
       <input ref="fileInputRef" type="file" accept="image/*" style="display:none" @change="handleAvatarUpload" />
       <div class="profile-text">
         <h2>{{ currentUsername }}</h2>
-        <span>系统编委</span>
+        <span>编委</span>
       </div>
     </section>
 
-    <!-- Identity & Security -->
-    <div class="section-label">账户</div>
-
+    <!-- Nickname -->
     <section class="card">
-      <div class="card-head">
-        <h3>身份标识</h3>
-        <p>系统内对外展示的名称。留空则显示登录账号。</p>
-      </div>
+      <h3>身份标识</h3>
+      <p>系统内对外展示的名称，留空则使用登录账号。</p>
       <div class="form-row">
         <input v-model="nickname" type="text" placeholder="输入新的身份标识…" class="input" @keyup.enter="handleChangeNickname" />
         <button class="btn" :disabled="nicknameLoading" @click="handleChangeNickname">{{ nicknameLoading ? '…' : '更新' }}</button>
@@ -150,11 +145,10 @@ async function handleChangeNickname() {
       <p v-if="nicknameMsg" class="msg ok">{{ nicknameMsg }}</p>
     </section>
 
+    <!-- Password -->
     <section class="card">
-      <div class="card-head">
-        <h3>通行密钥</h3>
-        <p>修改登录密码。新密码至少 4 个字符。</p>
-      </div>
+      <h3>通行密钥</h3>
+      <p>修改登录密码。新密码至少 4 个字符。</p>
       <div class="form-col">
         <input v-model="oldPassword" type="password" class="input" placeholder="当前密码" />
         <div class="form-row">
@@ -167,35 +161,33 @@ async function handleChangeNickname() {
       <p v-if="passwordMsg" class="msg ok">{{ passwordMsg }}</p>
     </section>
 
-    <!-- Admin -->
+    <!-- Admin section -->
     <template v-if="isSuperAdmin()">
-      <div class="section-label">系统管理</div>
+      <hr class="divider" />
+      <h2 class="section-title">系统管理</h2>
 
+      <!-- Backup -->
       <section class="card">
-        <div class="card-head">
-          <h3>数据备份</h3>
-          <p>导出数据库完整备份，包含所有族谱、人物和用户数据。</p>
-        </div>
+        <h3>数据备份</h3>
+        <p>导出数据库完整备份，包含所有族谱、人物和用户数据。</p>
         <button class="btn" :disabled="backupLoading" @click="handleBackup">{{ backupLoading ? '生成中…' : '创建备份并下载' }}</button>
         <p v-if="backupError" class="msg err">{{ backupError }}</p>
       </section>
 
+      <!-- Restore -->
       <section class="card">
-        <div class="card-head">
-          <h3>数据库还原</h3>
-          <p>从 SQL 备份文件还原。<strong>不可逆</strong>，将覆盖当前全部数据。</p>
-        </div>
+        <h3>数据库还原</h3>
+        <p>从备份文件还原数据库。<strong>此操作不可逆</strong>，将覆盖当前全部数据。</p>
         <div class="form-row">
           <input type="file" accept=".sql" @change="onFileSelected" class="input" />
           <button class="btn btn--danger" :disabled="!restoreFile || restorePending" @click="showRestoreConfirm = true">{{ restorePending ? '还原中…' : '还原' }}</button>
         </div>
       </section>
 
+      <!-- Consistency -->
       <section class="card">
-        <div class="card-head">
-          <h3>数据一致性检查</h3>
-          <p>扫描孤立人物、日期矛盾、状态不一致等问题。</p>
-        </div>
+        <h3>数据一致性检查</h3>
+        <p>扫描孤立人物、日期矛盾、状态不一致等问题。</p>
         <button class="btn" :disabled="consistencyRunning" @click="handleConsistencyCheck">{{ consistencyRunning ? '检查中…' : '开始检查' }}</button>
         <div v-if="consistencyResult.length > 0" class="consistency">
           <p>发现 {{ consistencyResult.length }} 个问题：</p>
@@ -206,7 +198,7 @@ async function handleChangeNickname() {
             </ul>
           </details>
         </div>
-        <p v-else-if="consistencyResult.length === 0 && !consistencyRunning" class="msg ok">未发现问题。</p>
+        <p v-else-if="consistencyResult.length === 0 && !consistencyRunning" class="msg ok">未发现问题，数据一致性良好。</p>
       </section>
     </template>
 
@@ -231,7 +223,7 @@ async function handleChangeNickname() {
 }
 
 /* ── Hero ── */
-.hero { margin-bottom: 36px; }
+.hero { margin-bottom: 40px; }
 .hero h1 {
   font-family: var(--font-serif);
   font-size: var(--text-display-36);
@@ -247,71 +239,41 @@ async function handleChangeNickname() {
 }
 
 /* ── Profile ── */
-.card--profile {
+.profile-card {
   display: flex;
   align-items: center;
   gap: 20px;
-  border-left: 3px solid var(--color-accent);
 }
 .profile-avatar {
-  width: 72px; height: 72px;
+  width: 64px; height: 64px;
   border-radius: 50%;
   background: var(--color-neutral-3);
   cursor: pointer;
   overflow: hidden;
   flex-shrink: 0;
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: opacity var(--duration-fast);
 }
-.profile-avatar:hover .avatar-overlay {
-  opacity: 1;
-}
+.profile-avatar:hover { opacity: 0.8; }
 .avatar-img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%; height: 100%;
-  font-family: var(--font-serif);
-  font-size: var(--text-title-28);
-  font-weight: 400;
-  color: var(--color-neutral-6);
-}
-.avatar-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  color: #fff;
-  font-size: var(--text-label-12);
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity var(--duration-fast);
-}
-.profile-text h2 {
   font-family: var(--font-serif);
   font-size: var(--text-title-24);
   font-weight: 400;
+  color: var(--color-neutral-6);
+}
+.profile-text h2 {
+  font-family: var(--font-serif);
+  font-size: var(--text-title-20);
+  font-weight: 400;
   color: var(--color-neutral-10);
-  margin: 0 0 4px;
+  margin: 0 0 2px;
 }
 .profile-text span {
   font-size: var(--text-label-12);
   color: var(--color-neutral-6);
-  letter-spacing: 0.06em;
-}
-
-/* ── Section Labels ── */
-.section-label {
-  font-size: var(--text-caption-10);
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  color: var(--color-neutral-5);
-  text-transform: uppercase;
-  margin: 40px 0 12px;
 }
 
 /* ── Cards ── */
@@ -320,26 +282,25 @@ async function handleChangeNickname() {
   border: 1px solid var(--color-card-stroke);
   border-radius: var(--radius-xl);
   padding: 24px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
-.card-head { margin-bottom: 16px; }
-.card-head h3 {
+.card h3 {
   font-family: var(--font-serif);
   font-size: var(--text-copy-16);
   font-weight: 400;
   color: var(--color-neutral-10);
   margin: 0 0 4px;
 }
-.card-head p {
+.card p {
   font-size: var(--text-copy-13);
   color: var(--color-neutral-6);
-  margin: 0;
+  margin: 0 0 16px;
   line-height: 1.6;
 }
 
 /* ── Form ── */
 .form-row { display: flex; gap: 8px; }
-.form-col { display: flex; flex-direction: column; gap: 10px; }
+.form-col { display: flex; flex-direction: column; gap: 12px; }
 
 .input {
   flex: 1;
@@ -351,10 +312,10 @@ async function handleChangeNickname() {
   color: var(--color-neutral-9);
   outline: none;
   font-family: inherit;
-  transition: border-color var(--duration-fast) var(--ease-breath);
+  transition: border-color var(--duration-fast);
 }
-.input:focus { border-color: var(--color-neutral-7); }
-.input[type="file"] { padding: 9px 12px; font-size: var(--text-copy-13); }
+.input:focus { border-color: var(--color-neutral-8); }
+.input[type="file"] { padding: 8px 12px; font-size: var(--text-copy-13); }
 
 .btn {
   padding: 10px 20px;
@@ -377,6 +338,20 @@ async function handleChangeNickname() {
 .msg.ok { color: var(--color-success); }
 .msg.err { color: var(--color-error); }
 
+/* ── Divider ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-neutral-4);
+  margin: 32px 0 24px;
+}
+.section-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-title-20);
+  font-weight: 400;
+  color: var(--color-neutral-10);
+  margin: 0 0 16px;
+}
+
 /* ── Consistency ── */
 .consistency { margin-top: 16px; }
 .consistency p { font-size: var(--text-copy-13); color: var(--color-neutral-6); margin: 0 0 8px; }
@@ -384,8 +359,4 @@ async function handleChangeNickname() {
 .consistency-group summary { font-size: var(--text-copy-13); color: var(--color-neutral-8); cursor: pointer; padding: 4px 0; }
 .consistency-group ul { margin: 4px 0 0 16px; font-size: var(--text-copy-13); color: var(--color-neutral-7); }
 .consistency-group li { padding: 2px 0; }
-
-@media (max-width: 480px) {
-  .card--profile { flex-direction: column; align-items: flex-start; }
-}
 </style>
