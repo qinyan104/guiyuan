@@ -161,8 +161,9 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   try {
     const id = await createPublication(sample.publication, defaultSettings, baseTitle + ' (副本)')
     router.push({ name: 'workbench', params: { id } })
-  } catch {
-    feedback.setError('创建失败，请重试')
+  } catch (err: any) {
+    console.error('[template clone] failed:', err)
+    feedback.setError('创建失败: ' + (err?.message || '未知错误'))
   } finally {
     cloningSampleId.value = null
   }
