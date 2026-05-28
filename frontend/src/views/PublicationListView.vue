@@ -16,8 +16,6 @@ import CollaboratorManager from '../components/CollaboratorManager.vue'
 import { useLexicon } from '../composables/useLexicon'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import { useFeedback } from '../composables/useFeedback'
-import { getPublicationActivityCardSummary } from '../lib/publicationActivity'
-
 const router = useRouter()
 const feedback = useFeedback()
 const { lexicon } = useLexicon()
@@ -45,6 +43,14 @@ const showShareDialog = ref(false)
 const shareDialogPubId = ref<number | null>(null)
 const showCollabDialog = ref(false)
 const collabDialogPubId = ref<number | null>(null)
+const openMenuIds = ref<Set<number>>(new Set())
+
+function toggleMenu(pubId: number) {
+  const next = new Set(openMenuIds.value)
+  if (next.has(pubId)) next.delete(pubId)
+  else next.add(pubId)
+  openMenuIds.value = next
+}
 
 async function loadPublications() {
   loading.value = true
@@ -236,67 +242,44 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
             <div class="archive-grid">
               <article v-for="pub in publications" :key="pub.id" class="glass-card archive-card" @click="openPublication(pub.id)">
-                <!-- Visual Left Pane -->
-                <div class="archive-visual">
-                  <div class="visual-meta">第{{ pub.id }}卷</div>
-                  <div class="visual-title-vertical">{{ pub.title?.substring(0, 6) || '未命名' }}</div>
-                  <div class="visual-spine-line"></div>
+                <div class="archive-body">
+                  <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
+                  <p v-if="pub.subtitle" class="archive-subtitle">{{ pub.subtitle }}</p>
+                  <div class="archive-tags" v-if="pub.info?.hallName || pub.info?.ancestralOrigin">
+                    <span v-if="pub.info?.hallName" class="meta-tag">{{ pub.info.hallName }}</span>
+                    <span v-if="pub.info?.ancestralOrigin" class="meta-tag">{{ pub.info.ancestralOrigin }}</span>
+                  </div>
                 </div>
 
-                <!-- Content Right Pane -->
-                <div class="archive-details">
-                  <div class="archive-main">
-                    <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
-                    <p class="archive-subtitle">{{ pub.subtitle || '暂无副标题' }}</p>
-                    <div class="archive-tags">
-                      <span v-if="pub.info?.hallName" class="meta-tag">{{ pub.info.hallName }}</span>
-                      <span v-if="pub.info?.ancestralOrigin" class="meta-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg> {{ pub.info.ancestralOrigin }}</span>
-                    </div>
-                    <button
-                      v-if="pub.lastUpdatedBy || pub.lastActivityAction"
-                      class="latest-activity"
-                      type="button"
-                      data-testid="latest-activity-link"
-                      @click.stop="openActivity(pub.id)"
-                    >
-                      <span class="latest-activity__label">最近动态</span>
-                      <span class="latest-activity__body">
-                        <strong>协作动态</strong>
-                        <span>{{ getPublicationActivityCardSummary(pub.lastUpdatedBy, pub.lastActivityAction) }}</span>
-                        <small>查看修订志</small>
-                      </span>
-                    </button>
-                  </div>
+                <div class="archive-foot">
+                  <span class="archive-date">{{ formatDate(pub.updatedAt) }}</span>
+                  <button class="enter-btn" @click.stop="openPublication(pub.id)">
+                    进入画布 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </button>
+                </div>
 
-                  <div class="archive-footer">
-                    <span class="archive-date">{{ formatDate(pub.updatedAt) }} 更新</span>
-                    <div class="archive-actions" @click.stop>
-                      <button class="icon-btn" title="出版工作室" @click="router.push(`/publishing/publication/${pub.id}`)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                      </button>
-                      <button class="icon-btn" title="编辑属性" @click="openEditDialog(pub)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                      </button>
-                      <button class="icon-btn" title="协作者管理" @click="openCollabDialog(pub.id)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                      </button>
-                      <button class="icon-btn" title="分享链接" @click="openShareDialog(pub.id)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
-                      </button>
-                      <button class="icon-btn danger" title="焚毁档案" @click="deleteConfirmId = pub.id">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                      </button>
-                    </div>
+                <!-- More actions dropdown -->
+                <div class="archive-more" @click.stop>
+                  <button class="more-btn" @click.stop="toggleMenu(pub.id)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                  </button>
+                  <div v-if="openMenuIds.has(pub.id)" class="more-dropdown">
+                    <button class="more-item" @click="router.push(`/publishing/publication/${pub.id}`); toggleMenu(pub.id)">出版工作室</button>
+                    <button class="more-item" @click="openEditDialog(pub); toggleMenu(pub.id)">编辑属性</button>
+                    <button class="more-item" @click="openCollabDialog(pub.id); toggleMenu(pub.id)">协作者管理</button>
+                    <button class="more-item" @click="openShareDialog(pub.id); toggleMenu(pub.id)">分享链接</button>
+                    <div class="more-divider"></div>
+                    <button class="more-item more-item--danger" @click="deleteConfirmId = pub.id; toggleMenu(pub.id)">删除档案</button>
                   </div>
                 </div>
 
                 <!-- Delete Confirm Overlay -->
                 <transition name="fade">
                   <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
-                    <p>焚毁此宗谱将彻底抹除数据，是否确认？</p>
+                    <p>此操作将彻底抹除该族谱，不可恢复。</p>
                     <div class="delete-btns">
-                      <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认焚毁</button>
-                      <button class="glass-pill-btn" @click="deleteConfirmId = null">暂且保留</button>
+                      <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认删除</button>
+                      <button class="glass-pill-btn" @click="deleteConfirmId = null">取消</button>
                     </div>
                   </div>
                 </transition>
@@ -607,180 +590,139 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 /* ── Archive Grid ── */
 .archive-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
 }
 .archive-card {
   display: flex;
-  flex-direction: row;
-  min-height: 180px;
-}
-.archive-visual {
-  width: 64px;
-  background: linear-gradient(to right, rgba(255,255,255,0.05), transparent 10%, transparent 90%, rgba(0,0,0,0.2)), var(--color-neutral-9);
-  color: var(--bg-panel, #fff);
-  display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 1.5rem 0;
-  flex-shrink: 0;
-  border-right: 2px solid rgba(0,0,0,0.2);
+  padding: 24px;
   position: relative;
 }
-.visual-spine-line {
-  position: absolute;
-  right: 6px;
-  top: 15%;
-  bottom: 15%;
-  width: 1px;
-  background: transparent;
-  border-top: 8px solid var(--color-accent);
-  border-bottom: 8px solid var(--color-accent);
-}
-.visual-meta {
-  font-family: 'Noto Serif SC', serif;
-  font-size: 0.8rem;
-  letter-spacing: 0.1em;
-  opacity: 0.8;
-  writing-mode: vertical-rl;
-  margin-bottom: 1rem;
-}
-.visual-title-vertical {
-  writing-mode: vertical-rl;
-  font-family: 'Noto Serif SC', serif;
-  font-size: 1.1rem;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  color: var(--bg-panel, #fff);
-  z-index: 1;
-}
-.archive-details {
+.archive-body {
   flex: 1;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 .archive-title {
-  font-family: 'Noto Serif SC', serif;
-  font-size: 1.4rem;
-  font-weight: 500;
-  color: var(--color-neutral-9);
-  margin: 0 0 0.3rem;
+  font-family: var(--font-serif);
+  font-size: var(--text-title-20);
+  font-weight: 400;
+  color: var(--color-neutral-10);
+  margin: 0 0 4px;
+  line-height: 1.3;
 }
 .archive-subtitle {
-  font-size: 0.85rem;
+  font-size: var(--text-copy-13);
   color: var(--color-neutral-6);
-  margin: 0 0 1rem;
+  margin: 0 0 12px;
 }
 .archive-tags {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
-.latest-activity {
+.archive-foot {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  margin-top: 14px;
-  padding: 8px 10px;
-  border: 1px solid var(--color-neutral-5);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.42);
+  justify-content: space-between;
+}
+.archive-date {
+  font-size: var(--text-label-12);
   color: var(--color-neutral-6);
+}
+.enter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-neutral-4);
+  background: transparent;
+  font-size: var(--text-copy-13);
+  font-weight: 500;
+  color: var(--color-neutral-7);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-breath);
+}
+.enter-btn:hover {
+  background: var(--color-neutral-9);
+  color: var(--color-neutral-1);
+  border-color: var(--color-neutral-9);
+}
+
+/* ── More menu ── */
+.archive-more {
+  position: absolute;
+  top: 16px;
+  right: 12px;
+}
+.more-btn {
+  width: 28px; height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--color-neutral-5);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast);
+}
+.more-btn:hover {
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-8);
+}
+.more-dropdown {
+  position: absolute;
+  top: 32px;
+  right: 0;
+  min-width: 140px;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-whisper);
+  padding: 4px;
+  z-index: 20;
+}
+.more-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: var(--text-copy-13);
+  color: var(--color-neutral-8);
   cursor: pointer;
   text-align: left;
-  font: inherit;
-  transition: all 0.2s ease;
+  transition: background var(--duration-fast);
 }
-
-.latest-activity:hover {
-  border-color: var(--color-accent);
-  background: rgba(169, 110, 53, 0.1);
-  color: var(--color-neutral-9);
+.more-item:hover {
+  background: var(--color-neutral-2);
 }
-
-.latest-activity__label {
-  flex: 0 0 auto;
-  color: var(--color-accent);
-  font-size: 0.7rem;
-  font-weight: 800;
+.more-item--danger {
+  color: var(--color-error);
 }
-
-.latest-activity__body {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-width: 0;
-  font-size: 0.78rem;
-  font-weight: 500;
+.more-item--danger:hover {
+  background: var(--color-female-muted);
 }
-
-.latest-activity__body strong {
-  color: var(--color-neutral-9);
-}
-
-.latest-activity__body small {
-  color: var(--color-accent);
-  font-size: 0.72rem;
-  font-weight: 800;
+.more-divider {
+  height: 1px;
+  background: var(--color-neutral-4);
+  margin: 4px 8px;
 }
 
 .meta-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.7rem;
+  font-size: var(--text-label-12);
   font-weight: 500;
-  background: rgba(0,0,0,0.04);
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: var(--text-sub);
-}
-[data-theme="dark"] .meta-tag,
-[data-theme="dark"] .meta-tag {
-  background: rgba(255,255,255,0.08);
-}
-.archive-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px dashed var(--border-color, rgba(0,0,0,0.1));
-}
-.archive-date {
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: var(--color-neutral-6);
-}
-.archive-actions {
-  display: flex;
-  gap: 4px;
-}
-.icon-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  color: var(--color-neutral-6);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.icon-btn:hover {
-  background: rgba(0,0,0,0.05);
-  color: var(--color-neutral-9);
-}
-.icon-btn.danger:hover {
-  background: rgba(255, 71, 4, 0.1);
-  color: #ff4704;
+  background: var(--color-neutral-2);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--color-neutral-7);
 }
 
 /* ── Delete Confirm ── */

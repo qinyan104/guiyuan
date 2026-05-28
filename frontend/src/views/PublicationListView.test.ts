@@ -50,46 +50,35 @@ describe('PublicationListView', () => {
         updatedAt: '2026-05-10T12:00:00Z',
         lastUpdatedBy: 'alice',
         lastActivityAction: 'UPDATE_PUB',
+        info: { hallName: '崇本堂', ancestralOrigin: '颍川' },
       },
     ])
     vi.mocked(deletePublication).mockResolvedValue()
   })
 
-  it('requires explicit confirmation before deleting a publication', async () => {
+  it('renders publication title, subtitle and tags', async () => {
     const wrapper = mountView()
-
-    await flushPromises()
-
-    await wrapper.get('.icon-btn.danger').trigger('click')
-
-    expect(deletePublication).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('确认')
-
-    await wrapper.get('.delete-overlay button.danger').trigger('click')
-
-    expect(deletePublication).toHaveBeenCalledWith(7)
-  })
-
-  it('shows who last updated the publication and what they did', async () => {
-    const wrapper = mountView()
-
     await flushPromises()
 
     expect(wrapper.text()).toContain('陈氏宗谱')
     expect(wrapper.text()).toContain('测试卷')
-    expect(wrapper.text()).toContain('2026/05/10')
-    expect(wrapper.text()).toContain('协作动态')
-    expect(wrapper.text()).toContain('alice 最近保存了这份族谱')
-    expect(wrapper.text()).toContain('查看修订志')
+    expect(wrapper.text()).toContain('崇本堂')
+    expect(wrapper.text()).toContain('颍川')
   })
 
-  it('opens the activity timeline from the latest activity summary', async () => {
+  it('requires explicit confirmation before deleting a publication', async () => {
     const wrapper = mountView()
-
     await flushPromises()
 
-    await wrapper.get('[data-testid="latest-activity-link"]').trigger('click')
+    // Open the more menu
+    await wrapper.get('.more-btn').trigger('click')
+    // Click delete in dropdown
+    await wrapper.get('.more-item--danger').trigger('click')
 
-    expect(push).toHaveBeenCalledWith({ name: 'publication-activity', params: { id: 7 } })
+    expect(deletePublication).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('确认删除')
+
+    await wrapper.get('.delete-overlay button.danger').trigger('click')
+    expect(deletePublication).toHaveBeenCalledWith(7)
   })
 })
