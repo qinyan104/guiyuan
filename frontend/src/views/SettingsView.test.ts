@@ -61,7 +61,7 @@ describe('SettingsView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('数据备份')
-    expect(wrapper.text()).toContain('创建备份并下载')
-    expect(wrapper.text()).toContain('还原数据库')
+    expect(wrapper.text()).toContain('下载备份')
+    expect(wrapper.text()).toContain('数据库还原')
   })
 })
