@@ -560,17 +560,19 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
-  align-items: stretch;
 }
 .archive-card {
   display: flex;
   flex-direction: column;
   padding: 24px;
   border-left: 3px solid var(--color-accent);
-  height: 100%;
+  height: 175px;
+  box-sizing: border-box;
 }
 .archive-body {
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 .archive-title {
   font-family: var(--font-serif);
