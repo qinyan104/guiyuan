@@ -9,6 +9,8 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const feedback = useFeedback()
 
+const section = ref<'profile' | 'account' | 'system'>('profile')
+
 // ── Avatar ──
 const avatarUrl = ref('')
 const avatarUploading = ref(false)
@@ -81,10 +83,7 @@ const restoreFile = ref<File | null>(null)
 const restorePending = ref(false)
 const showRestoreConfirm = ref(false)
 
-function onFileSelected(e: Event) {
-  const input = e.target as HTMLInputElement
-  if (input.files?.length) restoreFile.value = input.files[0]
-}
+function onFileSelected(e: Event) { const t = e.target as HTMLInputElement; if (t.files?.length) restoreFile.value = t.files[0] }
 
 async function handleRestore() {
   if (!restoreFile.value) return
@@ -117,6 +116,12 @@ async function handleConsistencyCheck() {
   catch (e: any) { feedback.errorMessage.value = e.message || '检查失败' }
   finally { consistencyRunning.value = false }
 }
+
+const navItems = [
+  { key: 'profile' as const, label: '个人资料' },
+  { key: 'account' as const, label: '账户' },
+  ...(isSuperAdmin() ? [{ key: 'system' as const, label: '系统' }] : []),
+]
 </script>
 
 <template>
@@ -124,69 +129,78 @@ async function handleConsistencyCheck() {
     <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
 
     <header class="hero">
-      <h1>偏好设置</h1>
+      <h1>设置</h1>
     </header>
 
-    <!-- Profile -->
-    <section class="group">
-      <div class="group-label">个人资料</div>
-      <div class="card profile-card">
-        <div class="avatar" @click="fileInputRef?.click()">
-          <img v-if="avatarUrl" :src="avatarUrl" />
-          <span v-else>{{ userInitials }}</span>
-        </div>
-        <input ref="fileInputRef" type="file" accept="image/*" hidden @change="handleAvatarUpload" />
-        <div class="profile-info">
-          <strong>{{ currentUsername }}</strong>
-          <span>编委</span>
-        </div>
-      </div>
-    </section>
+    <div class="layout">
+      <nav class="nav">
+        <button
+          v-for="item in navItems"
+          :key="item.key"
+          class="nav-item"
+          :class="{ active: section === item.key }"
+          @click="section = item.key"
+        >
+          {{ item.label }}
+        </button>
+      </nav>
 
-    <!-- Identity -->
-    <section class="group">
-      <div class="group-label">账户</div>
-      <div class="grid">
-        <div class="card">
-          <div class="field">
-            <label>身份标识</label>
-            <span class="hint">对外展示的名称，留空则使用登录账号</span>
-          </div>
-          <div class="row">
-            <input v-model="nickname" type="text" placeholder="输入身份标识…" @keyup.enter="handleChangeNickname" />
-            <button class="btn" :disabled="nicknameLoading" @click="handleChangeNickname">{{ nicknameLoading ? '…' : '保存' }}</button>
-          </div>
-          <p v-if="nicknameMsg" class="ok">{{ nicknameMsg }}</p>
-        </div>
-
-        <div class="card">
-          <div class="field">
-            <label>通行密钥</label>
-            <span class="hint">修改登录密码</span>
-          </div>
-          <div class="col">
-            <input v-model="oldPassword" type="password" placeholder="当前密码" />
-            <div class="row">
-              <input v-model="newPassword" type="password" placeholder="新密码（至少4位）" />
-              <input v-model="confirmPassword" type="password" placeholder="确认新密码" @keyup.enter="handleChangePassword" />
+      <main class="content">
+        <!-- Profile -->
+        <div v-if="section === 'profile'">
+          <div class="card">
+            <div class="avatar-row">
+              <div class="avatar" @click="fileInputRef?.click()">
+                <img v-if="avatarUrl" :src="avatarUrl" />
+                <span v-else>{{ userInitials }}</span>
+              </div>
+              <input ref="fileInputRef" type="file" accept="image/*" hidden @change="handleAvatarUpload" />
+              <div>
+                <strong>{{ currentUsername }}</strong>
+                <span>编委</span>
+              </div>
             </div>
-            <button class="btn" :disabled="passwordLoading" @click="handleChangePassword">{{ passwordLoading ? '…' : '更新密码' }}</button>
           </div>
-          <p v-if="passwordError" class="err">{{ passwordError }}</p>
-          <p v-if="passwordMsg" class="ok">{{ passwordMsg }}</p>
         </div>
-      </div>
-    </section>
 
-    <!-- Admin -->
-    <template v-if="isSuperAdmin()">
-      <section class="group">
-        <div class="group-label">系统</div>
-        <div class="grid">
+        <!-- Account -->
+        <div v-if="section === 'account'">
+          <div class="card">
+            <div class="field">
+              <label>身份标识</label>
+              <p>对外展示的名称，留空则使用登录账号。</p>
+            </div>
+            <div class="row">
+              <input v-model="nickname" type="text" placeholder="输入身份标识…" @keyup.enter="handleChangeNickname" />
+              <button class="btn" :disabled="nicknameLoading" @click="handleChangeNickname">{{ nicknameLoading ? '…' : '保存' }}</button>
+            </div>
+            <p v-if="nicknameMsg" class="ok">{{ nicknameMsg }}</p>
+          </div>
+
+          <div class="card">
+            <div class="field">
+              <label>通行密钥</label>
+              <p>修改登录密码。</p>
+            </div>
+            <div class="col">
+              <input v-model="oldPassword" type="password" placeholder="当前密码" />
+              <div class="row">
+                <input v-model="newPassword" type="password" placeholder="新密码（至少4位）" />
+                <input v-model="confirmPassword" type="password" placeholder="确认新密码" @keyup.enter="handleChangePassword" />
+              </div>
+              <button class="btn" :disabled="passwordLoading" @click="handleChangePassword">{{ passwordLoading ? '…' : '更新密码' }}</button>
+            </div>
+            <p v-if="passwordError" class="err">{{ passwordError }}</p>
+            <p v-if="passwordMsg" class="ok">{{ passwordMsg }}</p>
+          </div>
+        </div>
+
+        <!-- System -->
+        <div v-if="section === 'system'">
           <div class="card">
             <div class="field">
               <label>数据备份</label>
-              <span class="hint">导出完整数据库备份</span>
+              <p>导出完整数据库备份。</p>
             </div>
             <button class="btn" :disabled="backupLoading" @click="handleBackup">{{ backupLoading ? '生成中…' : '下载备份' }}</button>
             <p v-if="backupError" class="err">{{ backupError }}</p>
@@ -195,33 +209,31 @@ async function handleConsistencyCheck() {
           <div class="card">
             <div class="field">
               <label>数据库还原</label>
-              <span class="hint">从 SQL 备份文件还原。不可逆。</span>
+              <p>从 SQL 备份文件还原。不可逆。</p>
             </div>
             <div class="row">
               <input type="file" accept=".sql" @change="onFileSelected" />
               <button class="btn btn--danger" :disabled="!restoreFile || restorePending" @click="showRestoreConfirm = true">{{ restorePending ? '还原中…' : '还原' }}</button>
             </div>
           </div>
-        </div>
 
-        <div class="card">
-          <div class="field">
-            <label>一致性检查</label>
-            <span class="hint">扫描孤立人物、日期矛盾等问题</span>
+          <div class="card">
+            <div class="field">
+              <label>一致性检查</label>
+              <p>扫描孤立人物、日期矛盾等问题。</p>
+            </div>
+            <button class="btn" :disabled="consistencyRunning" @click="handleConsistencyCheck">{{ consistencyRunning ? '检查中…' : '开始检查' }}</button>
+            <div v-if="consistencyResult.length > 0" class="issues">
+              <details v-for="(group, type) in groupedIssues" :key="type">
+                <summary>{{ typeLabels[type] || type }}（{{ group.length }}）</summary>
+                <ul><li v-for="i in group" :key="i.personId + i.detail">{{ i.personName || i.personId }} — {{ i.detail }}</li></ul>
+              </details>
+            </div>
+            <p v-else-if="consistencyResult.length === 0 && !consistencyRunning" class="ok">未发现问题。</p>
           </div>
-          <button class="btn" :disabled="consistencyRunning" @click="handleConsistencyCheck">{{ consistencyRunning ? '检查中…' : '开始检查' }}</button>
-          <div v-if="consistencyResult.length > 0" class="issues">
-            <details v-for="(group, type) in groupedIssues" :key="type">
-              <summary>{{ typeLabels[type] || type }}（{{ group.length }}）</summary>
-              <ul>
-                <li v-for="issue in group" :key="issue.personId + issue.detail">{{ issue.personName || issue.personId }} — {{ issue.detail }}</li>
-              </ul>
-            </details>
-          </div>
-          <p v-else-if="consistencyResult.length === 0 && !consistencyRunning" class="ok">未发现问题。</p>
         </div>
-      </section>
-    </template>
+      </main>
+    </div>
 
     <ConfirmDialog
       :modelValue="showRestoreConfirm"
@@ -238,62 +250,66 @@ async function handleConsistencyCheck() {
 
 <style scoped>
 .root {
-  max-width: 880px;
+  max-width: 780px;
   margin: 0 auto;
   padding: 60px clamp(20px, 4vw, 48px) 80px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-@media (max-width: 640px) {
-  .grid { grid-template-columns: 1fr; }
-}
-
-/* ── Hero ── */
-.hero { margin-bottom: 36px; }
+.hero { margin-bottom: 32px; }
 .hero h1 {
-  font-family: var(--font-serif);
-  font-size: var(--text-display-36);
-  font-weight: 400;
-  color: var(--color-neutral-10);
+  font-size: var(--text-copy-14);
+  font-weight: 600;
+  color: var(--color-neutral-8);
   margin: 0;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
-/* ── Group ── */
-.group { margin-bottom: 32px; }
-.group-label {
-  font-size: var(--text-caption-10);
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  color: var(--color-neutral-5);
-  text-transform: uppercase;
-  margin-bottom: 12px;
+/* ── Layout ── */
+.layout { display: flex; gap: 48px; }
+
+/* ── Nav ── */
+.nav {
+  width: 140px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
+.nav-item {
+  text-align: left;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-6);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+.nav-item:hover { color: var(--color-neutral-9); background: var(--color-neutral-2); }
+.nav-item.active { color: var(--color-neutral-10); background: var(--color-neutral-3); font-weight: 500; }
+
+/* ── Content ── */
+.content { flex: 1; min-width: 0; }
 
 /* ── Card ── */
 .card {
   background: var(--color-neutral-2);
   border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-xl);
-  padding: 20px 24px;
-  box-shadow: var(--shadow-whisper);
+  border-radius: var(--radius-md);
+  padding: 20px;
   margin-bottom: 10px;
 }
 
-/* ── Profile ── */
-.profile-card {
+/* ── Avatar ── */
+.avatar-row {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 .avatar {
   width: 48px; height: 48px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: var(--color-neutral-3);
   cursor: pointer;
   overflow: hidden;
@@ -306,35 +322,24 @@ async function handleConsistencyCheck() {
 .avatar:hover { opacity: 0.75; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .avatar span {
-  font-family: var(--font-serif);
   font-size: var(--text-title-20);
-  color: var(--color-neutral-6);
-}
-.profile-info strong {
-  font-size: var(--text-copy-14);
   font-weight: 500;
-  color: var(--color-neutral-9);
-  display: block;
-}
-.profile-info span {
-  font-size: var(--text-label-12);
   color: var(--color-neutral-6);
 }
+.avatar-row strong { font-size: var(--text-copy-14); color: var(--color-neutral-9); display: block; }
+.avatar-row span { font-size: var(--text-label-12); color: var(--color-neutral-6); }
 
 /* ── Field ── */
 .field { margin-bottom: 14px; }
 .field label {
-  font-family: var(--font-serif);
   font-size: var(--text-copy-14);
-  font-weight: 400;
+  font-weight: 500;
   color: var(--color-neutral-9);
-  display: block;
 }
-.hint {
+.field p {
   font-size: var(--text-copy-13);
   color: var(--color-neutral-6);
-  margin-top: 2px;
-  display: block;
+  margin: 2px 0 0;
 }
 
 /* ── Layout ── */
@@ -345,40 +350,39 @@ async function handleConsistencyCheck() {
 input[type="text"],
 input[type="password"] {
   flex: 1;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--color-neutral-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--color-neutral-1);
-  font-size: var(--text-copy-14);
+  font-size: var(--text-copy-13);
   color: var(--color-neutral-9);
   outline: none;
   font-family: inherit;
-  transition: border-color var(--duration-fast) var(--ease-breath);
+  transition: border-color var(--duration-fast);
 }
 input:focus { border-color: var(--color-neutral-7); }
 input[type="file"] {
   flex: 1;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--color-neutral-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--color-neutral-1);
   font-size: var(--text-copy-13);
   color: var(--color-neutral-7);
-  font-family: inherit;
 }
 
 /* ── Button ── */
 .btn {
-  padding: 8px 18px;
+  padding: 6px 14px;
   border: 1px solid var(--color-neutral-4);
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: var(--color-neutral-1);
   font-size: var(--text-copy-13);
   font-weight: 500;
   color: var(--color-neutral-8);
   cursor: pointer;
   white-space: nowrap;
-  transition: all var(--duration-fast) var(--ease-breath);
+  transition: all var(--duration-fast);
 }
 .btn:hover { background: var(--color-neutral-9); color: var(--color-neutral-1); border-color: var(--color-neutral-9); }
 .btn:disabled { opacity: 0.5; cursor: default; }
@@ -388,10 +392,8 @@ input[type="file"] {
 .ok { font-size: var(--text-copy-13); color: var(--color-success); margin: 10px 0 0; }
 .err { font-size: var(--text-copy-13); color: var(--color-error); margin: 10px 0 0; }
 
-/* ── Issues ── */
-.issues { margin-top: 14px; }
-.issues details { margin-bottom: 4px; }
-.issues summary { font-size: var(--text-copy-13); color: var(--color-neutral-8); cursor: pointer; padding: 2px 0; }
+.issues { margin-top: 12px; }
+.issues details { margin-bottom: 2px; }
+.issues summary { font-size: var(--text-copy-13); color: var(--color-neutral-8); cursor: pointer; }
 .issues ul { margin: 4px 0 0 16px; font-size: var(--text-copy-13); color: var(--color-neutral-7); }
-.issues li { padding: 1px 0; }
 </style>
