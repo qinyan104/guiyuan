@@ -87,18 +87,19 @@ function toggleUserDropdown() {
 
     <div class="topbar__actions" aria-label="工作台操作">
       <div class="topbar__action-strip">
+        <!-- 纪略 & 编年史 —— 从下拉菜单提到顶栏 -->
+        <button class="btn btn--secondary" type="button" @click="emit('view-stats')" title="家族纪略">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          纪略
+        </button>
+        <button class="btn btn--secondary" type="button" @click="emit('view-timeline')" title="家族编年史">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          编年
+        </button>
+
         <div class="dropdown">
           <button class="btn btn--secondary dropdown-trigger" type="button">考据 <span class="caret">&#x25BE;</span></button>
           <div class="dropdown-menu">
-            <button class="dropdown-item" type="button" @click="emit('view-stats')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-              宗族纪略
-            </button>
-            <button class="dropdown-item" type="button" @click="emit('view-timeline')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              家族编年史
-            </button>
-            <div class="dropdown-divider"></div>
             <button class="dropdown-item" type="button" @click="triggerFileInput">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               引入前朝旧卷 (JSON)
