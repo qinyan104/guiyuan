@@ -698,11 +698,10 @@ body {
   margin-bottom: 20px;
 }
 .detail-photo {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid rgba(0,0,0,0.06);
+  max-width: 80px;
+  max-height: 100px;
+  border-radius: 4px;
+  object-fit: contain;
 }
 .detail-header h3 {
   font-family: 'Noto Serif SC', serif;
