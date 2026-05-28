@@ -146,33 +146,35 @@ async function handleConsistencyCheck() {
     <!-- Identity -->
     <section class="group">
       <div class="group-label">账户</div>
-      <div class="card">
-        <div class="field">
-          <label>身份标识</label>
-          <span class="hint">对外展示的名称，留空则使用登录账号</span>
-        </div>
-        <div class="row">
-          <input v-model="nickname" type="text" placeholder="输入身份标识…" @keyup.enter="handleChangeNickname" />
-          <button class="btn" :disabled="nicknameLoading" @click="handleChangeNickname">{{ nicknameLoading ? '…' : '保存' }}</button>
-        </div>
-        <p v-if="nicknameMsg" class="ok">{{ nicknameMsg }}</p>
-      </div>
-
-      <div class="card">
-        <div class="field">
-          <label>通行密钥</label>
-          <span class="hint">修改登录密码</span>
-        </div>
-        <div class="col">
-          <input v-model="oldPassword" type="password" placeholder="当前密码" />
-          <div class="row">
-            <input v-model="newPassword" type="password" placeholder="新密码（至少4位）" />
-            <input v-model="confirmPassword" type="password" placeholder="确认新密码" @keyup.enter="handleChangePassword" />
+      <div class="grid">
+        <div class="card">
+          <div class="field">
+            <label>身份标识</label>
+            <span class="hint">对外展示的名称，留空则使用登录账号</span>
           </div>
-          <button class="btn" :disabled="passwordLoading" @click="handleChangePassword">{{ passwordLoading ? '…' : '更新密码' }}</button>
+          <div class="row">
+            <input v-model="nickname" type="text" placeholder="输入身份标识…" @keyup.enter="handleChangeNickname" />
+            <button class="btn" :disabled="nicknameLoading" @click="handleChangeNickname">{{ nicknameLoading ? '…' : '保存' }}</button>
+          </div>
+          <p v-if="nicknameMsg" class="ok">{{ nicknameMsg }}</p>
         </div>
-        <p v-if="passwordError" class="err">{{ passwordError }}</p>
-        <p v-if="passwordMsg" class="ok">{{ passwordMsg }}</p>
+
+        <div class="card">
+          <div class="field">
+            <label>通行密钥</label>
+            <span class="hint">修改登录密码</span>
+          </div>
+          <div class="col">
+            <input v-model="oldPassword" type="password" placeholder="当前密码" />
+            <div class="row">
+              <input v-model="newPassword" type="password" placeholder="新密码（至少4位）" />
+              <input v-model="confirmPassword" type="password" placeholder="确认新密码" @keyup.enter="handleChangePassword" />
+            </div>
+            <button class="btn" :disabled="passwordLoading" @click="handleChangePassword">{{ passwordLoading ? '…' : '更新密码' }}</button>
+          </div>
+          <p v-if="passwordError" class="err">{{ passwordError }}</p>
+          <p v-if="passwordMsg" class="ok">{{ passwordMsg }}</p>
+        </div>
       </div>
     </section>
 
@@ -180,24 +182,25 @@ async function handleConsistencyCheck() {
     <template v-if="isSuperAdmin()">
       <section class="group">
         <div class="group-label">系统</div>
-
-        <div class="card">
-          <div class="field">
-            <label>数据备份</label>
-            <span class="hint">导出完整数据库备份</span>
+        <div class="grid">
+          <div class="card">
+            <div class="field">
+              <label>数据备份</label>
+              <span class="hint">导出完整数据库备份</span>
+            </div>
+            <button class="btn" :disabled="backupLoading" @click="handleBackup">{{ backupLoading ? '生成中…' : '下载备份' }}</button>
+            <p v-if="backupError" class="err">{{ backupError }}</p>
           </div>
-          <button class="btn" :disabled="backupLoading" @click="handleBackup">{{ backupLoading ? '生成中…' : '下载备份' }}</button>
-          <p v-if="backupError" class="err">{{ backupError }}</p>
-        </div>
 
-        <div class="card">
-          <div class="field">
-            <label>数据库还原</label>
-            <span class="hint">从 SQL 备份文件还原。不可逆。</span>
-          </div>
-          <div class="row">
-            <input type="file" accept=".sql" @change="onFileSelected" />
-            <button class="btn btn--danger" :disabled="!restoreFile || restorePending" @click="showRestoreConfirm = true">{{ restorePending ? '还原中…' : '还原' }}</button>
+          <div class="card">
+            <div class="field">
+              <label>数据库还原</label>
+              <span class="hint">从 SQL 备份文件还原。不可逆。</span>
+            </div>
+            <div class="row">
+              <input type="file" accept=".sql" @change="onFileSelected" />
+              <button class="btn btn--danger" :disabled="!restoreFile || restorePending" @click="showRestoreConfirm = true">{{ restorePending ? '还原中…' : '还原' }}</button>
+            </div>
           </div>
         </div>
 
@@ -235,9 +238,19 @@ async function handleConsistencyCheck() {
 
 <style scoped>
 .root {
-  max-width: 600px;
+  max-width: 880px;
   margin: 0 auto;
   padding: 60px clamp(20px, 4vw, 48px) 80px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; }
 }
 
 /* ── Hero ── */
