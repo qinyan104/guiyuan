@@ -1,6 +1,14 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.model.Person;
+import com.genealogy.server.model.PersonAccount;
+import com.genealogy.server.model.Photo;
+import com.genealogy.server.model.User;
+import com.genealogy.server.repository.PersonAccountRepository;
+import com.genealogy.server.repository.PersonRepository;
+import com.genealogy.server.repository.PhotoRepository;
+import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.UserService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -24,12 +32,24 @@ import java.util.UUID;
 public class ProfileController {
 
     private final UserService userService;
+    private final PersonAccountRepository personAccountRepository;
+    private final PersonRepository personRepository;
+    private final PhotoRepository photoRepository;
+    private final UserRepository userRepository;
 
     @Value("${app.upload.dir:uploads/avatars}")
     private String avatarUploadDir;
 
-    public ProfileController(UserService userService) {
+    public ProfileController(UserService userService,
+                             PersonAccountRepository personAccountRepository,
+                             PersonRepository personRepository,
+                             PhotoRepository photoRepository,
+                             UserRepository userRepository) {
         this.userService = userService;
+        this.personAccountRepository = personAccountRepository;
+        this.personRepository = personRepository;
+        this.photoRepository = photoRepository;
+        this.userRepository = userRepository;
     }
 
     @PutMapping("/password")
@@ -99,7 +119,36 @@ public class ProfileController {
         }
         Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-        String avatarUrl = "/api/photos/avatars/" + filename;
+        byte[] data = Files.readAllBytes(targetPath);
+
+        // Create Photo record and associate with the user's person
+        User user = userRepository.findByUsername(username).orElse(null);
+        Optional<PersonAccount> pa = user != null
+            ? personAccountRepository.findByUserId(user.getId())
+            : Optional.empty();
+        if (pa.isPresent()) {
+            Person person = personRepository.findById(pa.get().getPersonDbId()).orElse(null);
+            if (person != null) {
+                // Delete old photo if exists
+                if (person.getPhotoId() != null) {
+                    photoRepository.deleteById(person.getPhotoId());
+                }
+                // Create new photo
+                Photo photo = new Photo();
+                photo.setPersonDbId(person.getId());
+                photo.setMimeType(contentType);
+                photo.setData(data);
+                photo = photoRepository.save(photo);
+                // Update person
+                person.setPhotoId(photo.getId());
+                personRepository.save(person);
+            }
+        }
+
+        String photoId = pa.isPresent()
+            ? personRepository.findById(pa.get().getPersonDbId()).map(p -> String.valueOf(p.getPhotoId())).orElse(null)
+            : null;
+        String avatarUrl = photoId != null ? "/api/photos/" + photoId : "/api/photos/avatars/" + filename;
 
         return ApiResponse.success("头像上传成功", avatarUrl);
     }
