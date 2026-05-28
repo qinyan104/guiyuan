@@ -42,7 +42,7 @@ function markHistoricalPublication(publication: PublicationData): PublicationDat
         personId,
         {
           ...person,
-          deceased: person.deceased ?? true,
+          deceased: person.deceased ?? (person.death != null && person.death.length > 0),
           clan:
             person.clan ??
             (person.name.startsWith('朱') || person.name.endsWith('公主') ? '朱明宗室 · 凤阳朱氏帝系' : undefined),
