@@ -23,6 +23,8 @@ onMounted(async () => {
   } catch { /* ignore */ }
 })
 
+const avatarTimestamp = ref(0)
+
 async function handleAvatarUpload(event: Event) {
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
@@ -30,7 +32,12 @@ async function handleAvatarUpload(event: Event) {
   if (!file.type.startsWith('image/')) { feedback.errorMessage.value = '仅支持图片文件'; return }
   if (file.size > 5 * 1024 * 1024) { feedback.errorMessage.value = '图片大小不能超过 5MB'; return }
   avatarUploading.value = true
-  try { avatarUrl.value = await uploadAvatar(file) }
+  try {
+    const url = await uploadAvatar(file)
+    avatarUrl.value = url
+    avatarTimestamp.value = Date.now()
+    feedback.statusMessage.value = '头像已更新'
+  }
   catch (err: any) { feedback.errorMessage.value = '头像上传失败: ' + (err.message || '未知错误') }
   finally { avatarUploading.value = false; input.value = '' }
 }
@@ -126,7 +133,7 @@ async function handleConsistencyCheck() {
     <!-- Profile -->
     <section class="card card--profile">
       <div class="avatar" @click="fileInputRef?.click()">
-        <img v-if="avatarUrl" :src="avatarUrl" />
+        <img v-if="avatarUrl" :src="avatarUrl + (avatarTimestamp ? '?t=' + avatarTimestamp : '')" />
         <span v-else>{{ userInitials }}</span>
       </div>
       <input ref="fileInputRef" type="file" accept="image/*" hidden @change="handleAvatarUpload" />
