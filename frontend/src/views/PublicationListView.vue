@@ -151,8 +151,21 @@ function formatDate(dateStr: string) {
   })
 }
 
-function handleViewSample(sample: typeof builtinSamples[0]) {
-  router.push({ name: 'sample-preview', params: { sampleId: sample.id } })
+const cloningSampleId = ref<string | null>(null)
+
+async function handleViewSample(sample: typeof builtinSamples[0]) {
+  if (cloningSampleId.value) return
+  cloningSampleId.value = sample.id
+  
+  const baseTitle = sample.publication.title || sample.label
+  try {
+    const id = await createPublication(sample.publication, defaultSettings, baseTitle + ' (副本)')
+    router.push({ name: 'workbench', params: { id } })
+  } catch {
+    feedback.setError('创建失败，请重试')
+  } finally {
+    cloningSampleId.value = null
+  }
 }
 </script>
 
@@ -195,8 +208,11 @@ function handleViewSample(sample: typeof builtinSamples[0]) {
                   <h3 class="template-title">{{ sample.publication.title }}</h3>
                   <p class="template-subtitle">{{ sample.publication.subtitle }}</p>
                 </div>
-                <div class="template-action">
-                  预览示例 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                <div class="template-action" v-if="cloningSampleId !== sample.id">
+                  打开此谱 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                </div>
+                <div class="template-action cloning" v-else>
+                  拓印中...
                 </div>
               </div>
             </div>
