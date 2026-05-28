@@ -25,7 +25,7 @@ export interface Person {
   clan?: string
   note?: string
   avatarUrl?: string
-  highlightRole?: 'emperor' | 'heir'
+  highlightRole?: 'emperor' | 'heir' | 'consort'
   isMountPoint?: boolean
   mountPointTarget?: MountPointTarget
 }

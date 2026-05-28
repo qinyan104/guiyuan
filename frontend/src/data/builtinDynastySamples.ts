@@ -14,6 +14,7 @@ interface SuccessionSampleRuler {
   displayName?: string
   titleName?: string
   clan?: string
+  consort?: SuccessionSampleRelative
 }
 
 interface SuccessionSampleRelative {
@@ -195,7 +196,8 @@ function createSuccessionSample(definition: SuccessionSampleDefinition): Publica
       return existingId
     }
 
-    const existingId = personIdByName.get(child.name)
+    // Check by name first, then by displayName (for references to rulers)
+    const existingId = personIdByName.get(child.name) ?? (child.displayName ? personIdByName.get(child.displayName) : undefined)
     if (existingId) {
       return existingId
     }
@@ -205,10 +207,17 @@ function createSuccessionSample(definition: SuccessionSampleDefinition): Publica
 
   const rulerIds = definition.rulers.map((ruler) => createPerson(ruler, 'emperor'))
 
-  rulerIds.forEach((adultId, index) => {
-    const familyId = ensureFamily(adultId)
+  definition.rulers.forEach((ruler, index) => {
+    const rulerId = rulerIds[index]
+    const familyId = ensureFamily(rulerId)
     const childId = index < rulerIds.length - 1 ? rulerIds[index + 1] : null
     families[familyId].children = childId ? [childId] : []
+
+    // Add consort if present
+    if (ruler.consort) {
+      const consortId = createPerson(ruler.consort, 'consort')
+      families[familyId].adults.push(consortId)
+    }
   })
 
   definition.branches?.forEach((branch) => {
@@ -237,12 +246,12 @@ const successionSampleDefinitions: SuccessionSampleDefinition[] = [
     label: '唐朝',
     group: '隋唐五代',
     rulers: [
-      { name: '唐高祖', note: '李渊建唐' },
-      { name: '唐太宗', note: '贞观之治' },
-      { name: '唐高宗', note: '永徽之治' },
-      { name: '唐中宗', note: '神龙复辟' },
+      { name: '唐高祖', note: '李渊建唐', consort: { name: '窦皇后', gender: 'female', birth: '569年', death: '613年', note: '太穆皇后', clan: '扶风窦氏' } },
+      { name: '唐太宗', note: '贞观之治', consort: { name: '长孙皇后', gender: 'female', birth: '601年', death: '636年', note: '文德皇后', clan: '洛阳长孙氏' } },
+      { name: '唐高宗', note: '永徽之治', consort: { name: '武则天', gender: 'female', birth: '624年', death: '705年', note: '则天皇后·武周皇帝', highlightRole: 'emperor', displayName: '武曌', titleName: '则天皇帝' } },
+      { name: '唐中宗', note: '神龙复辟', consort: { name: '韦皇后', gender: 'female', death: '710年', note: '中宗韦后', clan: '京兆韦氏' } },
       { name: '唐睿宗', note: '让位玄宗' },
-      { name: '唐玄宗', note: '开元盛世' },
+      { name: '唐玄宗', note: '开元盛世', consort: { name: '杨玉环', gender: 'female', birth: '719年', death: '756年', note: '杨贵妃', displayName: '杨贵妃' } },
       { name: '唐肃宗', note: '安史之乱中继位' },
       { name: '唐代宗', note: '乱后收束' },
       { name: '唐德宗', note: '中唐转折' },
@@ -265,23 +274,31 @@ const successionSampleDefinitions: SuccessionSampleDefinition[] = [
         parent: '唐高宗',
         children: [
           { name: '李弘', birth: '652年', death: '675年', note: '孝敬皇帝·李弘', highlightRole: 'heir' },
+          { name: '李贤', birth: '655年', death: '684年', note: '章怀太子·李贤', highlightRole: 'heir' },
           '唐中宗',
           '唐睿宗',
+          { name: '太平公主', gender: 'female', birth: '665年', death: '713年', note: '镇国太平公主' },
         ],
       },
       {
         parent: '唐中宗',
-        children: [],
+        children: [
+          { name: '李重润', birth: '682年', death: '701年', note: '懿德太子', highlightRole: 'heir' },
+          { name: '安乐公主', gender: 'female', birth: '684年', death: '710年', note: '安乐公主·李裹儿' },
+        ],
       },
       {
         parent: '唐睿宗',
-        children: ['唐玄宗'],
+        children: [
+          { name: '李成器', birth: '679年', death: '742年', note: '让皇帝·李宪' },
+          '唐玄宗',
+        ],
       },
       {
         parent: '唐玄宗',
         children: [
           { name: '李瑛', death: '737年', note: '废太子·李瑛', highlightRole: 'heir' },
-          '唐肃宗',
+          { name: '李亨', note: '即唐肃宗', displayName: '唐肃宗', highlightRole: 'heir' },
         ],
       },
     ],
