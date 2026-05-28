@@ -1,13 +1,13 @@
 ﻿<script setup lang="ts">
 import { useFeedback } from '../composables/useFeedback'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
+
+const feedback = useFeedback()
 import { ref, computed } from 'vue'
 import { getUsername, isSuperAdmin } from '../api/auth'
 import { changePassword, changeNickname, uploadAvatar } from '../api/profile'
 import { downloadBackup, adminRestoreDatabase, adminCheckConsistency, type ConsistencyIssue } from '../api/admin'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
-
-const feedback = useFeedback()
 
 const avatarUrl = ref('')
 const avatarUploading = ref(false)
@@ -17,16 +17,28 @@ async function handleAvatarUpload(event: Event) {
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
   const file = input.files[0]
-  if (!file.type.startsWith('image/')) { feedback.errorMessage.value = '仅支持图片文件'; return }
-  if (file.size > 5 * 1024 * 1024) { feedback.errorMessage.value = '图片大小不能超过 5MB'; return }
+  if (!file.type.startsWith('image/')) {
+    feedback.errorMessage.value = '仅支持图片文件'
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    feedback.errorMessage.value = '图片大小不能超过 5MB'
+    return
+  }
   avatarUploading.value = true
-  try { avatarUrl.value = await uploadAvatar(file) }
-  catch (err: any) { feedback.errorMessage.value = '头像上传失败: ' + (err.message || '未知错误') }
-  finally { avatarUploading.value = false; input.value = '' }
+  try {
+    const url = await uploadAvatar(file)
+    avatarUrl.value = url
+  } catch (err: any) {
+    feedback.errorMessage.value = '头像上传失败: ' + (err.message || '未知错误')
+  } finally {
+    avatarUploading.value = false
+    input.value = '' // reset
+  }
 }
 
 const currentUsername = ref(getUsername() ?? '')
-const userInitials = computed(() => currentUsername.value.charAt(0).toUpperCase())
+const userInitials = computed(() => currentUsername.value ? currentUsername.value.charAt(0).toUpperCase() : '总')
 
 const oldPassword = ref('')
 const newPassword = ref('')
@@ -41,9 +53,11 @@ const nicknameLoading = ref(false)
 
 const backupLoading = ref(false)
 const backupError = ref('')
+
 const restoreFile = ref<File | null>(null)
 const restorePending = ref(false)
 const showRestoreConfirm = ref(false)
+const restoreFileInputRef = ref<HTMLInputElement | null>(null)
 
 const consistencyResult = ref<ConsistencyIssue[]>([])
 const consistencyRunning = ref(false)
@@ -58,305 +72,608 @@ const groupedIssues = computed(() => {
 })
 
 const typeLabels: Record<string, string> = {
-  orphan: '孤立人物', date_conflict: '生卒日期矛盾', status_conflict: '在世状态矛盾', empty_family: '空家族',
+  orphan: '孤立人物',
+  date_conflict: '生卒日期矛盾',
+  status_conflict: '在世状态矛盾',
+  empty_family: '空家族',
 }
 
 async function handleBackup() {
-  backupError.value = ''; backupLoading.value = true
-  try { await downloadBackup() }
-  catch (err: any) { backupError.value = err.message || '备份失败' }
-  finally { backupLoading.value = false }
+  backupError.value = ''
+  backupLoading.value = true
+  try {
+    await downloadBackup()
+  } catch (err: any) {
+    backupError.value = err.message || '备份失败'
+  } finally {
+    backupLoading.value = false
+  }
 }
 
 async function handleRestore() {
   if (!restoreFile.value) return
   restorePending.value = true
-  try { const msg = await adminRestoreDatabase(restoreFile.value); feedback.errorMessage.value = msg; window.location.reload() }
-  catch (e: any) { feedback.errorMessage.value = e.message || '数据库还原失败' }
-  finally { restorePending.value = false }
+  try {
+    const msg = await adminRestoreDatabase(restoreFile.value)
+    feedback.errorMessage.value = msg
+    window.location.reload()
+  } catch (e: any) {
+    feedback.errorMessage.value = e.message || '数据库还原失败'
+  } finally {
+    restorePending.value = false
+  }
 }
 
 async function handleConsistencyCheck() {
   consistencyRunning.value = true
-  try { const report = await adminCheckConsistency(); consistencyResult.value = report.issues }
-  catch (e: any) { feedback.errorMessage.value = e.message || '一致性检查失败' }
-  finally { consistencyRunning.value = false }
+  try {
+    const report = await adminCheckConsistency()
+    consistencyResult.value = report.issues
+  } catch (e: any) {
+    feedback.errorMessage.value = e.message || '一致性检查失败'
+  } finally {
+    consistencyRunning.value = false
+  }
 }
 
 function onFileSelected(e: Event) {
   const input = e.target as HTMLInputElement
-  if (input.files?.length) restoreFile.value = input.files[0]
+  if (input.files?.length) {
+    restoreFile.value = input.files[0]
+  }
 }
 
 async function handleChangePassword() {
-  passwordMsg.value = ''; passwordError.value = ''
-  if (!oldPassword.value.trim()) { passwordError.value = '请输入当前密码'; return }
-  if (newPassword.value.length < 4) { passwordError.value = '新密码至少4个字符'; return }
-  if (newPassword.value !== confirmPassword.value) { passwordError.value = '两次输入的新密码不一致'; return }
+  passwordMsg.value = ''
+  passwordError.value = ''
+
+  if (!oldPassword.value.trim()) {
+    passwordError.value = '请输入当前密码'
+    return
+  }
+  if (newPassword.value.length < 4) {
+    passwordError.value = '新密码至少4个字符'
+    return
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    passwordError.value = '两次输入的新密码不一致'
+    return
+  }
+
   passwordLoading.value = true
   try {
     await changePassword(oldPassword.value, newPassword.value)
-    passwordMsg.value = '密码已更新'
-    oldPassword.value = ''; newPassword.value = ''; confirmPassword.value = ''
-  } catch (err: any) { passwordError.value = err.response?.data?.message || '密码修改失败' }
-  finally { passwordLoading.value = false }
+    passwordMsg.value = '通行密钥重铸成功'
+    oldPassword.value = ''
+    newPassword.value = ''
+    confirmPassword.value = ''
+  } catch (err: any) {
+    passwordError.value = err.response?.data?.message || '重铸失败，请检查原密码是否正确'
+  } finally {
+    passwordLoading.value = false
+  }
 }
 
 async function handleChangeNickname() {
   nicknameMsg.value = ''
   if (!nickname.value.trim()) return
+
   nicknameLoading.value = true
-  try { await changeNickname(nickname.value.trim()); nicknameMsg.value = '身份标识已更新' }
-  catch { nicknameMsg.value = '更新失败' }
-  finally { nicknameLoading.value = false }
+  try {
+    await changeNickname(nickname.value.trim())
+    nicknameMsg.value = '公开身份标识更新成功'
+  } catch {
+    nicknameMsg.value = '更新身份失败，请稍后重试'
+  } finally {
+    nicknameLoading.value = false
+  }
 }
 </script>
 
 <template>
-  <div class="settings-root">
-    <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
-
-    <header class="hero">
-      <h1>偏好设置</h1>
-      <p class="hero-sub">管理账户信息、安全凭证与数据维护。</p>
-    </header>
-
-    <!-- Profile -->
-    <section class="card profile-card">
-      <div class="profile-avatar" @click="fileInputRef?.click()">
-        <img v-if="avatarUrl" :src="avatarUrl" class="avatar-img" />
-        <div v-else class="avatar-fallback">{{ userInitials }}</div>
-      </div>
-      <input ref="fileInputRef" type="file" accept="image/*" style="display:none" @change="handleAvatarUpload" />
-      <div class="profile-text">
-        <h2>{{ currentUsername }}</h2>
-        <span>编委</span>
-      </div>
-    </section>
-
-    <!-- Nickname -->
-    <section class="card">
-      <h3>身份标识</h3>
-      <p>系统内对外展示的名称，留空则使用登录账号。</p>
-      <div class="form-row">
-        <input v-model="nickname" type="text" placeholder="输入新的身份标识…" class="input" @keyup.enter="handleChangeNickname" />
-        <button class="btn" :disabled="nicknameLoading" @click="handleChangeNickname">{{ nicknameLoading ? '…' : '更新' }}</button>
-      </div>
-      <p v-if="nicknameMsg" class="msg ok">{{ nicknameMsg }}</p>
-    </section>
-
-    <!-- Password -->
-    <section class="card">
-      <h3>通行密钥</h3>
-      <p>修改登录密码。新密码至少 4 个字符。</p>
-      <div class="form-col">
-        <input v-model="oldPassword" type="password" class="input" placeholder="当前密码" />
-        <div class="form-row">
-          <input v-model="newPassword" type="password" class="input" placeholder="新密码" />
-          <input v-model="confirmPassword" type="password" class="input" placeholder="确认新密码" @keyup.enter="handleChangePassword" />
+  <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
+  <div class="settings-view-root">
+    <div class="settings-view">
+      <header class="poetic-header">
+        <div class="poetic-header__main">
+          <div class="poetic-eyebrow">PREFERENCES // SETTINGS</div>
+          <h1 class="poetic-title">偏好<span class="text-italic">设置</span></h1>
         </div>
-        <button class="btn" :disabled="passwordLoading" @click="handleChangePassword">{{ passwordLoading ? '…' : '更新密码' }}</button>
+        <div class="poetic-header__extra">
+          <p class="poetic-quote">
+            工欲善其事，必先利其器。<br />
+            于此调和规矩，方成方圆。
+          </p>
+        </div>
+      </header>
+
+      <div class="bento-grid">
+        <!-- Big Profile Identity Card -->
+        <div class="bento-card profile-card">
+          <div class="avatar-glow-ring" style="cursor: pointer;" @click="fileInputRef?.click()">
+            <img v-if="avatarUrl" :src="avatarUrl" class="large-avatar-img" />
+            <div v-else class="large-avatar">{{ userInitials }}</div>
+          </div>
+          <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleAvatarUpload" />
+          <div class="profile-info">
+            <span class="profile-status">已验证通行证</span>
+            <h2 class="profile-name">{{ currentUsername }}</h2>
+            <span class="profile-role">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+              档案系统注册编委
+            </span>
+          </div>
+        </div>
+
+        <!-- Detail Forms Grid -->
+        <div class="forms-container">
+          <!-- Nickname Card -->
+          <div class="bento-card nickname-card">
+            <div class="card-header">
+              <h3 class="card-title">公开身份标识</h3>
+              <p class="card-subtitle">系统内对外展出的别名或真实姓名，若留空则自动显示登录账号。</p>
+            </div>
+            <div class="glass-form-row">
+              <input
+                v-model="nickname"
+                type="text"
+                placeholder="输入全新的身份标识..."
+                class="glass-input"
+                @keyup.enter="handleChangeNickname"
+              />
+              <button class="bento-btn primary" :disabled="nicknameLoading" @click="handleChangeNickname">
+                {{ nicknameLoading ? '验证中...' : '更新身份' }}
+              </button>
+            </div>
+            <transition name="fade-slide">
+              <p v-if="nicknameMsg" class="feedback-msg success">{{ nicknameMsg }}</p>
+            </transition>
+          </div>
+
+          <!-- Password Card -->
+          <div class="bento-card password-card">
+            <div class="card-header">
+              <h3 class="card-title">系统通行密钥</h3>
+              <p class="card-subtitle">为保障数字档案馆资产安全，请定期进行密钥轮换更新。</p>
+            </div>
+            <div class="glass-form-col">
+              <div class="field">
+                <label>当前通行密钥</label>
+                <input v-model="oldPassword" type="password" class="glass-input" placeholder="输入当前密码进行权限验证" />
+              </div>
+              <div class="field-group">
+                <div class="field">
+                  <label>新设密钥</label>
+                  <input v-model="newPassword" type="password" class="glass-input" placeholder="新密码要求不少于 4 个字符" />
+                </div>
+                <div class="field">
+                  <label>确认密钥</label>
+                  <input
+                    v-model="confirmPassword"
+                    type="password"
+                    class="glass-input"
+                    placeholder="请再次输入新密码"
+                    @keyup.enter="handleChangePassword"
+                  />
+                </div>
+              </div>
+            
+              <div class="form-actions">
+                <button class="bento-btn primary" :disabled="passwordLoading" @click="handleChangePassword">
+                  {{ passwordLoading ? '重铸进程中...' : '重铸通行密钥' }}
+                </button>
+              </div>
+              <transition name="fade-slide">
+                <div v-if="passwordError" class="feedback-msg error">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                  {{ passwordError }}
+                </div>
+                <div v-else-if="passwordMsg" class="feedback-msg success">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                  {{ passwordMsg }}
+                </div>
+              </transition>
+            </div>
+          </div>
+
+          <!-- Data Backup Card (SUPER_ADMIN only) -->
+          <div v-if="isSuperAdmin()" class="bento-card backup-card">
+            <div class="card-header">
+              <h3 class="card-title">数据备份</h3>
+              <p class="card-subtitle">导出数据库完整备份，包含所有族谱、人物和用户数据。</p>
+            </div>
+            <div class="glass-form-row">
+              <button class="bento-btn primary" :disabled="backupLoading" @click="handleBackup">
+                {{ backupLoading ? '备份生成中...' : '创建备份并下载' }}
+              </button>
+            </div>
+            <transition name="fade-slide">
+              <p v-if="backupError" class="feedback-msg error">{{ backupError }}</p>
+            </transition>
+          </div>
+
+          <!-- Database Restore Card (SUPER_ADMIN only) -->
+          <div v-if="isSuperAdmin()" class="settings-card">
+            <h3>数据库还原</h3>
+            <p class="settings-card__desc">
+              从备份文件还原数据库。此操作<strong>不可逆</strong>，将覆盖当前全部数据。
+            </p>
+            <div class="restore-controls">
+              <input
+                ref="restoreFileInputRef"
+                type="file"
+                accept=".sql"
+                @change="onFileSelected"
+              />
+              <button
+                class="btn btn--danger"
+                :disabled="!restoreFile || restorePending"
+                @click="showRestoreConfirm = true"
+              >
+                {{ restorePending ? '还原中...' : '还原数据库' }}
+              </button>
+            </div>
+          </div>
+
+          <ConfirmDialog
+            :modelValue="showRestoreConfirm"
+            title="确认还原数据库"
+            message="此操作不可逆，将覆盖当前全部数据。请确保已备份。"
+            confirmLabel="确认还原"
+            tone="danger"
+            @confirm="showRestoreConfirm = false; handleRestore()"
+            @cancel="showRestoreConfirm = false"
+            @update:model-value="(v: boolean) => { if (!v) showRestoreConfirm = false }"
+          />
+
+          <!-- Data Consistency Card (SUPER_ADMIN only) -->
+          <div v-if="isSuperAdmin()" class="bento-card">
+            <div class="card-header">
+              <h3 class="card-title">数据一致性检查</h3>
+              <p class="card-subtitle">扫描全库数据，检测孤立人物、日期矛盾、状态不一致等问题。</p>
+            </div>
+            <div class="glass-form-row">
+              <button
+                class="bento-btn primary"
+                :disabled="consistencyRunning"
+                @click="handleConsistencyCheck"
+              >
+                {{ consistencyRunning ? '检查中...' : '开始检查' }}
+              </button>
+            </div>
+
+            <div v-if="consistencyResult.length > 0" class="consistency-report">
+              <p class="consistency-summary">发现 {{ consistencyResult.length }} 个问题：</p>
+              <details v-for="(group, type) in groupedIssues" :key="type" class="consistency-group">
+                <summary>{{ typeLabels[type] || type }} ({{ group.length }})</summary>
+                <ul>
+                  <li v-for="issue in group" :key="issue.personId + issue.detail">
+                    <strong>{{ issue.personName || issue.personId }}</strong>
+                    — {{ issue.detail }}
+                  </li>
+                </ul>
+              </details>
+            </div>
+            <p v-else-if="consistencyResult.length === 0 && !consistencyRunning" class="consistency-clean">
+              未发现问题，数据一致性良好。
+            </p>
+          </div>
+        </div>
       </div>
-      <p v-if="passwordError" class="msg err">{{ passwordError }}</p>
-      <p v-if="passwordMsg" class="msg ok">{{ passwordMsg }}</p>
-    </section>
-
-    <!-- Admin section -->
-    <template v-if="isSuperAdmin()">
-      <hr class="divider" />
-      <h2 class="section-title">系统管理</h2>
-
-      <!-- Backup -->
-      <section class="card">
-        <h3>数据备份</h3>
-        <p>导出数据库完整备份，包含所有族谱、人物和用户数据。</p>
-        <button class="btn" :disabled="backupLoading" @click="handleBackup">{{ backupLoading ? '生成中…' : '创建备份并下载' }}</button>
-        <p v-if="backupError" class="msg err">{{ backupError }}</p>
-      </section>
-
-      <!-- Restore -->
-      <section class="card">
-        <h3>数据库还原</h3>
-        <p>从备份文件还原数据库。<strong>此操作不可逆</strong>，将覆盖当前全部数据。</p>
-        <div class="form-row">
-          <input type="file" accept=".sql" @change="onFileSelected" class="input" />
-          <button class="btn btn--danger" :disabled="!restoreFile || restorePending" @click="showRestoreConfirm = true">{{ restorePending ? '还原中…' : '还原' }}</button>
-        </div>
-      </section>
-
-      <!-- Consistency -->
-      <section class="card">
-        <h3>数据一致性检查</h3>
-        <p>扫描孤立人物、日期矛盾、状态不一致等问题。</p>
-        <button class="btn" :disabled="consistencyRunning" @click="handleConsistencyCheck">{{ consistencyRunning ? '检查中…' : '开始检查' }}</button>
-        <div v-if="consistencyResult.length > 0" class="consistency">
-          <p>发现 {{ consistencyResult.length }} 个问题：</p>
-          <details v-for="(group, type) in groupedIssues" :key="type" class="consistency-group">
-            <summary>{{ typeLabels[type] || type }}（{{ group.length }}）</summary>
-            <ul>
-              <li v-for="issue in group" :key="issue.personId + issue.detail"><strong>{{ issue.personName || issue.personId }}</strong> — {{ issue.detail }}</li>
-            </ul>
-          </details>
-        </div>
-        <p v-else-if="consistencyResult.length === 0 && !consistencyRunning" class="msg ok">未发现问题，数据一致性良好。</p>
-      </section>
-    </template>
-
-    <ConfirmDialog
-      :modelValue="showRestoreConfirm"
-      title="确认还原数据库"
-      message="此操作不可逆，将覆盖当前全部数据。请确保已备份。"
-      confirmLabel="确认还原"
-      tone="danger"
-      @confirm="showRestoreConfirm = false; handleRestore()"
-      @cancel="showRestoreConfirm = false"
-      @update:model-value="(v: boolean) => { if (!v) showRestoreConfirm = false }"
-    />
+    </div>
   </div>
 </template>
 
-<style scoped>
-.settings-root {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 60px clamp(20px, 4vw, 48px) 80px;
+<style scoped>.settings-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-/* ── Hero ── */
-.hero { margin-bottom: 40px; }
-.hero h1 {
-  font-family: var(--font-serif);
-  font-size: var(--text-display-36);
-  font-weight: 400;
-  color: var(--color-neutral-10);
-  margin: 0 0 8px;
-  letter-spacing: 0.04em;
+/* ── Header ── */
+.bento-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.hero-sub {
-  font-size: var(--text-copy-14);
+
+.page-title {
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--color-neutral-9);
+  margin: 0 0 6px;
+}
+
+.page-desc {
+  font-size: 0.85rem;
   color: var(--color-neutral-6);
   margin: 0;
 }
 
-/* ── Profile ── */
+/* ── Bento Cards Core ── */
+.bento-card {
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.6));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  border-radius: 20px;
+  box-shadow: var(--shadow-whisper);
+  padding: 32px;
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── Profile Identity Card ── */
 .profile-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 20px;
-}
-.profile-avatar {
-  width: 64px; height: 64px;
-  border-radius: 50%;
-  background: var(--color-neutral-3);
-  cursor: pointer;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 32px;
+  position: relative;
   overflow: hidden;
-  flex-shrink: 0;
+}
+
+/* Background atmospheric glow */
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, var(--color-accent) 0%, transparent 40%);
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+.avatar-glow-ring {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-neutral-2), transparent);
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity var(--duration-fast);
+  margin-bottom: 24px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.1);
+  position: relative;
 }
-.profile-avatar:hover { opacity: 0.8; }
-.avatar-img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-fallback {
-  font-family: var(--font-serif);
-  font-size: var(--text-title-24);
-  font-weight: 400;
-  color: var(--color-neutral-6);
-}
-.profile-text h2 {
-  font-family: var(--font-serif);
-  font-size: var(--text-title-20);
-  font-weight: 400;
-  color: var(--color-neutral-10);
-  margin: 0 0 2px;
-}
-.profile-text span {
-  font-size: var(--text-label-12);
-  color: var(--color-neutral-6);
+.avatar-glow-ring::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, var(--color-accent), transparent);
+  opacity: 0.3;
+  animation: rotate 6s linear infinite;
+  z-index: -1;
 }
 
-/* ── Cards ── */
-.card {
-  background: var(--color-neutral-2);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-xl);
-  padding: 24px;
-  margin-bottom: 16px;
-}
-.card h3 {
-  font-family: var(--font-serif);
-  font-size: var(--text-copy-16);
-  font-weight: 400;
-  color: var(--color-neutral-10);
-  margin: 0 0 4px;
-}
-.card p {
-  font-size: var(--text-copy-13);
-  color: var(--color-neutral-6);
-  margin: 0 0 16px;
-  line-height: 1.6;
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* ── Form ── */
-.form-row { display: flex; gap: 8px; }
-.form-col { display: flex; flex-direction: column; gap: 12px; }
-
-.input {
-  flex: 1;
-  padding: 10px 14px;
-  border: 1px solid var(--color-neutral-4);
-  border-radius: var(--radius-md);
-  background: var(--color-neutral-1);
-  font-size: var(--text-copy-14);
+.large-avatar {
+  width: 100%;
+  height: 100%;
+  background: var(--color-card-fill);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 800;
+  font-family: 'Noto Serif SC', serif;
   color: var(--color-neutral-9);
-  outline: none;
-  font-family: inherit;
-  transition: border-color var(--duration-fast);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
-.input:focus { border-color: var(--color-neutral-8); }
-.input[type="file"] { padding: 8px 12px; font-size: var(--text-copy-13); }
 
-.btn {
-  padding: 10px 20px;
-  border: 1px solid var(--color-neutral-4);
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-status {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  background: rgba(0,0,0,0.04);
+  padding: 4px 10px;
   border-radius: 999px;
-  background: var(--color-neutral-1);
-  font-size: var(--text-copy-13);
+}
+
+.profile-name {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--color-neutral-9);
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.profile-role {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--color-neutral-6);
+  font-family: monospace;
+}
+
+/* ── Detail Forms Grid ── */
+.forms-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card-header {
+  margin-bottom: 24px;
+}
+.card-title {
+  font-size: 1.1rem;
   font-weight: 500;
-  color: var(--color-neutral-8);
+  color: var(--color-neutral-9);
+  margin: 0 0 6px;
+}
+.card-subtitle {
+  font-size: 0.85rem;
+  color: var(--color-neutral-6);
+  margin: 0;
+}
+
+.glass-form-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.glass-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.field label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-neutral-6);
+  letter-spacing: 0.05em;
+}
+
+.glass-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border-shadow, rgba(0,0,0,0.1));
+  background: rgba(255,255,255,0.4);
+  color: var(--color-neutral-9);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+.glass-input:focus {
+  background: var(--color-card-fill);
+  border-color: var(--color-neutral-9);
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.04);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 8px;
+}
+
+/* ── Buttons ── */
+.bento-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 24px;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  white-space: nowrap;
-  transition: all var(--duration-fast) var(--ease-breath);
-}
-.btn:hover { background: var(--color-neutral-9); color: var(--color-neutral-1); border-color: var(--color-neutral-9); }
-.btn:disabled { opacity: 0.5; cursor: default; }
-.btn--danger:hover { background: var(--color-error); color: #fff; border-color: var(--color-error); }
-
-/* ── Messages ── */
-.msg { font-size: var(--text-copy-13); margin: 12px 0 0; }
-.msg.ok { color: var(--color-success); }
-.msg.err { color: var(--color-error); }
-
-/* ── Divider ── */
-.divider {
+  transition: all 0.2s ease;
   border: none;
-  border-top: 1px solid var(--color-neutral-4);
-  margin: 32px 0 24px;
+  white-space: nowrap;
 }
-.section-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-title-20);
-  font-weight: 400;
-  color: var(--color-neutral-10);
-  margin: 0 0 16px;
+.bento-btn.primary {
+  background: var(--color-neutral-9);
+  color: var(--color-card-fill);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+.bento-btn.primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-whisper);
+}
+.bento-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-/* ── Consistency ── */
-.consistency { margin-top: 16px; }
-.consistency p { font-size: var(--text-copy-13); color: var(--color-neutral-6); margin: 0 0 8px; }
-.consistency-group { margin-bottom: 8px; }
-.consistency-group summary { font-size: var(--text-copy-13); color: var(--color-neutral-8); cursor: pointer; padding: 4px 0; }
-.consistency-group ul { margin: 4px 0 0 16px; font-size: var(--text-copy-13); color: var(--color-neutral-7); }
-.consistency-group li { padding: 2px 0; }
+/* ── Feedback Messages ── */
+.feedback-msg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin: 16px 0 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+}
+.feedback-msg.success {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+}
+.feedback-msg.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+.large-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+@media (max-width: 960px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .glass-form-row {
+    flex-direction: column;
+  }
+  .bento-btn {
+    width: 100%;
+  }
+  .field-group {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
+
+
