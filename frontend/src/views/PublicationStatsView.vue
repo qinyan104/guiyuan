@@ -137,7 +137,10 @@ function goBack() { router.push({ name: 'workbench', params: { id: props.publica
 
 <template>
   <div class="chronicle-root" data-testid="stats-view">
-    <button class="back-link" @click="goBack">← 画布</button>
+    <button class="back-btn" @click="goBack">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+      画布
+    </button>
 
     <header class="hero">
       <h1>{{ pubData.title || '未命名族谱' }}</h1>
@@ -231,17 +234,27 @@ function goBack() { router.push({ name: 'workbench', params: { id: props.publica
   padding: 60px clamp(20px, 4vw, 48px) 80px;
 }
 
-.back-link {
-  display: inline-block;
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-bottom: 40px;
+  padding: 8px 16px;
   font-size: var(--text-copy-13);
-  color: var(--color-neutral-6);
-  background: none;
-  border: none;
+  font-weight: 500;
+  color: var(--color-neutral-7);
+  background: var(--color-neutral-2);
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: color var(--duration-fast) var(--ease-breath);
+  transition: all var(--duration-fast) var(--ease-breath);
 }
-.back-link:hover { color: var(--color-neutral-9); }
+.back-btn:hover {
+  color: var(--color-neutral-9);
+  background: var(--color-neutral-3);
+  border-color: var(--color-neutral-5);
+}
+.back-btn svg { flex-shrink: 0; }
 
 /* ── Hero ── */
 .hero {
