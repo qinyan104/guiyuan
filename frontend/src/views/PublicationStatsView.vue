@@ -239,13 +239,13 @@ function goBack() { router.push({ name: 'workbench', params: { id: props.publica
   align-items: center;
   gap: 6px;
   margin-bottom: 40px;
-  padding: 7px 14px;
+  padding: 8px 18px;
   font-size: var(--text-copy-13);
   font-weight: 500;
   color: var(--color-neutral-7);
   background: transparent;
   border: 1px solid var(--color-neutral-4);
-  border-radius: var(--radius-md);
+  border-radius: 999px;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-breath);
 }
