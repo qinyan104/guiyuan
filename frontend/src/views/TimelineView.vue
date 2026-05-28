@@ -5,7 +5,6 @@ import { parseExactDate, parseYear } from '../lib/dateUtils'
 import { PUBLICATION_CONTEXT_KEY, type Person } from '../types/family'
 
 const props = defineProps<{ publicationId: number }>()
-
 const router = useRouter()
 const context = inject(PUBLICATION_CONTEXT_KEY)!
 const pubData = computed(() => context.pub.publication)
@@ -21,700 +20,303 @@ interface TimelineEvent {
 
 const events = computed<TimelineEvent[]>(() => {
   const list: TimelineEvent[] = []
-
   for (const person of Object.values(pubData.value.people ?? {}) as Person[]) {
-    const birthYear = parseYear(person.birth)
-    if (birthYear !== null) {
-      list.push({
-        person,
-        year: birthYear,
-        exactDate: parseExactDate(person.birth),
-        type: 'birth',
-        label: person.birth || `${birthYear}年`,
-        centuryStart: Math.floor(birthYear / 100) * 100,
-      })
-    }
-
-    const deathYear = parseYear(person.death)
-    if (deathYear !== null) {
-      list.push({
-        person,
-        year: deathYear,
-        exactDate: parseExactDate(person.death),
-        type: 'death',
-        label: person.death || `${deathYear}年`,
-        centuryStart: Math.floor(deathYear / 100) * 100,
-      })
-    }
+    const by = parseYear(person.birth)
+    if (by !== null) list.push({ person, year: by, exactDate: parseExactDate(person.birth), type: 'birth', label: person.birth || `${by}年`, centuryStart: Math.floor(by / 100) * 100 })
+    const dy = parseYear(person.death)
+    if (dy !== null) list.push({ person, year: dy, exactDate: parseExactDate(person.death), type: 'death', label: person.death || `${dy}年`, centuryStart: Math.floor(dy / 100) * 100 })
   }
-
-  return list.sort((left, right) => {
-    if (left.exactDate !== right.exactDate) {
-      return left.exactDate - right.exactDate
-    }
-
-    return left.type === right.type ? 0 : left.type === 'birth' ? -1 : 1
-  })
+  return list.sort((a, b) => a.exactDate !== b.exactDate ? a.exactDate - b.exactDate : a.type === 'birth' ? -1 : 1)
 })
 
 const centuryGroups = computed(() => {
-  const grouped = new Map<number, TimelineEvent[]>()
-
-  for (const event of events.value) {
-    if (!grouped.has(event.centuryStart)) {
-      grouped.set(event.centuryStart, [])
-    }
-
-    grouped.get(event.centuryStart)!.push(event)
+  const g = new Map<number, TimelineEvent[]>()
+  for (const e of events.value) {
+    if (!g.has(e.centuryStart)) g.set(e.centuryStart, [])
+    g.get(e.centuryStart)!.push(e)
   }
-
-  return Array.from(grouped.entries())
-    .sort((a, b) => a[0] - b[0])
-    .map(([centuryStart, centuryEvents]) => {
-      const births = centuryEvents.filter((event) => event.type === 'birth').length
-      const deaths = centuryEvents.filter((event) => event.type === 'death').length
-      const distinctPeople = new Set(centuryEvents.map((event) => event.person.id)).size
-
-      return {
-        centuryStart,
-        centuryEvents,
-        births,
-        deaths,
-        distinctPeople,
-      }
-    })
+  return Array.from(g.entries()).sort((a, b) => a[0] - b[0]).map(([cs, evts]) => {
+    const births = evts.filter((e) => e.type === 'birth').length
+    const deaths = evts.filter((e) => e.type === 'death').length
+    const people = new Set(evts.map((e) => e.person.id)).size
+    return { centuryStart: cs, events: evts, births, deaths, people }
+  })
 })
 
 const totalEvents = computed(() => events.value.length)
-const datedPeopleCount = computed(
-  () => new Set(events.value.map((event) => event.person.id)).size,
-)
-const earliestYear = computed(() => (events.value.length > 0 ? events.value[0].year : null))
-const latestYear = computed(() =>
-  events.value.length > 0 ? events.value[events.value.length - 1].year : null,
-)
-const timelineSpan = computed(() => {
-  if (earliestYear.value === null || latestYear.value === null) return null
-  return latestYear.value - earliestYear.value
-})
+const distinctPeople = computed(() => new Set(events.value.map((e) => e.person.id)).size)
+const earliest = computed(() => events.value.length > 0 ? events.value[0].year : null)
+const latest = computed(() => events.value.length > 0 ? events.value[events.value.length - 1].year : null)
+const span = computed(() => earliest.value && latest.value ? latest.value - earliest.value : null)
 
-const timelineSummary = computed(() => {
-  const parts: string[] = []
+function centuryLabel(s: number) { return `${Math.floor(s / 100) + 1} 世纪 · ${s}—${s + 99}` }
+function typeChar(t: TimelineEvent['type']) { return t === 'birth' ? '生' : '卒' }
 
-  if (earliestYear.value !== null && latestYear.value !== null) {
-    parts.push(`时间跨度 ${earliestYear.value}—${latestYear.value} 年`)
-  }
+function goPerson(id: string) { router.push({ name: 'workbench', params: { id: props.publicationId }, query: { personId: id } }) }
+function goBack() { router.push({ name: 'workbench', params: { id: props.publicationId } }) }
+function goStats() { router.push({ name: 'publication-stats', params: { id: props.publicationId } }) }
 
-  parts.push(`共收录 ${totalEvents.value} 个纪事节点`)
-  parts.push(`涉及 ${datedPeopleCount.value} 位有据人物`)
-
-  return parts.join('，') + '。'
-})
-
-const showBackToTop = ref(false)
-
-function centuryLabel(startYear: number) {
-  return `${Math.floor(startYear / 100) + 1} 世纪 · ${startYear}—${startYear + 99}`
-}
-
-function typeLabel(type: TimelineEvent['type']) {
-  return type === 'birth' ? '出生' : '去世'
-}
-
-function eventMeta(event: TimelineEvent) {
-  return event.label === `${event.year}年` ? `${typeLabel(event.type)}记录` : event.label
-}
-
-function goToPerson(personId: string) {
-  router.push({
-    name: 'workbench',
-    params: { id: props.publicationId },
-    query: { personId },
-  })
-}
-
-function goBack() {
-  router.push({ name: 'workbench', params: { id: props.publicationId } })
-}
-
-function onScroll() {
-  showBackToTop.value = window.scrollY > 420
-}
-
-function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-onMounted(() => {
-  window.addEventListener('scroll', onScroll)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('scroll', onScroll)
-})
+const showTop = ref(false)
+function onScroll() { showTop.value = window.scrollY > 420 }
+function toTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
+onMounted(() => window.addEventListener('scroll', onScroll))
+onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 </script>
 
 <template>
-  <div class="timeline-view page-shell" data-testid="timeline-view">
-    <header class="timeline-header">
-      <button type="button" class="header-back" @click="goBack">返回画布</button>
-      <div class="header-copy">
-        <p class="header-eyebrow">Family Chronicle</p>
-        <h1>家族编年史</h1>
-        <p class="header-desc">沿着时间展开人物生卒节点，回看家族脉络如何在年代里延续。</p>
-      </div>
+  <div class="timeline-root" data-testid="timeline-view">
+    <button class="back-link" @click="goBack">← 返回画布</button>
+
+    <header class="hero">
+      <h1>{{ pubData.title || '未命名族谱' }}</h1>
+      <p class="hero-narrative" v-if="earliest && latest">
+        自 {{ earliest }} 年至 {{ latest }} 年，跨 {{ span }} 年，
+        收录 {{ totalEvents }} 个纪事节点，涉及 {{ distinctPeople }} 位族人。
+      </p>
+      <p class="hero-narrative" v-else>补充人物生卒年份后，编年史将在此展开。</p>
     </header>
 
-    <main class="timeline-main">
-      <section v-if="events.length === 0" data-testid="timeline-empty" class="empty-panel bento-card">
-        <div class="empty-icon">史</div>
-        <h2>家族编年史尚未生成</h2>
-        <p>补充人物的生卒年份后，这里会自动串起家族的时间脉络。</p>
-        <button type="button" class="primary-btn" @click="goBack">前往画布补充</button>
-      </section>
+    <section class="metric-strip" v-if="events.length > 0">
+      <div class="metric-item">
+        <span class="metric-num">{{ totalEvents }}</span>
+        <span class="metric-label">纪事节点</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-num">{{ distinctPeople }}</span>
+        <span class="metric-label">有据族人</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-num">{{ earliest }}</span>
+        <span class="metric-label">最早年份</span>
+      </div>
+      <div class="metric-item" v-if="span !== null">
+        <span class="metric-num">{{ span }}</span>
+        <span class="metric-label">年跨度</span>
+      </div>
+    </section>
 
-      <template v-else>
-        <section class="hero-panel bento-card">
-          <div class="hero-copy">
-            <p class="section-eyebrow">Chronicle Overview</p>
-            <h2>{{ pubData.title || '未命名族谱' }}</h2>
-            <p class="hero-subtitle">{{ pubData.subtitle || '暂无副题' }}</p>
-            <p class="hero-summary">{{ timelineSummary }}</p>
+    <div v-if="events.length === 0" class="empty-state">
+      <p>补充人物生卒年份后，编年史将在此徐徐展开。</p>
+      <button class="back-link" @click="goBack">前往画布补充</button>
+    </div>
+
+    <section v-else class="timeline">
+      <article v-for="g in centuryGroups" :key="g.centuryStart" class="era">
+        <header class="era-head">
+          <div class="era-dot"></div>
+          <div>
+            <h2>{{ centuryLabel(g.centuryStart) }}</h2>
+            <p class="era-summary">{{ g.events.length }} 节点 · {{ g.people }} 人 · 生 {{ g.births }} 卒 {{ g.deaths }}</p>
           </div>
+        </header>
 
-          <div class="hero-side">
-            <div class="hero-note">
-              <span>最早年份</span>
-              <strong>{{ earliestYear }}</strong>
-            </div>
-            <div class="hero-note">
-              <span>最近年份</span>
-              <strong>{{ latestYear }}</strong>
-            </div>
-            <div class="hero-note">
-              <span>年代跨度</span>
-              <strong>{{ timelineSpan ?? 0 }} 年</strong>
-            </div>
-            <div class="hero-note">
-              <span>有据人物</span>
-              <strong>{{ datedPeopleCount }} 人</strong>
-            </div>
-          </div>
-        </section>
-
-        <section class="metric-grid">
-          <article class="metric-card bento-card">
-            <span class="metric-label">纪事节点</span>
-            <strong class="metric-value">{{ totalEvents }}</strong>
-            <p class="metric-desc">每个生卒时间都会成为一条编年节点。</p>
-          </article>
-
-          <article class="metric-card bento-card">
-            <span class="metric-label">涉及人物</span>
-            <strong class="metric-value">{{ datedPeopleCount }}</strong>
-            <p class="metric-desc">至少录入过一个有效年份的人物数量。</p>
-          </article>
-
-          <article class="metric-card bento-card">
-            <span class="metric-label">时间起点</span>
-            <strong class="metric-value">{{ earliestYear }}</strong>
-            <p class="metric-desc">当前可追溯到的最早年份。</p>
-          </article>
-
-          <article class="metric-card bento-card">
-            <span class="metric-label">时间跨度</span>
-            <strong class="metric-value">{{ timelineSpan ?? 0 }}</strong>
-            <p class="metric-desc">以最早与最晚节点计算的跨度。</p>
-          </article>
-        </section>
-
-        <section class="timeline-shell">
-          <div class="timeline-spine" aria-hidden="true"></div>
-
-          <article
-            v-for="group in centuryGroups"
-            :key="group.centuryStart"
-            class="era-section"
+        <div class="era-events">
+          <button
+            v-for="e in g.events"
+            :key="`${e.person.id}-${e.type}-${e.exactDate}`"
+            class="event"
+            :class="`event--${e.type}`"
+            @click="goPerson(e.person.id)"
           >
-            <div class="era-heading">
-              <p class="section-eyebrow">Era</p>
-              <h3>{{ centuryLabel(group.centuryStart) }}</h3>
-              <p class="era-desc">
-                本世纪共记载 {{ group.centuryEvents.length }} 个节点，涉及 {{ group.distinctPeople }}
-                位人物，其中出生 {{ group.births }} 次、去世 {{ group.deaths }} 次。
-              </p>
-            </div>
+            <span class="event-year">{{ e.year }}</span>
+            <span class="event-type">{{ typeChar(e.type) }}</span>
+            <span class="event-name">{{ e.person.name }}</span>
+            <span class="event-detail">{{ e.label }}</span>
+            <span class="event-hint">点击定位</span>
+          </button>
+        </div>
+      </article>
+    </section>
 
-            <div class="era-events">
-              <button
-                v-for="event in group.centuryEvents"
-                :key="`${event.person.id}-${event.type}-${event.exactDate}`"
-                data-testid="timeline-event"
-                type="button"
-                class="timeline-event bento-card"
-                @click="goToPerson(event.person.id)"
-              >
-                <div class="timeline-event__year">
-                  <strong>{{ event.year }}</strong>
-                  <span>年</span>
-                </div>
+    <footer class="page-foot" v-if="events.length > 0">
+      <button class="foot-btn" @click="goStats">查看家族纪略 →</button>
+    </footer>
 
-                <div class="timeline-event__body">
-                  <div class="timeline-event__meta">
-                    <span class="event-type" :class="`event-type--${event.type}`">
-                      {{ typeLabel(event.type) }}
-                    </span>
-                    <span class="event-person">{{ event.person.name }}</span>
-                  </div>
-
-                  <p class="timeline-event__detail">{{ eventMeta(event) }}</p>
-                  <p class="timeline-event__hint">点击返回画布定位此人</p>
-                </div>
-              </button>
-            </div>
-          </article>
-        </section>
-      </template>
-    </main>
-
-    <button
-      v-show="showBackToTop"
-      type="button"
-      class="back-to-top"
-      @click="scrollToTop"
-    >
-      回到顶部
-    </button>
+    <button v-show="showTop" class="top-btn" @click="toTop">↑ 顶部</button>
   </div>
 </template>
 
 <style scoped>
-.timeline-view {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.page-shell {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 1240px;
+.timeline-root {
+  max-width: 720px;
   margin: 0 auto;
-  padding: 0 clamp(20px, 3.6vw, 44px) 40px;
+  padding: 60px clamp(20px, 4vw, 48px) 80px;
+  position: relative;
 }
 
-.timeline-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 18px;
-}
-
-.header-back,
-.primary-btn,
-.back-to-top,
-.timeline-event {
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    background 160ms ease,
-    border-color 160ms ease;
-}
-
-.header-back,
-.primary-btn,
-.back-to-top {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 40px;
-  padding: 0 16px;
-  border-radius: 999px;
-  font-size: 0.88rem;
-  font-weight: 500;
-}
-
-.header-back {
-  border: 1px solid var(--color-neutral-5);
-  background: var(--color-neutral-2);
-  color: var(--color-neutral-9);
-  box-shadow: 0 12px 24px color-mix(in srgb, var(--color-neutral-9) 6%, transparent);
-}
-
-.header-back:hover,
-.primary-btn:hover,
-.back-to-top:hover,
-.timeline-event:hover {
-  transform: translateY(-1px);
-}
-
-.header-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.header-copy h1,
-.hero-copy h2,
-.empty-panel h2,
-.era-heading h3 {
-  margin: 0;
-  color: var(--color-neutral-9);
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
-}
-
-.header-copy h1 {
-  font-size: 2rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-}
-
-.header-eyebrow,
-.section-eyebrow,
-.metric-label {
-  margin: 0;
+.back-link {
+  display: inline-block;
+  margin-bottom: 40px;
+  font-size: var(--text-copy-13);
   color: var(--color-neutral-6);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-breath);
 }
+.back-link:hover { color: var(--color-neutral-9); }
 
-.header-desc,
-.hero-subtitle,
-.hero-summary,
-.metric-desc,
-.empty-panel p,
-.era-desc,
-.timeline-event__detail,
-.timeline-event__hint {
+/* ── Hero ── */
+.hero { margin-bottom: 48px; }
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: var(--text-display-36);
+  font-weight: 400;
+  color: var(--color-neutral-10);
+  margin: 0 0 16px;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+}
+.hero-narrative {
+  font-family: var(--font-serif);
+  font-size: var(--text-copy-16);
   color: var(--color-neutral-7);
-}
-
-.header-desc {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.7;
-}
-
-.timeline-main {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.empty-panel,
-.hero-panel,
-.metric-card,
-.timeline-event {
-  border-radius: 28px;
-  padding: 24px;
-}
-
-.empty-panel {
-  display: grid;
-  justify-items: center;
-  gap: 12px;
-  text-align: center;
-  padding: 64px 32px;
-}
-
-.empty-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 22px;
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-neutral-1));
-  color: var(--color-accent);
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
-  font-size: 1.8rem;
-  font-weight: 500;
-}
-
-.primary-btn {
-  border: 1px solid transparent;
-  background: var(--color-accent);
-  color: var(--btn-primary-color);
-  box-shadow: 0 18px 30px color-mix(in srgb, var(--color-accent) 18%, transparent);
-}
-
-.hero-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
-  gap: 20px;
-}
-
-.hero-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.hero-copy h2 {
-  font-size: 2rem;
-  line-height: 1.1;
-}
-
-.hero-subtitle,
-.hero-summary,
-.era-desc,
-.metric-desc,
-.timeline-event__detail,
-.timeline-event__hint {
   margin: 0;
   line-height: 1.8;
 }
 
-.hero-side,
-.metric-grid {
-  display: grid;
-  gap: 12px;
-}
-
-.hero-side {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.hero-note,
-.metric-card {
-  display: grid;
-  gap: 8px;
-}
-
-.hero-note,
-.metric-card {
-  padding: 18px 20px;
-  border-radius: 20px;
-  border: 1px solid var(--color-neutral-4);
-  background: color-mix(in srgb, var(--color-neutral-1) 88%, transparent);
-}
-
-.hero-note span {
-  color: var(--color-neutral-6);
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.hero-note strong,
-.metric-value {
-  color: var(--color-neutral-9);
-}
-
-.hero-note strong {
-  font-size: 1rem;
-  line-height: 1.5;
-}
-
-.metric-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.metric-value {
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
-  font-size: 2rem;
-  font-weight: 500;
-  line-height: 1;
-}
-
-.timeline-shell {
-  position: relative;
+/* ── Metric Strip ── */
+.metric-strip {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding-left: 32px;
-}
-
-.timeline-spine {
-  position: absolute;
-  left: 11px;
-  top: 12px;
-  bottom: 12px;
-  width: 2px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-accent) 24%, transparent);
-}
-
-.era-section {
-  position: relative;
-  display: grid;
-  gap: 16px;
-}
-
-.era-heading {
-  position: relative;
-  padding: 0 0 0 18px;
-}
-
-.era-heading::before {
-  content: '';
-  position: absolute;
-  left: -26px;
-  top: 6px;
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  border: 3px solid var(--color-accent);
-  background: var(--color-neutral-1);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 12%, transparent);
-}
-
-.era-heading h3 {
-  font-size: 1.35rem;
-  line-height: 1.3;
-}
-
-.era-events {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.timeline-event {
-  display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
-  gap: 18px;
-  align-items: flex-start;
-  width: 100%;
-  text-align: left;
-  border: 1px solid var(--color-neutral-4);
-  background: color-mix(in srgb, var(--color-neutral-1) 90%, transparent);
-  box-shadow: 0 18px 28px color-mix(in srgb, var(--color-neutral-9) 6%, transparent);
-}
-
-.timeline-event:hover {
-  border-color: color-mix(in srgb, var(--color-accent) 42%, transparent);
-  box-shadow: 0 20px 32px color-mix(in srgb, var(--color-accent) 10%, transparent);
-}
-
-.timeline-event__year {
-  display: grid;
-  gap: 4px;
-  justify-items: end;
-  padding-top: 2px;
-}
-
-.timeline-event__year strong,
-.event-person {
-  color: var(--color-neutral-9);
-}
-
-.timeline-event__year strong {
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
-  font-size: 1.8rem;
-  font-weight: 500;
-  line-height: 1;
-}
-
-.timeline-event__year span {
-  color: var(--color-neutral-6);
-  font-size: 0.8rem;
-}
-
-.timeline-event__body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.timeline-event__meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  gap: 32px;
+  padding: 32px 0;
+  border-top: 1px solid var(--color-neutral-5);
+  border-bottom: 1px solid var(--color-neutral-5);
+  margin-bottom: 56px;
   flex-wrap: wrap;
 }
+.metric-item { display: flex; flex-direction: column; gap: 4px; }
+.metric-num { font-family: var(--font-serif); font-size: var(--text-title-28); font-weight: 400; color: var(--color-neutral-9); line-height: 1; }
+.metric-label { font-size: var(--text-label-12); color: var(--color-neutral-6); letter-spacing: 0.08em; }
 
-.event-type,
-.event-person {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 800;
+/* ── Empty ── */
+.empty-state { text-align: center; padding: 64px 0; color: var(--color-neutral-6); }
+
+/* ── Timeline ── */
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px; top: 0; bottom: 0;
+  width: 1px;
+  background: var(--color-neutral-4);
 }
 
-.event-type {
-  padding: 0 10px;
-  border: 1px solid transparent;
-}
+.era { margin-bottom: 48px; position: relative; }
+.era:last-child { margin-bottom: 0; }
 
-.event-type--birth {
-  background: color-mix(in srgb, var(--color-success) 12%, transparent);
-  color: var(--color-success);
+.era-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 20px;
+  margin-left: -32px;
+  padding-left: 22px;
 }
-
-.event-type--death {
-  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
-  color: var(--color-warning);
-}
-
-.event-person {
-  padding: 0 12px;
-  background: color-mix(in srgb, var(--color-neutral-9) 6%, transparent);
-}
-
-.timeline-event__hint {
-  color: var(--color-neutral-6);
-  font-size: 0.84rem;
-}
-
-.back-to-top {
-  position: fixed;
-  right: 28px;
-  bottom: 28px;
-  border: 1px solid transparent;
+.era-dot {
+  flex-shrink: 0;
+  width: 14px; height: 14px;
+  border-radius: 50%;
   background: var(--color-accent);
-  color: var(--btn-primary-color);
-  box-shadow: 0 18px 30px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border: 3px solid var(--color-neutral-1);
+  margin-top: 5px;
+  margin-left: -7px;
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+.era-head h2 {
+  font-family: var(--font-serif);
+  font-size: var(--text-title-20);
+  font-weight: 400;
+  color: var(--color-neutral-10);
+  margin: 0 0 4px;
+}
+.era-summary {
+  font-size: var(--text-copy-13);
+  color: var(--color-neutral-6);
+  margin: 0;
 }
 
-@media (max-width: 1180px) {
-  .hero-panel,
-  .metric-grid {
-    grid-template-columns: 1fr;
-  }
+/* ── Events ── */
+.era-events { display: flex; flex-direction: column; gap: 8px; }
+
+.event {
+  display: grid;
+  grid-template-columns: 4em 2em 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--color-neutral-2);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--duration-fast) var(--ease-breath);
 }
+.event:hover { background: var(--color-neutral-3); }
 
-@media (max-width: 760px) {
-  .page-shell {
-    padding-inline: 18px;
-    padding-bottom: 28px;
-  }
+.event-year {
+  font-family: var(--font-serif);
+  font-size: var(--text-copy-16);
+  font-weight: 400;
+  color: var(--color-neutral-9);
+}
+.event-type {
+  font-size: var(--text-label-12);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+.event--birth .event-type { background: var(--color-male-muted); color: var(--color-male); }
+.event--death .event-type { background: var(--color-female-muted); color: var(--color-female); }
 
-  .timeline-header {
-    flex-direction: column;
-  }
+.event-name {
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-9);
+  font-weight: 500;
+}
+.event-detail {
+  font-size: var(--text-copy-13);
+  color: var(--color-neutral-6);
+}
+.event-hint {
+  font-size: var(--text-caption-10);
+  color: var(--color-neutral-6);
+  opacity: 0;
+  transition: opacity var(--duration-fast);
+}
+.event:hover .event-hint { opacity: 1; }
 
-  .hero-side {
-    grid-template-columns: 1fr;
-  }
+/* ── Footer ── */
+.page-foot { padding-top: 48px; border-top: 1px solid var(--color-neutral-4); margin-top: 56px; }
+.foot-btn {
+  font-family: var(--font-serif);
+  font-size: var(--text-copy-14);
+  color: var(--color-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--duration-fast);
+}
+.foot-btn:hover { opacity: 0.7; }
 
-  .timeline-shell {
-    padding-left: 24px;
-  }
+/* ── Back to top ── */
+.top-btn {
+  position: fixed;
+  right: 28px; bottom: 28px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-9);
+  color: var(--color-neutral-1);
+  border: none;
+  font-size: var(--text-copy-13);
+  cursor: pointer;
+  transition: opacity var(--duration-fast);
+}
+.top-btn:hover { opacity: 0.8; }
 
-  .timeline-spine {
-    left: 7px;
-  }
-
-  .era-heading {
-    padding-left: 12px;
-  }
-
-  .era-heading::before {
-    left: -22px;
-  }
-
-  .timeline-event {
-    grid-template-columns: 1fr;
-  }
-
-  .timeline-event__year {
-    justify-items: start;
-  }
+@media (max-width: 640px) {
+  .event { grid-template-columns: 3em 1.5em 1fr; }
+  .event-detail, .event-hint { display: none; }
 }
 </style>
-

@@ -19,9 +19,7 @@ vi.mock('vue-router', () => ({
 
 function mountView(people: Record<string, unknown>) {
   return mount(TimelineView, {
-    props: {
-      publicationId: 15,
-    },
+    props: { publicationId: 15 },
     global: {
       provide: {
         [PUBLICATION_CONTEXT_KEY as symbol]: {
@@ -41,31 +39,22 @@ function mountView(people: Record<string, unknown>) {
 }
 
 describe('TimelineView', () => {
-  it('shows an empty state inside an edge-safe page shell', () => {
+  it('shows a narrative hero even with empty data', () => {
     const wrapper = mountView({
-      p1: {
-        id: 'p1',
-        name: '陈一',
-        gender: 'male',
-      },
+      p1: { id: 'p1', name: '陈一', gender: 'male' },
     })
 
-    expect(wrapper.get('[data-testid="timeline-view"]').classes()).toContain('page-shell')
-    expect(wrapper.find('[data-testid="timeline-empty"]').exists()).toBe(true)
-    expect(wrapper.find('.primary-btn').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="timeline-view"]').classes()).toContain('timeline-root')
+    expect(wrapper.text()).toContain('陈氏宗谱')
+    expect(wrapper.text()).toContain('补充人物生卒年份')
   })
 
   it('routes event clicks back to the workbench with a personId query', async () => {
     const wrapper = mountView({
-      p1: {
-        id: 'p1',
-        name: '陈一',
-        gender: 'female',
-        birth: '1901年',
-      },
+      p1: { id: 'p1', name: '陈一', gender: 'female', birth: '1901年' },
     })
 
-    await wrapper.get('[data-testid="timeline-event"]').trigger('click')
+    await wrapper.get('.event').trigger('click')
 
     expect(routerPush).toHaveBeenCalledWith({
       name: 'workbench',
