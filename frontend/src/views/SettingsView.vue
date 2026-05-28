@@ -128,48 +128,52 @@ async function handleConsistencyCheck() {
     </section>
 
     <!-- Account -->
-    <section class="card">
-      <h3>身份标识</h3>
-      <p>对外展示的名称，留空则使用登录账号。</p>
-      <div class="row">
-        <input v-model="nickname" type="text" placeholder="输入身份标识…" @keyup.enter="handleChangeNickname" />
-        <button class="btn" :disabled="nicknameLoading" @click="handleChangeNickname">{{ nicknameLoading ? '…' : '保存' }}</button>
-      </div>
-      <p v-if="nicknameMsg" class="msg ok">{{ nicknameMsg }}</p>
-    </section>
-
-    <section class="card">
-      <h3>通行密钥</h3>
-      <p>修改登录密码。新密码至少 4 个字符。</p>
-      <div class="col">
-        <input v-model="oldPassword" type="password" placeholder="当前密码" />
+    <div class="grid-2">
+      <section class="card">
+        <h3>身份标识</h3>
+        <p>对外展示的名称，留空则使用登录账号。</p>
         <div class="row">
-          <input v-model="newPassword" type="password" placeholder="新密码" />
-          <input v-model="confirmPassword" type="password" placeholder="确认新密码" @keyup.enter="handleChangePassword" />
+          <input v-model="nickname" type="text" placeholder="输入身份标识…" @keyup.enter="handleChangeNickname" />
+          <button class="btn" :disabled="nicknameLoading" @click="handleChangeNickname">{{ nicknameLoading ? '…' : '保存' }}</button>
         </div>
-        <button class="btn" :disabled="passwordLoading" @click="handleChangePassword">{{ passwordLoading ? '…' : '更新密码' }}</button>
-      </div>
-      <p v-if="passwordError" class="msg err">{{ passwordError }}</p>
-      <p v-if="passwordMsg" class="msg ok">{{ passwordMsg }}</p>
-    </section>
+        <p v-if="nicknameMsg" class="msg ok">{{ nicknameMsg }}</p>
+      </section>
+
+      <section class="card">
+        <h3>通行密钥</h3>
+        <p>修改登录密码。新密码至少 4 个字符。</p>
+        <div class="col">
+          <input v-model="oldPassword" type="password" placeholder="当前密码" />
+          <div class="row">
+            <input v-model="newPassword" type="password" placeholder="新密码" />
+            <input v-model="confirmPassword" type="password" placeholder="确认新密码" @keyup.enter="handleChangePassword" />
+          </div>
+          <button class="btn" :disabled="passwordLoading" @click="handleChangePassword">{{ passwordLoading ? '…' : '更新密码' }}</button>
+        </div>
+        <p v-if="passwordError" class="msg err">{{ passwordError }}</p>
+        <p v-if="passwordMsg" class="msg ok">{{ passwordMsg }}</p>
+      </section>
+    </div>
 
     <!-- Admin -->
     <template v-if="isSuperAdmin()">
-      <section class="card">
-        <h3>数据备份</h3>
-        <p>导出完整数据库备份。</p>
-        <button class="btn" :disabled="backupLoading" @click="handleBackup">{{ backupLoading ? '生成中…' : '下载备份' }}</button>
-        <p v-if="backupError" class="msg err">{{ backupError }}</p>
-      </section>
+      <div class="grid-2">
+        <section class="card">
+          <h3>数据备份</h3>
+          <p>导出完整数据库备份。</p>
+          <button class="btn" :disabled="backupLoading" @click="handleBackup">{{ backupLoading ? '生成中…' : '下载备份' }}</button>
+          <p v-if="backupError" class="msg err">{{ backupError }}</p>
+        </section>
 
-      <section class="card">
-        <h3>数据库还原</h3>
-        <p>从 SQL 备份文件还原。<strong>不可逆。</strong></p>
-        <div class="row">
-          <input type="file" accept=".sql" @change="onFileSelected" />
-          <button class="btn btn--danger" :disabled="!restoreFile || restorePending" @click="showRestoreConfirm = true">{{ restorePending ? '还原中…' : '还原' }}</button>
-        </div>
-      </section>
+        <section class="card">
+          <h3>数据库还原</h3>
+          <p>从 SQL 备份文件还原。<strong>不可逆。</strong></p>
+          <div class="row">
+            <input type="file" accept=".sql" @change="onFileSelected" />
+            <button class="btn btn--danger" :disabled="!restoreFile || restorePending" @click="showRestoreConfirm = true">{{ restorePending ? '还原中…' : '还原' }}</button>
+          </div>
+        </section>
+      </div>
 
       <section class="card">
         <h3>一致性检查</h3>
@@ -197,9 +201,17 @@ async function handleConsistencyCheck() {
 
 <style scoped>
 .root {
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 60px clamp(20px, 4vw, 48px) 80px;
+  padding: 60px clamp(32px, 5vw, 64px) 80px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .grid-2 { grid-template-columns: 1fr; }
 }
 
 /* ── Hero ── */
