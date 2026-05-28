@@ -239,20 +239,20 @@ function goBack() { router.push({ name: 'workbench', params: { id: props.publica
   align-items: center;
   gap: 6px;
   margin-bottom: 40px;
-  padding: 8px 16px;
+  padding: 7px 14px;
   font-size: var(--text-copy-13);
   font-weight: 500;
   color: var(--color-neutral-7);
-  background: var(--color-neutral-2);
+  background: transparent;
   border: 1px solid var(--color-neutral-4);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-breath);
 }
 .back-btn:hover {
-  color: var(--color-neutral-9);
-  background: var(--color-neutral-3);
-  border-color: var(--color-neutral-5);
+  background: var(--color-neutral-9);
+  color: var(--color-neutral-1);
+  border-color: var(--color-neutral-9);
 }
 .back-btn svg { flex-shrink: 0; }
 
