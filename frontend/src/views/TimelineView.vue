@@ -138,7 +138,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
 <style scoped>
 .timeline-root {
-  max-width: 720px;
+  max-width: 880px;
   margin: 0 auto;
   padding: 60px clamp(20px, 4vw, 48px) 80px;
   position: relative;

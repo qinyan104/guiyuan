@@ -72,7 +72,7 @@ describe('PublicationStatsView', () => {
 
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="stats-view"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="stats-view"]').element).toBeTruthy()
     expect(wrapper.text()).toContain('陈氏宗谱')
     // Still renders the page structure even with empty data
     expect(wrapper.text()).toContain('0')
