@@ -565,11 +565,8 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   display: flex;
   flex-direction: column;
   padding: 24px;
-  border-left: 3px solid transparent;
-  transition: border-color var(--duration-fast) var(--ease-breath);
-}
-.archive-card:hover {
-  border-left-color: var(--color-accent);
+  border-left: 3px solid var(--color-accent);
+  min-height: 140px;
 }
 .archive-body {
   flex: 1;
