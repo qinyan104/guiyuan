@@ -1,9 +1,9 @@
 ﻿<script setup lang="ts">
 import { useFeedback } from '../composables/useFeedback'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getUsername, isSuperAdmin } from '../api/auth'
-import { changePassword, changeNickname, uploadAvatar } from '../api/profile'
+import { changePassword, changeNickname, uploadAvatar, getMyProfile } from '../api/profile'
 import { downloadBackup, adminRestoreDatabase, adminCheckConsistency, type ConsistencyIssue } from '../api/admin'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 
@@ -13,6 +13,15 @@ const feedback = useFeedback()
 const avatarUrl = ref('')
 const avatarUploading = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+
+onMounted(async () => {
+  try {
+    const profile = await getMyProfile()
+    if (profile.person?.avatarUrl) {
+      avatarUrl.value = profile.person.avatarUrl
+    }
+  } catch { /* ignore */ }
+})
 
 async function handleAvatarUpload(event: Event) {
   const input = event.target as HTMLInputElement
