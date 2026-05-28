@@ -43,15 +43,6 @@ const showShareDialog = ref(false)
 const shareDialogPubId = ref<number | null>(null)
 const showCollabDialog = ref(false)
 const collabDialogPubId = ref<number | null>(null)
-const openMenuIds = ref<Set<number>>(new Set())
-
-function toggleMenu(pubId: number) {
-  const next = new Set(openMenuIds.value)
-  if (next.has(pubId)) next.delete(pubId)
-  else next.add(pubId)
-  openMenuIds.value = next
-}
-
 async function loadPublications() {
   loading.value = true
   try {
@@ -254,21 +245,20 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                 <div class="archive-foot">
                   <span class="archive-date">{{ formatDate(pub.updatedAt) }}</span>
                   <div class="archive-actions">
-                    <div class="more-wrap" @click.stop>
-                      <button class="more-btn" @click.stop="toggleMenu(pub.id)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-                      </button>
-                      <div v-if="openMenuIds.has(pub.id)" class="more-dropdown">
-                        <button class="more-item" @click="router.push(`/publishing/publication/${pub.id}`); toggleMenu(pub.id)">出版工作室</button>
-                        <button class="more-item" @click="openEditDialog(pub); toggleMenu(pub.id)">编辑属性</button>
-                        <button class="more-item" @click="openCollabDialog(pub.id); toggleMenu(pub.id)">协作者管理</button>
-                        <button class="more-item" @click="openShareDialog(pub.id); toggleMenu(pub.id)">分享链接</button>
-                        <div class="more-divider"></div>
-                        <button class="more-item more-item--danger" @click="deleteConfirmId = pub.id; toggleMenu(pub.id)">删除档案</button>
-                      </div>
-                    </div>
-                    <button class="enter-btn" @click.stop="openPublication(pub.id)">
-                      进入画布 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <button class="action-btn" title="出版工作室" @click.stop="router.push(`/publishing/publication/${pub.id}`)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </button>
+                    <button class="action-btn" title="编辑属性" @click.stop="openEditDialog(pub)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="action-btn" title="协作者管理" @click.stop="openCollabDialog(pub.id)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </button>
+                    <button class="action-btn" title="分享链接" @click.stop="openShareDialog(pub.id)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    </button>
+                    <button class="action-btn action-btn--danger" title="删除档案" @click.stop="deleteConfirmId = pub.id">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
                   </div>
                 </div>
@@ -635,84 +625,29 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   align-items: center;
   gap: 8px;
 }
-.enter-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 14px;
-  border-radius: 999px;
+/* ── Action buttons ── */
+.action-btn {
+  width: 30px; height: 30px;
   border: 1px solid var(--color-neutral-4);
-  background: transparent;
-  font-size: var(--text-copy-13);
-  font-weight: 500;
-  color: var(--color-neutral-7);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-breath);
-}
-.enter-btn:hover {
-  background: var(--color-neutral-9);
-  color: var(--color-neutral-1);
-  border-color: var(--color-neutral-9);
-}
-
-/* ── More menu ── */
-.more-wrap {
-  position: relative;
-}
-.more-btn {
-  width: 28px; height: 28px;
-  border: none;
-  background: transparent;
-  color: var(--color-neutral-5);
-  border-radius: var(--radius-sm);
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-6);
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--duration-fast);
+  transition: all var(--duration-fast) var(--ease-breath);
+  flex-shrink: 0;
 }
-.more-btn:hover {
-  background: var(--color-neutral-2);
-  color: var(--color-neutral-8);
+.action-btn:hover {
+  background: var(--color-neutral-9);
+  color: var(--color-neutral-1);
+  border-color: var(--color-neutral-9);
 }
-.more-dropdown {
-  position: absolute;
-  bottom: 36px;
-  right: 0;
-  min-width: 140px;
-  background: var(--color-panel-bg);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-whisper);
-  padding: 4px;
-  z-index: 20;
-}
-.more-item {
-  display: block;
-  width: 100%;
-  padding: 8px 12px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  font-size: var(--text-copy-13);
-  color: var(--color-neutral-8);
-  cursor: pointer;
-  text-align: left;
-  transition: background var(--duration-fast);
-}
-.more-item:hover {
-  background: var(--color-neutral-2);
-}
-.more-item--danger {
-  color: var(--color-error);
-}
-.more-item--danger:hover {
-  background: var(--color-female-muted);
-}
-.more-divider {
-  height: 1px;
-  background: var(--color-neutral-4);
-  margin: 4px 8px;
+.action-btn--danger:hover {
+  background: var(--color-error);
+  color: #fff;
+  border-color: var(--color-error);
 }
 
 .meta-tag {

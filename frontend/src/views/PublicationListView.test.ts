@@ -70,10 +70,8 @@ describe('PublicationListView', () => {
     const wrapper = mountView()
     await flushPromises()
 
-    // Open the more menu
-    await wrapper.get('.more-btn').trigger('click')
-    // Click delete in dropdown
-    await wrapper.get('.more-item--danger').trigger('click')
+    // Click delete button
+    await wrapper.get('.action-btn--danger').trigger('click')
 
     expect(deletePublication).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('确认删除')
