@@ -222,6 +222,19 @@ const EXPORT_SVG_STYLE = `
     stroke: rgba(154, 77, 54, 0.22);
   }
 
+  .person-card--consort .person-card__panel {
+    stroke: rgba(180, 110, 140, 0.48);
+    stroke-width: 2;
+  }
+
+  .person-card--consort .person-card__header,
+  .person-card--consort .person-card__note-pill,
+  .person-card--consort .person-card__detail-band,
+  .person-card--consort .person-card__lineage-pill {
+    fill: rgba(180, 110, 140, 0.12);
+    stroke: rgba(180, 110, 140, 0.18);
+  }
+
   .person-card--selected .person-card__panel {
     stroke: var(--card-selected-stroke, #ab6d30);
     stroke-width: 2.4;
