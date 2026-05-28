@@ -54,7 +54,6 @@ function typeChar(t: TimelineEvent['type']) { return t === 'birth' ? '生' : '�
 
 function goPerson(id: string) { router.push({ name: 'workbench', params: { id: props.publicationId }, query: { personId: id } }) }
 function goBack() { router.push({ name: 'workbench', params: { id: props.publicationId } }) }
-function goStats() { router.push({ name: 'publication-stats', params: { id: props.publicationId } }) }
 
 const showTop = ref(false)
 function onScroll() { showTop.value = window.scrollY > 420 }
@@ -65,7 +64,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
 <template>
   <div class="timeline-root" data-testid="timeline-view">
-    <button class="back-link" @click="goBack">← 返回画布</button>
+    <button class="back-link" @click="goBack">← 画布</button>
 
     <header class="hero">
       <h1>{{ pubData.title || '未命名族谱' }}</h1>
@@ -128,9 +127,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
       </article>
     </section>
 
-    <footer class="page-foot" v-if="events.length > 0">
-      <button class="foot-btn" @click="goStats">查看家族纪略 →</button>
-    </footer>
+
 
     <button v-show="showTop" class="top-btn" @click="toTop">↑ 顶部</button>
   </div>
@@ -287,18 +284,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 }
 .event:hover .event-hint { opacity: 1; }
 
-/* ── Footer ── */
-.page-foot { padding-top: 48px; border-top: 1px solid var(--color-neutral-4); margin-top: 56px; }
-.foot-btn {
-  font-family: var(--font-serif);
-  font-size: var(--text-copy-14);
-  color: var(--color-accent);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: opacity var(--duration-fast);
-}
-.foot-btn:hover { opacity: 0.7; }
 
 /* ── Back to top ── */
 .top-btn {

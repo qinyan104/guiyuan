@@ -133,12 +133,11 @@ const narrative = computed(() => {
 })
 
 function goBack() { router.push({ name: 'workbench', params: { id: props.publicationId } }) }
-function goTimeline() { router.push({ name: 'publication-timeline', params: { id: props.publicationId } }) }
 </script>
 
 <template>
   <div class="chronicle-root" data-testid="stats-view">
-    <button class="back-link" @click="goBack">← 返回画布</button>
+    <button class="back-link" @click="goBack">← 画布</button>
 
     <header class="hero">
       <h1>{{ pubData.title || '未命名族谱' }}</h1>
@@ -221,9 +220,7 @@ function goTimeline() { router.push({ name: 'publication-timeline', params: { id
       </div>
     </section>
 
-    <footer class="page-foot">
-      <button class="foot-btn" @click="goTimeline">查看家族编年史 →</button>
-    </footer>
+
   </div>
 </template>
 
@@ -350,16 +347,4 @@ function goTimeline() { router.push({ name: 'publication-timeline', params: { id
 
 .empty { color: var(--color-neutral-6); font-size: var(--text-copy-13); padding: 12px 0; }
 
-/* ── Footer ── */
-.page-foot { padding-top: 32px; border-top: 1px solid var(--color-neutral-4); }
-.foot-btn {
-  font-family: var(--font-serif);
-  font-size: var(--text-copy-14);
-  color: var(--color-accent);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: opacity var(--duration-fast);
-}
-.foot-btn:hover { opacity: 0.7; }
 </style>
