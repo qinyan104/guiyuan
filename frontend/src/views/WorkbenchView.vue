@@ -117,8 +117,10 @@ const fileOps = useFileOperations({
   canvasRef,
   layout: context.pub.layout,
   onImport() {
-    context.serverPublicationId.value = null
-    setTimeout(context.saveToServer, 100)
+    // 在已有族谱中导入 JSON 时保留服务器 ID，确保数据持久化到数据库
+    if (context.serverPublicationId.value) {
+      setTimeout(context.saveToServer, 100)
+    }
   },
 })
 
