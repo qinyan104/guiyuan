@@ -1,6 +1,6 @@
 import { nextTick, ref, shallowRef, type Ref } from 'vue'
 
-import type { DraftPackage } from '../types/family'
+import type { DraftPackage, Person } from '../types/family'
 import {
   createPrintDocument,
   createPrintLayoutPages,
@@ -23,6 +23,7 @@ import {
   type DraftFileHandle,
 } from '../features/persistence/draftFileAccess'
 import { formatValidationIssues } from '../features/validation/draftSchema'
+import { uploadPhoto, getPhotoUrl } from '../api/photo'
 
 import type { PublicationStateReturn } from './usePublicationState'
 interface FileOperationsDeps {
@@ -39,6 +40,7 @@ interface FileOperationsDeps {
   } | null>
   layout: PublicationStateReturn['layout']
   onImport?: () => void
+  serverPublicationId: Ref<number | null>
 }
 
 export function useFileOperations(deps: FileOperationsDeps) {
@@ -50,6 +52,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     initializeHistoryBaseline,
     canvasRef,
     layout,
+    serverPublicationId,
   } = deps
 
   const {
@@ -70,6 +73,54 @@ export function useFileOperations(deps: FileOperationsDeps) {
 
   function getIsApplyingFileDraft(): boolean {
     return isApplyingFileDraft
+  }
+
+  /** 将 base64 Data URL 转换为 File 对象 */
+  function base64DataUrlToFile(dataUrl: string, filename: string): File {
+    const [header, b64] = dataUrl.split(',')
+    const mimeMatch = header.match(/:(.*?);/)
+    const mime = mimeMatch?.[1] || 'image/jpeg'
+    const binaryStr = atob(b64)
+    const bytes = new Uint8Array(binaryStr.length)
+    for (let i = 0; i < binaryStr.length; i++) {
+      bytes[i] = binaryStr.charCodeAt(i)
+    }
+    return new File([bytes], filename, { type: mime })
+  }
+
+  /** 处理族谱数据中的 base64 头像：上传到服务器并替换为照片 URL */
+  async function processBase64AvatarsInDraft(
+    draft: DraftPackage,
+    pubId: number,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<void> {
+    const people = draft.publication.people
+    if (!people) return
+
+    const entries = Object.entries(people).filter(
+      ([, p]: [string, unknown]) => {
+        const person = p as Person
+        return person.avatarUrl?.startsWith('data:')
+      },
+    )
+
+    if (entries.length === 0) return
+
+    let done = 0
+    for (const [personId, p] of entries) {
+      const person = p as Person
+      try {
+        const file = base64DataUrlToFile(person.avatarUrl!, `${personId}.jpg`)
+        const photoId = await uploadPhoto(personId, pubId, file)
+        person.avatarUrl = getPhotoUrl(photoId)
+      } catch (err) {
+        // 上传失败则清除该头像，避免影响整体保存
+        console.warn(`[import] 头像上传失败 (${personId}):`, err)
+        person.avatarUrl = undefined
+      }
+      done++
+      onProgress?.(done, entries.length)
+    }
   }
 
   function sanitizeFileName(raw: string): string {
@@ -291,7 +342,22 @@ export function useFileOperations(deps: FileOperationsDeps) {
       return
     }
 
-    applyFileDraft(parsed.value, {
+    const draft = parsed.value
+    const pubId = serverPublicationId.value
+    if (pubId) {
+      const people = draft.publication.people
+      const base64Count = people
+        ? Object.values(people).filter((p: unknown) => (p as Person).avatarUrl?.startsWith('data:')).length
+        : 0
+      if (base64Count > 0) {
+        statusMessage.value = `正在处理 ${base64Count} 张头像图片...`
+        await processBase64AvatarsInDraft(draft, pubId, (done, total) => {
+          statusMessage.value = `正在处理头像图片 (${done}/${total})...`
+        })
+      }
+    }
+
+    applyFileDraft(draft, {
       fileName: file.name,
       handle: null,
       statusMessage: `已导入文件：${file.name}`,

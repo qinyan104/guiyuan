@@ -116,6 +116,7 @@ const fileOps = useFileOperations({
   initializeHistoryBaseline: context.history.initializeHistoryBaseline,
   canvasRef,
   layout: context.pub.layout,
+  serverPublicationId: context.serverPublicationId,
   onImport() {
     // 在已有族谱中导入 JSON 时保留服务器 ID，确保数据持久化到数据库
     if (context.serverPublicationId.value) {
