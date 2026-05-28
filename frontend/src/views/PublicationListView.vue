@@ -245,9 +245,6 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                 <div class="archive-foot">
                   <span class="archive-date">{{ formatDate(pub.updatedAt) }}</span>
                   <div class="archive-actions">
-                    <button class="action-btn" title="出版工作室" @click.stop="router.push(`/publishing/publication/${pub.id}`)">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    </button>
                     <button class="action-btn" title="编辑属性" @click.stop="openEditDialog(pub)">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     </button>
@@ -266,7 +263,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                 <!-- Delete Confirm Overlay -->
                 <transition name="fade">
                   <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
-                    <p>此操作将彻底抹除该族谱，不可恢复。</p>
+                    <p>确定要删除「{{ pub.title }}」吗？此操作不可撤销。</p>
                     <div class="delete-btns">
                       <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认删除</button>
                       <button class="glass-pill-btn" @click="deleteConfirmId = null">取消</button>
@@ -425,58 +422,39 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
 /* ── Glass Pill Button ── */
 .glass-pill-btn {
-  background: var(--color-card-fill);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: 999px;
-  padding: 0.6rem 1.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--color-neutral-9);
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  transition: all 0.2s ease;
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--color-neutral-4);
+  background: var(--color-neutral-2);
+  font-size: var(--text-copy-13);
+  font-weight: 500;
+  color: var(--color-neutral-8);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-breath);
 }
 .glass-pill-btn:hover {
-  background: var(--bg-panel, #fff);
+  background: var(--color-neutral-9);
+  color: var(--color-neutral-1);
   border-color: var(--color-neutral-9);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
 }
 .glass-pill-btn.primary {
   background: var(--color-neutral-9);
-  color: var(--bg-shell, #fff);
-  border-color: transparent;
+  color: var(--color-neutral-1);
+  border-color: var(--color-neutral-9);
 }
 .glass-pill-btn.primary:hover {
   opacity: 0.85;
-  box-shadow: var(--shadow-whisper);
 }
 .glass-pill-btn.danger {
-  background: #ff4704;
+  background: var(--color-error);
   color: #fff;
-  border-color: transparent;
+  border-color: var(--color-error);
 }
-
-[data-theme="dark"] .glass-pill-btn,
-[data-theme="dark"] .glass-pill-btn {
-  background: rgba(0,0,0,0.4);
-  border-color: rgba(255,255,255,0.1);
-  color: #fff;
-}
-[data-theme="dark"] .glass-pill-btn:hover,
-[data-theme="dark"] .glass-pill-btn:hover {
-  background: #fff;
-  color: #000;
-}
-[data-theme="dark"] .glass-pill-btn.primary,
-[data-theme="dark"] .glass-pill-btn.primary {
-  background: linear-gradient(135deg, var(--color-neutral-8), var(--color-accent));
-  color: #fff;
+.glass-pill-btn.danger:hover {
+  opacity: 0.85;
 }
 
 /* ── Sections ── */
@@ -587,6 +565,11 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   display: flex;
   flex-direction: column;
   padding: 24px;
+  border-left: 3px solid transparent;
+  transition: border-color var(--duration-fast) var(--ease-breath);
+}
+.archive-card:hover {
+  border-left-color: var(--color-accent);
 }
 .archive-body {
   flex: 1;
@@ -627,7 +610,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 /* ── Action buttons ── */
 .action-btn {
-  width: 30px; height: 30px;
+  width: 32px; height: 32px;
   border: 1px solid var(--color-neutral-4);
   background: var(--color-neutral-2);
   color: var(--color-neutral-6);
@@ -638,6 +621,10 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   justify-content: center;
   transition: all var(--duration-fast) var(--ease-breath);
   flex-shrink: 0;
+  box-sizing: border-box;
+}
+.action-btn svg {
+  width: 14px; height: 14px;
 }
 .action-btn:hover {
   background: var(--color-neutral-9);
@@ -666,28 +653,36 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 .delete-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 20px;
   z-index: 10;
+  border-radius: 24px;
 }
-[data-theme="dark"] .delete-overlay,
 [data-theme="dark"] .delete-overlay {
-  background: rgba(0, 0, 0, 0.95);
+  background: rgba(20, 20, 20, 0.96);
 }
 .delete-overlay p {
-  font-size: 0.9rem;
+  font-size: var(--text-copy-14);
   font-weight: 500;
-  color: #ff4704;
+  color: var(--color-neutral-9);
   margin: 0;
+  text-align: center;
+  max-width: 260px;
+  line-height: 1.6;
 }
 .delete-btns {
   display: flex;
   gap: 12px;
+}
+.delete-btns .glass-pill-btn {
+  font-size: var(--text-copy-13);
+  padding: 8px 20px;
 }
 
 .empty-gallery {
@@ -778,15 +773,14 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 
 .glass-sheet {
-  background: var(--color-card-fill);
+  background: var(--color-panel-bg);
   border: 1px solid var(--color-card-stroke);
-  border-radius: 28px;
+  border-radius: var(--radius-2xl);
   width: 100%;
   max-width: 480px;
   padding: 32px;
-  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-whisper);
   position: relative;
-  overflow: hidden;
 }
 .glass-sheet.large {
   max-width: 680px;
@@ -795,76 +789,73 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 .sheet-body {
   overflow-y: auto;
   max-height: 65vh;
-  scrollbar-width: thin;
 }
-[data-theme="dark"] .glass-sheet,
 [data-theme="dark"] .glass-sheet {
-  background: rgba(20, 20, 20, 0.85);
-  border-color: rgba(255,255,255,0.1);
+  background: var(--color-neutral-2);
+  border-color: rgba(255,255,255,0.06);
 }
 
 .sheet-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 28px;
 }
 .sheet-title {
-  font-family: 'Noto Serif SC', serif;
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: var(--color-neutral-9);
+  font-family: var(--font-serif);
+  font-size: var(--text-title-24);
+  font-weight: 400;
+  color: var(--color-neutral-10);
   margin: 0;
 }
 .sheet-close {
-  background: none;
-  border: none;
-  font-size: 28px;
-  line-height: 1;
+  width: 32px; height: 32px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-4);
+  background: var(--color-neutral-2);
   color: var(--color-neutral-6);
+  font-size: 18px;
+  line-height: 1;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--ease-breath);
 }
-.sheet-close:hover { color: var(--color-neutral-9); }
+.sheet-close:hover {
+  background: var(--color-neutral-9);
+  color: var(--color-neutral-1);
+  border-color: var(--color-neutral-9);
+}
 
 .glass-input-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
 .glass-input-group label {
-  font-size: 0.75rem;
+  font-size: var(--text-label-12);
   font-weight: 500;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--color-neutral-6);
+  text-transform: uppercase;
 }
 .glass-input-group input,
 .glass-input-group textarea {
-  background: rgba(255,255,255,0.5);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.1));
-  border-radius: 12px;
+  background: var(--color-neutral-2);
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-lg);
   padding: 12px 16px;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: var(--text-copy-14);
   color: var(--color-neutral-9);
   outline: none;
-  transition: all 0.2s;
+  transition: border-color var(--duration-fast) var(--ease-breath);
 }
 .glass-input-group input:focus,
 .glass-input-group textarea:focus {
-  background: #fff;
-  border-color: var(--color-neutral-9);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-[data-theme="dark"] .glass-input-group input,
-[data-theme="dark"] .glass-input-group input {
-  background: rgba(0,0,0,0.4);
-  border-color: rgba(255,255,255,0.1);
-}
-[data-theme="dark"] .glass-input-group input:focus,
-[data-theme="dark"] .glass-input-group input:focus {
-  background: rgba(0,0,0,0.6);
-  border-color: var(--color-neutral-9);
+  border-color: var(--color-neutral-8);
 }
 
 .grid-form {
@@ -880,7 +871,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 1rem;
+  margin-top: 24px;
 }
 
 .spinner {
