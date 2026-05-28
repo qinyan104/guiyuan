@@ -253,23 +253,23 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
                 <div class="archive-foot">
                   <span class="archive-date">{{ formatDate(pub.updatedAt) }}</span>
-                  <button class="enter-btn" @click.stop="openPublication(pub.id)">
-                    进入画布 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  </button>
-                </div>
-
-                <!-- More actions dropdown -->
-                <div class="archive-more" @click.stop>
-                  <button class="more-btn" @click.stop="toggleMenu(pub.id)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-                  </button>
-                  <div v-if="openMenuIds.has(pub.id)" class="more-dropdown">
-                    <button class="more-item" @click="router.push(`/publishing/publication/${pub.id}`); toggleMenu(pub.id)">出版工作室</button>
-                    <button class="more-item" @click="openEditDialog(pub); toggleMenu(pub.id)">编辑属性</button>
-                    <button class="more-item" @click="openCollabDialog(pub.id); toggleMenu(pub.id)">协作者管理</button>
-                    <button class="more-item" @click="openShareDialog(pub.id); toggleMenu(pub.id)">分享链接</button>
-                    <div class="more-divider"></div>
-                    <button class="more-item more-item--danger" @click="deleteConfirmId = pub.id; toggleMenu(pub.id)">删除档案</button>
+                  <div class="archive-actions">
+                    <div class="more-wrap" @click.stop>
+                      <button class="more-btn" @click.stop="toggleMenu(pub.id)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                      </button>
+                      <div v-if="openMenuIds.has(pub.id)" class="more-dropdown">
+                        <button class="more-item" @click="router.push(`/publishing/publication/${pub.id}`); toggleMenu(pub.id)">出版工作室</button>
+                        <button class="more-item" @click="openEditDialog(pub); toggleMenu(pub.id)">编辑属性</button>
+                        <button class="more-item" @click="openCollabDialog(pub.id); toggleMenu(pub.id)">协作者管理</button>
+                        <button class="more-item" @click="openShareDialog(pub.id); toggleMenu(pub.id)">分享链接</button>
+                        <div class="more-divider"></div>
+                        <button class="more-item more-item--danger" @click="deleteConfirmId = pub.id; toggleMenu(pub.id)">删除档案</button>
+                      </div>
+                    </div>
+                    <button class="enter-btn" @click.stop="openPublication(pub.id)">
+                      进入画布 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
                   </div>
                 </div>
 
@@ -597,7 +597,6 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   display: flex;
   flex-direction: column;
   padding: 24px;
-  position: relative;
 }
 .archive-body {
   flex: 1;
@@ -631,6 +630,11 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   font-size: var(--text-label-12);
   color: var(--color-neutral-6);
 }
+.archive-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .enter-btn {
   display: inline-flex;
   align-items: center;
@@ -652,10 +656,8 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 
 /* ── More menu ── */
-.archive-more {
-  position: absolute;
-  top: 16px;
-  right: 12px;
+.more-wrap {
+  position: relative;
 }
 .more-btn {
   width: 28px; height: 28px;
@@ -675,7 +677,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 .more-dropdown {
   position: absolute;
-  top: 32px;
+  bottom: 36px;
   right: 0;
   min-width: 140px;
   background: var(--color-panel-bg);
