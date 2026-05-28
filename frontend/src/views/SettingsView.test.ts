@@ -21,22 +21,18 @@ vi.mock('../api/admin', () => ({
 }))
 
 describe('SettingsView', () => {
-  it('shows profile by default, system tab navigable for super admin', async () => {
+  it('renders profile and system sections for super admin', async () => {
     const wrapper = mount(SettingsView, {
       global: { stubs: { ConfirmDialog: true } },
     })
 
     await flushPromises()
 
-    // Default: profile
     expect(wrapper.text()).toContain('root')
-
-    // Navigate to system
-    const items = wrapper.findAll('.nav-item')
-    await items[items.length - 1].trigger('click')
-
+    expect(wrapper.text()).toContain('编委')
+    expect(wrapper.text()).toContain('身份标识')
+    expect(wrapper.text()).toContain('通行密钥')
     expect(wrapper.text()).toContain('数据备份')
-    expect(wrapper.text()).toContain('下载备份')
     expect(wrapper.text()).toContain('数据库还原')
   })
 })
