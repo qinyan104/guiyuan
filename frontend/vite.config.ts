@@ -9,8 +9,15 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://127.0.0.1:8080',
         changeOrigin: true,
+        timeout: 30000,
+        proxyTimeout: 30000,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.error('[vite proxy] error:', err.message)
+          })
+        },
       }
     }
   },

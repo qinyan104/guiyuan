@@ -139,15 +139,16 @@ async function saveToServer() {
 
     syncStatus.value = 'error'
     feedback.setError('同步到服务器失败')
+    return
   }
 
-  // After successful save (no exception was thrown by conflict handler):
+  // After successful save:
   const hasUnsavedChanges = persistedSignature.value !== lastSyncedSignature.value
   if (saveRequestedWhileSyncing || hasUnsavedChanges) {
     saveRequestedWhileSyncing = false
     syncStatus.value = 'pending'
     scheduleAutosave()
-  } else if (syncStatus.value !== 'error') {
+  } else {
     syncStatus.value = 'saved'
   }
 }
