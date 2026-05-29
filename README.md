@@ -2,30 +2,15 @@
 
 数字化家族族谱的创建、编辑与出版预览工具。现代界面，无限画布，所见即所得。
 
-> 🖼️ **截图展示区** — 请将截图放入仓库后替换下方占位链接
+![image-20260526212025105](C:\Users\HX\Desktop\guiyuan\screenshots\image-20260526212025105.png)
 
-<p align="center">
-  <img src="screenshots/workbench.png" width="800" alt="工作台主界面">
-  <br><em>▲ 工作台 — 无限画布树形图编辑器</em>
-</p>
 
-<p align="center">
-  <img src="screenshots/dashboard.png" width="800" alt="Dashboard">
-  <br><em>▲ Dashboard — 馆藏总览与快捷操作</em>
-</p>
 
-<details>
-<summary>📸 更多截图（点击展开）</summary>
+![image-20260526211421777](C:\Users\HX\Desktop\guiyuan\screenshots\image-20260526211421777.png)
 
-| 树形图编辑 | 出版工作室 | 数据分析 |
-|:---:|:---:|:---:|
-| ![](screenshots/canvas.png) | ![](screenshots/publishing.png) | ![](screenshots/stats.png) |
+![image-20260526211511161](C:\Users\HX\Desktop\guiyuan\screenshots\image-20260526211511161.png)
 
-| 亲属关系 | 协作动态 | 分享链接 |
-|:---:|:---:|:---:|
-| ![](screenshots/kinship.png) | ![](screenshots/activity.png) | ![](screenshots/share.png) |
-
-</details>
+![image-20260526211931699](C:\Users\HX\Desktop\guiyuan\screenshots\image-20260526211931699.png)
 
 ## 功能
 
