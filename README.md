@@ -2,15 +2,15 @@
 
 数字化家族族谱的创建、编辑与出版预览工具。现代界面，无限画布，所见即所得。
 
-![image-20260526212025105](C:\Users\HX\Desktop\guiyuan\screenshots\image-20260526212025105.png)
+![image-20260526212025105](screenshots/image-20260526212025105.png)
 
 
 
-![image-20260526211421777](C:\Users\HX\Desktop\guiyuan\screenshots\image-20260526211421777.png)
+![image-20260526211421777](screenshots/image-20260526211421777.png)
 
-![image-20260526211511161](C:\Users\HX\Desktop\guiyuan\screenshots\image-20260526211511161.png)
+![image-20260526211511161](screenshots/image-20260526211511161.png)
 
-![image-20260526211931699](C:\Users\HX\Desktop\guiyuan\screenshots\image-20260526211931699.png)
+![image-20260526211931699](screenshots/image-20260526211931699.png)
 
 ## 功能
 
