@@ -5,7 +5,6 @@ import { useRoute, useRouter } from 'vue-router'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import PersonEditorDrawer from '../components/PersonEditorDrawer.vue'
 import PublicationCanvas from '../components/PublicationCanvas.vue'
-import CanvasInsightPanel from '../components/CanvasInsightPanel.vue'
 import WorkbenchHeader from '../components/WorkbenchHeader.vue'
 import WorkbenchPanels from '../components/WorkbenchPanels.vue'
 
@@ -283,8 +282,6 @@ watch(
           @select-person="handleSelectPerson"
           @hover-person="context.pub.setHoveredPerson"
         />
-
-        <CanvasInsightPanel />
 
         <PersonEditorDrawer
           v-if="context.pub.selectedPerson.value"

@@ -33,13 +33,15 @@ backend/vrain_py/
 release/.env
 
 # AI tool artifacts
-.claude/
+# AI tool artifacts
 .codex/
 .github/
 .superpowers/
 .antigravitycli/
 .alma-snapshots/
 .gstack/
+.od-skills/
+.reasonix/
 AGENTS.md
 CLAUDE.md
 DESIGN.md
@@ -47,3 +49,7 @@ docs/
 
 # Temp debug scripts
 tmp_*.cjs
+
+# Temp files
+backend/tmp-*.json
+index.html
