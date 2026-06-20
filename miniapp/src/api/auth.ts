@@ -17,7 +17,6 @@ interface PublicationSummary {
 
 /**
  * 微信登录
- * 调用 wx.login() 获取 code，发送到后端换取 JWT
  */
 export async function wxLogin(): Promise<LoginResult> {
   return new Promise((resolve, reject) => {
@@ -77,7 +76,7 @@ export async function listPublications(): Promise<PublicationSummary[]> {
 }
 
 /**
- * 获取简化版族谱树数据
+ * 获取族谱树数据（需登录）
  */
 export async function getPublicationTree(pubId: number) {
   const resp = await http.get(`/publications/${pubId}`)
@@ -86,7 +85,19 @@ export async function getPublicationTree(pubId: number) {
 }
 
 /**
- * 搜索人物
+ * 通过分享码搜索人物（无需登录）
+ */
+export async function searchWithShareToken(pubId: number, query: string, shareToken: string) {
+  const resp = await http.get(`/mobile/publications/${pubId}/search`, {
+    q: query,
+    shareToken,
+  })
+  if (resp.code === 200) return resp.data
+  throw new Error(resp.message || '搜索失败')
+}
+
+/**
+ * 搜索人物（已登录）
  */
 export async function searchPersons(pubId: number, query: string) {
   const resp = await http.get(`/mobile/publications/${pubId}/search`, { q: query })

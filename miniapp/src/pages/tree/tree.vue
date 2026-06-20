@@ -18,16 +18,34 @@ const showSearch = ref(false)
 const showDetail = ref(false)
 const selectedPerson = ref<Person | null>(null)
 
-// 简化版布局结果
+// 布局结果
 interface LayoutCard { personId: string; x: number; y: number; w: number; h: number }
 interface LayoutLine { x1: number; y1: number; x2: number; y2: number; type: 'parent-child' | 'spousal' }
 const layoutCards = ref<LayoutCard[]>([])
 const layoutLines = ref<LayoutLine[]>([])
 
-// 获取系统信息
+// 系统信息
 const sysInfo = uni.getSystemInfoSync()
 canvasWidth.value = sysInfo.windowWidth
-canvasHeight.value = sysInfo.windowHeight - 200
+canvasHeight.value = sysInfo.windowHeight - sysInfo.statusBarHeight - 88
+
+// 颜色方案
+const COLORS = {
+  bg: '#f8f4ed',
+  cardBg: '#fff9ef',
+  cardBgSelected: '#fff5eb',
+  cardStroke: '#d4c4a8',
+  cardStrokeSelected: '#ab6d30',
+  maleHeader: 'rgba(70,108,144,0.12)',
+  femaleHeader: 'rgba(180,90,90,0.12)',
+  unknownHeader: 'rgba(140,140,140,0.08)',
+  nameText: '#241a10',
+  infoText: '#8a6845',
+  mutedText: '#b89a78',
+  lineParentChild: 'rgba(95,73,50,0.5)',
+  lineSpousal: 'rgba(171,109,48,0.35)',
+  dotColor: '#ab6d30',
+}
 
 onLoad((options: any) => {
   if (options?.pubId) {
@@ -39,7 +57,6 @@ onLoad((options: any) => {
 async function loadAndLayout() {
   await pubStore.loadTree(pubId.value)
   if (!pubStore.currentPub) return
-
   nextTick(() => {
     computeLayout()
     drawTree()
@@ -47,32 +64,27 @@ async function loadAndLayout() {
 }
 
 /**
- * 简化版树布局算法
- * 从左到右：始祖在左，后代在右
- * 每代一列，同代人物纵向排列
+ * 树布局算法：始祖在左，后代向右展开
  */
 function computeLayout() {
   const pub = pubStore.currentPub
   if (!pub) return
 
-  const CARD_W = 200
-  const CARD_H = 120
-  const COL_GAP = 280
-  const ROW_GAP = 30
+  const CARD_W = 180
+  const CARD_H = 110
+  const COL_GAP = 260
+  const ROW_GAP = 24
 
-  // 找出 focusFamilyId 的根人物
   const focusFam = pub.families[pub.focusFamilyId]
   if (!focusFam) return
+
+  const rootId = focusFam.adults[0]
+  if (!rootId) return
 
   // BFS 分代
   const generations: Map<number, string[]> = new Map()
   const personGen = new Map<string, number>()
   const visited = new Set<string>()
-
-  // 从 focus family 的第一个 adult 开始
-  const rootId = focusFam.adults[0]
-  if (!rootId) return
-
   const queue: Array<{ id: string; gen: number }> = [{ id: rootId, gen: 0 }]
   visited.add(rootId)
 
@@ -82,7 +94,6 @@ function computeLayout() {
     if (!generations.has(gen)) generations.set(gen, [])
     generations.get(gen)!.push(id)
 
-    // 找子女
     for (const fam of Object.values(pub.families)) {
       if (fam.adults.includes(id)) {
         for (const childId of fam.children) {
@@ -91,7 +102,6 @@ function computeLayout() {
             queue.push({ id: childId, gen: gen + 1 })
           }
         }
-        // 配偶也加入同一世代
         for (const adultId of fam.adults) {
           if (adultId !== id && !visited.has(adultId)) {
             visited.add(adultId)
@@ -108,43 +118,49 @@ function computeLayout() {
   const cards: LayoutCard[] = []
   const lines: LayoutLine[] = []
   const personPos = new Map<string, { x: number; y: number }>()
-
   const maxGen = Math.max(...generations.keys())
   const startY = 40
 
   for (let gen = 0; gen <= maxGen; gen++) {
     const ids = generations.get(gen) || []
-    const x = 60 + gen * COL_GAP
+    const x = 50 + gen * COL_GAP
     const totalHeight = ids.length * (CARD_H + ROW_GAP) - ROW_GAP
-    let y = startY + (canvasHeight.value - totalHeight) / 2
+    let y = startY + Math.max(0, (canvasHeight.value - totalHeight) / 2)
 
     for (const id of ids) {
-      const card: LayoutCard = { personId: id, x, y, w: CARD_W, h: CARD_H }
-      cards.push(card)
+      cards.push({ personId: id, x, y, w: CARD_W, h: CARD_H })
       personPos.set(id, { x: x + CARD_W / 2, y: y + CARD_H / 2 })
       y += CARD_H + ROW_GAP
     }
   }
 
-  // 计算连线
+  // 连线
   for (const fam of Object.values(pub.families)) {
+    const adultPositions = fam.adults
+      .map((id) => personPos.get(id))
+      .filter(Boolean) as Array<{ x: number; y: number }>
+
+    // 配偶连线（横向虚线）
+    if (adultPositions.length >= 2) {
+      lines.push({
+        x1: adultPositions[0].x, y1: adultPositions[0].y,
+        x2: adultPositions[1].x, y2: adultPositions[1].y,
+        type: 'spousal',
+      })
+    }
+
+    // 父子连线（用折线）
     for (const adultId of fam.adults) {
       const parentPos = personPos.get(adultId)
       if (!parentPos) continue
-      // 配偶连线
-      for (const otherAdultId of fam.adults) {
-        if (otherAdultId !== adultId) {
-          const otherPos = personPos.get(otherAdultId)
-          if (otherPos) {
-            lines.push({ x1: parentPos.x, y1: parentPos.y, x2: otherPos.x, y2: otherPos.y, type: 'spousal' })
-          }
-        }
-      }
-      // 父子连线
       for (const childId of fam.children) {
         const childPos = personPos.get(childId)
         if (childPos) {
-          lines.push({ x1: parentPos.x, y1: parentPos.y, x2: childPos.x, y2: childPos.y, type: 'parent-child' })
+          lines.push({
+            x1: parentPos.x, y1: parentPos.y,
+            x2: childPos.x, y2: childPos.y,
+            type: 'parent-child',
+          })
         }
       }
     }
@@ -171,8 +187,8 @@ function drawTree() {
       canvas.height = canvasHeight.value * dpr
       ctx.scale(dpr, dpr)
 
-      // 清空
-      ctx.fillStyle = '#f8f4ed'
+      // 背景
+      ctx.fillStyle = COLORS.bg
       ctx.fillRect(0, 0, canvasWidth.value, canvasHeight.value)
 
       ctx.save()
@@ -180,59 +196,93 @@ function drawTree() {
       ctx.scale(scale.value, scale.value)
 
       const pub = pubStore.currentPub
-      if (!pub) return
+      if (!pub) { ctx.restore(); return }
 
-      // 绘制连线
+      // ── 绘制连线 ──
       for (const line of layoutLines.value) {
         ctx.beginPath()
-        ctx.moveTo(line.x1, line.y1)
-        ctx.lineTo(line.x2, line.y2)
-        ctx.strokeStyle = line.type === 'spousal' ? 'rgba(171,109,48,0.4)' : 'rgba(95,73,50,0.7)'
-        ctx.lineWidth = line.type === 'spousal' ? 1.5 : 2
-        if (line.type === 'spousal') ctx.setLineDash([6, 4])
+        if (line.type === 'spousal') {
+          // 配偶：虚线
+          ctx.setLineDash([8, 5])
+          ctx.strokeStyle = COLORS.lineSpousal
+          ctx.lineWidth = 1.5
+          ctx.moveTo(line.x1, line.y1)
+          ctx.lineTo(line.x2, line.y2)
+        } else {
+          // 父子：折线（水平 → 垂直 → 水平）
+          const midX = (line.x1 + line.x2) / 2
+          ctx.strokeStyle = COLORS.lineParentChild
+          ctx.lineWidth = 1.8
+          ctx.moveTo(line.x1, line.y1)
+          ctx.lineTo(midX, line.y1)
+          ctx.lineTo(midX, line.y2)
+          ctx.lineTo(line.x2, line.y2)
+        }
         ctx.stroke()
         ctx.setLineDash([])
+
+        // 连线中点小圆点
+        if (line.type === 'parent-child') {
+          const midX = (line.x1 + line.x2) / 2
+          const midY = (line.y1 + line.y2) / 2
+          ctx.beginPath()
+          ctx.arc(midX, midY, 3, 0, Math.PI * 2)
+          ctx.fillStyle = COLORS.dotColor
+          ctx.fill()
+        }
       }
 
-      // 绘制人物卡片
+      // ── 绘制人物卡片 ──
       for (const card of layoutCards.value) {
         const person = pub.people[card.personId]
         if (!person) continue
         const isSelected = card.personId === selectedPersonId.value
-        const isMale = person.gender === 'male'
-        const isFemale = person.gender === 'female'
+
+        // 卡片阴影
+        ctx.save()
+        ctx.shadowColor = isSelected ? 'rgba(171,109,48,0.2)' : 'rgba(0,0,0,0.06)'
+        ctx.shadowBlur = isSelected ? 16 : 8
+        ctx.shadowOffsetY = isSelected ? 4 : 2
 
         // 卡片背景
-        ctx.fillStyle = isSelected ? '#fff5eb' : '#fff9ef'
-        ctx.strokeStyle = isSelected ? '#ab6d30' : '#6f5943'
-        ctx.lineWidth = isSelected ? 2.5 : 1.2
-        roundRect(ctx, card.x, card.y, card.w, card.h, 8)
+        ctx.fillStyle = isSelected ? COLORS.cardBgSelected : COLORS.cardBg
+        roundRect(ctx, card.x, card.y, card.w, card.h, 12)
         ctx.fill()
+        ctx.restore()
+
+        // 卡片边框
+        ctx.strokeStyle = isSelected ? COLORS.cardStrokeSelected : COLORS.cardStroke
+        ctx.lineWidth = isSelected ? 2 : 1
+        roundRect(ctx, card.x, card.y, card.w, card.h, 12)
         ctx.stroke()
 
-        // 性别色条
-        ctx.fillStyle = isMale ? 'rgba(70,130,180,0.18)' : isFemale ? 'rgba(200,100,120,0.18)' : 'rgba(160,160,160,0.12)'
-        roundRect(ctx, card.x, card.y, card.w, 32, [8, 8, 0, 0])
+        // 顶部色条
+        const isMale = person.gender === 'male'
+        const isFemale = person.gender === 'female'
+        ctx.fillStyle = isMale ? COLORS.maleHeader : isFemale ? COLORS.femaleHeader : COLORS.unknownHeader
+        roundRectTop(ctx, card.x, card.y, card.w, 36, 12)
         ctx.fill()
 
         // 姓名
-        ctx.fillStyle = '#241a10'
-        ctx.font = 'bold 28px "Noto Serif SC", serif'
+        ctx.fillStyle = COLORS.nameText
+        ctx.font = 'bold 26px "Noto Serif SC", serif'
         ctx.textAlign = 'center'
-        ctx.fillText(person.name || '未知', card.x + card.w / 2, card.y + 56)
+        ctx.textBaseline = 'middle'
+        ctx.fillText(person.name || '未知', card.x + card.w / 2, card.y + 60)
 
-        // 出生年份
-        if (person.birth) {
-          ctx.fillStyle = '#8a6845'
-          ctx.font = '22px sans-serif'
-          ctx.fillText(person.birth, card.x + card.w / 2, card.y + 82)
+        // 生卒信息
+        if (person.birth || person.death) {
+          ctx.fillStyle = COLORS.infoText
+          ctx.font = '20px sans-serif'
+          const info = [person.birth, person.death].filter(Boolean).join(' - ')
+          ctx.fillText(info, card.x + card.w / 2, card.y + 85)
         }
 
         // 已故标记
         if (person.deceased) {
-          ctx.fillStyle = 'rgba(120,100,80,0.3)'
-          ctx.font = '18px sans-serif'
-          ctx.fillText('已故', card.x + card.w / 2, card.y + card.h - 12)
+          ctx.fillStyle = COLORS.mutedText
+          ctx.font = '16px sans-serif'
+          ctx.fillText('已故', card.x + card.w / 2, card.y + card.h - 14)
         }
       }
 
@@ -240,25 +290,37 @@ function drawTree() {
     })
 }
 
-function roundRect(ctx: any, x: number, y: number, w: number, h: number, r: number | number[]) {
-  const radii = Array.isArray(r) ? r : [r, r, r, r]
+function roundRect(ctx: any, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
-  ctx.moveTo(x + radii[0], y)
-  ctx.lineTo(x + w - radii[1], y)
-  ctx.quadraticCurveTo(x + w, y, x + w, y + radii[1])
-  ctx.lineTo(x + w, y + h - radii[2])
-  ctx.quadraticCurveTo(x + w, y + h, x + w - radii[2], y + h)
-  ctx.lineTo(x + radii[3], y + h)
-  ctx.quadraticCurveTo(x, y + h, x, y + h - radii[3])
-  ctx.lineTo(x, y + radii[0])
-  ctx.quadraticCurveTo(x, y, x + radii[0], y)
+  ctx.moveTo(x + r, y)
+  ctx.lineTo(x + w - r, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+  ctx.lineTo(x + w, y + h - r)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+  ctx.lineTo(x + r, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
   ctx.closePath()
 }
 
-// 触摸处理
+function roundRectTop(ctx: any, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.lineTo(x + w - r, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+  ctx.lineTo(x + w, y + h)
+  ctx.lineTo(x, y + h)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
+  ctx.closePath()
+}
+
+// ── 手势处理 ──
 let lastTouchDistance = 0
 let lastTouchX = 0
 let lastTouchY = 0
+let isDragging = false
 
 function onTouchStart(e: any) {
   if (e.touches.length === 2) {
@@ -268,6 +330,7 @@ function onTouchStart(e: any) {
   } else if (e.touches.length === 1) {
     lastTouchX = e.touches[0].clientX
     lastTouchY = e.touches[0].clientY
+    isDragging = false
   }
 }
 
@@ -285,6 +348,7 @@ function onTouchMove(e: any) {
   } else if (e.touches.length === 1) {
     const dx = e.touches[0].clientX - lastTouchX
     const dy = e.touches[0].clientY - lastTouchY
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDragging = true
     panX.value += dx
     panY.value += dy
     lastTouchX = e.touches[0].clientX
@@ -298,6 +362,7 @@ function onTouchEnd() {
 }
 
 function onCanvasTap(e: any) {
+  if (isDragging) return
   const x = (e.detail.x - panX.value) / scale.value
   const y = (e.detail.y - panY.value) / scale.value
 
@@ -310,12 +375,12 @@ function onCanvasTap(e: any) {
       return
     }
   }
-  // 点击空白处取消选择
   selectedPersonId.value = null
   showDetail.value = false
   drawTree()
 }
 
+// ── 搜索 ──
 function handleSearch() {
   if (!searchQuery.value.trim()) {
     searchResults.value = []
@@ -331,11 +396,29 @@ function jumpToPerson(personId: string) {
   showSearch.value = false
   searchQuery.value = ''
   searchResults.value = []
+
+  // 平移到该人物
+  const card = layoutCards.value.find((c) => c.personId === personId)
+  if (card) {
+    panX.value = canvasWidth.value / 2 - (card.x + card.w / 2) * scale.value
+    panY.value = canvasHeight.value / 2 - (card.y + card.h / 2) * scale.value
+  }
   drawTree()
 }
 
 function closeDetail() {
   showDetail.value = false
+}
+
+function resetView() {
+  scale.value = 1
+  panX.value = 0
+  panY.value = 0
+  drawTree()
+}
+
+function getGenderLabel(g: string) {
+  return g === 'male' ? '男' : g === 'female' ? '女' : '未知'
 }
 </script>
 
@@ -343,9 +426,13 @@ function closeDetail() {
   <view class="tree-page">
     <!-- 自定义导航栏 -->
     <view class="nav-bar">
-      <text class="nav-bar__title">{{ pubStore.currentPub?.title || '族谱' }}</text>
+      <view class="nav-bar__left">
+        <text class="nav-back" @tap="uni.navigateBack()">←</text>
+        <text class="nav-bar__title">{{ pubStore.currentPub?.title || '族谱' }}</text>
+      </view>
       <view class="nav-bar__actions">
         <text class="nav-btn" @tap="showSearch = !showSearch">🔍</text>
+        <text class="nav-btn" @tap="resetView">⊕</text>
       </view>
     </view>
 
@@ -382,36 +469,52 @@ function closeDetail() {
       @touchend="onTouchEnd"
     />
 
+    <!-- 缩放提示 -->
+    <view class="zoom-hint" v-if="scale !== 1">
+      <text class="zoom-hint__text">{{ Math.round(scale * 100) }}%</text>
+    </view>
+
     <!-- 人物详情面板 -->
-    <view v-if="showDetail && selectedPerson" class="detail-panel" @tap.stop>
-      <view class="detail-header">
-        <text class="detail-name">{{ selectedPerson.name }}</text>
-        <text class="detail-close" @tap="closeDetail">✕</text>
-      </view>
-      <view class="detail-body">
-        <view class="detail-row" v-if="selectedPerson.gender">
-          <text class="detail-label">性别</text>
-          <text class="detail-value">{{ selectedPerson.gender === 'male' ? '男' : selectedPerson.gender === 'female' ? '女' : '未知' }}</text>
+    <view v-if="showDetail && selectedPerson" class="detail-overlay" @tap="closeDetail">
+      <view class="detail-panel" @tap.stop>
+        <view class="detail-header">
+          <view class="detail-header__left">
+            <text class="detail-name">{{ selectedPerson.name }}</text>
+            <text class="detail-gender" :class="selectedPerson.gender === 'female' ? 'detail-gender--f' : 'detail-gender--m'">
+              {{ getGenderLabel(selectedPerson.gender) }}
+            </text>
+          </view>
+          <text class="detail-close" @tap="closeDetail">✕</text>
         </view>
-        <view class="detail-row" v-if="selectedPerson.birth">
-          <text class="detail-label">出生</text>
-          <text class="detail-value">{{ selectedPerson.birth }}</text>
-        </view>
-        <view class="detail-row" v-if="selectedPerson.death">
-          <text class="detail-label">去世</text>
-          <text class="detail-value">{{ selectedPerson.death }}</text>
-        </view>
-        <view class="detail-row" v-if="selectedPerson.titleName">
-          <text class="detail-label">辈分/头衔</text>
-          <text class="detail-value">{{ selectedPerson.titleName }}</text>
-        </view>
-        <view class="detail-row" v-if="selectedPerson.clan">
-          <text class="detail-label">堂号</text>
-          <text class="detail-value">{{ selectedPerson.clan }}</text>
-        </view>
-        <view class="detail-row" v-if="selectedPerson.note">
-          <text class="detail-label">备注</text>
-          <text class="detail-value detail-value--note">{{ selectedPerson.note }}</text>
+        <view class="detail-body">
+          <view class="detail-row" v-if="selectedPerson.birth">
+            <text class="detail-label">出生</text>
+            <text class="detail-value">{{ selectedPerson.birth }}</text>
+          </view>
+          <view class="detail-row" v-if="selectedPerson.death">
+            <text class="detail-label">去世</text>
+            <text class="detail-value">{{ selectedPerson.death }}</text>
+          </view>
+          <view class="detail-row" v-if="selectedPerson.age">
+            <text class="detail-label">年龄</text>
+            <text class="detail-value">{{ selectedPerson.age }}</text>
+          </view>
+          <view class="detail-row" v-if="selectedPerson.titleName">
+            <text class="detail-label">辈分</text>
+            <text class="detail-value">{{ selectedPerson.titleName }}</text>
+          </view>
+          <view class="detail-row" v-if="selectedPerson.clan">
+            <text class="detail-label">堂号</text>
+            <text class="detail-value">{{ selectedPerson.clan }}</text>
+          </view>
+          <view class="detail-row" v-if="selectedPerson.note">
+            <text class="detail-label">备注</text>
+            <text class="detail-value detail-value--note">{{ selectedPerson.note }}</text>
+          </view>
+          <view class="detail-row" v-if="selectedPerson.deceased">
+            <text class="detail-label">状态</text>
+            <text class="detail-value">已故</text>
+          </view>
         </view>
       </view>
     </view>
@@ -424,6 +527,7 @@ function closeDetail() {
   background: #f8f4ed;
 }
 
+/* ── 导航栏 ── */
 .nav-bar {
   display: flex;
   align-items: center;
@@ -434,6 +538,18 @@ function closeDetail() {
   padding-top: env(safe-area-inset-top);
 }
 
+.nav-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.nav-back {
+  font-size: 36rpx;
+  color: rgba(255,255,255,0.8);
+  padding: 8rpx;
+}
+
 .nav-bar__title {
   font-size: 32rpx;
   font-weight: 600;
@@ -441,15 +557,22 @@ function closeDetail() {
   font-family: serif;
 }
 
-.nav-btn {
-  font-size: 36rpx;
-  padding: 8rpx 16rpx;
+.nav-bar__actions {
+  display: flex;
+  gap: 8rpx;
 }
 
+.nav-btn {
+  font-size: 32rpx;
+  padding: 10rpx 16rpx;
+  color: rgba(255,255,255,0.8);
+}
+
+/* ── 搜索栏 ── */
 .search-bar {
   padding: 16rpx 24rpx;
   background: #fff9ef;
-  border-bottom: 1rpx solid rgba(111,89,67,0.12);
+  border-bottom: 1rpx solid rgba(111,89,67,0.1);
 }
 
 .search-input {
@@ -457,7 +580,7 @@ function closeDetail() {
   height: 72rpx;
   padding: 0 24rpx;
   background: #f0ebe3;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   font-size: 28rpx;
   color: #241a10;
 }
@@ -473,7 +596,7 @@ function closeDetail() {
   justify-content: space-between;
   align-items: center;
   padding: 16rpx 20rpx;
-  border-radius: 8rpx;
+  border-radius: 12rpx;
 }
 
 .search-result-item:active {
@@ -491,66 +614,117 @@ function closeDetail() {
   color: #8a6845;
 }
 
-/* Detail panel */
-.detail-panel {
+/* ── 缩放提示 ── */
+.zoom-hint {
   position: fixed;
+  bottom: 180rpx;
+  right: 24rpx;
+  padding: 8rpx 20rpx;
+  background: rgba(36,26,16,0.75);
+  border-radius: 999rpx;
+  z-index: 50;
+}
+
+.zoom-hint__text {
+  font-size: 22rpx;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── 详情面板 ── */
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.25);
+}
+
+.detail-panel {
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   background: #fff9ef;
-  border-radius: 24rpx 24rpx 0 0;
-  box-shadow: 0 -8rpx 40rpx rgba(0,0,0,0.12);
+  border-radius: 28rpx 28rpx 0 0;
+  box-shadow: 0 -12rpx 48rpx rgba(0,0,0,0.12);
   padding: 32rpx;
   padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
-  z-index: 100;
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28rpx;
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid rgba(111,89,67,0.1);
+}
+
+.detail-header__left {
+  display: flex;
   align-items: center;
-  margin-bottom: 24rpx;
+  gap: 16rpx;
 }
 
 .detail-name {
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: 700;
   color: #241a10;
   font-family: serif;
 }
 
+.detail-gender {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  font-weight: 600;
+}
+
+.detail-gender--m {
+  background: rgba(70,108,144,0.1);
+  color: #4a6c90;
+}
+
+.detail-gender--f {
+  background: rgba(180,90,90,0.1);
+  color: #a05a5a;
+}
+
 .detail-close {
   font-size: 36rpx;
-  color: #8a6845;
+  color: #b89a78;
   padding: 8rpx;
 }
 
 .detail-body {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: 20rpx;
 }
 
 .detail-row {
   display: flex;
-  gap: 16rpx;
+  gap: 20rpx;
+  align-items: flex-start;
 }
 
 .detail-label {
   flex-shrink: 0;
-  width: 140rpx;
+  width: 100rpx;
   font-size: 24rpx;
   color: #8a6845;
   font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .detail-value {
   font-size: 28rpx;
   color: #241a10;
+  line-height: 1.6;
 }
 
 .detail-value--note {
   font-size: 24rpx;
-  line-height: 1.6;
+  color: #6b5035;
 }
 </style>
