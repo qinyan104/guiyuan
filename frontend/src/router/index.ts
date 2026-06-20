@@ -9,6 +9,10 @@ import AuditLogView from '../views/AuditLogView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import SamplePreviewView from '../views/SamplePreviewView.vue'
 import LandingView from '../views/LandingView.vue'
+import InfoDocumentView from '../views/InfoDocumentView.vue'
+import NotFoundView from '../views/NotFoundView.vue'
+import WorkbenchDirectionDetailView from '../views/WorkbenchDirectionDetailView.vue'
+import WorkbenchDirectionLabView from '../views/WorkbenchDirectionLabView.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -29,9 +33,35 @@ const routes: RouteRecordRaw[] = [
     component: SamplePreviewView,
   },
   {
+    path: '/design/workbench-directions',
+    name: 'workbench-direction-lab',
+    component: WorkbenchDirectionLabView,
+    meta: { public: true },
+  },
+  {
+    path: '/design/workbench-directions/:directionId',
+    name: 'workbench-direction-detail',
+    component: WorkbenchDirectionDetailView,
+    meta: { public: true },
+  },
+  {
     path: '/',
     name: 'landing',
     component: LandingView,
+    meta: { public: true },
+  },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    component: InfoDocumentView,
+    props: { variant: 'privacy' },
+    meta: { public: true },
+  },
+  {
+    path: '/terms',
+    name: 'terms',
+    component: InfoDocumentView,
+    props: { variant: 'terms' },
     meta: { public: true },
   },
   {
@@ -143,7 +173,9 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/',
+    name: 'not-found',
+    component: NotFoundView,
+    meta: { public: true },
   },
 ]
 
