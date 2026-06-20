@@ -10,6 +10,9 @@ import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.BackupService;
 import com.genealogy.server.service.ConsistencyService;
 import com.genealogy.server.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -26,6 +29,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
+@Tag(name = "管理员", description = "管理员操作（用户管理、备份、一致性检查）")
 public class AdminController {
 
     private final UserService userService;
@@ -43,6 +47,7 @@ public class AdminController {
 
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
+    @Operation(summary = "获取用户列表", description = "获取系统中所有用户的列表")
     @GetMapping("/users")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<List<Map<String, Object>>> listUsers() {
@@ -60,6 +65,7 @@ public class AdminController {
         return ApiResponse.success(users);
     }
 
+    @Operation(summary = "创建用户", description = "管理员创建新用户")
     @PostMapping("/users")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<User> createUser(@Valid @RequestBody CreateUserRequest body, HttpServletRequest request) {
@@ -75,9 +81,10 @@ public class AdminController {
         return ApiResponse.success("用户创建成功", user);
     }
 
+    @Operation(summary = "删除用户", description = "根据用户ID删除用户")
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<Void> deleteUser(@PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<Void> deleteUser(@Parameter(description = "用户ID") @PathVariable Long id, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
 
         User user = userService.findById(id).orElse(null);
@@ -89,9 +96,10 @@ public class AdminController {
         return ApiResponse.success("用户已删除", null);
     }
 
+    @Operation(summary = "重置用户密码", description = "管理员重置指定用户的密码")
     @PutMapping("/users/{id}/password")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<Void> resetPassword(@PathVariable Long id, @Valid @RequestBody ResetPasswordRequest body, HttpServletRequest request) {
+    public ApiResponse<Void> resetPassword(@Parameter(description = "用户ID") @PathVariable Long id, @Valid @RequestBody ResetPasswordRequest body, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
 
         userService.resetPassword(id, body.getNewPassword());
@@ -102,9 +110,10 @@ public class AdminController {
         return ApiResponse.success("密码已重置", null);
     }
 
+    @Operation(summary = "修改用户角色", description = "修改指定用户的角色")
     @PutMapping("/users/{id}/role")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ApiResponse<Void> changeRole(@PathVariable Long id, @RequestBody Map<String, String> body, HttpServletRequest request) {
+    public ApiResponse<Void> changeRole(@Parameter(description = "用户ID") @PathVariable Long id, @RequestBody Map<String, String> body, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         String newRole = body.get("role");
         if (newRole == null || newRole.isBlank()) {
@@ -118,6 +127,7 @@ public class AdminController {
         return ApiResponse.success("角色已更新", null);
     }
 
+    @Operation(summary = "批量删除用户", description = "根据ID列表批量删除用户")
     @PostMapping("/users/batch-delete")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<Map<String, Object>> batchDeleteUsers(@RequestBody Map<String, List<Long>> body, HttpServletRequest request) {
@@ -134,6 +144,7 @@ public class AdminController {
                 Map.of("deleted", deleted, "requested", ids.size()));
     }
 
+    @Operation(summary = "备份数据库", description = "导出数据库备份文件")
     @GetMapping("/backup")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void backupDatabase(Authentication authentication, HttpServletResponse response) throws IOException {
@@ -159,16 +170,18 @@ public class AdminController {
         }
     }
 
+    @Operation(summary = "检查数据一致性", description = "运行数据一致性检查并返回报告")
     @GetMapping("/check-consistency")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<ConsistencyReport> checkConsistency() {
         return ApiResponse.success(consistencyService.runCheck());
     }
 
+    @Operation(summary = "还原数据库", description = "从SQL文件还原数据库")
     @PostMapping("/restore")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<Map<String, String>> restoreDatabase(
-            @RequestParam("file") MultipartFile file,
+            @Parameter(description = "SQL备份文件") @RequestParam("file") MultipartFile file,
             HttpServletRequest request) {
         if (file.isEmpty()) {
             throw new BadRequestException("请选择要还原的 SQL 文件");

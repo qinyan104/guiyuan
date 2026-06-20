@@ -13,6 +13,9 @@ import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +26,7 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api/publications/{id}/access")
+@Tag(name = "族谱权限", description = "族谱协作者权限管理")
 public class PublicationAccessController {
 
     private static final Set<String> ALLOWED_ROLES = Set.of("EDITOR", "VIEWER");
@@ -61,8 +65,9 @@ public class PublicationAccessController {
         return new UserSubject(user.getId(), user.getRole(), user.getUsername());
     }
 
+    @Operation(summary = "获取协作者列表", description = "获取族谱的所有协作者及其权限")
     @GetMapping
-    public ApiResponse<List<Map<String, Object>>> listAccess(@PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<List<Map<String, Object>>> listAccess(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
         authorizationService.require(resolveSubject(request), id, AccessPermission.MANAGE_ACCESS);
 
         List<Map<String, Object>> result = accessRepository.findByPublicationId(id).stream()
@@ -83,8 +88,9 @@ public class PublicationAccessController {
         return ApiResponse.success(result);
     }
 
+    @Operation(summary = "添加协作者", description = "为族谱添加新的协作者")
     @PostMapping
-    public ApiResponse<Map<String, Object>> addAccess(@PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> addAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
@@ -123,8 +129,9 @@ public class PublicationAccessController {
         return ApiResponse.success("协作者已添加", result);
     }
 
+    @Operation(summary = "修改协作者权限", description = "修改协作者的角色和脱敏配置")
     @PutMapping("/{userId}")
-    public ApiResponse<Void> updateAccess(@PathVariable Long id, @PathVariable Long userId,
+    public ApiResponse<Void> updateAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "用户ID") @PathVariable Long userId,
                                           @RequestBody Map<String, Object> body, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         UserSubject subject = resolveSubject(request);
@@ -153,8 +160,9 @@ public class PublicationAccessController {
         return ApiResponse.success("角色及配置已更新", null);
     }
 
+    @Operation(summary = "移除协作者", description = "移除族谱的指定协作者")
     @DeleteMapping("/{userId}")
-    public ApiResponse<Void> removeAccess(@PathVariable Long id, @PathVariable Long userId, HttpServletRequest request) {
+    public ApiResponse<Void> removeAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "用户ID") @PathVariable Long userId, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
@@ -177,8 +185,9 @@ public class PublicationAccessController {
         return ApiResponse.success("协作者已移除", null);
     }
 
+    @Operation(summary = "合并分支", description = "将指定人物的分支合并到主干")
     @PostMapping("/{personId}/merge")
-    public ApiResponse<Void> mergeBranch(@PathVariable Long id, @PathVariable String personId, HttpServletRequest request) {
+    public ApiResponse<Void> mergeBranch(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "人物ID") @PathVariable String personId, HttpServletRequest request) {
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
         publicationService.mergeBranch(id, personId, subject);

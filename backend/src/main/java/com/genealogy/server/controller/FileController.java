@@ -1,6 +1,9 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +19,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
+@Tag(name = "文件", description = "文件上传管理")
 public class FileController {
 
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
@@ -32,8 +36,9 @@ public class FileController {
         this.uploadDir = new File(uploadDir).getAbsolutePath() + File.separator;
     }
 
+    @Operation(summary = "上传文件", description = "上传图片或PDF文件")
     @PostMapping("/upload")
-    public ApiResponse<String> uploadFile(@RequestParam("file") MultipartFile file,
+    public ApiResponse<String> uploadFile(@Parameter(description = "要上传的文件") @RequestParam("file") MultipartFile file,
                                           HttpServletRequest request) {
         if (file.isEmpty()) {
             return ApiResponse.error("文件不能为空");

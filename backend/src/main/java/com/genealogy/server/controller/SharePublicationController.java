@@ -16,6 +16,9 @@ import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
 import com.genealogy.server.service.PublicationViewProjector;
 import com.genealogy.server.service.ShareLinkService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +28,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/shares/{token}")
+@Tag(name = "分享", description = "族谱公开分享链接")
 public class SharePublicationController {
 
     private final ShareTokenResolver shareTokenResolver;
@@ -54,16 +58,18 @@ public class SharePublicationController {
         this.publicationRepository = publicationRepository;
     }
 
+    @Operation(summary = "获取分享族谱", description = "通过分享链接获取族谱数据（脱敏后）")
     @GetMapping
-    public ApiResponse<Map<String, Object>> getPublication(@PathVariable String token) {
+    public ApiResponse<Map<String, Object>> getPublication(@Parameter(description = "分享令牌") @PathVariable String token) {
         ShareSubject subject = shareTokenResolver.resolveSubject(token);
         Map<String, Object> fullData = publicationService.loadPublication(subject.getSharePublicationId());
         Map<String, Object> redacted = viewProjector.projectRedacted(fullData, subject, token);
         return ApiResponse.success(redacted);
     }
 
+    @Operation(summary = "获取分享元数据", description = "获取分享链接的元数据信息")
     @GetMapping("/meta")
-    public ApiResponse<Map<String, Object>> getMeta(@PathVariable String token) {
+    public ApiResponse<Map<String, Object>> getMeta(@Parameter(description = "分享令牌") @PathVariable String token) {
         ShareSubject subject = shareTokenResolver.resolveSubject(token);
         PublicationShareLink link = shareLinkService.validateToken(token);
 
@@ -81,8 +87,9 @@ public class SharePublicationController {
         return ApiResponse.success(meta);
     }
 
+    @Operation(summary = "获取分享照片", description = "通过分享链接获取族谱中的照片")
     @GetMapping("/photos/{photoId}")
-    public ResponseEntity<byte[]> getPhoto(@PathVariable String token, @PathVariable Long photoId) {
+    public ResponseEntity<byte[]> getPhoto(@Parameter(description = "分享令牌") @PathVariable String token, @Parameter(description = "照片ID") @PathVariable Long photoId) {
         ShareSubject subject = shareTokenResolver.resolveSubject(token);
         Long sharedPubId = subject.getSharePublicationId();
 

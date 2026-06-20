@@ -12,6 +12,9 @@ import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
 import com.genealogy.server.service.ShareLinkService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +25,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/publications")
+@Tag(name = "族谱", description = "族谱 CRUD 操作")
 public class PublicationController {
 
     private final PublicationService publicationService;
@@ -69,14 +73,16 @@ public class PublicationController {
         return new UserSubject(user.getId(), user.getRole(), user.getUsername());
     }
 
+    @Operation(summary = "获取族谱列表", description = "获取当前用户的所有族谱")
     @GetMapping
     public ApiResponse<List<Map<String, Object>>> list(HttpServletRequest request) {
         Long userId = resolveUserId(request);
         return ApiResponse.success(publicationService.listPublications(userId));
     }
 
+    @Operation(summary = "获取族谱详情", description = "根据ID获取族谱详细数据")
     @GetMapping("/{id}")
-    public ApiResponse<Map<String, Object>> get(@PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> get(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.READ_FULL);
         try {
@@ -96,6 +102,7 @@ public class PublicationController {
         }
     }
 
+    @Operation(summary = "创建族谱", description = "创建新的族谱")
     @PostMapping
     public ApiResponse<Map<String, Object>> create(@RequestBody PublicationSnapshot body, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
@@ -108,8 +115,9 @@ public class PublicationController {
         return ApiResponse.success("族谱已创建", Map.of("id", pubId));
     }
 
+    @Operation(summary = "更新族谱", description = "更新族谱数据和设置")
     @PutMapping("/{id}")
-    public ApiResponse<Map<String, Object>> update(@PathVariable Long id, @RequestBody PublicationSnapshot body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> update(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody PublicationSnapshot body, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.EDIT);
@@ -126,8 +134,9 @@ public class PublicationController {
         return ApiResponse.success("族谱已保存", Map.of("newRevision", newRevision));
     }
 
+    @Operation(summary = "更新族谱信息", description = "更新族谱的标题、副标题等元数据")
     @PutMapping("/{id}/metadata")
-    public ApiResponse<Map<String, Object>> updateMetadata(@PathVariable Long id, @RequestBody com.genealogy.server.dto.UpdateMetadataRequest body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> updateMetadata(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody com.genealogy.server.dto.UpdateMetadataRequest body, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.EDIT);
@@ -137,10 +146,11 @@ public class PublicationController {
         return ApiResponse.success("族谱信息已更新", Map.of("newRevision", newRevision));
     }
 
+    @Operation(summary = "更新人物信息", description = "更新族谱中指定人物的详细信息")
     @PutMapping("/{pubId}/people/{personId}")
     public ApiResponse<Map<String, Object>> updatePerson(
-            @PathVariable Long pubId,
-            @PathVariable String personId,
+            @Parameter(description = "族谱ID") @PathVariable Long pubId,
+            @Parameter(description = "人物ID") @PathVariable String personId,
             @RequestBody Map<String, Object> body,
             HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
@@ -167,8 +177,9 @@ public class PublicationController {
         return ApiResponse.success("个人信息已更新", Map.of("newRevision", newRevision));
     }
 
+    @Operation(summary = "删除族谱", description = "删除指定族谱")
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<Void> delete(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.DELETE);
@@ -177,8 +188,9 @@ public class PublicationController {
         return ApiResponse.success("族谱已删除", null);
     }
 
+    @Operation(summary = "获取族谱历史", description = "获取族谱的变更历史记录")
     @GetMapping("/{id}/history")
-    public ApiResponse<List<Map<String, Object>>> history(@PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<List<Map<String, Object>>> history(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.HISTORY_READ);
         List<Map<String, Object>> logs = auditLogRepository.findByTargetTypeAndTargetIdOrderByCreatedAtDesc("publication", id)
@@ -197,10 +209,11 @@ public class PublicationController {
         return ApiResponse.success(logs);
     }
 
+    @Operation(summary = "创建分享链接", description = "为族谱创建公开分享链接")
     @SuppressWarnings("unchecked")
     @PostMapping("/{id}/shares")
     public ApiResponse<Map<String, Object>> createShareLink(
-            @PathVariable Long id,
+            @Parameter(description = "族谱ID") @PathVariable Long id,
             @RequestBody Map<String, Object> body,
             HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
@@ -217,19 +230,21 @@ public class PublicationController {
         return ApiResponse.success("分享链接已创建", result);
     }
 
+    @Operation(summary = "获取分享链接列表", description = "获取族谱的所有分享链接")
     @GetMapping("/{id}/shares")
     public ApiResponse<List<Map<String, Object>>> listShareLinks(
-            @PathVariable Long id,
+            @Parameter(description = "族谱ID") @PathVariable Long id,
             HttpServletRequest request) {
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_SHARES);
         return ApiResponse.success(shareLinkService.listShareLinks(id));
     }
 
+    @Operation(summary = "撤销分享链接", description = "撤销指定的分享链接")
     @DeleteMapping("/{id}/shares/{shareId}")
     public ApiResponse<Void> revokeShareLink(
-            @PathVariable Long id,
-            @PathVariable Long shareId,
+            @Parameter(description = "族谱ID") @PathVariable Long id,
+            @Parameter(description = "分享链接ID") @PathVariable Long shareId,
             HttpServletRequest request) {
         String username = (String) request.getAttribute("currentUsername");
         UserSubject subject = resolveSubject(request);

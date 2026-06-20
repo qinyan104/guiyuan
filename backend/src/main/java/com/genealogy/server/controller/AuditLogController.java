@@ -5,6 +5,9 @@ import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +19,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/logs")
+@Tag(name = "审计日志", description = "系统操作日志")
 public class AuditLogController {
 
     private final AuditLogRepository auditLogRepository;
@@ -33,10 +37,11 @@ public class AuditLogController {
         }
     }
 
+    @Operation(summary = "获取操作日志", description = "分页获取系统操作日志列表")
     @GetMapping
     public ApiResponse<List<Map<String, Object>>> listLogs(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size,
+            @Parameter(description = "页码，从0开始") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "每页条数，最大200") @RequestParam(defaultValue = "50") int size,
             HttpServletRequest request) {
         requireAdmin(request);
         Page<AuditLog> logPage = auditLogRepository.findAllByOrderByCreatedAtDesc(
@@ -55,6 +60,7 @@ public class AuditLogController {
         return ApiResponse.success(logs);
     }
 
+    @Operation(summary = "添加操作日志", description = "手动添加一条操作日志")
     @PostMapping
     public ApiResponse<Void> addLog(@RequestBody Map<String, String> body, HttpServletRequest request) {
         requireAdmin(request);

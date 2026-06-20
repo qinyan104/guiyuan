@@ -10,6 +10,9 @@ import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PhotoRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +32,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/user")
+@Tag(name = "个人资料", description = "用户个人信息管理")
 public class ProfileController {
 
     private final UserService userService;
@@ -52,6 +56,7 @@ public class ProfileController {
         this.userRepository = userRepository;
     }
 
+    @Operation(summary = "修改密码", description = "用户修改自己的登录密码")
     @PutMapping("/password")
     public ApiResponse<Void> changePassword(@RequestBody Map<String, String> body, Authentication authentication) {
         String username = authentication.getName();
@@ -72,6 +77,7 @@ public class ProfileController {
         return ApiResponse.success("密码修改成功", null);
     }
 
+    @Operation(summary = "修改昵称", description = "用户修改自己的昵称")
     @PutMapping("/nickname")
     public ApiResponse<Void> changeNickname(@RequestBody Map<String, String> body, Authentication authentication) {
         String username = authentication.getName();
@@ -85,8 +91,9 @@ public class ProfileController {
         return ApiResponse.success("昵称修改成功", null);
     }
 
+    @Operation(summary = "上传头像", description = "上传用户头像图片")
     @PostMapping("/avatar")
-    public ApiResponse<String> uploadAvatar(@RequestParam("file") MultipartFile file, Authentication authentication) throws IOException {
+    public ApiResponse<String> uploadAvatar(@Parameter(description = "头像图片文件") @RequestParam("file") MultipartFile file, Authentication authentication) throws IOException {
         String username = authentication.getName();
 
         if (file.isEmpty()) {
