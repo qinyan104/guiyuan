@@ -9,6 +9,8 @@ import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.security.JwtService;
 import com.genealogy.server.service.RefreshTokenService;
 import com.genealogy.server.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,6 +25,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "认证", description = "用户登录、注册、刷新令牌")
 public class AuthController {
 
     private static final String REFRESH_COOKIE_NAME = "refresh_token";
@@ -48,6 +51,7 @@ public class AuthController {
         this.secureCookie = secureCookie;
     }
 
+    @Operation(summary = "用户注册", description = "注册新用户账号")
     @PostMapping("/register")
     public ApiResponse<User> register(@Valid @RequestBody RegisterRequest request) {
         User user = userService.register(request);
@@ -55,6 +59,7 @@ public class AuthController {
         return ApiResponse.success("注册成功", user);
     }
 
+    @Operation(summary = "用户登录", description = "用户登录并获取访问令牌和刷新令牌")
     @PostMapping("/login")
     public ApiResponse<Map<String, String>> login(
             @Valid @RequestBody LoginRequest request,
@@ -82,12 +87,20 @@ public class AuthController {
         return ApiResponse.success("登录成功", data);
     }
 
+    @Operation(summary = "刷新访问令牌", description = "使用刷新令牌获取新的访问令牌")
     @PostMapping("/refresh")
     public ApiResponse<Map<String, String>> refresh(
             HttpServletRequest request,
             HttpServletResponse response) {
 
         String refreshToken = extractCookie(request, REFRESH_COOKIE_NAME);
+        if (refreshToken == null) {
+            // 兼容小程序：尝试从 Authorization 头读取 Refresh Token
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Refresh ")) {
+                refreshToken = authHeader.substring(8);
+            }
+        }
         if (refreshToken == null) {
             return ApiResponse.error(401, "未登录");
         }
@@ -126,6 +139,7 @@ public class AuthController {
         return ApiResponse.success(data);
     }
 
+    @Operation(summary = "用户登出", description = "撤销刷新令牌并清除Cookie")
     @PostMapping("/logout")
     public ApiResponse<Void> logout(
             HttpServletRequest request,
@@ -140,6 +154,7 @@ public class AuthController {
         return ApiResponse.success("已退出登录", null);
     }
 
+    @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的用户名和角色")
     @GetMapping("/me")
     public ApiResponse<Map<String, String>> me(Authentication authentication) {
         String username = authentication.getName();

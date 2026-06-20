@@ -56,9 +56,13 @@ public class SecurityConfig {
                     "/api/auth/register",
                     "/api/auth/refresh",
                     "/api/auth/logout",
-                    "/api/health"
+                    "/api/health",
+                    "/api/mobile/auth/**",  // 放行小程序认证接口
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**"
                 ).permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/photos/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/photos/avatars/**").permitAll()
                 .requestMatchers("/api/shares/**").permitAll()
                 .anyRequest().authenticated()
             )
