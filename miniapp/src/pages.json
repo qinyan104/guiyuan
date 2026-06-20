@@ -1,0 +1,58 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "归源族谱",
+        "navigationBarBackgroundColor": "#241a10",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/tree/tree",
+      "style": {
+        "navigationBarTitleText": "族谱",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/search/search",
+      "style": {
+        "navigationBarTitleText": "搜索"
+      }
+    },
+    {
+      "path": "pages/profile/profile",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "归源",
+    "navigationBarBackgroundColor": "#241a10",
+    "backgroundColor": "#f8f4ed",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#8a6845",
+    "selectedColor": "#ab6d30",
+    "backgroundColor": "#fff9ef",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/search/search",
+        "text": "搜索"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  }
+}

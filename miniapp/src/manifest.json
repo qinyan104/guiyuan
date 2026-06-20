@@ -1,0 +1,44 @@
+{
+  "compilerVersion": "4.06",
+  "name": "guiyuan-miniapp",
+  "appid": "",
+  "description": "归源族谱小程序",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "locale": "zh-Hans",
+  "app-plus": {
+    "usingComponents": true
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true,
+      "postcss": true
+    },
+    "usingComponents": true,
+    "permission": {
+      "scope.userInfo": {
+        "desc": "用于获取您的基本信息以绑定族谱账号"
+      }
+    },
+    "requiredPrivateInfos": []
+  },
+  "h5": {
+    "title": "归源族谱",
+    "router": {
+      "mode": "hash"
+    },
+    "devServer": {
+      "port": 5174,
+      "proxy": {
+        "/api": {
+          "target": "http://localhost:8080",
+          "changeOrigin": true
+        }
+      }
+    }
+  }
+}
