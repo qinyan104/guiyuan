@@ -62,12 +62,12 @@ interface ExtendedPath {
 
 const relationshipPath = computed<ExtendedPath | null>(() => {
   if (!selectedA.value || !selectedB.value || selectedA.value === selectedB.value) return null
-  const pathResult = findRelationshipPathExtended(props.publication, selectedA.value, selectedB.value)
-  if (!pathResult) return null
+  const result = findRelationshipPathExtended(props.publication, selectedA.value, selectedB.value)
+  if (!result) return null
   return {
-    isInLaw: pathResult.isInLaw,
-    bloodPath: pathResult.bloodPath,
-    inLawPath: pathResult.inLawPath,
+    isInLaw: result.isInLaw,
+    bloodPath: result.bloodPath,
+    inLawPath: result.inLawPath,
   }
 })
 
@@ -160,8 +160,8 @@ const pathDescription = computed(() => {
 
   if (ip) {
     const pathNames = ip.path.map((id) => {
-      const pathPerson = personById(id)
-      const name = pathPerson?.name ?? "未知"
+      const p = personById(id)
+      const name = p?.name ?? "未知"
       if (ip.spousesUsed.includes(id)) return `${name}(配偶)`
       return name
     }).join(" -> ")
@@ -195,7 +195,7 @@ function avatarLetter(name: string): string {
 </script>
 <template>
   <Transition name="kinship-fade">
-    <div v-show="true" class="kinship-overlay" @click.self="emit('close')">
+    <div class="kinship-overlay" @click.self="emit('close')">
       <div class="kinship-dialog">
         <div class="kinship-dialog__header">
           <h2>该怎么称呼？</h2>

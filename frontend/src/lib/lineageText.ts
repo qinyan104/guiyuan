@@ -158,16 +158,16 @@ function formatEntry(
     const f = fams[i]
     const spouseId = f.adults.find(a => a !== pid)
     if (spouseId && people[spouseId]) {
-      const sp = people[spouseId]
+      const s = people[spouseId]
       // 招婿：女为主，男为"贅"；外嫁：女"適"男
       const isUxori = f.branchMode === "uxorilocal"
       const prefix = p.gender === "female"
         ? (isUxori ? "招" : "適")
         : (isUxori ? "贅" : i === 0 ? "元配" : "繼配")
-      const sParts: string[] = [prefix + sp.name]
-      if (sp.birth) sParts.push(`生於${stripLocation(sp.birth)}`)
-      if (sp.death) sParts.push(`卒於${stripLocation(sp.death)}`)
-      if (sp.age) sParts.push(`享年${sp.age}`)
+      const sParts: string[] = [prefix + s.name]
+      if (s.birth) sParts.push(`生於${stripLocation(s.birth)}`)
+      if (s.death) sParts.push(`卒於${stripLocation(s.death)}`)
+      if (s.age) sParts.push(`享年${s.age}`)
       spouseEntries.push(sParts.join("，"))
     }
   }
@@ -280,7 +280,7 @@ function addSpouseEntries(
 
 // ── Dynamic entries per page ──
 
-async function calcEntriesPerPage(opts: LayoutOptions, canvasId?: string): Promise<number> {
+function calcEntriesPerPage(opts: LayoutOptions, canvasId?: string): number {
   const fontSize = opts.fontSize ?? 12
   const lineHeight = opts.lineHeight ?? 1.9
   const columns = opts.columns ?? 1
@@ -288,7 +288,7 @@ async function calcEntriesPerPage(opts: LayoutOptions, canvasId?: string): Promi
   // 有模板时按实际文本区计算
   if (canvasId) {
     try {
-      const { getCanvasConfig } = await import("./CanvasConfig")
+      const { getCanvasConfig } = require("./CanvasConfig")
       const cfg = getCanvasConfig(canvasId)
       const ta = getTextArea(cfg)
       const pxFontSize = fontSize * 4 / 3
@@ -307,8 +307,8 @@ async function calcEntriesPerPage(opts: LayoutOptions, canvasId?: string): Promi
 
 // ── Pagination ──
 
-export async function paginate(entries: LineageEntry[], rootIds: string[], opts: LayoutOptions, canvasId?: string): Promise<LineagePage[]> {
-  const perPage = await calcEntriesPerPage(opts, canvasId)
+export function paginate(entries: LineageEntry[], rootIds: string[], opts: LayoutOptions, canvasId?: string): LineagePage[] {
+  const perPage = calcEntriesPerPage(opts, canvasId)
   const pages: LineagePage[] = []
   for (let i = 0; i < entries.length; i += perPage) {
     pages.push({
@@ -329,7 +329,7 @@ export interface LineageSettings {
   cnNumeral?: boolean
 }
 
-export async function computeLineageText(data: PublicationData, opts: LayoutOptions = {}, settings: LineageSettings = {}): Promise<LineagePage[]> {
+export function computeLineageText(data: PublicationData, opts: LayoutOptions = {}, settings: LineageSettings = {}): LineagePage[] {
   const { people, families, info } = data
   const pubInfo = info ? { ancestralOrigin: info.ancestralOrigin, hallName: info.hallName } : undefined
   const s = { sortGenFirst: true, showSpouses: false, hideLocation: true, cnNumeral: true, ...settings }
@@ -339,7 +339,7 @@ export async function computeLineageText(data: PublicationData, opts: LayoutOpti
   if (Object.keys(families).length === 0 && Object.keys(people).length === 1) {
     const pid = Object.keys(people)[0]
     const entry = formatEntry(pid, 0, people, families, s)
-    return await paginate([entry], [pid], opts)
+    return paginate([entry], [pid], opts)
   }
 
   const roots = findRoots(people, families)
@@ -370,5 +370,5 @@ export async function computeLineageText(data: PublicationData, opts: LayoutOpti
     }
   }
 
-  return await paginate(allEntries, roots, opts, opts.canvasId)
+  return paginate(allEntries, roots, opts, opts.canvasId)
 }

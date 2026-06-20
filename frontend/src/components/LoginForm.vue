@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { reactive, ref } from 'vue'
 
 import { login, type LoginRequest } from '../api/auth'
@@ -20,8 +20,8 @@ async function onSubmit() {
   try {
     const data = await login(form)
     emit('success', data.username)
-  } catch (error: unknown) {
-    errorMsg.value = error instanceof Error ? error.message : '登录失败，请稍后重试'
+  } catch (error: any) {
+    errorMsg.value = error?.message || '登录失败，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -31,61 +31,59 @@ async function onSubmit() {
 <template>
   <div class="auth-stage">
     <div class="login-panel">
+      <!-- 左侧：品牌展示 -->
       <aside class="brand-section">
         <div class="editorial-layout">
           <div class="layout-header">
             <div class="logo-mark">
-              <div class="logo-seal">归</div>
+              <div class="logo-seal">溯</div>
               <span class="logo-text">GUIYUAN</span>
             </div>
-            <div class="layout-meta">RELATION ARCHIVE</div>
+            <div class="layout-meta">01 // VISIONS</div>
           </div>
 
           <div class="layout-body">
-            <div class="hero-eyebrow">继续整理</div>
+            <div class="hero-eyebrow">CHAPTER I</div>
             <h1 class="hero-title">
-              把还没说完的名字，
-              <br />
-              慢慢补回来
+              万物<span class="text-italic">逆旅</span><br />
+              百代<span class="text-gradient">过客</span>
             </h1>
             <hr class="hero-divider" />
             <p class="hero-quote">
-              照片会散，聊天会沉，
-              <br />
-              但重要的人和关系，
-              <br />
-              值得被好好放在一起。
+              我们在时间的缝隙中寻找来处，<br />
+              在浩瀚的星海里标记归途。<br />
+              每一段记忆，都是抵抗遗忘的史诗。
             </p>
           </div>
 
           <div class="layout-footer">
             <div class="footer-info">
-              <span class="info-label">先看一眼</span>
-              <router-link to="/sample/ming" class="info-link">打开示例</router-link>
+              <span class="info-label">AESTHETICS</span>
+              <span class="info-value">Timeless Design</span>
             </div>
             <div class="footer-info text-right">
-              <span class="info-label">回到首页</span>
-              <router-link to="/" class="info-link">看看它能做什么</router-link>
+              <span class="info-label">EDITION</span>
+              <span class="info-value">Volume. I</span>
             </div>
           </div>
         </div>
       </aside>
 
+      <!-- 右侧：登录表单 -->
       <main class="form-section">
         <div class="form-wrapper">
           <div class="form-header">
             <h2 class="form-title">欢迎回来</h2>
-            <p class="form-desc">从这里继续整理家人关系与记忆。</p>
+            <p class="form-desc">念念不忘，必有回响</p>
           </div>
 
           <form class="auth-form" @submit.prevent="onSubmit">
             <div class="input-group" :class="{ 'is-focused': focusedField === 'username', 'has-value': form.username }">
-              <label>账号</label>
+              <label>账号 / 邮箱</label>
               <input
                 v-model="form.username"
                 type="text"
                 required
-                autocomplete="username"
                 @focus="focusedField = 'username'"
                 @blur="focusedField = null"
               />
@@ -97,24 +95,28 @@ async function onSubmit() {
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 required
-                autocomplete="current-password"
                 @focus="focusedField = 'password'"
                 @blur="focusedField = null"
               />
-              <button type="button" class="password-toggle" :aria-label="showPassword ? '隐藏密码' : '显示密码'" @click="showPassword = !showPassword">
+              <button type="button" class="password-toggle" @click="showPassword = !showPassword">
                 <svg v-if="showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22" /></svg>
                 <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
               </button>
             </div>
 
-            <div class="form-note">
-              <span>先从你最熟悉的几个人开始，后面的内容都可以慢慢补。</span>
+            <div class="form-actions">
+              <label class="remember-me">
+                <input type="checkbox" checked />
+                <span class="checkmark"></span>
+                保持登录
+              </label>
+              <a href="#" class="forgot-link">忘记密码？</a>
             </div>
 
             <button type="submit" class="submit-btn" :class="{ 'is-loading': loading }" :disabled="loading">
-              <span v-if="loading">正在进入...</span>
+              <span v-if="loading">正在登录...</span>
               <template v-else>
-                <span>进入归源</span>
+                <span>登 录</span>
                 <span class="btn-arrow">→</span>
               </template>
             </button>
@@ -123,8 +125,8 @@ async function onSubmit() {
           </form>
 
           <p class="form-footer">
-            还想先熟悉一下？
-            <router-link to="/sample/ming">先看看示例</router-link>
+            还没有账号？
+            <router-link to="/register">立即注册</router-link>
           </p>
         </div>
       </main>
@@ -133,6 +135,11 @@ async function onSubmit() {
 </template>
 
 <style scoped>
+/* ═══════════════════════════════════════════════════════════
+   LoginForm — 归源登录表单
+   基于 Yohaku 设计体系，纸面质感 + 留白美学
+   ═══════════════════════════════════════════════════════════ */
+
 .auth-stage {
   display: flex;
   align-items: center;
@@ -144,42 +151,44 @@ async function onSubmit() {
 
 @keyframes floatUp {
   from { opacity: 0; transform: translateY(32px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── 主面板：左右分栏 ── */
 .login-panel {
   display: flex;
-  max-width: 980px;
+  max-width: 960px;
   width: 100%;
-  min-height: 560px;
+  min-height: 540px;
   background: var(--color-card-fill);
   border-radius: var(--radius-2xl);
-  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 8px 48px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03);
   border: 1px solid var(--color-card-stroke);
   overflow: hidden;
 }
 
+/* ── 左侧品牌区 ── */
 .brand-section {
   flex: 1;
   position: relative;
   padding: 48px 40px;
-  background:
-    radial-gradient(circle at 18% 22%, rgba(196, 58, 49, 0.12), transparent 38%),
-    linear-gradient(180deg, rgba(240, 239, 235, 0.96), rgba(249, 248, 245, 0.9));
+  background: var(--color-neutral-2);
   border-right: 1px solid var(--color-neutral-4);
   display: flex;
   align-items: center;
   overflow: hidden;
 }
-
+/* 径向光晕 */
 .brand-section::before {
-  content: '';
+  content: "";
   position: absolute;
-  inset: 18px;
-  border: 1px solid rgba(20, 19, 18, 0.06);
-  border-radius: 28px;
+  top: -30%; left: -20%;
+  width: 140%; height: 160%;
+  background: radial-gradient(ellipse at 60% 40%, var(--color-accent-muted) 0%, transparent 60%),
+              radial-gradient(ellipse at 30% 70%, rgba(168,166,159,0.06) 0%, transparent 50%);
   pointer-events: none;
 }
+
 
 .editorial-layout {
   position: relative;
@@ -191,12 +200,10 @@ async function onSubmit() {
   min-height: 100%;
 }
 
-.layout-header,
-.layout-footer {
+.layout-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
 }
 
 .logo-mark {
@@ -211,7 +218,7 @@ async function onSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-accent-gradient);
+  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
   color: #fff;
   font-family: var(--font-serif);
   font-size: var(--text-title-24);
@@ -219,36 +226,51 @@ async function onSubmit() {
   box-shadow: var(--shadow-whisper);
 }
 
-.logo-text,
-.layout-meta,
-.hero-eyebrow,
-.info-label {
+.logo-text {
   font-size: var(--text-label-12);
   font-weight: 500;
   letter-spacing: 0.12em;
   color: var(--color-neutral-7);
-  text-transform: uppercase;
 }
 
-.layout-meta,
-.hero-eyebrow {
-  color: var(--color-accent);
+.layout-meta {
+  font-size: var(--text-caption-10);
+  letter-spacing: 0.08em;
+  color: var(--color-neutral-6);
+  font-weight: 500;
 }
 
 .layout-body {
   margin: auto 0;
-  padding: 28px 0;
+  padding: 24px 0;
+}
+
+.hero-eyebrow {
+  font-size: var(--text-caption-10);
+  letter-spacing: 0.16em;
+  color: var(--color-accent);
+  font-weight: 500;
+  margin-bottom: 8px;
 }
 
 .hero-title {
   font-family: var(--font-serif);
-  font-size: clamp(30px, 4.2vw, 42px);
+  font-size: clamp(30px, 4.5vw, 42px);
   font-weight: 500;
   color: var(--color-neutral-10);
-  line-height: 1.18;
-  margin: 0;
-  letter-spacing: 0.02em;
-  text-wrap: balance;
+  line-height: 1.15;
+  margin: 0; letter-spacing: 0.03em;
+}
+
+.text-italic {
+  font-style: oblique 10deg;
+}
+
+.text-gradient {
+  background: var(--color-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .hero-divider {
@@ -256,46 +278,55 @@ async function onSubmit() {
   height: 2px;
   background: var(--color-accent);
   border: none;
-  margin: 22px 0 18px;
-  opacity: 0.35;
+  margin: 20px 0;
+  opacity: 0.4;
 }
 
 .hero-quote {
-  font-size: var(--text-copy-15);
+  font-size: var(--text-copy-14);
   color: var(--color-neutral-7);
-  line-height: 1.9;
+  line-height: 1.8;
   max-width: 320px;
-  margin: 0;
+  font-style: oblique 10deg;
+}
+
+.layout-footer {
+  display: flex;
+  justify-content: space-between;
 }
 
 .footer-info {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+}
+
+.info-label {
+  font-size: var(--text-caption-10);
+  letter-spacing: 0.1em;
+  color: var(--color-neutral-6);
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-8);
+  font-weight: 500;
 }
 
 .text-right {
   text-align: right;
 }
 
-.info-link {
-  color: var(--color-neutral-9);
-  font-size: var(--text-copy-14);
-  font-weight: 500;
-}
-
-.info-link:hover {
-  color: var(--color-accent);
-}
-
+/* ── 右侧表单区 ── */
 .form-section {
   flex: 1;
   padding: 56px 52px;
   display: flex;
   align-items: center;
-  background:
-    radial-gradient(ellipse at 80% 20%, rgba(196, 58, 49, 0.04) 0%, transparent 50%),
-    var(--color-neutral-1);
+  background: var(--color-neutral-1);
+  background-image:
+    radial-gradient(ellipse at 80% 20%, rgba(196,58,49,0.03) 0%, transparent 50%);
 }
 
 .form-wrapper {
@@ -305,7 +336,7 @@ async function onSubmit() {
 }
 
 .form-header {
-  margin-bottom: 42px;
+  margin-bottom: 48px;
 }
 
 .form-title {
@@ -313,32 +344,31 @@ async function onSubmit() {
   font-size: var(--text-title-24);
   font-weight: 500;
   color: var(--color-neutral-10);
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
-
 .form-title::before {
-  content: '';
+  content: "";
   display: block;
-  width: 24px;
-  height: 2px;
+  width: 24px; height: 2px;
   background: var(--color-accent);
-  opacity: 0.35;
-  border-radius: 1px;
+  opacity: 0.35; border-radius: 1px;
   margin-bottom: 16px;
 }
-
-.form-desc,
-.form-note,
-.form-footer {
+.form-desc {
   font-size: var(--text-copy-14);
   color: var(--color-neutral-7);
-  line-height: 1.8;
+  margin: 0;
+  font-style: oblique 10deg;
 }
 
+/* ── 输入框 ── */
 .input-group {
   position: relative;
   margin-bottom: 24px;
 }
+
+.input-group.is-focused {
+  }
 
 .input-group label {
   display: block;
@@ -365,10 +395,8 @@ async function onSubmit() {
   font-weight: 500;
   border-radius: 10px;
   margin-top: 6px;
-  transition:
-    border-color var(--duration-fast) var(--ease-breath),
-    box-shadow var(--duration-fast) var(--ease-breath),
-    background var(--duration-fast) var(--ease-breath);
+  transition: border-color var(--duration-fast) var(--ease-breath),
+              box-shadow var(--duration-fast) var(--ease-breath);
 }
 
 .input-group input:focus {
@@ -388,7 +416,6 @@ async function onSubmit() {
   top: 38px;
   color: var(--color-neutral-6);
   padding: 4px;
-  background: transparent;
   transition: color var(--duration-fast);
 }
 
@@ -396,14 +423,76 @@ async function onSubmit() {
   color: var(--color-neutral-9);
 }
 
-.form-note {
-  margin: 4px 0 20px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(196, 58, 49, 0.06);
-  color: var(--color-neutral-8);
+/* ── 表单操作行 ── */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-7);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.remember-me input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  background: var(--color-neutral-3);
+  border: 1px solid var(--color-neutral-5);
+  border-radius: var(--radius-sm);
+  position: relative;
+  transition: all var(--duration-fast);
+}
+
+.remember-me input:checked ~ .checkmark {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.checkmark::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.remember-me input:checked ~ .checkmark::after {
+  display: block;
+}
+
+.forgot-link {
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-7);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--duration-fast);
+}
+
+.forgot-link:hover {
+  color: var(--color-accent);
+}
+
+/* ── 提交按钮 ── */
 .submit-btn {
   width: 100%;
   display: flex;
@@ -411,7 +500,7 @@ async function onSubmit() {
   align-items: center;
   gap: 8px;
   padding: 14px;
-  background: var(--color-accent-gradient);
+  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
   color: #fff;
   border: none;
   border-radius: var(--radius-lg);
@@ -419,9 +508,8 @@ async function onSubmit() {
   font-weight: 500;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(196, 58, 49, 0.1);
-  transition:
-    filter var(--duration-fast) var(--ease-breath),
-    transform var(--duration-fast) var(--ease-breath);
+  transition: filter var(--duration-fast) var(--ease-breath),
+              transform var(--duration-fast) var(--ease-breath);
 }
 
 .submit-btn:hover {
@@ -448,6 +536,7 @@ async function onSubmit() {
   transform: translateX(3px);
 }
 
+/* ── 错误提示 ── */
 .error-banner {
   margin-top: 16px;
   padding: 12px 16px;
@@ -459,9 +548,12 @@ async function onSubmit() {
   font-weight: 500;
 }
 
+/* ── 表单底部 ── */
 .form-footer {
-  margin-top: 28px;
+  margin-top: 32px;
   text-align: center;
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-7);
 }
 
 .form-footer a {
@@ -474,6 +566,7 @@ async function onSubmit() {
   text-decoration: underline;
 }
 
+/* ── 响应式 ── */
 @media (max-width: 960px) {
   .login-panel {
     flex-direction: column;
@@ -488,6 +581,10 @@ async function onSubmit() {
 
   .form-section {
     padding: 36px 32px;
+  }
+
+  .hero-title {
+    font-size: var(--text-title-28);
   }
 }
 
@@ -504,13 +601,7 @@ async function onSubmit() {
   .form-section {
     padding: 28px 24px;
   }
-
-  .layout-footer {
-    display: grid;
-  }
-
-  .text-right {
-    text-align: left;
-  }
 }
 </style>
+
+

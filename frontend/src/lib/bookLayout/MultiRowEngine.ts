@@ -24,11 +24,11 @@ import { getFontMetricsEngine } from "./FontMetricsEngine"
  * 执行多行模式排版
  * @returns 排版后的页面数组（使用 multiRowColumns 字段）
  */
-export async function layoutMultiRows(input: LayoutInput): Promise<PageGlyphs[]> {
+export function layoutMultiRows(input: LayoutInput): PageGlyphs[] {
   const { entries, canvas, options } = input
   if (!canvas.multiRows?.enabled) {
     // 回退到普通列流模式
-    const { layoutColumns } = await import("./ColumnFlowEngine")
+    const { layoutColumns } = require("./ColumnFlowEngine")
     return layoutColumns(input)
   }
 
