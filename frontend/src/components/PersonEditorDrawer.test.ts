@@ -47,4 +47,42 @@ describe('PersonEditorDrawer', () => {
       wrapper.findAll('button').some((button) => button.text().includes('查看详情页')),
     ).toBe(false)
   })
+
+  it('renders contextual chips when suggestion metadata is available', () => {
+    const wrapper = mount(PersonEditorDrawer, {
+      props: {
+        open: true,
+        person,
+        publicationId: 7,
+        suggestion: '本人',
+        lineageSuggestion: '长房',
+        details: [],
+        spouse: null,
+        parents: [],
+        children: [],
+        childItems: [],
+        canAddSpouse: true,
+        hasCompleteParents: false,
+        canSwapAdults: false,
+        isSelectedBranchFocused: false,
+        canSetBranchMode: false,
+        branchMode: '',
+        parentActionLabel: '新增父母',
+        branchActionLabel: '设为当前宗支',
+      },
+      global: {
+        stubs: {
+          BranchMountManager: true,
+          Transition: false,
+          Teleport: {
+            template: '<div><slot /></div>',
+          },
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('当前人物')
+    expect(wrapper.text()).toContain('本人')
+    expect(wrapper.text()).toContain('长房')
+  })
 })

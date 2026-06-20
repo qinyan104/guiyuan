@@ -1,20 +1,59 @@
 ﻿<script setup lang="ts">
-import { ref, inject, computed } from 'vue'
+import { ref, inject, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DarkModeToggle from './DarkModeToggle.vue'
 import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import CollaboratorManager from './CollaboratorManager.vue'
 import ExportDialog from '../features/export/ExportDialog.vue'
+import GedcomImportDialog from '../features/gedcom/GedcomImportDialog.vue'
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const showExportDialog = ref(false)
+const showGedcomImport = ref(false)
 const showCollabDialog = ref(false)
 const isExporting = ref(false)
+const headerRoot = ref<HTMLElement | null>(null)
+const activeMenu = ref<'research' | 'export' | null>(null)
 
 const route = useRoute(); const router = useRouter()
 const context = inject(PUBLICATION_CONTEXT_KEY) as any
 
 const isOwner = computed(() => context?.currentAccessRole?.value === 'OWNER')
+const publicationTitle = computed(() => {
+  const title = context?.pub?.publication?.title
+  return typeof title === 'string' && title.trim() ? title.trim() : '未命名族谱'
+})
+const roleLabel = computed(() => {
+  switch (context?.currentAccessRole?.value) {
+    case 'OWNER':
+      return '谱主'
+    case 'EDITOR':
+      return '协修'
+    case 'VIEWER':
+      return '阅览'
+    default:
+      return '共编'
+  }
+})
+const syncStatusLabel = computed(() => {
+  switch (props.syncStatus) {
+    case 'syncing':
+      return '誊录中'
+    case 'saved':
+      return '已落卷'
+    case 'error':
+      return '落卷失败'
+    case 'conflict':
+      return '待校勘'
+    default:
+      return '待落卷'
+  }
+})
+const draftDescriptor = computed(() => {
+  const name = props.fileName.trim()
+  if (name) return name
+  return props.nativeFileAccess ? '未命名本地草稿' : '云端草稿'
+})
 
 function triggerFileInput() {
   fileInputRef.value?.click()
@@ -52,6 +91,8 @@ const emit = defineEmits<{
   (event: 'print-publication'): void
   (event: 'export-json'): void
   (event: 'export-share-html', password: string): void
+  (event: 'import-gedcom'): void
+  (event: 'export-gedcom'): void
   (event: 'logout'): void
   (event: 'go-back'): void
   (event: 'view-stats'): void
@@ -63,14 +104,75 @@ const userInitials = computed(() => {
   const name = props.currentUsername || '总'
   return name.charAt(0).toUpperCase()
 })
+function closeTransientUi() {
+  activeMenu.value = null
+  userDropdownOpen.value = false
+}
+
+function toggleMenu(menu: 'research' | 'export') {
+  userDropdownOpen.value = false
+  activeMenu.value = activeMenu.value === menu ? null : menu
+}
+
 function toggleUserDropdown() {
+  activeMenu.value = null
   userDropdownOpen.value = !userDropdownOpen.value
 }
+
+function handleImportClick() {
+  activeMenu.value = null
+  triggerFileInput()
+}
+
+function openPublishingStudio() {
+  closeTransientUi()
+  router.push(`/publishing/publication/${context?.serverPublicationId?.value ?? ''}`)
+}
+
+function openExportDialog() {
+  activeMenu.value = null
+  showExportDialog.value = true
+}
+
+function openCollaboratorDialog() {
+  closeTransientUi()
+  showCollabDialog.value = true
+}
+
+function handleGedcomImported() {
+  // 导入成功后，如果是在合并模式下，刷新当前页面数据
+  // 如果是新建模式，GedcomImportDialog 内部会跳转到新族谱
+  // 这里什么都不做，由 dialog 内部处理
+}
+
+function handleDocumentClick(event: MouseEvent) {
+  const target = event.target as Node | null
+  if (!target || !headerRoot.value) return
+  if (!headerRoot.value.contains(target)) {
+    closeTransientUi()
+  }
+}
+
+function handleDocumentKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    closeTransientUi()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick, { capture: true })
+  document.addEventListener('keydown', handleDocumentKeydown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick, { capture: true })
+  document.removeEventListener('keydown', handleDocumentKeydown)
+})
 
 </script>
 
 <template>
-  <header class="topbar">
+  <header ref="headerRoot" class="topbar">
     <!-- 隐藏的文件输入框 -->
     <input
       ref="fileInputRef"
@@ -81,8 +183,15 @@ function toggleUserDropdown() {
     />
 
     <div class="topbar__intro">
-      <h1 class="clickable-title" @click="emit('go-back')">无涯画布</h1>
-      <span class="sync-dot" :class="`sync-dot--${syncStatus}`" :title="syncStatus === 'syncing' ? '同步中' : syncStatus === 'saved' ? '已保存' : syncStatus === 'error' ? '保存失败' : syncStatus === 'conflict' ? '数据冲突' : '未保存'"></span>
+      <div class="topbar__intro-copy">
+        <p class="topbar-eyebrow">宗谱工作台 · {{ roleLabel }}</p>
+        <div class="topbar__name-row">
+          <button type="button" class="topbar-title" @click="emit('go-back')">无涯画布</button>
+          <span class="sync-dot" :class="`sync-dot--${syncStatus}`" :title="syncStatusLabel"></span>
+          <span class="topbar__status-text">{{ syncStatusLabel }}</span>
+        </div>
+        <p class="topbar__manuscript">《{{ publicationTitle }}》<span>{{ draftDescriptor }}</span></p>
+      </div>
     </div>
 
     <div class="topbar__actions" aria-label="工作台操作">
@@ -98,35 +207,61 @@ function toggleUserDropdown() {
         </button>
 
         <div class="dropdown">
-          <button class="btn btn--secondary dropdown-trigger" type="button">考据 <span class="caret">&#x25BE;</span></button>
-          <div class="dropdown-menu">
-            <button class="dropdown-item" type="button" @click="triggerFileInput">
+          <button
+            class="btn btn--secondary dropdown-trigger"
+            type="button"
+            aria-haspopup="menu"
+            :aria-expanded="activeMenu === 'research'"
+            @click="toggleMenu('research')"
+          >
+            考据 <span class="caret">&#x25BE;</span>
+          </button>
+          <div v-if="activeMenu === 'research'" class="dropdown-menu" role="menu">
+            <button class="dropdown-item" type="button" @click="handleImportClick">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               引入前朝旧卷 (JSON)
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" type="button" @click="activeMenu = null; showGedcomImport = true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+              引入 GEDCOM 族谱 (兼容各谱软件)
             </button>
           </div>
         </div>
 
         <div class="dropdown">
-          <button class="btn btn--secondary dropdown-trigger" type="button">付梓 <span class="caret">&#x25BE;</span></button>
-          <div class="dropdown-menu">
-            <button class="dropdown-item" type="button" @click="router.push(`/publishing/publication/${context?.serverPublicationId?.value ?? ''}`)">
+          <button
+            class="btn btn--secondary dropdown-trigger"
+            type="button"
+            aria-haspopup="menu"
+            :aria-expanded="activeMenu === 'export'"
+            @click="toggleMenu('export')"
+          >
+            付梓 <span class="caret">&#x25BE;</span>
+          </button>
+          <div v-if="activeMenu === 'export'" class="dropdown-menu" role="menu">
+            <button class="dropdown-item" type="button" @click="openPublishingStudio">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
               出版工作室
             </button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="showExportDialog = true">
+            <button class="dropdown-item" type="button" @click="openExportDialog">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               付梓发行 (高精影印/PDF)
             </button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="emit('download-svg')">
+            <button class="dropdown-item" type="button" @click="activeMenu = null; emit('download-svg')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
               拓印长卷 (SVG)
             </button>
-            <button class="dropdown-item" type="button" @click="emit('export-json')">
+            <button class="dropdown-item" type="button" @click="activeMenu = null; emit('export-json')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               封存卷宗草本 (JSON)
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" type="button" @click="activeMenu = null; emit('export-gedcom')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="8 13 12 17 16 13"/><line x1="12" y1="17" x2="12" y2="9"/></svg>
+              导出 GEDCOM 族谱 (兼容各谱软件)
             </button>
           </div>
         </div>
@@ -135,7 +270,7 @@ function toggleUserDropdown() {
           v-if="isOwner"
           class="btn btn--secondary"
           type="button"
-          @click="showCollabDialog = true"
+          @click="openCollaboratorDialog"
         >
           同修编委
         </button>
@@ -145,7 +280,7 @@ function toggleUserDropdown() {
         <span class="topbar__action-divider" aria-hidden="true" />
 
         <div class="user-dropdown-container">
-          <button class="user-profile-pill" :class="{'is-open': userDropdownOpen}" @click="toggleUserDropdown">
+          <button type="button" class="user-profile-pill" :class="{'is-open': userDropdownOpen}" @click="toggleUserDropdown">
             <div class="avatar-ring">
               <span class="avatar-text">{{ userInitials }}</span>
             </div>
@@ -186,7 +321,7 @@ function toggleUserDropdown() {
           <div class="glass-sheet collab-sheet">
             <header class="sheet-header">
               <div class="header-content">
-                <div class="header-icon">👥</div>
+                <div class="header-icon" aria-hidden="true">修</div>
                 <div class="header-text">
                   <h2 class="sheet-title">协作者管理</h2>
                   <p class="sheet-subtitle">管理谁可以查看或编辑您的族谱</p>
@@ -202,6 +337,13 @@ function toggleUserDropdown() {
         </div>
       </transition>
     </Teleport>
+
+    <!-- GEDCOM 导入对话框 -->
+    <GedcomImportDialog
+      v-model:visible="showGedcomImport"
+      :currentPubId="context?.serverPublicationId?.value ?? null"
+      @imported="handleGedcomImported"
+    />
   </header>
 </template>
 
@@ -212,34 +354,59 @@ function toggleUserDropdown() {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 20px;
-  background: var(--color-panel-bg);
-  border-bottom: 1px solid var(--color-card-stroke);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  padding: 14px 18px;
+  background: var(--workbench-header-bg, var(--color-panel-bg));
+  border: 1px solid var(--workbench-header-border, var(--color-card-stroke));
+  border-radius: 24px;
+  box-shadow: var(--workbench-header-shadow, var(--shadow-whisper));
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
   position: sticky;
-  top: 0;
+  top: 12px;
   z-index: 100;
+  margin-bottom: 12px;
 }
 
 /* ── Left: Title + Sync ── */
 .topbar__intro {
   display: flex;
   align-items: center;
-  gap: 10px;
   flex-shrink: 0;
 }
 
+.topbar__intro-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.topbar-eyebrow {
+  margin: 0;
+  color: var(--workbench-text-soft, var(--color-neutral-6));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.topbar__name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .topbar-title {
+  display: inline-flex;
+  align-items: center;
   font-family: var(--font-serif);
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 500;
-  color: var(--color-neutral-10);
+  color: var(--workbench-text-main, var(--color-neutral-10));
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px 0;
-  letter-spacing: 0.03em;
+  padding: 0;
+  letter-spacing: 0.06em;
   transition: opacity 0.15s;
 }
 
@@ -247,13 +414,35 @@ function toggleUserDropdown() {
   opacity: 0.7;
 }
 
+.topbar__status-text {
+  color: var(--workbench-text-soft, var(--color-neutral-6));
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.topbar__manuscript {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--workbench-text-sub, var(--color-neutral-8));
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.topbar__manuscript span {
+  color: var(--workbench-text-soft, var(--color-neutral-6));
+  font-size: 12px;
+}
+
 /* Sync dot */
 .sync-dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
   transition: background 0.3s;
+  box-shadow: 0 0 0 4px rgba(196, 58, 49, 0.08);
 }
 
 .sync-dot--saved { background: #22c55e; }
@@ -297,18 +486,18 @@ function toggleUserDropdown() {
 }
 
 .btn:hover {
-  background: var(--color-neutral-2);
+  background: var(--workbench-panel-muted, var(--color-neutral-2));
 }
 
 .btn--secondary {
-  background: var(--color-neutral-1);
-  border-color: var(--color-neutral-4);
+  background: var(--workbench-panel-muted, var(--color-neutral-1));
+  border-color: var(--workbench-line-soft, var(--color-neutral-4));
   border-radius: 999px;
   padding: 7px 18px;
 }
 
 .btn--secondary:hover {
-  background: var(--color-neutral-2);
+  background: var(--workbench-panel-strong, var(--color-neutral-2));
   border-color: var(--color-neutral-5);
 }
 
@@ -339,18 +528,14 @@ function toggleUserDropdown() {
   left: 0;
   z-index: 200;
   min-width: 200px;
-  background: var(--color-panel-bg);
-  border: 1px solid var(--color-card-stroke);
+  background: var(--workbench-panel-strong, var(--color-panel-bg));
+  border: 1px solid var(--workbench-line-soft, var(--color-card-stroke));
   border-radius: var(--radius-lg);
   box-shadow: 0 12px 32px rgba(0,0,0,0.1);
   padding: 6px;
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-.dropdown:hover .dropdown-menu {
-  display: flex;
 }
 
 .dropdown-item {
@@ -371,7 +556,7 @@ function toggleUserDropdown() {
 }
 
 .dropdown-item:hover {
-  background: var(--color-neutral-2);
+  background: var(--workbench-panel-muted, var(--color-neutral-2));
   color: var(--color-neutral-10);
 }
 
@@ -390,7 +575,7 @@ function toggleUserDropdown() {
 .topbar__action-divider {
   width: 1px;
   height: 24px;
-  background: var(--color-neutral-4);
+  background: var(--workbench-line-soft, var(--color-neutral-4));
   margin: 0 4px;
   flex-shrink: 0;
 }
@@ -405,16 +590,16 @@ function toggleUserDropdown() {
   align-items: center;
   gap: 8px;
   padding: 4px 12px 4px 4px;
-  border: 1px solid var(--color-neutral-4);
+  border: 1px solid var(--workbench-line-soft, var(--color-neutral-4));
   border-radius: 999px;
-  background: var(--color-neutral-1);
+  background: var(--workbench-panel-muted, var(--color-neutral-1));
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .user-profile-pill:hover,
 .user-profile-pill.is-open {
-  background: var(--color-neutral-2);
+  background: var(--workbench-panel-strong, var(--color-neutral-2));
   border-color: var(--color-neutral-5);
 }
 
@@ -432,7 +617,7 @@ function toggleUserDropdown() {
 .avatar-text {
   width: 100%;
   height: 100%;
-  background: var(--bg-panel, #fff);
+  background: var(--workbench-panel-strong, #fff);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -466,8 +651,8 @@ function toggleUserDropdown() {
   right: 0;
   width: 220px;
   border-radius: var(--radius-xl);
-  background: var(--color-panel-bg);
-  border: 1px solid var(--color-card-stroke);
+  background: var(--workbench-panel-strong, var(--color-panel-bg));
+  border: 1px solid var(--workbench-line-soft, var(--color-card-stroke));
   box-shadow: 0 16px 40px rgba(0,0,0,0.1);
   padding: 8px;
   z-index: 9999;
@@ -557,7 +742,10 @@ function toggleUserDropdown() {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: var(--color-accent);
 }
 
@@ -622,6 +810,49 @@ function toggleUserDropdown() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+@media (max-width: 1200px) {
+  .topbar {
+    flex-wrap: wrap;
+  }
+
+  .topbar__actions {
+    width: 100%;
+  }
+
+  .topbar__action-strip {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 860px) {
+  .topbar {
+    align-items: stretch;
+    padding-inline: 16px;
+  }
+
+  .topbar__intro {
+    justify-content: space-between;
+  }
+
+  .topbar__manuscript {
+    flex-wrap: wrap;
+  }
+
+  .topbar__actions {
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .topbar__action-strip {
+    width: max-content;
+    min-width: 100%;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+  }
 }
 </style>
 

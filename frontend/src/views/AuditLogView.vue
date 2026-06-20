@@ -1,9 +1,9 @@
 ﻿<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { listLogs, type AuditLogEntry } from '../api/audit'
-import { useLexicon } from '../composables/useLexicon'
+import { useLexiconStore } from '../stores/lexicon'
 
-const { lexicon } = useLexicon()
+const { lexicon } = useLexiconStore()
 const logs = ref<AuditLogEntry[]>([])
 const loading = ref(true)
 const errorMsg = ref('')

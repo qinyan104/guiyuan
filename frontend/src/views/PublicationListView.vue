@@ -13,12 +13,12 @@ import { builtinSamples } from '../data/builtinDynastySamples'
 import type { PublicationInfo } from '../types/family'
 import ShareLinkManager from '../components/ShareLinkManager.vue'
 import CollaboratorManager from '../components/CollaboratorManager.vue'
-import { useLexicon } from '../composables/useLexicon'
+import { useLexiconStore } from '../stores/lexicon'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import { useFeedback } from '../composables/useFeedback'
 const router = useRouter()
 const feedback = useFeedback()
-const { lexicon } = useLexicon()
+const { lexicon } = useLexiconStore()
 
 const publications = ref<PublicationSummary[]>([])
 const loading = ref(true)
@@ -133,7 +133,7 @@ async function handleDelete(id: number) {
     publications.value = publications.value.filter((p) => p.id !== id)
     deleteConfirmId.value = null
   } catch (err: any) {
-    alert('删除失败: ' + (err?.response?.data?.message || err.message || '未知错误'))
+    feedback.setError('删除失败: ' + (err?.response?.data?.message || err.message || '未知错误'))
   }
 }
 

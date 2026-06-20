@@ -1,8 +1,9 @@
 ﻿<script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useLexicon, type LexiconId } from '../composables/useLexicon'
+import { useLexiconStore, type LexiconId } from '../stores/lexicon'
 
-const { currentLexiconId, lexicons, setLexicon } = useLexicon()
+const lexiconStore = useLexiconStore()
+const { currentLexiconId, lexicons, setLexicon } = lexiconStore
 
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)

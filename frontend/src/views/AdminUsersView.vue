@@ -10,10 +10,10 @@ import {
   type AdminUser,
 } from '../api/admin'
 import { isSuperAdmin } from '../api/auth'
-import { useLexicon } from '../composables/useLexicon'
+import { useLexiconStore } from '../stores/lexicon'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 
-const { lexicon } = useLexicon()
+const { lexicon } = useLexiconStore()
 const users = ref<AdminUser[]>([])
 const loading = ref(true)
 

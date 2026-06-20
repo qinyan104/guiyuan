@@ -9,6 +9,8 @@ const props = defineProps<{
   card: PositionedCard
   settings: PublicationSettings
   selected: boolean
+  hovered?: boolean
+  subdued?: boolean
   kinshipNote?: string | null  // 当前查看者与此人的亲属关系称谓
 }>()
 
@@ -41,6 +43,8 @@ const cardClasses = computed(() => [
   `person-card--${props.person.gender}`,
   props.person.highlightRole ? `person-card--${props.person.highlightRole}` : '',
   props.selected ? 'person-card--selected' : '',
+  props.hovered ? 'person-card--hovered' : '',
+  props.subdued ? 'person-card--subdued' : '',
   props.kinshipNote === '本人' ? 'person-card--ego' : '',
   props.person.isMountPoint ? 'is-mount-point' : '',
 ])
@@ -539,3 +543,266 @@ function handleMouseLeave() {
     </g>
   </g>
 </template>
+
+<style scoped>
+.person-card {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: opacity 180ms ease;
+}
+
+.person-card text {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.person-card__drop-line {
+  stroke: var(--line-soft, rgba(0, 0, 0, 0.15));
+  transition: stroke 0.2s ease;
+}
+
+.person-card__name--compact {
+  transition: fill 0.3s ease;
+}
+
+.person-card__panel {
+  fill: var(--card-panel-fill);
+  stroke: var(--card-panel-stroke);
+  stroke-width: 1.2;
+  transition:
+    stroke 180ms ease,
+    stroke-width 180ms ease,
+    fill 180ms ease;
+}
+
+.person-card__accent-frame {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 0;
+  pointer-events: none;
+}
+
+.person-card__header {
+  fill: var(--card-header-fill);
+}
+
+.person-card__divider {
+  stroke: var(--card-inner-stroke);
+  stroke-width: 1;
+}
+
+.person-card__seal {
+  fill: var(--card-header-fill);
+  stroke: var(--card-inner-stroke);
+  stroke-width: 1;
+}
+
+.person-card__seal-mark {
+  fill: none;
+  stroke: var(--card-detail-fill);
+  opacity: 0.4;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.person-card__status {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  fill: var(--card-status-fill);
+}
+
+.person-card__name {
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-weight: 600;
+  fill: var(--card-name-fill);
+  letter-spacing: 0.08em;
+}
+
+.person-card__note-pill {
+  fill: var(--card-header-fill);
+}
+
+.person-card__lineage-pill {
+  fill: none;
+  stroke: var(--card-inner-stroke);
+  stroke-width: 0.8;
+}
+
+.person-card__imperial-ribbon {
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 0.8;
+}
+
+.person-card__imperial-ribbon--emperor {
+  fill: #c6932f;
+}
+
+.person-card__imperial-ribbon--heir {
+  fill: #9a4d36;
+}
+
+.person-card__imperial-label {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  fill: #fffaf0;
+}
+
+.person-card__note,
+.person-card__detail,
+.person-card__lineage-text {
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  fill: var(--card-detail-fill);
+}
+
+.person-card__note {
+  letter-spacing: 0.1em;
+}
+
+.person-card__lineage-text {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.person-card__detail-band {
+  fill: none;
+}
+
+.person-card--male .person-card__header,
+.person-card--male .person-card__note-pill,
+.person-card--male .person-card__detail-band {
+  fill: none;
+}
+
+.person-card--female .person-card__header,
+.person-card--female .person-card__note-pill,
+.person-card--female .person-card__detail-band {
+  fill: none;
+}
+
+.person-card--emperor .person-card__accent-frame--emperor {
+  stroke: rgba(198, 147, 47, 0.92);
+  stroke-width: 2.6;
+}
+
+.person-card--emperor .person-card__panel {
+  stroke: rgba(198, 147, 47, 0.56);
+  stroke-width: 2.2;
+}
+
+.person-card--emperor .person-card__header,
+.person-card--emperor .person-card__note-pill,
+.person-card--emperor .person-card__detail-band {
+  fill: none;
+}
+
+.person-card--emperor .person-card__lineage-pill {
+  fill: none;
+  stroke: rgba(198, 147, 47, 0.26);
+}
+
+.person-card--heir .person-card__accent-frame--heir {
+  stroke: rgba(154, 77, 54, 0.82);
+  stroke-width: 2.2;
+  stroke-dasharray: 8 5;
+}
+
+.person-card--heir .person-card__panel {
+  stroke: rgba(154, 77, 54, 0.48);
+  stroke-width: 2;
+}
+
+.person-card--heir .person-card__header,
+.person-card--heir .person-card__note-pill,
+.person-card--heir .person-card__detail-band {
+  fill: none;
+}
+
+.person-card--heir .person-card__lineage-pill {
+  fill: none;
+  stroke: rgba(154, 77, 54, 0.22);
+}
+
+.person-card--consort .person-card__panel {
+  stroke: rgba(180, 110, 140, 0.48);
+  stroke-width: 2;
+}
+
+.person-card--consort .person-card__header,
+.person-card--consort .person-card__note-pill,
+.person-card--consort .person-card__detail-band,
+.person-card--consort .person-card__lineage-pill {
+  fill: rgba(180, 110, 140, 0.12);
+  stroke: rgba(180, 110, 140, 0.18);
+}
+
+.person-card:hover .person-card__panel {
+  fill: var(--card-hover-fill);
+  stroke: var(--card-hover-stroke);
+}
+
+.person-card--hovered .person-card__panel {
+  fill: var(--card-hover-fill);
+  stroke: var(--card-hover-stroke);
+  stroke-width: 2;
+}
+
+.person-card--hovered .person-card__name,
+.person-card--hovered .person-card__name--compact {
+  fill: var(--card-selected-stroke);
+}
+
+.person-card:hover .person-card__name--compact {
+  fill: var(--accent-amber) !important;
+}
+
+.person-card:hover .person-card__drop-line {
+  stroke: var(--color-neutral-6);
+}
+
+.person-card--selected .person-card__panel {
+  stroke: var(--card-selected-stroke);
+  stroke-width: 2.4;
+}
+
+.person-card--selected .person-card__drop-line {
+  stroke: var(--color-accent);
+  stroke-opacity: 0.4;
+}
+
+.person-card--selected .person-card__knot-ring {
+  filter: drop-shadow(0 0 6px var(--color-accent, #c43a31));
+}
+
+.person-card--selected .person-card__knot-core {
+  filter: drop-shadow(0 0 3px var(--color-accent, #c43a31));
+}
+
+.person-card--selected .person-card__name--compact {
+  fill: var(--color-accent, #c43a31) !important;
+  font-weight: 600;
+}
+
+.person-card--subdued {
+  opacity: 0.54;
+}
+
+.person-card--ego .person-card__panel {
+  stroke: #f59e0b;
+  stroke-width: 2.8;
+  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.35));
+}
+
+.person-card--ego .person-card__header {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+.is-mount-point .person-card__panel {
+  stroke: #2d59a2;
+  stroke-width: 3px;
+  stroke-dasharray: 4;
+}
+</style>

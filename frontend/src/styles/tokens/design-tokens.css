@@ -42,7 +42,9 @@
 
   --color-accent: #c43a31;
   --color-accent-light: #d47068;   /* 暗色模式下提亮 */
+  --color-accent-deep: #8b2c26;    /* 朱砂渐变深端 — 按钮/印章渐变起点 */
   --color-accent-muted: rgba(196, 58, 49, 0.10);  /* 淡色强调背景 */
+  --color-accent-gradient: linear-gradient(145deg, var(--color-accent-deep), var(--color-accent));
 
   /* ═══════════════════════════════════════════════════════════════════════════
      语义色 — 传统和色（Japanese 和色）
@@ -87,6 +89,12 @@
   /* 面板 & 对话框 */
   --color-panel-bg: rgba(249, 248, 245, 0.96);
   --color-overlay: rgba(20, 19, 18, 0.3);
+
+  /* 场景表面 — 落地页等整页背景（暗色下自动反转，避免穿帮） */
+  --bg-landing-gradient: linear-gradient(180deg, #fbfaf7 0%, #f3f0ea 48%, #efebe3 100%);
+  --bg-landing-glow: rgba(196, 58, 49, 0.10);   /* 朱砂径向光 */
+  --bg-landing-vignette: rgba(36, 35, 31, 0.08); /* 暗角色彩平衡 */
+  --bg-landing-grid: rgba(20, 19, 18, 0.02);    /* 纸纹理网格线 */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      排版
@@ -137,6 +145,7 @@
 
   --shadow-whisper: 0 4px 24px rgba(0, 0, 0, 0.05);
   --shadow-ring: 0 0 0 1px rgba(24, 24, 27, 0.08);
+  --shadow-accent: 0 12px 32px rgba(196, 58, 49, 0.18);  /* 朱砂着色阴影 — CTA/印章 */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      动效
@@ -182,6 +191,8 @@
 
   /* 强调色 — 暗色下提亮 */
   --color-accent: #e07068;
+  --color-accent-deep: #b34a40;    /* 暗色朱砂渐变深端，与 accent-light 色相协调 */
+  --color-accent-gradient: linear-gradient(145deg, var(--color-accent-deep), var(--color-accent));
 
   /* 语义色 — 各提亮约 15% */
   --color-info: #5a8cc0;
@@ -214,8 +225,15 @@
   --color-panel-bg: rgba(30, 30, 30, 0.96);
   --color-overlay: rgba(0, 0, 0, 0.5);
 
+  /* 落地页暗色覆写 — 纯灰三段，降朱砂光强度避免暗底过亮 */
+  --bg-landing-gradient: linear-gradient(180deg, #141414 0%, #1a1a1a 48%, #1e1e1e 100%);
+  --bg-landing-glow: rgba(224, 112, 104, 0.06);
+  --bg-landing-vignette: rgba(0, 0, 0, 0.24);
+  --bg-landing-grid: rgba(255, 255, 255, 0.02);
+
   --shadow-whisper: 0 4px 24px rgba(0, 0, 0, 0.2);
   --shadow-ring: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-accent: 0 12px 32px rgba(224, 112, 104, 0.12);  /* 暗色朱砂阴影降噪 */
 
   color-scheme: dark;
 }

@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { calculateRevealPan, type RevealPersonOptions } from '../lib/canvasViewport'
 import type { KinshipTerm } from '../lib/kinship'
+import { getPersonStatusLabel } from '../lib/personStatus'
 import type { Person, PublicationData, PublicationLayout, PublicationSettings } from '../types/family'
 import PersonCardSvg from './PersonCardSvg.vue'
 
@@ -115,6 +116,7 @@ const MINIMAP_COLORS = {
   male: '#5b6e8a',
   female: '#c47a5a',
   unknown: '#b5a99a',
+  hovered: '#8f5f35',
   selected: '#d4a853',
 }
 
@@ -183,16 +185,19 @@ function drawMinimapCanvas() {
     props.layout.cards.forEach((card) => {
       const person = props.publication.people[card.personId]
       const isSelected = card.personId === props.selectedPersonId
+      const isHovered = card.personId === props.hoveredPersonId
 
       if (isSelected) {
         ctx.fillStyle = MINIMAP_COLORS.selected
+      } else if (isHovered) {
+        ctx.fillStyle = MINIMAP_COLORS.hovered
       } else {
         ctx.fillStyle = person?.gender === 'female' ? MINIMAP_COLORS.female : person?.gender === 'male' ? MINIMAP_COLORS.male : MINIMAP_COLORS.unknown
       }
 
       const x = (card.x + card.width / 2) * scale
       const y = (card.y + card.height / 2) * scale
-      const size = isSelected ? 6 : 5
+      const size = isSelected ? 6 : isHovered ? 5.5 : 5
 
       ctx.fillRect(x - size / 2, y - size / 2, size, size)
     })
@@ -200,7 +205,7 @@ function drawMinimapCanvas() {
 }
 
 watch(
-  () => [props.layout.cards, props.selectedPersonId, minimapData.value.scale],
+  () => [props.layout.cards, props.selectedPersonId, props.hoveredPersonId, minimapData.value.scale],
   () => {
     drawMinimapCanvas()
   },
@@ -222,6 +227,30 @@ function handleHoverPerson(personId: string | null) {
 function resolvePerson(personId: string): Person {
   return props.publication.people[personId]
 }
+
+const selectedPerson = computed(() => props.selectedPersonId ? props.publication.people[props.selectedPersonId] ?? null : null)
+const hoveredPerson = computed(() => props.hoveredPersonId ? props.publication.people[props.hoveredPersonId] ?? null : null)
+const focusPerson = computed(() => selectedPerson.value ?? hoveredPerson.value)
+const focusLabel = computed(() => {
+  if (selectedPerson.value) return '当前焦点'
+  if (hoveredPerson.value) return '悬停人物'
+  return '画布状态'
+})
+const focusTitle = computed(() => {
+  if (focusPerson.value) return focusPerson.value.name
+  return '拖动画布，滚轮缩放'
+})
+const focusMeta = computed(() => {
+  if (selectedPerson.value && props.relationshipToSelected) {
+    return `${props.relationshipToSelected.term} · ${props.relationshipToSelected.description}`
+  }
+
+  if (focusPerson.value) {
+    return props.kinshipNotes?.[focusPerson.value.id] || focusPerson.value.note || focusPerson.value.titleName || getPersonStatusLabel(focusPerson.value)
+  }
+
+  return '点击人物进入编辑，悬停可快速辨认当前节点'
+})
 
 const CARD_TO_SCREEN_RATIO = 1
 
@@ -493,7 +522,10 @@ function resetView() {
   <div
     ref="viewportRef"
     class="canvas-viewport"
-    :class="{ 'canvas-viewport--dragging': isDragging }"
+    :class="{
+      'canvas-viewport--dragging': isDragging,
+      'canvas-viewport--focused': Boolean(focusPerson),
+    }"
     :style="viewportStyle"
     @pointerdown="handlePointerDown"
     @pointermove="handlePointerMove"
@@ -556,6 +588,8 @@ function resetView() {
               :card="card"
               :settings="settings"
               :selected="card.personId === selectedPersonId"
+              :hovered="card.personId === hoveredPersonId"
+              :subdued="Boolean((selectedPersonId || hoveredPersonId) && card.personId !== selectedPersonId && card.personId !== hoveredPersonId)"
               :kinshipNote="kinshipNotes?.[card.personId] ?? null"
               @select="handleSelect"
               @hover="handleHoverPerson"
@@ -563,6 +597,12 @@ function resetView() {
           </g>
         </svg>
       </div>
+    </div>
+
+    <div class="canvas-context" :class="{ 'canvas-context--active': Boolean(focusPerson) }">
+      <span class="canvas-context__eyebrow">{{ focusLabel }}</span>
+      <strong class="canvas-context__title">{{ focusTitle }}</strong>
+      <p class="canvas-context__meta">{{ focusMeta }}</p>
     </div>
 
     <div
@@ -609,3 +649,208 @@ function resetView() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.canvas-viewport {
+  position: relative;
+  min-height: calc(100vh - 164px);
+  overflow: hidden;
+  touch-action: none;
+  cursor: default;
+  overscroll-behavior: contain;
+  background:
+    linear-gradient(var(--canvas-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-grid-color) 1px, transparent 1px),
+    var(--canvas-bg);
+  background-size: 44px 44px, 44px 44px, auto;
+  background-position:
+    calc(50% + var(--grid-offset-x, 0px)) calc(50% + var(--grid-offset-y, 0px)),
+    calc(50% + var(--grid-offset-x, 0px)) calc(50% + var(--grid-offset-y, 0px)),
+    center;
+}
+
+.canvas-viewport::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--workspace-glow, transparent);
+  pointer-events: none;
+}
+
+.canvas-viewport::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.canvas-viewport--focused::after {
+  opacity: 1;
+}
+
+.canvas-viewport--dragging {
+  cursor: default;
+  user-select: none;
+}
+
+.canvas-camera {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.canvas-minimap {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 26;
+  width: 220px;
+  padding: 12px;
+  border-radius: 20px;
+  background: var(--minimap-bg);
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.16));
+  box-shadow: 0 18px 28px rgba(82, 57, 28, 0.1);
+  user-select: none;
+  touch-action: none;
+}
+
+.canvas-context {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  z-index: 26;
+  width: min(320px, calc(100vw - 64px));
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: var(--bg-panel, rgba(255, 249, 241, 0.82));
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.16));
+  box-shadow: 0 18px 28px rgba(82, 57, 28, 0.08);
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+}
+
+.canvas-context--active {
+  background: var(--bg-panel-strong, rgba(255, 253, 249, 0.92));
+}
+
+.canvas-context__eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.canvas-context__title {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-main);
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.canvas-context__meta {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.canvas-minimap__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.canvas-minimap__header span {
+  color: var(--text-soft);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.canvas-minimap__header strong {
+  color: var(--text-main);
+  font-size: 13px;
+}
+
+.canvas-minimap__stage {
+  position: relative;
+  width: 100%;
+  height: 164px;
+  border-radius: 14px;
+  background:
+    linear-gradient(var(--canvas-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-grid-color) 1px, transparent 1px),
+    var(--bg-panel-strong, rgba(237, 228, 208, 0.82));
+  background-size: 18px 18px;
+  overflow: hidden;
+}
+
+.canvas-minimap__paper {
+  position: absolute;
+  border-radius: 10px;
+  background: var(--bg-panel, rgba(249, 241, 227, 0.36));
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.1));
+}
+
+.canvas-minimap__canvas {
+  display: block;
+  pointer-events: none;
+}
+
+.canvas-minimap__viewport {
+  position: absolute;
+  border-radius: 8px;
+  border: 1.5px dashed var(--minimap-node-selected, rgba(180, 140, 70, 0.5));
+  background: transparent;
+  box-shadow: none;
+}
+
+.publication-stage {
+  position: relative;
+  background: transparent;
+  border-radius: 8px;
+  filter: var(--filter-paper);
+}
+
+.publication-svg {
+  display: block;
+  overflow: visible;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tree-lines line {
+  stroke: var(--tree-line-color);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+@media (max-width: 980px) {
+  .canvas-viewport {
+    min-height: calc(100vh - 152px);
+  }
+
+  .canvas-minimap {
+    right: 12px;
+    bottom: 12px;
+    width: min(220px, calc(100vw - 40px));
+  }
+
+  .canvas-context {
+    left: 12px;
+    bottom: 12px;
+    width: min(280px, calc(100vw - 40px));
+  }
+}
+</style>

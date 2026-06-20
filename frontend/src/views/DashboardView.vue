@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useLexicon } from '../composables/useLexicon'
+import { useLexiconStore } from '../stores/lexicon'
 import { listPublications, createPublication, type PublicationSummary } from '../api/publication'
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { isAdmin, isSuperAdmin } from '../api/auth'
@@ -10,7 +10,7 @@ import { useFeedback } from '../composables/useFeedback'
 import { adminListUsers, adminBackupDatabase } from '../api/admin'
 
 const router = useRouter()
-const { lexicon } = useLexicon()
+const { lexicon } = useLexiconStore()
 const feedback = useFeedback()
 
 const pubCount = ref(0)
@@ -287,13 +287,13 @@ async function handleCreateFromDashboard() {
 }
 
 .bento-card {
-  background: var(--color-card-fill));
-  border: 1px solid var(--color-card-stroke));
+  background: var(--color-card-fill);
+  border: 1px solid var(--color-card-stroke);
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 
     0 12px 32px -12px rgba(0,0,0,0.05),
-    inset 0 0 0 1px var(--color-neutral-4));
+    inset 0 0 0 1px var(--color-neutral-4);
   backdrop-filter: blur(24px) saturate(150%);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
   position: relative;
@@ -303,7 +303,6 @@ async function handleCreateFromDashboard() {
   flex-direction: column;
 }
 
-[data-theme="dark"] .bento-card,
 [data-theme="dark"] .bento-card {
   background: rgba(0, 0, 0, 0.2);
   border-color: rgba(255, 255, 255, 0.06);
@@ -394,25 +393,6 @@ async function handleCreateFromDashboard() {
 }
 [data-theme="dark"] .hero-bg-layer {
   background: var(--color-neutral-2);
-}
-
-.card-glass-panel {
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-xl);
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-[data-theme="dark"] .card-glass-panel {
-  background: rgba(30, 30, 30, 0.6);
-  border-color: rgba(255, 255, 255, 0.06);
 }
 
 
@@ -509,7 +489,6 @@ async function handleCreateFromDashboard() {
   -webkit-text-fill-color: transparent;
   text-shadow: none;
 }
-[data-theme="dark"] .card-users .stat-value,
 [data-theme="dark"] .card-users .stat-value {
   background: linear-gradient(135deg, #fff, #aaa);
   -webkit-background-clip: text;
@@ -535,9 +514,10 @@ async function handleCreateFromDashboard() {
 
 /* Action Box */
 .card-action {
-  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
+  background: var(--color-accent-gradient);
   color: #fff;
   border: none;
+  box-shadow: var(--shadow-accent);
   justify-content: center;
   align-items: center;
 }
@@ -608,7 +588,6 @@ async function handleCreateFromDashboard() {
   background: var(--color-neutral-5);
   z-index: 0;
 }
-[data-theme="dark"] .history-list::before,
 [data-theme="dark"] .history-list::before {
   background: rgba(255,255,255,0.1);
 }
@@ -636,7 +615,6 @@ async function handleCreateFromDashboard() {
   box-shadow: 0 0 0 4px var(--color-card-fill);
   transition: transform 0.2s;
 }
-[data-theme="dark"] .history-thread,
 [data-theme="dark"] .history-thread {
   box-shadow: 0 0 0 4px rgba(0,0,0,0.5);
 }
@@ -648,14 +626,12 @@ async function handleCreateFromDashboard() {
 .history-item:hover .history-thread {
   transform: translateY(-50%) scale(1.5);
 }
-[data-theme="dark"] .history-item:hover,
 [data-theme="dark"] .history-item:hover {
   background: rgba(255,255,255,0.06);
 }
 
 .history-time {
   font-family: monospace;
-  color: var(--color-neutral-6);
   font-weight: 400;
   color: var(--color-neutral-6);
   width: 45px;
@@ -748,7 +724,6 @@ async function handleCreateFromDashboard() {
   border-radius: 50%;
   animation: spin 1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
-[data-theme="dark"] .spinner,
 [data-theme="dark"] .spinner {
   border-color: rgba(255,255,255,0.1);
   border-top-color: var(--color-accent);
@@ -786,7 +761,7 @@ async function handleCreateFromDashboard() {
 .error-card {
   max-width: 420px;
   width: 100%;
-  background: var(--color-card-fill));
+  background: var(--color-card-fill);
   backdrop-filter: blur(40px) saturate(180%);
   border-radius: 32px;
   border: 1px solid rgba(255, 59, 48, 0.2);
@@ -794,7 +769,6 @@ async function handleCreateFromDashboard() {
   padding: 48px 40px;
   text-align: center;
 }
-[data-theme="dark"] .error-card,
 [data-theme="dark"] .error-card {
   background: rgba(0,0,0,0.5);
   border-color: rgba(255, 59, 48, 0.3);
@@ -834,7 +808,7 @@ async function handleCreateFromDashboard() {
   position: relative;
   max-width: 520px;
   width: 100%;
-  background: var(--color-card-fill));
+  background: var(--color-card-fill);
   backdrop-filter: blur(40px) saturate(180%);
   border-radius: 32px;
   border: 1px solid var(--color-neutral-2);
@@ -865,7 +839,7 @@ async function handleCreateFromDashboard() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
+  background: var(--color-accent-gradient);
   border-radius: 20px;
   font-family: 'Noto Serif SC', serif;
   font-size: 2rem;
@@ -907,9 +881,9 @@ async function handleCreateFromDashboard() {
   border: none;
 }
 .welcome-btn.primary {
-  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
+  background: var(--color-accent-gradient);
   color: #fff;
-  box-shadow: var(--shadow-whisper);
+  box-shadow: var(--shadow-accent);
 }
 .welcome-btn.primary:hover {
   transform: translateY(-2px);

@@ -2,6 +2,7 @@
 import { onMounted, onBeforeUnmount } from 'vue'
 import type { KinshipTerm } from '../lib/kinship'
 import type { PublicationSettings } from '../types/family'
+import ValidationPanel from '../features/validation/ValidationPanel.vue'
 
 interface HistoryDisplayEntry {
   id: string
@@ -12,6 +13,8 @@ interface HistoryDisplayEntry {
 const props = defineProps<{
   layoutPanelOpen: boolean
   historyOpen: boolean
+  validationOpen: boolean
+  pubId: number | null
   focusFamilyLabel: string
   canReturnToMainBranch: boolean
   canUndo: boolean
@@ -31,6 +34,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'toggle-layout'): void
   (event: 'toggle-history'): void
+  (event: 'toggle-validation'): void
   (event: 'return-main-branch'): void
   (event: 'reset-canvas-view'): void
   (event: 'undo'): void
@@ -41,6 +45,8 @@ const emit = defineEmits<{
   (event: 'focus-selected-branch'): void
   (event: 'close-layout'): void
   (event: 'close-history'): void
+  (event: 'close-validation'): void
+  (event: 'locate-person', personId: string): void
   (event: 'open-kinship'): void
   (event: 'update-settings', patch: Partial<PublicationSettings>): void
 }>()
@@ -69,11 +75,12 @@ function readPaperValue(event: Event): PublicationSettings['paper'] {
 function onClickOutside(e: MouseEvent) {
   const target = e.target as Element | null
   if (!target) return
-  if (target.closest('.layout-panel') || target.closest('.history-panel') || target.closest('.tool-btn--panel')) {
+  if (target.closest('.layout-panel') || target.closest('.history-panel') || target.closest('.validation-panel-section') || target.closest('.tool-btn--panel')) {
     return
   }
   if (props.layoutPanelOpen) emit('close-layout')
   if (props.historyOpen) emit('close-history')
+  if (props.validationOpen) emit('close-validation')
 }
 
 onMounted(() => {
@@ -108,6 +115,16 @@ onBeforeUnmount(() => {
         <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 7h5l-2-3" /><path d="M4 7a6 6 0 1 1 0 6" /><circle cx="12" cy="10" r="1" fill="currentColor" stroke="none" /></svg>
         历史
       </button>
+      <button
+        class="tool-btn tool-btn--panel"
+        :class="{ 'tool-btn--active': validationOpen }"
+        type="button"
+        :aria-pressed="validationOpen"
+        @click="$emit('toggle-validation')"
+      >
+        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M9 11l2 2 4-6" /><circle cx="10" cy="10" r="7" /></svg>
+        校验
+      </button>
     </div>
     <button
       v-if="canReturnToMainBranch"
@@ -141,8 +158,8 @@ onBeforeUnmount(() => {
 
   <div class="floating-toolbar floating-toolbar--right">
     <div v-if="!hasSelectedPerson" class="status-chip status-chip--compact">
-      <span>宗支</span>
-      <strong>{{ focusFamilyLabel }}</strong>
+      <span class="status-chip__label">当前宗支</span>
+      <strong class="status-chip__value">{{ focusFamilyLabel }}</strong>
     </div>
 
     <div v-if="hasSelectedPerson" class="selection-chip">
@@ -174,7 +191,7 @@ onBeforeUnmount(() => {
 
     <div class="zoom-control">
       <button class="zoom-control__btn" type="button" @click="$emit('adjust-zoom', -0.05)">−</button>
-      <span>{{ Math.round(zoom * 100) }}%</span>
+      <span class="zoom-control__value">缩放 {{ Math.round(zoom * 100) }}%</span>
       <button class="zoom-control__btn" type="button" @click="$emit('adjust-zoom', 0.05)">+</button>
     </div>
   </div>
@@ -379,9 +396,428 @@ onBeforeUnmount(() => {
       </p>
     </section>
   </Transition>
+
+  <Transition name="float-panel">
+    <section v-if="validationOpen" class="validation-panel-section floating-panel--left" @mousedown.stop>
+      <div class="floating-panel__header">
+        <div>
+          <p class="floating-panel__eyebrow">质量</p>
+          <h2>数据校验</h2>
+        </div>
+        <button class="floating-panel__close" type="button" @click="$emit('close-validation')" aria-label="关闭">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11" /><line x1="11" y1="3" x2="3" y2="11" /></svg>
+        </button>
+      </div>
+      <ValidationPanel
+        :pubId="pubId"
+        @locate-person="$emit('locate-person', $event)"
+      />
+    </section>
+  </Transition>
 </template>
 
 <style scoped>
+.tool-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  transition: opacity 150ms ease;
+}
+
+.btn-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.8;
+  transition: opacity 150ms ease;
+}
+
+.floating-toolbar {
+  position: absolute;
+  z-index: 25;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.floating-toolbar--left {
+  top: 16px;
+  left: 16px;
+  gap: 6px;
+}
+
+.floating-toolbar--right {
+  top: 16px;
+  right: 16px;
+  max-width: min(calc(100% - 32px), 760px);
+  justify-content: flex-end;
+}
+
+.tool-btn,
+.status-chip,
+.zoom-control {
+  border-radius: 14px;
+  background: var(--bg-panel, rgba(255, 249, 241, 0.8));
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.14));
+  box-shadow: 0 8px 16px rgba(82, 57, 28, 0.05);
+}
+
+.tool-btn {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  padding: 6px 10px;
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease,
+    background 0.3s ease;
+}
+
+.tool-btn:hover {
+  background: var(--bg-panel-strong, rgba(255, 255, 255, 0.6));
+  transform: translateY(-2px);
+}
+
+.tool-btn:hover .tool-icon {
+  opacity: 1;
+}
+
+.tool-btn:active {
+  transform: scale(0.96);
+  transition-duration: 50ms;
+}
+
+.tool-btn:active .tool-icon {
+  opacity: 1;
+  transition-duration: 50ms;
+}
+
+.tool-switcher {
+  display: inline-flex;
+  gap: 1px;
+  align-items: center;
+  padding: 3px;
+  border-radius: 16px;
+  background: var(--bg-panel, rgba(255, 249, 241, 0.78));
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.14));
+  box-shadow: 0 8px 16px rgba(82, 57, 28, 0.04);
+}
+
+.tool-btn--panel {
+  min-width: 44px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.tool-btn--panel:hover {
+  background: var(--bg-paper, rgba(255, 255, 255, 0.56));
+  box-shadow: none;
+}
+
+.tool-btn--active {
+  background: var(--accent-earth, rgba(69, 47, 27, 0.92));
+  border-color: transparent;
+  color: var(--accent-btn-color, #fff8ef);
+  box-shadow: 0 8px 16px rgba(82, 57, 28, 0.13);
+}
+
+.tool-btn--accent {
+  background: var(--accent-btn-bg, linear-gradient(135deg, rgba(118, 84, 47, 0.96), rgba(159, 112, 57, 0.96)));
+  color: var(--accent-btn-color, #fff8ef);
+}
+
+.tool-btn--quiet {
+  padding-inline: 10px;
+  border-style: solid;
+  background: var(--bg-paper, rgba(255, 251, 244, 0.5));
+  box-shadow: 0 2px 4px rgba(82, 57, 28, 0.03);
+}
+
+.status-chip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+}
+
+.status-chip--compact {
+  min-width: 100px;
+}
+
+.status-chip__label {
+  color: var(--text-soft);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.status-chip__value {
+  color: var(--text-main);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.selection-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.22), transparent 44%),
+    var(--bg-panel-strong, rgba(255, 249, 241, 0.9));
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.16));
+  box-shadow: 0 14px 24px rgba(82, 57, 28, 0.08);
+}
+
+.selection-chip__content {
+  display: flex;
+  min-width: 220px;
+  max-width: 320px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 4px 2px 6px;
+}
+
+.selection-chip__header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.selection-chip__family {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-paper, rgba(255, 255, 255, 0.68));
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.12));
+  color: var(--text-sub);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.selection-chip__content strong {
+  color: var(--text-main);
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.selection-chip__content em {
+  max-width: 320px;
+  overflow: hidden;
+  color: var(--text-sub);
+  font-size: 12px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selection-chip__kinship {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.selection-chip__kinship-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(169, 110, 53, 0.12);
+  border: 1px solid rgba(169, 110, 53, 0.18);
+  color: var(--accent-earth);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.selection-chip__kinship-desc {
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.selection-chip__actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.selection-chip__btn {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  min-width: 56px;
+  border-radius: 12px;
+  padding: 6px 10px;
+  background: var(--bg-paper, rgba(255, 255, 255, 0.72));
+  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.12));
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 150ms cubic-bezier(0.2, 0, 0, 1),
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.selection-chip__btn:hover:not(:disabled) {
+  background: var(--bg-panel-strong, #fffdf8);
+}
+
+.selection-chip__btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 50ms;
+}
+
+.selection-chip__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.44;
+}
+
+.selection-chip__btn--accent {
+  background: var(--accent-btn-bg);
+  color: var(--accent-btn-color);
+}
+
+.selection-chip__btn--danger {
+  background: #c43a31;
+  color: #fff;
+  border-color: #c43a31;
+}
+
+.selection-chip__btn--danger:hover:not(:disabled) {
+  background: #c43a31;
+  opacity: 0.85;
+}
+
+.zoom-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+}
+
+.zoom-control__value {
+  min-width: 44px;
+  text-align: center;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.zoom-control__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: var(--bg-paper, rgba(255, 255, 255, 0.72));
+  color: var(--text-sub);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 150ms cubic-bezier(0.2, 0, 0, 1),
+    background 150ms ease;
+}
+
+.zoom-control__btn:hover {
+  background: var(--bg-panel-strong, rgba(255, 255, 255, 0.96));
+}
+
+.zoom-control__btn:active {
+  transform: scale(0.95);
+  transition-duration: 50ms;
+}
+
+.floating-panel {
+  position: absolute;
+  top: 74px;
+  z-index: 24;
+  width: 330px;
+  max-height: calc(100% - 150px);
+  overflow: auto;
+  border-radius: 24px;
+  background: var(--bg-panel-strong, linear-gradient(180deg, rgba(255, 252, 246, 0.94), rgba(245, 236, 220, 0.92)));
+  border: 1px solid var(--line-soft, rgba(126, 99, 69, 0.14));
+  box-shadow: 0 24px 40px rgba(72, 49, 25, 0.12);
+  padding: 16px;
+}
+
+.floating-panel--left {
+  left: 16px;
+}
+
+.floating-panel--right {
+  right: 16px;
+}
+
+.floating-panel__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.floating-panel__eyebrow {
+  margin: 0 0 6px;
+  color: var(--text-soft);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.floating-panel__header h2 {
+  margin: 0;
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.floating-panel__close {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: var(--bg-panel, rgba(255, 255, 255, 0.66));
+  border: 1px solid var(--line-soft, rgba(121, 96, 63, 0.16));
+  color: var(--text-sub);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 150ms cubic-bezier(0.2, 0, 0, 1),
+    background 150ms ease;
+}
+
+.floating-panel__close:hover {
+  background: var(--bg-panel-strong, rgba(255, 255, 255, 0.88));
+}
+
+.floating-panel__close:active {
+  transform: scale(0.96);
+  transition-duration: 50ms;
+}
+
 /* ══════════════════════════════════════════════════════════════
    Layout Panel (版式设置) — Yohaku Design Tokens
    ══════════════════════════════════════════════════════════════ */
@@ -990,6 +1426,42 @@ onBeforeUnmount(() => {
 .layout-panel::-webkit-scrollbar-thumb:hover,
 .hp-list::-webkit-scrollbar-thumb:hover {
   background: var(--color-neutral-5);
+}
+
+@media (max-width: 980px) {
+  .floating-toolbar--left,
+  .floating-toolbar--right {
+    left: 12px;
+    right: 12px;
+    max-width: none;
+  }
+
+  .floating-toolbar--right {
+    top: auto;
+    bottom: 12px;
+    justify-content: flex-start;
+  }
+
+  .selection-chip {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .selection-chip__content {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .zoom-control {
+    margin-left: auto;
+  }
+
+  .layout-panel,
+  .history-panel {
+    top: 68px;
+    left: 12px;
+    width: min(296px, calc(100vw - 24px));
+  }
 }
 
 /* ── Dark mode auto-adaptation ── */

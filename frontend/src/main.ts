@@ -1,4 +1,5 @@
 ﻿import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
@@ -26,4 +27,7 @@ app.config.errorHandler = (err, _instance, info) => {
   console.error('[全局错误]', err, info)
 }
 
+const pinia = createPinia()
+
+app.use(pinia)
 app.use(router).mount('#app')

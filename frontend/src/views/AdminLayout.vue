@@ -2,7 +2,7 @@
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
-import { useLexicon } from '../composables/useLexicon'
+import { useLexiconStore } from '../stores/lexicon'
 import { logout, getUsername, isAdmin } from '../api/auth'
 import DarkModeToggle from '../components/DarkModeToggle.vue'
 import LexiconSwitcher from '../components/LexiconSwitcher.vue'
@@ -11,7 +11,7 @@ import GlobalSearch from '../components/GlobalSearch.vue'
 const router = useRouter()
 const route = useRoute()
 
-const { lexicon } = useLexicon()
+const { lexicon } = useLexiconStore()
 const currentUsername = computed(() => getUsername() ?? '')
 const userInitials = computed(() => currentUsername.value ? currentUsername.value.charAt(0).toUpperCase() : '总')
 
@@ -25,13 +25,13 @@ interface NavItem {
 
 const navItems = computed<NavItem[]>(() => [
 
-  { key: 'dashboard', label: lexicon.value.dashboard.label, routeName: 'dashboard', icon: 'home' },
+  { key: 'dashboard', label: lexicon.dashboard.label, routeName: 'dashboard', icon: 'home' },
 
-  { key: 'publications', label: lexicon.value.publications.label, routeName: 'publications', icon: 'book' },
+  { key: 'publications', label: lexicon.publications.label, routeName: 'publications', icon: 'book' },
 
-  { key: 'users', label: lexicon.value.users.label, routeName: 'admin-users', icon: 'users', adminOnly: true },
+  { key: 'users', label: lexicon.users.label, routeName: 'admin-users', icon: 'users', adminOnly: true },
 
-  { key: 'logs', label: lexicon.value.logs.label, routeName: 'admin-logs', icon: 'log', adminOnly: true },
+  { key: 'logs', label: lexicon.logs.label, routeName: 'admin-logs', icon: 'log', adminOnly: true },
 
 ])
 
@@ -41,18 +41,18 @@ const activeRouteName = computed(() => route.name as string)
 // 灵魂水印逻辑
 const soulMap = computed<Record<string, string>>(() => ({
 
-  'dashboard': lexicon.value.dashboard.soul,
+  'dashboard': lexicon.dashboard.soul,
 
-  'publications': lexicon.value.publications.soul,
+  'publications': lexicon.publications.soul,
 
-  'admin-users': lexicon.value.users.soul,
+  'admin-users': lexicon.users.soul,
 
-  'admin-logs': lexicon.value.logs.soul,
+  'admin-logs': lexicon.logs.soul,
 
-  'settings': lexicon.value.settings.soul
+  'settings': lexicon.settings.soul
 
 }))
-const currentSoul = computed(() => soulMap.value[activeRouteName.value] || lexicon.value.dashboard.soul)
+const currentSoul = computed(() => soulMap.value[activeRouteName.value] || lexicon.dashboard.soul)
 
 function navigateTo(routeName: string) {
   router.push({ name: routeName })

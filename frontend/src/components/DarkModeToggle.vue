@@ -1,7 +1,8 @@
 ﻿<script setup lang="ts">
-import { useDarkMode } from '../composables/useDarkMode'
+import { useUiStore } from '../stores/ui'
 
-const { isDark, toggle } = useDarkMode()
+const uiStore = useUiStore()
+const { isDark, toggle } = uiStore
 </script>
 
 <template>
