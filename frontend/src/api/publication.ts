@@ -64,6 +64,7 @@ export async function updatePublication(
     settings,
     info: publication.info,
   })
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '保存族谱失败')
   return resp.data.data.newRevision
 }
 
@@ -80,6 +81,7 @@ export async function updatePublicationMetadata(
     subtitle,
     info,
   })
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '更新元数据失败')
   return resp.data.data.newRevision
 }
 
@@ -89,11 +91,13 @@ export async function updatePerson(
   personData: Partial<Person> & { expectedRevision?: number },
 ): Promise<number> {
   const resp = await http.put<ApiResponse<{ newRevision: number }>>(`/publications/${pubId}/people/${personId}`, personData)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '更新人物失败')
   return resp.data.data.newRevision
 }
 
 export async function deletePublication(id: number): Promise<void> {
-  await http.delete(`/publications/${id}`)
+  const resp = await http.delete<ApiResponse<null>>(`/publications/${id}`)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '删除族谱失败')
 }
 
 export interface PublicationHistoryEntry {
@@ -131,6 +135,7 @@ export interface FieldChange {
 
 export async function getPublicationHistory(id: number): Promise<PublicationHistoryEntry[]> {
   const resp = await http.get<ApiResponse<PublicationHistoryEntry[]>>(`/publications/${id}/history`)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '获取历史记录失败')
   return resp.data.data
 }
 

@@ -44,30 +44,68 @@ const junctions = computed(() => {
   const junctionPoints = new Set<string>()
   const endpoints = new Set<string>()
 
-  props.layout.lines.forEach(line => {
+  const lines = props.layout.lines
+
+  // Pass 1: collect shared endpoints
+  for (const line of lines) {
     const p1 = `${line.x1},${line.y1}`
     const p2 = `${line.x2},${line.y2}`
     if (endpoints.has(p1)) junctionPoints.add(p1)
     if (endpoints.has(p2)) junctionPoints.add(p2)
     endpoints.add(p1)
     endpoints.add(p2)
-  })
+  }
 
-  // Detect T-junctions
-  props.layout.lines.forEach(line => {
-    const p1 = { x: line.x1, y: line.y1 }
-    const p2 = { x: line.x2, y: line.y2 }
-    props.layout.lines.forEach(other => {
-      const op1 = { x: other.x1, y: other.y1 }
-      const op2 = { x: other.x2, y: other.y2 }
-      if (!((op1.x === p1.x && op1.y === p1.y) || (op1.x === p2.x && op1.y === p2.y))) {
-        if (isPointOnSegment(op1, p1, p2)) junctionPoints.add(`${op1.x},${op1.y}`)
+  // Pass 2: T-junction detection using spatial index (O(L) instead of O(L²))
+  // Group axis-aligned lines by their fixed coordinate
+  const verticalByX = new Map<number, { y1: number; y2: number }[]>()
+  const horizontalByY = new Map<number, { x1: number; x2: number }[]>()
+
+  for (const line of lines) {
+    if (line.x1 === line.x2) {
+      const yMin = Math.min(line.y1, line.y2)
+      const yMax = Math.max(line.y1, line.y2)
+      const arr = verticalByX.get(line.x1)
+      if (arr) arr.push({ y1: yMin, y2: yMax })
+      else verticalByX.set(line.x1, [{ y1: yMin, y2: yMax }])
+    } else if (line.y1 === line.y2) {
+      const xMin = Math.min(line.x1, line.x2)
+      const xMax = Math.max(line.x1, line.x2)
+      const arr = horizontalByY.get(line.y1)
+      if (arr) arr.push({ x1: xMin, x2: xMax })
+      else horizontalByY.set(line.y1, [{ x1: xMin, x2: xMax }])
+    }
+  }
+
+  // Check each endpoint against perpendicular lines at that coordinate
+  for (const line of lines) {
+    const points = [
+      { x: line.x1, y: line.y1 },
+      { x: line.x2, y: line.y2 },
+    ]
+    for (const p of points) {
+      const key = `${p.x},${p.y}`
+      if (junctionPoints.has(key)) continue
+
+      if (line.x1 === line.x2) {
+        // Current line is vertical — check if point lies on any horizontal line at this y
+        const horizontals = horizontalByY.get(p.y)
+        if (horizontals) {
+          for (const h of horizontals) {
+            if (p.x > h.x1 && p.x < h.x2) { junctionPoints.add(key); break }
+          }
+        }
+      } else if (line.y1 === line.y2) {
+        // Current line is horizontal — check if point lies on any vertical line at this x
+        const verticals = verticalByX.get(p.x)
+        if (verticals) {
+          for (const v of verticals) {
+            if (p.y > v.y1 && p.y < v.y2) { junctionPoints.add(key); break }
+          }
+        }
       }
-      if (!((op2.x === p1.x && op2.y === p1.y) || (op2.x === p2.x && op2.y === p2.y))) {
-        if (isPointOnSegment(op2, p1, p2)) junctionPoints.add(`${op2.x},${op2.y}`)
-      }
-    })
-  })
+    }
+  }
 
   return Array.from(junctionPoints).map(s => {
     const [x, y] = s.split(',').map(Number)
@@ -75,15 +113,6 @@ const junctions = computed(() => {
   })
 })
 
-function isPointOnSegment(p: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }) {
-  if (a.x === b.x && p.x === a.x) {
-    return p.y > Math.min(a.y, b.y) && p.y < Math.max(a.y, b.y)
-  }
-  if (a.y === b.y && p.y === a.y) {
-    return p.x > Math.min(a.x, b.x) && p.x < Math.max(a.x, b.x)
-  }
-  return false
-}
 
 function setPan(x: number, y: number) {
   emit('update:panX', x)

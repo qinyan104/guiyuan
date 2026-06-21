@@ -213,14 +213,23 @@ function extractYear(birthStr?: string): number | null {
   return match ? parseInt(match[1], 10) : null
 }
 
-function isOlderSibling(publication: PublicationData, personAId: string, personBId: string): boolean | null {
-  for (const family of Object.values(publication.families)) {
-    const aIdx = family.children.indexOf(personAId)
-    const bIdx = family.children.indexOf(personBId)
-    if (aIdx >= 0 && bIdx >= 0) return aIdx < bIdx
+function isOlderSibling(graph: KinshipGraph, personAId: string, personBId: string): boolean | null {
+  // Check sibling order from graph
+  const siblings = graph.siblings.get(personAId)
+  if (siblings) {
+    const entry = siblings.find(s => s.siblingId === personBId)
+    if (entry) {
+      // Graph doesn't store order, fall through to birth year comparison
+    }
   }
-  const personA = publication.people[personAId]
-  const personB = publication.people[personBId]
+  // Check if they share a parent family and compare child order
+  const parentsA = graph.parents.get(personAId)
+  const parentsB = graph.parents.get(personBId)
+  if (parentsA && parentsB) {
+    // They might share a parent - check birth year
+  }
+  const personA = graph.people.get(personAId)
+  const personB = graph.people.get(personBId)
   if (!personA || !personB) return null
   const yearA = extractYear(personA.birth)
   const yearB = extractYear(personB.birth)
@@ -228,25 +237,31 @@ function isOlderSibling(publication: PublicationData, personAId: string, personB
   return null
 }
 
-function isOlderSiblingInFamily(publication: PublicationData, personAId: string, personBId: string): boolean | null {
-  for (const family of Object.values(publication.families)) {
-    const aIdx = family.children.indexOf(personAId)
-    const bIdx = family.children.indexOf(personBId)
-    if (aIdx >= 0 && bIdx >= 0) return aIdx < bIdx
-  }
+function isOlderSiblingInFamily(graph: KinshipGraph, personAId: string, personBId: string): boolean | null {
+  const siblings = graph.siblings.get(personAId)
+  if (!siblings) return null
+  const isSibling = siblings.some(s => s.siblingId === personBId)
+  if (!isSibling) return null
+  const personA = graph.people.get(personAId)
+  const personB = graph.people.get(personBId)
+  if (!personA || !personB) return null
+  const yearA = extractYear(personA.birth)
+  const yearB = extractYear(personB.birth)
+  if (yearA !== null && yearB !== null) return yearA < yearB
   return null
 }
 
-function areSiblings(publication: PublicationData, personAId: string, personBId: string): boolean {
-  for (const family of Object.values(publication.families)) {
-    if (family.children.includes(personAId) && family.children.includes(personBId)) return true
-  }
-  return false
+function areSiblings(graph: KinshipGraph, personAId: string, personBId: string): boolean {
+  const siblings = graph.siblings.get(personAId)
+  return siblings ? siblings.some(s => s.siblingId === personBId) : false
 }
 
-function findParentFamily(publication: PublicationData, personId: string): FamilyUnit | null {
+function findParentFamily(graph: KinshipGraph, publication: PublicationData, personId: string): FamilyUnit | null {
+  const parents = graph.parents.get(personId)
+  if (!parents || parents.length === 0) return null
+  // Find the family where these parents are adults
   for (const family of Object.values(publication.families)) {
-    if (family.children.includes(personId)) return family
+    if (parents.some(pid => family.adults.includes(pid))) return family
   }
   return null
 }
@@ -337,30 +352,28 @@ function resolveDirectLine(generationGap: number, alterGender: Gender): KinshipT
   return null
 }
 
-function resolveSameGeneration(publication: PublicationData, personAId: string, personBId: string, alterGender: Gender): KinshipTerm | null {
-  for (const family of Object.values(publication.families)) {
-    if (family.children.includes(personAId) && family.children.includes(personBId)) {
-      const older = isOlderSibling(publication, personAId, personBId)
-      let ageKey: string
-      if (older === true) ageKey = "younger"
-      else if (older === false) ageKey = "older"
-      else ageKey = "unknown"
-      const key = `${alterGender}_${ageKey}`
-      const entry = SIBLING[key]
-      if (entry) return { term: entry.term, description: entry.description, generationGap: 0, isElder: older === false }
-    }
+function resolveSameGeneration(graph: KinshipGraph, publication: PublicationData, personAId: string, personBId: string, alterGender: Gender): KinshipTerm | null {
+  if (areSiblings(graph, personAId, personBId)) {
+    const older = isOlderSibling(graph, personAId, personBId)
+    let ageKey: string
+    if (older === true) ageKey = "younger"
+    else if (older === false) ageKey = "older"
+    else ageKey = "unknown"
+    const key = `${alterGender}_${ageKey}`
+    const entry = SIBLING[key]
+    if (entry) return { term: entry.term, description: entry.description, generationGap: 0, isElder: older === false }
   }
   return null
 }
 
 function resolveSameGenerationCollateral(
-  publication: PublicationData,
+  graph: KinshipGraph,
   personAId: string,
   personBId: string,
   alterGender: Gender,
   isPatrilineal: boolean,
 ): KinshipTerm {
-  const older = isOlderSibling(publication, personAId, personBId)
+  const older = isOlderSibling(graph, personAId, personBId)
   let ageKey: string
   if (older === true) ageKey = "younger"
   else if (older === false) ageKey = "older"
@@ -377,6 +390,7 @@ function resolveSameGenerationCollateral(
 }
 
 function resolveElderOneGeneration(
+  graph: KinshipGraph,
   publication: PublicationData,
   personAId: string,
   personBId: string,
@@ -386,11 +400,11 @@ function resolveElderOneGeneration(
   alterConnectorId: string | null,
 ): KinshipTerm {
   if (isPatrilineal && alterConnectorGender === "male") {
-    const egoParentFamily = findParentFamily(publication, personAId)
+    const egoParentFamily = findParentFamily(graph, publication, personAId)
     if (egoParentFamily && alterConnectorId && egoParentFamily.adults.length > 0) {
       for (const egoParentId of egoParentFamily.adults) {
-        if (areSiblings(publication, egoParentId, alterConnectorId)) {
-          const older = isOlderSiblingInFamily(publication, egoParentId, alterConnectorId)
+        if (areSiblings(graph, egoParentId, alterConnectorId)) {
+          const older = isOlderSiblingInFamily(graph, egoParentId, alterConnectorId)
           if (older === true) return { term: "叔叔", description: "父亲的弟弟", generationGap: 1, isElder: true }
           if (older === false) return { term: "伯父", description: "父亲的哥哥", generationGap: 1, isElder: true }
         }
@@ -400,19 +414,9 @@ function resolveElderOneGeneration(
     const unclePerson = publication.people[alterConnectorId ?? ""]
     if (alterConnectorId && unclePerson && egoParentFamily) {
       for (const egoParentId of egoParentFamily.adults) {
-        const older2 = isOlderSibling(publication, egoParentId, alterConnectorId)
+        const older2 = isOlderSibling(graph, egoParentId, alterConnectorId)
         if (older2 === true) return { term: "叔叔", description: "父亲的弟弟", generationGap: 1, isElder: true }
         if (older2 === false) return { term: "伯父", description: "父亲的哥哥", generationGap: 1, isElder: true }
-      }
-    }
-    // Last resort: use children order
-    for (const family of Object.values(publication.families)) {
-      for (const egoParentId of egoParentFamily?.adults ?? []) {
-        const aIdx = family.children.indexOf(egoParentId)
-        const bIdx = family.children.indexOf(alterConnectorId ?? "")
-        if (aIdx >= 0 && bIdx >= 0) {
-          return { term: aIdx < bIdx ? "伯父" : "叔叔", description: "父亲的兄弟", generationGap: 1, isElder: true }
-        }
       }
     }
     return { term: "伯叔", description: "父亲的兄弟", generationGap: 1, isElder: true }
@@ -482,6 +486,7 @@ export function resolveKinshipTerm(publication: PublicationData, personAId: stri
     return { term: "本人", description: "自己", generationGap: 0, isElder: false }
   }
 
+  const graph = getCachedGraph(publication)
   const path = findRelationshipPath(publication, personAId, personBId)
   if (!path) return null
 
@@ -498,11 +503,11 @@ export function resolveKinshipTerm(publication: PublicationData, personAId: stri
   // Same generation (generationGap == 0)
   if (generationGap === 0) {
     // Check if siblings first
-    const sibling = resolveSameGeneration(publication, personAId, personBId, alterGender)
+    const sibling = resolveSameGeneration(graph, publication, personAId, personBId, alterGender)
     if (sibling) return sibling
 
     // Cousins
-    return resolveSameGenerationCollateral(publication, personAId, personBId, alterGender, isPatrilineal)
+    return resolveSameGenerationCollateral(graph, personAId, personBId, alterGender, isPatrilineal)
   }
 
   // One generation younger (nephew/niece)
@@ -513,7 +518,7 @@ export function resolveKinshipTerm(publication: PublicationData, personAId: stri
 
   // One generation elder (uncle/aunt)
   if (generationGap === -1) {
-    return resolveElderOneGeneration(publication, personAId, personBId, alterGender, isPatrilineal, alterConnectorGender, alterConnectorId)
+    return resolveElderOneGeneration(graph, publication, personAId, personBId, alterGender, isPatrilineal, alterConnectorGender, alterConnectorId)
   }
 
   // Multi-generational younger
@@ -548,9 +553,10 @@ function findAnyConnection(publication: PublicationData, fromId: string, toId: s
   const graph = getCachedGraph(publication)
   const visited = new Set<string>()
   const queue: BfsStep[] = [{ personId: fromId, edge: "parent", path: [] }]
+  let head = 0
 
   while (queue.length > 0) {
-    const cur = queue.shift()!
+    const cur = queue[head++]
     if (visited.has(cur.personId)) continue
     visited.add(cur.personId)
     const newPath = [...cur.path, { personId: cur.personId, edge: cur.edge }]

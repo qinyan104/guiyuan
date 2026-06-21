@@ -58,16 +58,37 @@ export function usePublicationState(
     return Object.values(publication.families)
   }
 
+  // O(1) person→family indexes (built once, reused by all computeds)
+  const adultToFamily = computed(() => {
+    const map = new Map<string, string>()
+    for (const family of Object.values(publication.families)) {
+      for (const adultId of family.adults) {
+        map.set(adultId, family.id)
+      }
+    }
+    return map
+  })
+
+  const childToFamily = computed(() => {
+    const map = new Map<string, string>()
+    for (const family of Object.values(publication.families)) {
+      for (const childId of family.children) {
+        map.set(childId, family.id)
+      }
+    }
+    return map
+  })
+
   function isPersonId(value: string | undefined): value is string {
     return typeof value === 'string' && value.length > 0
   }
 
   function findAdultFamilyIdForPerson(personId: string): string | undefined {
-    return listFamilies().find((family) => family.adults.includes(personId))?.id
+    return adultToFamily.value.get(personId)
   }
 
   function findParentFamilyIdForPerson(personId: string): string | undefined {
-    return listFamilies().find((family) => family.children.includes(personId))?.id
+    return childToFamily.value.get(personId)
   }
 
   function getPersonStatus(person: Person | null): string {

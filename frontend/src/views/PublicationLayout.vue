@@ -195,6 +195,8 @@ async function detectViewerPerson() {
   }
 }
 
+let loadGeneration = 0
+
 async function load() {
   const targetId = publicationId.value
   if (!targetId) {
@@ -207,11 +209,15 @@ async function load() {
     return
   }
 
+  const myGeneration = ++loadGeneration
   loading.value = true
   clearScheduledSave()
 
   try {
     const result = await getPublication(targetId)
+    // Check if a newer load() call has started
+    if (myGeneration !== loadGeneration) return
+
     applyPublicationSnapshot(result.publication, result.settings)
 
     if (!pub.selectedPersonId.value || !result.publication.people[pub.selectedPersonId.value]) {
@@ -229,13 +235,17 @@ async function load() {
     history.initializeHistoryBaseline()
     await detectViewerPerson()
   } catch (err: any) {
+    // Don't show error for stale requests
+    if (myGeneration !== loadGeneration) return
     if (err?.response?.status === 403) {
       feedback.setError('你无权访问此家谱，请联系管理员将你添加为协作者')
     } else {
       feedback.setError('加载族谱失败')
     }
   } finally {
-    loading.value = false
+    if (myGeneration === loadGeneration) {
+      loading.value = false
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { computed, inject, nextTick, ref, toRef, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, ref, toRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import FeedbackStrip from '../components/FeedbackStrip.vue'
@@ -52,6 +52,14 @@ function onConfirmDialogResult(result: boolean) {
 }
 
 defineExpose({ confirmAsync })
+
+// Clean up pending confirm promise on unmount
+onBeforeUnmount(() => {
+  if (confirmResolve) {
+    confirmResolve(false)
+    confirmResolve = null
+  }
+})
 
 // ─── Shared Context ─────────────────────────────────────────────
 

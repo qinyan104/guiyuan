@@ -84,28 +84,50 @@ function handleAvatarChange(e: Event) {
   compressImage(file).then((blob) => {
     avatarFile.value = new File([blob], file.name, { type: 'image/jpeg' })
     avatarPreview.value = URL.createObjectURL(blob)
+  }).catch((err) => {
+    alert(err.message || '图片处理失败')
   })
 }
 
 async function compressImage(file: File): Promise<Blob> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
-    img.onload = () => {
+    const timeout = setTimeout(() => {
       URL.revokeObjectURL(url)
-      const canvas = document.createElement('canvas')
-      const maxSize = 200
-      let w = img.width
-      let h = img.height
-      if (w > maxSize || h > maxSize) {
-        if (w > h) { h = Math.round(h * maxSize / w); w = maxSize }
-        else { w = Math.round(w * maxSize / h); h = maxSize }
+      reject(new Error('图片加载超时'))
+    }, 10000)
+
+    img.onerror = () => {
+      clearTimeout(timeout)
+      URL.revokeObjectURL(url)
+      reject(new Error('图片加载失败'))
+    }
+
+    img.onload = () => {
+      clearTimeout(timeout)
+      URL.revokeObjectURL(url)
+      try {
+        const canvas = document.createElement('canvas')
+        const maxSize = 200
+        let w = img.width
+        let h = img.height
+        if (w > maxSize || h > maxSize) {
+          if (w > h) { h = Math.round(h * maxSize / w); w = maxSize }
+          else { w = Math.round(w * maxSize / h); h = maxSize }
+        }
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('Canvas 不可用')); return }
+        ctx.drawImage(img, 0, 0, w, h)
+        canvas.toBlob((blob) => {
+          if (!blob) { reject(new Error('图片压缩失败')); return }
+          resolve(blob)
+        }, 'image/jpeg', 0.85)
+      } catch (e) {
+        reject(e)
       }
-      canvas.width = w
-      canvas.height = h
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0, w, h)
-      canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.85)
     }
     img.src = url
   })

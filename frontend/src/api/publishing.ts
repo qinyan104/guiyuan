@@ -38,7 +38,8 @@ export async function updateDraft(
 }
 
 export async function deleteDraft(draftId: number): Promise<void> {
-  await http.delete(`/publishing/drafts/${draftId}`)
+  const resp = await http.delete<ApiResponse<null>>(`/publishing/drafts/${draftId}`)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "删除草稿失败")
 }
 
 export async function upsertPersonDetail(
@@ -78,7 +79,8 @@ export async function deletePersonDetail(
   draftId: number,
   personId: string,
 ): Promise<void> {
-  await http.delete(`/publishing/drafts/${draftId}/persons/${personId}`)
+  const resp = await http.delete<ApiResponse<null>>(`/publishing/drafts/${draftId}/persons/${personId}`)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "删除人物详情失败")
 }
 
 export async function getSyncStatus(draftId: number): Promise<DraftSyncStatus> {
@@ -123,7 +125,8 @@ export async function listSheets(draftId: number): Promise<SheetResponse[]> {
 }
 
 export async function deleteSheet(draftId: number, sheetId: number): Promise<void> {
-  await http.delete(`/publishing/drafts/${draftId}/sheets/${sheetId}`)
+  const resp = await http.delete<ApiResponse<null>>(`/publishing/drafts/${draftId}/sheets/${sheetId}`)
+  if (resp.data.code !== 200) throw new Error(resp.data.message || "删除书页失败")
 }
 
 /** Export PDF via pdf-lib (v2) — sends ComposedPage[] JSON */
@@ -133,5 +136,16 @@ export async function exportPdfV2(draftId: number, pagesJson: string): Promise<B
     pagesJson,
     { responseType: "blob" },
   )
+  // Check if the response is an error JSON instead of a PDF blob
+  if (resp.data instanceof Blob && resp.data.type === 'application/json') {
+    const text = await resp.data.text()
+    try {
+      const json = JSON.parse(text)
+      if (json.code !== 200) throw new Error(json.message || "导出 PDF 失败")
+    } catch (e) {
+      if (e instanceof Error && e.message !== "导出 PDF 失败") throw new Error("导出 PDF 失败")
+      throw e
+    }
+  }
   return resp.data
 }

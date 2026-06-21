@@ -39,6 +39,9 @@ const editForm = ref({
 })
 
 const deleteConfirmId = ref<number | null>(null)
+const deletingId = ref<number | null>(null)
+const saving = ref(false)
+const creating = ref(false)
 const showShareDialog = ref(false)
 const shareDialogPubId = ref<number | null>(null)
 const showCollabDialog = ref(false)
@@ -79,7 +82,8 @@ function openEditDialog(pub: PublicationSummary) {
 }
 
 async function handleEditSave() {
-  if (!editingId.value) return
+  if (!editingId.value || saving.value) return
+  saving.value = true
 
   const title = editForm.value.title.trim() || '未命名族谱'
   const subtitle = editForm.value.subtitle.trim()
@@ -96,10 +100,14 @@ async function handleEditSave() {
     await loadPublications()
   } catch (err: any) {
     feedback.setError('保存失败: ' + (err.message || '未知错误'))
+  } finally {
+    saving.value = false
   }
 }
 
 async function handleCreate() {
+  if (creating.value) return
+  creating.value = true
   const title = newTitle.value.trim() || '未命名族谱'
   const subtitle = newSubtitle.value.trim()
   try {
@@ -114,6 +122,8 @@ async function handleCreate() {
     router.push({ name: 'workbench', params: { id } })
   } catch {
     // error handled silently
+  } finally {
+    creating.value = false
   }
 }
 
@@ -128,12 +138,16 @@ function openCollabDialog(pubId: number) {
 }
 
 async function handleDelete(id: number) {
+  if (deletingId.value) return
+  deletingId.value = id
   try {
     await deletePublication(id)
     publications.value = publications.value.filter((p) => p.id !== id)
     deleteConfirmId.value = null
   } catch (err: any) {
     feedback.setError('删除失败: ' + (err?.response?.data?.message || err.message || '未知错误'))
+  } finally {
+    deletingId.value = null
   }
 }
 
@@ -265,7 +279,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                   <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
                     <p>确定要删除「{{ pub.title }}」吗？此操作不可撤销。</p>
                     <div class="delete-btns">
-                      <button class="glass-pill-btn danger" @click="handleDelete(pub.id)">确认删除</button>
+                      <button class="glass-pill-btn danger" :disabled="deletingId === pub.id" @click="handleDelete(pub.id)">{{ deletingId === pub.id ? '删除中...' : '确认删除' }}</button>
                       <button class="glass-pill-btn" @click="deleteConfirmId = null">取消</button>
                     </div>
                   </div>
@@ -298,7 +312,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
               </div>
               <footer class="sheet-footer">
                 <button class="glass-pill-btn" @click="showCreateDialog = false">取消</button>
-                <button class="glass-pill-btn primary" @click="handleCreate">建档立案</button>
+                <button class="glass-pill-btn primary" :disabled="creating" @click="handleCreate">{{ creating ? '创建中...' : '建档立案' }}</button>
               </footer>
             </div>
           </div>
@@ -340,7 +354,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
               </div>
               <footer class="sheet-footer">
                 <button class="glass-pill-btn" @click="showEditDialog = false">放弃修改</button>
-                <button class="glass-pill-btn primary" @click="handleEditSave">封装保存</button>
+                <button class="glass-pill-btn primary" :disabled="saving" @click="handleEditSave">{{ saving ? '保存中...' : '封装保存' }}</button>
               </footer>
             </div>
           </div>
