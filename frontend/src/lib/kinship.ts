@@ -522,6 +522,7 @@ function resolveElderOneGeneration(
 }
 
 function resolveYoungerOneGeneration(
+  graph: KinshipGraph,
   publication: PublicationData,
   personAId: string,
   personBId: string,
@@ -531,6 +532,14 @@ function resolveYoungerOneGeneration(
   alterConnectorId: string | null,
   isPatrilineal: boolean,
 ): KinshipTerm | null {
+  // 亲兄弟姐妹的孩子：侄子/侄女/外甥/外甥女（优先级最高）
+  if (alterConnectorId && areSiblings(graph, personAId, alterConnectorId)) {
+    const line = alterConnectorGender === "male" ? "patrilineal" : "matrilineal"
+    const key = `${alterGender}_${line}`
+    const entry = YOUNGER_1[key]
+    if (entry) return { ...entry, generationGap: -1, isElder: false }
+  }
+
   // 堂亲晚辈：ego 的堂兄弟的孩子 → 堂侄/堂侄女
   if (isPatrilineal) {
     const key = `${alterGender}`
@@ -545,11 +554,6 @@ function resolveYoungerOneGeneration(
     if (entry) return { ...entry, generationGap: -1, isElder: false }
   }
 
-  // 亲兄弟姐妹的孩子：侄子/侄女/外甥/外甥女
-  const line = alterConnectorGender === "male" ? "patrilineal" : "matrilineal"
-  const key = `${alterGender}_${line}`
-  const entry = YOUNGER_1[key]
-  if (entry) return { ...entry, generationGap: -1, isElder: false }
   return null
 }
 
@@ -595,7 +599,9 @@ export function resolveKinshipTerm(publication: PublicationData, personAId: stri
   const alterGender = personB?.gender ?? "unknown"
 
   // Direct line: check if matrilineal (path goes through female connector)
-  const isDirectMatrilineal = path.egoConnectorGender === "female"
+  // For upward paths: egoConnector tells us ego's parent gender
+  // For downward paths: alterConnector tells us the child's gender on the path
+  const isDirectMatrilineal = path.egoConnectorGender === "female" || path.alterConnectorGender === "female"
 
   // Direct line (generationGap != 0, path length is direct)
   if (generationGap !== 0 && (path.upSteps === 0 || path.downSteps === 0)) {
@@ -615,7 +621,7 @@ export function resolveKinshipTerm(publication: PublicationData, personAId: stri
 
   // One generation younger (nephew/niece)
   if (generationGap === 1) {
-    const younger = resolveYoungerOneGeneration(publication, personAId, personBId, alterGender, isEgoLinePatrilineal, alterConnectorGender, alterConnectorId, isPatrilineal)
+    const younger = resolveYoungerOneGeneration(graph, publication, personAId, personBId, alterGender, isEgoLinePatrilineal, alterConnectorGender, alterConnectorId, isPatrilineal)
     if (younger) return younger
   }
 
