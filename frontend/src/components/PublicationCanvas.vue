@@ -259,27 +259,6 @@ function resolvePerson(personId: string): Person {
 
 const selectedPerson = computed(() => props.selectedPersonId ? props.publication.people[props.selectedPersonId] ?? null : null)
 const hoveredPerson = computed(() => props.hoveredPersonId ? props.publication.people[props.hoveredPersonId] ?? null : null)
-const focusPerson = computed(() => selectedPerson.value ?? hoveredPerson.value)
-const focusLabel = computed(() => {
-  if (selectedPerson.value) return '当前焦点'
-  if (hoveredPerson.value) return '悬停人物'
-  return '画布状态'
-})
-const focusTitle = computed(() => {
-  if (focusPerson.value) return focusPerson.value.name
-  return '拖动画布，滚轮缩放'
-})
-const focusMeta = computed(() => {
-  if (selectedPerson.value && props.relationshipToSelected) {
-    return `${props.relationshipToSelected.term} · ${props.relationshipToSelected.description}`
-  }
-
-  if (focusPerson.value) {
-    return props.kinshipNotes?.[focusPerson.value.id] || focusPerson.value.note || focusPerson.value.titleName || getPersonStatusLabel(focusPerson.value)
-  }
-
-  return '点击人物进入编辑，悬停可快速辨认当前节点'
-})
 
 const CARD_TO_SCREEN_RATIO = 1
 
@@ -553,7 +532,6 @@ function resetView() {
     class="canvas-viewport"
     :class="{
       'canvas-viewport--dragging': isDragging,
-      'canvas-viewport--focused': Boolean(focusPerson),
     }"
     :style="viewportStyle"
     @pointerdown="handlePointerDown"
@@ -626,12 +604,6 @@ function resetView() {
           </g>
         </svg>
       </div>
-    </div>
-
-    <div class="canvas-context" :class="{ 'canvas-context--active': Boolean(focusPerson) }">
-      <span class="canvas-context__eyebrow">{{ focusLabel }}</span>
-      <strong class="canvas-context__title">{{ focusTitle }}</strong>
-      <p class="canvas-context__meta">{{ focusMeta }}</p>
     </div>
 
     <div
@@ -717,10 +689,6 @@ function resetView() {
   transition: opacity 180ms ease;
 }
 
-.canvas-viewport--focused::after {
-  opacity: 1;
-}
-
 .canvas-viewport--dragging {
   cursor: default;
   user-select: none;
@@ -745,51 +713,6 @@ function resetView() {
   box-shadow: 0 18px 28px rgba(82, 57, 28, 0.1);
   user-select: none;
   touch-action: none;
-}
-
-.canvas-context {
-  position: absolute;
-  left: 18px;
-  bottom: 18px;
-  z-index: 26;
-  width: min(320px, calc(100vw - 64px));
-  padding: 14px 16px;
-  border-radius: 20px;
-  background: var(--bg-panel, rgba(255, 249, 241, 0.82));
-  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.16));
-  box-shadow: 0 18px 28px rgba(82, 57, 28, 0.08);
-  backdrop-filter: blur(16px) saturate(135%);
-  -webkit-backdrop-filter: blur(16px) saturate(135%);
-}
-
-.canvas-context--active {
-  background: var(--bg-panel-strong, rgba(255, 253, 249, 0.92));
-}
-
-.canvas-context__eyebrow {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--text-soft);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.canvas-context__title {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--text-main);
-  font-family: var(--font-serif);
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.canvas-context__meta {
-  margin: 0;
-  color: var(--text-sub);
-  font-size: 13px;
-  line-height: 1.6;
 }
 
 .canvas-minimap__header {
@@ -876,10 +799,5 @@ function resetView() {
     width: min(220px, calc(100vw - 40px));
   }
 
-  .canvas-context {
-    left: 12px;
-    bottom: 12px;
-    width: min(280px, calc(100vw - 40px));
-  }
 }
 </style>
