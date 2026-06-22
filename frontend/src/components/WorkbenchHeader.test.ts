@@ -65,4 +65,14 @@ describe('WorkbenchHeader', () => {
 
     expect(wrapper.text()).not.toContain('出版工作室')
   })
+
+  it('groups the four primary genealogy tools', () => {
+    const wrapper = mountHeader()
+    const group = wrapper.get('[role="group"][aria-label="谱系工具"]')
+
+    expect(group.text()).toContain('纪略')
+    expect(group.text()).toContain('编年')
+    expect(group.text()).toContain('考据')
+    expect(group.text()).toContain('付梓')
+  })
 })

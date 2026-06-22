@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue'
 import type { KinshipTerm } from '../lib/kinship'
 import type { PublicationSettings } from '../types/family'
@@ -68,10 +68,6 @@ function sliderFill(value: number, min: number, max: number): string {
   return `${Math.round(pct)}%`
 }
 
-function readPaperValue(event: Event): PublicationSettings['paper'] {
-  return (event.target as HTMLSelectElement).value as PublicationSettings['paper']
-}
-
 function onClickOutside(e: MouseEvent) {
   const target = e.target as Element | null
   if (!target) return
@@ -93,7 +89,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="floating-toolbar floating-toolbar--left" aria-label="画布工具">
+  <div class="floating-toolbar floating-toolbar--left" role="toolbar" aria-label="画布工具">
     <div class="tool-switcher" role="group" aria-label="面板切换">
       <button
         class="tool-btn tool-btn--panel"
@@ -197,7 +193,7 @@ onBeforeUnmount(() => {
   </div>
 
   <Transition name="float-panel">
-    <section v-if="layoutPanelOpen" class="layout-panel floating-panel--left" @mousedown.stop>
+    <section v-if="layoutPanelOpen" class="layout-panel floating-panel--left" @mousedown.stop @wheel.stop>
       <div class="floating-panel__header">
         <div>
           <p class="floating-panel__eyebrow">排版</p>
@@ -208,136 +204,197 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <div class="lp-section">
-        <label class="lp-field">
-          <span class="lp-label">纸张尺寸</span>
-          <AppSelect :model-value="settings.paper" :options="[{value:'A3',label:'A3 横向'},{value:'A4',label:'A4 横向'}]" @change="(v: string) => updateSetting('paper', v as PublicationSettings['paper'])" />
-        </label>
+      <div class="lp-overview">
+        <span class="lp-mode-pill" :class="{ 'lp-mode-pill--compact': !settings.showCard }">
+          {{ settings.showCard ? '卡片模式' : '简式模式' }}
+        </span>
+        <strong>{{ settings.paper }} · {{ Math.round(zoom * 100) }}%</strong>
       </div>
 
-      <div class="lp-section">
-        <p class="lp-section-title">间距与尺寸</p>
+      <div class="lp-stack">
+        <div class="lp-section">
+          <div class="lp-section-head">
+            <div class="lp-section-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2.5" y="3" width="11" height="10" rx="2" /><line x1="5" y1="6" x2="11" y2="6" /><line x1="5" y1="10" x2="9" y2="10" /></svg>
+            </div>
+            <div>
+              <p class="lp-section-title">画布基础</p>
+            </div>
+          </div>
 
-        <label class="lp-field">
-          <span class="lp-label">卡片宽度</span>
-          <span class="lp-value">{{ settings.cardWidth }}<small>px</small></span>
-          <input
-            class="lp-slider"
-            :value="settings.cardWidth"
-            type="range" min="120" max="200" step="2"
-            :style="{ '--lp-fill': sliderFill(settings.cardWidth, 120, 200) }"
-            @input="updateSetting('cardWidth', readNumericValue($event))"
-          />
-        </label>
-
-        <label class="lp-field">
-          <span class="lp-label">代际间距</span>
-          <span class="lp-value">{{ settings.generationGap }}<small>px</small></span>
-          <input
-            class="lp-slider lp-slider--accent"
-            :value="settings.generationGap"
-            type="range" min="80" max="280" step="10"
-            :style="{ '--lp-fill': sliderFill(settings.generationGap, 80, 280) }"
-            @input="updateSetting('generationGap', readNumericValue($event))"
-          />
-        </label>
-
-        <label class="lp-field">
-          <span class="lp-label">兄弟间距</span>
-          <span class="lp-value">{{ settings.siblingGap }}<small>px</small></span>
-          <input
-            class="lp-slider lp-slider--warm"
-            :value="settings.siblingGap"
-            type="range" min="40" max="180" step="4"
-            :style="{ '--lp-fill': sliderFill(settings.siblingGap, 40, 180) }"
-            @input="updateSetting('siblingGap', readNumericValue($event))"
-          />
-        </label>
-
-        <label class="lp-field">
-          <span class="lp-label">字体倍率</span>
-          <span class="lp-value">{{ settings.fontScale.toFixed(2) }}<small>x</small></span>
-          <input
-            class="lp-slider"
-            :value="settings.fontScale"
-            type="range" min="0.72" max="1.40" step="0.02"
-            :style="{ '--lp-fill': sliderFill(settings.fontScale, 0.72, 1.40) }"
-            @input="updateSetting('fontScale', readNumericValue($event))"
-          />
-        </label>
-      </div>
-
-      <div class="lp-section">
-        <p class="lp-section-title">卡片信息</p>
-        <div class="lp-toggles">
-          <label class="lp-toggle">
-            <span>显示卡片</span>
-            <span class="lp-switch" :class="{ 'lp-switch--active': settings.showCard }">
-              <input :checked="settings.showCard" type="checkbox" @change="updateSetting('showCard', readCheckedValue($event))" />
-              <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-            </span>
-          </label>
-          <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-            <span>显示照片</span>
-            <span class="lp-switch" :class="{ 'lp-switch--active': settings.showPhoto }">
-              <input :checked="settings.showPhoto" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showPhoto', readCheckedValue($event))" />
-              <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-            </span>
-          </label>
-          <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-            <span>显示状态</span>
-            <span class="lp-switch" :class="{ 'lp-switch--active': settings.showStatus }">
-              <input :checked="settings.showStatus" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showStatus', readCheckedValue($event))" />
-              <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-            </span>
-          </label>
-          <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-            <span>显示注记</span>
-            <span class="lp-switch" :class="{ 'lp-switch--active': settings.showNote }">
-              <input :checked="settings.showNote" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showNote', readCheckedValue($event))" />
-              <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-            </span>
-          </label>
+          <div class="lp-surface">
+            <label class="lp-field">
+              <span class="lp-label">纸张尺寸</span>
+              <div class="lp-select-wrap">
+                <AppSelect :model-value="settings.paper" :options="[{value:'A3',label:'A3 横向'},{value:'A4',label:'A4 横向'}]" @change="(v: string) => updateSetting('paper', v as PublicationSettings['paper'])" />
+              </div>
+            </label>
+          </div>
         </div>
-      </div>
 
-      <div class="lp-section">
-        <p class="lp-section-title">生卒信息</p>
-        <div class="lp-toggles">
-          <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-            <span>显示生辰</span>
-            <span class="lp-switch" :class="{ 'lp-switch--active': settings.showBirth }">
-              <input :checked="settings.showBirth" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showBirth', readCheckedValue($event))" />
-              <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-            </span>
-          </label>
-          <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-            <span>显示卒年</span>
-            <span class="lp-switch" :class="{ 'lp-switch--active': settings.showDeath }">
-              <input :checked="settings.showDeath" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showDeath', readCheckedValue($event))" />
-              <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-            </span>
-          </label>
-          <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-            <span>显示年龄</span>
-            <span class="lp-switch" :class="{ 'lp-switch--active': settings.showAge }">
-              <input :checked="settings.showAge" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showAge', readCheckedValue($event))" />
-              <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-            </span>
-          </label>
+        <div class="lp-section">
+          <div class="lp-section-head">
+            <div class="lp-section-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 12.5h10" /><path d="M5 12.5V7.5" /><path d="M8 12.5V4.5" /><path d="M11 12.5V9.5" /></svg>
+            </div>
+            <div>
+              <p class="lp-section-title">间距与尺寸</p>
+            </div>
+          </div>
+
+          <div class="lp-surface">
+            <label class="lp-field">
+              <span class="lp-label">卡片宽度</span>
+              <span class="lp-value">{{ settings.cardWidth }}<small>px</small></span>
+              <input
+                class="lp-slider"
+                :value="settings.cardWidth"
+                type="range" min="120" max="200" step="2"
+                :style="{ '--lp-fill': sliderFill(settings.cardWidth, 120, 200) }"
+                @input="updateSetting('cardWidth', readNumericValue($event))"
+              />
+            </label>
+
+            <label class="lp-field">
+              <span class="lp-label">代际间距</span>
+              <span class="lp-value">{{ settings.generationGap }}<small>px</small></span>
+              <input
+                class="lp-slider lp-slider--accent"
+                :value="settings.generationGap"
+                type="range" min="80" max="280" step="10"
+                :style="{ '--lp-fill': sliderFill(settings.generationGap, 80, 280) }"
+                @input="updateSetting('generationGap', readNumericValue($event))"
+              />
+            </label>
+
+            <label class="lp-field">
+              <span class="lp-label">兄弟间距</span>
+              <span class="lp-value">{{ settings.siblingGap }}<small>px</small></span>
+              <input
+                class="lp-slider lp-slider--warm"
+                :value="settings.siblingGap"
+                type="range" min="40" max="180" step="4"
+                :style="{ '--lp-fill': sliderFill(settings.siblingGap, 40, 180) }"
+                @input="updateSetting('siblingGap', readNumericValue($event))"
+              />
+            </label>
+
+            <label class="lp-field">
+              <span class="lp-label">字体倍率</span>
+              <span class="lp-value">{{ settings.fontScale.toFixed(2) }}<small>x</small></span>
+              <input
+                class="lp-slider"
+                :value="settings.fontScale"
+                type="range" min="0.72" max="1.40" step="0.02"
+                :style="{ '--lp-fill': sliderFill(settings.fontScale, 0.72, 1.40) }"
+                @input="updateSetting('fontScale', readNumericValue($event))"
+              />
+            </label>
+          </div>
         </div>
-      </div>
 
-      <div class="lp-section lp-section--last">
-        <p class="lp-section-title">世系</p>
-        <div class="lp-toggles">
-          <label class="lp-toggle">
-            <span>显示世系</span>
-            <span class="lp-switch" :class="{ 'lp-switch--active': settings.showLineage }">
-              <input :checked="settings.showLineage" type="checkbox" @change="updateSetting('showLineage', readCheckedValue($event))" />
-              <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-            </span>
-          </label>
+        <div class="lp-section">
+          <div class="lp-section-head">
+            <div class="lp-section-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2" /><path d="M5.5 6.5h5" /><path d="M5.5 9.5h3" /></svg>
+            </div>
+            <div>
+              <p class="lp-section-title">卡片信息</p>
+            </div>
+          </div>
+
+          <div class="lp-surface lp-surface--toggle-grid">
+            <div class="lp-toggles lp-toggles--grid">
+              <label class="lp-toggle lp-toggle--emphasis">
+                <span>显示卡片</span>
+                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showCard }">
+                  <input :checked="settings.showCard" type="checkbox" @change="updateSetting('showCard', readCheckedValue($event))" />
+                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+                </span>
+              </label>
+              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
+                <span>显示照片</span>
+                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showPhoto }">
+                  <input :checked="settings.showPhoto" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showPhoto', readCheckedValue($event))" />
+                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+                </span>
+              </label>
+              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
+                <span>显示状态</span>
+                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showStatus }">
+                  <input :checked="settings.showStatus" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showStatus', readCheckedValue($event))" />
+                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+                </span>
+              </label>
+              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
+                <span>显示注记</span>
+                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showNote }">
+                  <input :checked="settings.showNote" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showNote', readCheckedValue($event))" />
+                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="lp-section">
+          <div class="lp-section-head">
+            <div class="lp-section-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 4.5h10" /><path d="M3 8h10" /><path d="M3 11.5h6" /></svg>
+            </div>
+            <div>
+              <p class="lp-section-title">生卒信息</p>
+            </div>
+          </div>
+
+          <div class="lp-surface lp-surface--toggle-grid">
+            <div class="lp-toggles lp-toggles--grid">
+              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
+                <span>显示生辰</span>
+                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showBirth }">
+                  <input :checked="settings.showBirth" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showBirth', readCheckedValue($event))" />
+                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+                </span>
+              </label>
+              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
+                <span>显示卒年</span>
+                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showDeath }">
+                  <input :checked="settings.showDeath" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showDeath', readCheckedValue($event))" />
+                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+                </span>
+              </label>
+              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
+                <span>显示年龄</span>
+                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showAge }">
+                  <input :checked="settings.showAge" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showAge', readCheckedValue($event))" />
+                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="lp-section lp-section--last">
+          <div class="lp-section-head">
+            <div class="lp-section-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 3v10" /><path d="M4 5.5h8" /><path d="M5.5 9h5" /></svg>
+            </div>
+            <div>
+              <p class="lp-section-title">世系标记</p>
+            </div>
+          </div>
+
+          <div class="lp-surface lp-surface--toggle-grid">
+            <div class="lp-toggles">
+              <label class="lp-toggle">
+                <span>显示世系</span>
+                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showLineage }">
+                  <input :checked="settings.showLineage" type="checkbox" @change="updateSetting('showLineage', readCheckedValue($event))" />
+                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -414,6 +471,7 @@ onBeforeUnmount(() => {
       />
     </section>
   </Transition>
+
 </template>
 
 <style scoped>
@@ -446,6 +504,11 @@ onBeforeUnmount(() => {
   top: 16px;
   left: 16px;
   gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-xl);
+  background: var(--color-panel-bg);
+  box-shadow: var(--shadow-whisper);
 }
 
 .floating-toolbar--right {
@@ -458,31 +521,38 @@ onBeforeUnmount(() => {
 .tool-btn,
 .status-chip,
 .zoom-control {
-  border-radius: 14px;
-  background: var(--bg-panel, rgba(255, 249, 241, 0.8));
-  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.14));
-  box-shadow: 0 8px 16px rgba(82, 57, 28, 0.05);
+  border-radius: var(--radius-lg);
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: var(--shadow-whisper);
 }
 
 .tool-btn {
   display: inline-flex;
-  gap: 3px;
+  gap: 5px;
   align-items: center;
-  padding: 6px 10px;
-  color: var(--text-sub);
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-neutral-7);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition:
-    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.3s ease,
-    border-color 0.3s ease,
-    background 0.3s ease;
+    transform var(--duration-normal) var(--ease-bounce),
+    box-shadow var(--duration-fast) var(--ease-breath),
+    border-color var(--duration-fast) var(--ease-breath),
+    background var(--duration-fast) var(--ease-breath);
 }
 
 .tool-btn:hover {
-  background: var(--bg-panel-strong, rgba(255, 255, 255, 0.6));
-  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+  transform: translateY(-1px);
 }
 
 .tool-btn:hover .tool-icon {
@@ -501,45 +571,39 @@ onBeforeUnmount(() => {
 
 .tool-switcher {
   display: inline-flex;
-  gap: 1px;
+  gap: 2px;
   align-items: center;
-  padding: 3px;
-  border-radius: 16px;
-  background: var(--bg-panel, rgba(255, 249, 241, 0.78));
-  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.14));
-  box-shadow: 0 8px 16px rgba(82, 57, 28, 0.04);
-}
-
-.tool-btn--panel {
-  min-width: 44px;
-  border: 1px solid transparent;
-  border-radius: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
   background: transparent;
   box-shadow: none;
 }
 
+.tool-btn--panel {
+  min-width: 58px;
+}
+
 .tool-btn--panel:hover {
-  background: var(--bg-paper, rgba(255, 255, 255, 0.56));
+  background: var(--color-accent-muted);
   box-shadow: none;
 }
 
-.tool-btn--active {
-  background: var(--accent-earth, rgba(69, 47, 27, 0.92));
-  border-color: transparent;
-  color: var(--accent-btn-color, #fff8ef);
-  box-shadow: 0 8px 16px rgba(82, 57, 28, 0.13);
+.tool-btn--active,
+.tool-btn--active:hover {
+  background: #c43a31;
+  border-color: #c43a31;
+  color: var(--color-text-on-accent);
+  box-shadow: 0 8px 18px rgba(196, 58, 49, 0.22);
 }
 
 .tool-btn--accent {
-  background: var(--accent-btn-bg, linear-gradient(135deg, rgba(118, 84, 47, 0.96), rgba(159, 112, 57, 0.96)));
-  color: var(--accent-btn-color, #fff8ef);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
 }
 
 .tool-btn--quiet {
-  padding-inline: 10px;
-  border-style: solid;
-  background: var(--bg-paper, rgba(255, 251, 244, 0.5));
-  box-shadow: 0 2px 4px rgba(82, 57, 28, 0.03);
+  padding-inline: 11px;
 }
 
 .status-chip {
@@ -554,14 +618,14 @@ onBeforeUnmount(() => {
 }
 
 .status-chip__label {
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .status-chip__value {
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -571,12 +635,10 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   padding: 6px 8px;
-  border-radius: 16px;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.22), transparent 44%),
-    var(--bg-panel-strong, rgba(255, 249, 241, 0.9));
-  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.16));
-  box-shadow: 0 14px 24px rgba(82, 57, 28, 0.08);
+  border-radius: var(--radius-xl);
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: var(--shadow-float);
 }
 
 .selection-chip__content {
@@ -601,16 +663,16 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  background: var(--bg-paper, rgba(255, 255, 255, 0.68));
-  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.12));
-  color: var(--text-sub);
+  background: var(--color-neutral-2);
+  border: 1px solid var(--color-card-stroke);
+  color: var(--color-neutral-6);
   font-size: 11px;
   font-weight: 700;
 }
 
 .selection-chip__content strong {
-  color: var(--text-main);
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  color: var(--color-neutral-9);
+  font-family: var(--font-serif);
   font-size: 15px;
   font-weight: 700;
 }
@@ -618,7 +680,7 @@ onBeforeUnmount(() => {
 .selection-chip__content em {
   max-width: 320px;
   overflow: hidden;
-  color: var(--text-sub);
+  color: var(--color-neutral-6);
   font-size: 12px;
   font-style: normal;
   text-overflow: ellipsis;
@@ -637,16 +699,16 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(169, 110, 53, 0.12);
-  border: 1px solid rgba(169, 110, 53, 0.18);
-  color: var(--accent-earth);
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent-muted);
+  color: var(--color-accent);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
 }
 
 .selection-chip__kinship-desc {
-  color: var(--text-soft);
+  color: var(--color-neutral-6);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -663,22 +725,22 @@ onBeforeUnmount(() => {
   gap: 4px;
   align-items: center;
   min-width: 56px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 6px 10px;
-  background: var(--bg-paper, rgba(255, 255, 255, 0.72));
-  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.12));
-  color: var(--text-sub);
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  color: var(--color-neutral-6);
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
   transition:
-    transform 150ms cubic-bezier(0.2, 0, 0, 1),
-    background 150ms ease,
-    box-shadow 150ms ease;
+    transform var(--duration-fast) var(--ease-breath),
+    background var(--duration-fast) var(--ease-breath),
+    box-shadow var(--duration-fast) var(--ease-breath);
 }
 
 .selection-chip__btn:hover:not(:disabled) {
-  background: var(--bg-panel-strong, #fffdf8);
+  background: var(--color-neutral-2);
 }
 
 .selection-chip__btn:active:not(:disabled) {
@@ -688,23 +750,44 @@ onBeforeUnmount(() => {
 
 .selection-chip__btn:disabled {
   cursor: not-allowed;
-  opacity: 0.44;
+  opacity: var(--opacity-disabled);
 }
 
 .selection-chip__btn--accent {
-  background: var(--accent-btn-bg);
-  color: var(--accent-btn-color);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent);
+}
+
+.selection-chip__btn--accent:hover:not(:disabled) {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--color-accent) 24%, transparent);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
 
 .selection-chip__btn--danger {
   background: #c43a31;
-  color: #fff;
+  color: var(--color-text-on-accent);
   border-color: #c43a31;
 }
 
 .selection-chip__btn--danger:hover:not(:disabled) {
   background: #c43a31;
-  opacity: 0.85;
+  color: var(--color-text-on-accent);
+  border-color: #c43a31;
+  box-shadow: 0 7px 16px rgba(196, 58, 49, 0.24);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.tool-btn:focus-visible,
+.selection-chip__btn:focus-visible,
+.zoom-control__btn:focus-visible {
+  outline: 3px solid var(--color-accent-muted);
+  outline-offset: 2px;
 }
 
 .zoom-control {
@@ -717,7 +800,7 @@ onBeforeUnmount(() => {
 .zoom-control__value {
   min-width: 44px;
   text-align: center;
-  color: var(--text-main);
+  color: var(--color-neutral-9);
   font-size: 13px;
   font-weight: 700;
 }
@@ -728,19 +811,19 @@ onBeforeUnmount(() => {
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 10px;
-  background: var(--bg-paper, rgba(255, 255, 255, 0.72));
-  color: var(--text-sub);
+  border-radius: var(--radius-md);
+  background: var(--color-panel-bg);
+  color: var(--color-neutral-6);
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   transition:
-    transform 150ms cubic-bezier(0.2, 0, 0, 1),
-    background 150ms ease;
+    transform var(--duration-fast) var(--ease-breath),
+    background var(--duration-fast) var(--ease-breath);
 }
 
 .zoom-control__btn:hover {
-  background: var(--bg-panel-strong, rgba(255, 255, 255, 0.96));
+  background: var(--color-neutral-2);
 }
 
 .zoom-control__btn:active {
@@ -751,14 +834,14 @@ onBeforeUnmount(() => {
 .floating-panel {
   position: absolute;
   top: 74px;
-  z-index: 24;
+  z-index: var(--z-overlay);
   width: 330px;
   max-height: calc(100% - 150px);
   overflow: auto;
-  border-radius: 24px;
-  background: var(--bg-panel-strong, linear-gradient(180deg, rgba(255, 252, 246, 0.94), rgba(245, 236, 220, 0.92)));
-  border: 1px solid var(--line-soft, rgba(126, 99, 69, 0.14));
-  box-shadow: 0 24px 40px rgba(72, 49, 25, 0.12);
+  border-radius: var(--radius-2xl);
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: var(--shadow-float);
   padding: 16px;
 }
 
@@ -788,7 +871,7 @@ onBeforeUnmount(() => {
 
 .floating-panel__header h2 {
   margin: 0;
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-family: var(--font-serif);
   font-size: 24px;
   font-weight: 600;
 }
@@ -827,22 +910,23 @@ onBeforeUnmount(() => {
   top: 74px;
   left: 16px;
   z-index: 24;
-  width: 296px;
-  padding: 16px;
+  width: 336px;
+  padding: 18px;
   background: var(--color-panel-bg);
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
   border: 1px solid var(--color-neutral-4);
-  border-radius: var(--radius-xl);
+  border-radius: 24px;
   box-shadow: var(--shadow-whisper), var(--shadow-ring);
-  max-height: calc(100vh - 90px);
+  max-height: calc(100vh - 200px);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* ── Panel header overrides ── */
 
 .layout-panel :deep(.floating-panel__header) {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .layout-panel :deep(.floating-panel__eyebrow) {
@@ -857,10 +941,94 @@ onBeforeUnmount(() => {
 
 .layout-panel :deep(.floating-panel__header h2) {
   font-family: var(--font-serif);
-  font-size: var(--text-title-20);
+  font-size: 22px;
   font-weight: 600;
   color: var(--color-neutral-10);
   line-height: var(--leading-title);
+}
+
+.lp-overview {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.7)),
+    var(--color-neutral-1);
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.lp-overview__lead {
+  display: grid;
+  gap: 7px;
+}
+
+.lp-overview__lead strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-neutral-10);
+}
+
+.lp-overview__lead p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--color-neutral-7);
+}
+
+.lp-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(196, 58, 49, 0.1);
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.lp-mode-pill--compact {
+  background: rgba(117, 90, 55, 0.1);
+  color: var(--color-neutral-7);
+}
+
+.lp-overview__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.lp-stat {
+  display: grid;
+  gap: 3px;
+  padding: 10px 10px 9px;
+  border-radius: 14px;
+  background: rgba(247, 242, 235, 0.86);
+  border: 1px solid var(--color-card-stroke);
+}
+
+.lp-stat small {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-neutral-6);
+}
+
+.lp-stat strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-neutral-9);
+}
+
+.lp-stack {
+  display: grid;
+  gap: 14px;
 }
 
 .layout-panel :deep(.floating-panel__close) {
@@ -885,19 +1053,36 @@ onBeforeUnmount(() => {
 /* ── Sections ── */
 
 .lp-section {
-  padding-top: 10px;
-  margin-top: 10px;
-  border-top: 1px solid var(--color-neutral-3);
-}
-
-.lp-section:first-of-type {
-  padding-top: 0;
-  margin-top: 0;
-  border-top: none;
+  display: grid;
+  gap: 10px;
 }
 
 .lp-section--last {
   margin-bottom: 0;
+}
+
+.lp-section-head {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.lp-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(196, 58, 49, 0.08);
+  color: var(--color-accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.lp-section-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .lp-section-title {
@@ -910,18 +1095,49 @@ onBeforeUnmount(() => {
   margin: 0 0 8px;
 }
 
+.lp-caption {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--color-neutral-6);
+}
+
+.lp-section-desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-neutral-6);
+}
+
+.lp-surface {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(250, 247, 242, 0.86);
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.lp-surface--toggle-grid {
+  gap: 8px;
+}
+
 /* ── Slider fields ── */
 
 .lp-field {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0 12px;
-  margin-bottom: 6px;
+  margin-bottom: 0;
   cursor: default;
 }
 
 .lp-field:last-child {
   margin-bottom: 0;
+}
+
+.lp-field--disabled {
+  opacity: 0.56;
 }
 
 .lp-label {
@@ -951,6 +1167,15 @@ onBeforeUnmount(() => {
   font-size: 10px;
   margin-left: 1px;
   opacity: 0.7;
+}
+
+.lp-value--hex {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lp-select-wrap {
+  grid-column: 1 / -1;
 }
 
 /* ── Custom range slider with filled track ── */
@@ -997,6 +1222,12 @@ onBeforeUnmount(() => {
 
 .lp-slider:hover {
   opacity: 0.9;
+}
+
+.lp-slider:disabled,
+.lp-color:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .lp-slider::-webkit-slider-thumb {
@@ -1059,29 +1290,82 @@ onBeforeUnmount(() => {
   background: var(--color-warning);
 }
 
+.lp-color {
+  width: 40px;
+  min-width: 40px;
+  height: 32px;
+  padding: 3px;
+  border: 1px solid var(--color-card-stroke);
+  border-radius: 10px;
+  background: var(--color-neutral-1);
+  cursor: pointer;
+}
+
+.lp-color-field {
+  gap: 8px 12px;
+}
+
+.lp-color-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid var(--color-card-stroke);
+}
+
+.lp-color-preview {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(106, 82, 61, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
 /* ── Toggle rows ── */
 
 .lp-toggles {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 6px;
+}
+
+.lp-toggles--grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }
 
 .lp-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 6px;
-  border-radius: var(--radius-md);
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--color-card-stroke);
+  background: rgba(255, 255, 255, 0.62);
   font-size: var(--text-copy-13);
   color: var(--color-neutral-8);
   cursor: pointer;
-  transition: background var(--duration-fast) var(--ease-breath);
+  transition:
+    background var(--duration-fast) var(--ease-breath),
+    border-color var(--duration-fast) var(--ease-breath),
+    transform var(--duration-fast) var(--ease-breath);
   user-select: none;
 }
 
 .lp-toggle:hover {
-  background: var(--color-neutral-2);
+  background: rgba(255, 255, 255, 0.84);
+  border-color: rgba(168, 122, 61, 0.24);
+  transform: translateY(-1px);
+}
+
+.lp-toggle--emphasis {
+  background: rgba(196, 58, 49, 0.08);
+  border-color: rgba(196, 58, 49, 0.16);
 }
 
 .lp-toggle--disabled {
@@ -1460,7 +1744,12 @@ onBeforeUnmount(() => {
   .history-panel {
     top: 68px;
     left: 12px;
-    width: min(296px, calc(100vw - 24px));
+    width: min(336px, calc(100vw - 24px));
+  }
+
+  .lp-overview__stats,
+  .lp-toggles--grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1482,11 +1771,12 @@ onBeforeUnmount(() => {
 }
 
 [data-theme="dark"] .hp-entry--latest {
-  background: rgba(224, 112, 104, 0.12);
+  background: var(--color-error-muted);
 }
 
 [data-theme="dark"] .hp-entry--latest:hover {
-  background: rgba(224, 112, 104, 0.18);
+  background: var(--color-error-muted);
+  filter: brightness(1.2);
 }
 
 [data-theme="dark"] .hp-action-btn {
@@ -1510,5 +1800,19 @@ onBeforeUnmount(() => {
 [data-theme="dark"] .lp-switch__thumb {
   background: var(--color-neutral-3);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Float Panel transition */
+.float-panel-enter-active,
+.float-panel-leave-active {
+  transition:
+    opacity var(--duration-panel) var(--ease-breath),
+    transform var(--duration-panel) var(--ease-breath);
+}
+
+.float-panel-enter-from,
+.float-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.97);
 }
 </style>

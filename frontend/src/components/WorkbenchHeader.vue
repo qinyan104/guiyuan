@@ -196,73 +196,74 @@ onBeforeUnmount(() => {
 
     <div class="topbar__actions" aria-label="工作台操作">
       <div class="topbar__action-strip">
-        <!-- 纪略 & 编年史 —— 从下拉菜单提到顶栏 -->
-        <button class="btn btn--secondary" type="button" @click="emit('view-stats')" title="家族纪略">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-          纪略
-        </button>
-        <button class="btn btn--secondary" type="button" @click="emit('view-timeline')" title="家族编年史">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          编年
-        </button>
-
-        <div class="dropdown">
-          <button
-            class="btn btn--secondary dropdown-trigger"
-            type="button"
-            aria-haspopup="menu"
-            :aria-expanded="activeMenu === 'research'"
-            @click="toggleMenu('research')"
-          >
-            考据 <span class="caret">&#x25BE;</span>
+        <div class="topbar__primary-tools" role="group" aria-label="谱系工具">
+          <button class="btn btn--secondary" type="button" @click="emit('view-stats')" title="家族纪略">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            纪略
           </button>
-          <div v-if="activeMenu === 'research'" class="dropdown-menu" role="menu">
-            <button class="dropdown-item" type="button" @click="handleImportClick">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              引入前朝旧卷 (JSON)
+          <button class="btn btn--secondary" type="button" @click="emit('view-timeline')" title="家族编年史">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            编年
+          </button>
+
+          <div class="dropdown">
+            <button
+              class="btn btn--secondary dropdown-trigger"
+              type="button"
+              aria-haspopup="menu"
+              :aria-expanded="activeMenu === 'research'"
+              @click="toggleMenu('research')"
+            >
+              考据 <span class="caret">&#x25BE;</span>
             </button>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="activeMenu = null; showGedcomImport = true">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
-              引入 GEDCOM 族谱 (兼容各谱软件)
-            </button>
+            <div v-if="activeMenu === 'research'" class="dropdown-menu" role="menu">
+              <button class="dropdown-item" type="button" @click="handleImportClick">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                引入前朝旧卷 (JSON)
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" type="button" @click="activeMenu = null; showGedcomImport = true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+                引入 GEDCOM 族谱 (兼容各谱软件)
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="dropdown">
-          <button
-            class="btn btn--secondary dropdown-trigger"
-            type="button"
-            aria-haspopup="menu"
-            :aria-expanded="activeMenu === 'export'"
-            @click="toggleMenu('export')"
-          >
-            付梓 <span class="caret">&#x25BE;</span>
-          </button>
-          <div v-if="activeMenu === 'export'" class="dropdown-menu" role="menu">
-            <button class="dropdown-item" type="button" @click="openPublishingStudio">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-              出版工作室
+          <div class="dropdown">
+            <button
+              class="btn btn--secondary dropdown-trigger"
+              type="button"
+              aria-haspopup="menu"
+              :aria-expanded="activeMenu === 'export'"
+              @click="toggleMenu('export')"
+            >
+              付梓 <span class="caret">&#x25BE;</span>
             </button>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="openExportDialog">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              付梓发行 (高精影印/PDF)
-            </button>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="activeMenu = null; emit('download-svg')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-              拓印长卷 (SVG)
-            </button>
-            <button class="dropdown-item" type="button" @click="activeMenu = null; emit('export-json')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              封存卷宗草本 (JSON)
-            </button>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item" type="button" @click="activeMenu = null; emit('export-gedcom')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="8 13 12 17 16 13"/><line x1="12" y1="17" x2="12" y2="9"/></svg>
-              导出 GEDCOM 族谱 (兼容各谱软件)
-            </button>
+            <div v-if="activeMenu === 'export'" class="dropdown-menu" role="menu">
+              <button class="dropdown-item" type="button" @click="openPublishingStudio">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                出版工作室
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" type="button" @click="openExportDialog">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                付梓发行 (高精影印/PDF)
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" type="button" @click="activeMenu = null; emit('download-svg')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                拓印长卷 (SVG)
+              </button>
+              <button class="dropdown-item" type="button" @click="activeMenu = null; emit('export-json')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                封存卷宗草本 (JSON)
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" type="button" @click="activeMenu = null; emit('export-gedcom')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="8 13 12 17 16 13"/><line x1="12" y1="17" x2="12" y2="9"/></svg>
+                导出 GEDCOM 族谱 (兼容各谱软件)
+              </button>
+            </div>
           </div>
         </div>
 
@@ -317,7 +318,7 @@ onBeforeUnmount(() => {
     <!-- 协作者管理对话框 -->
     <Teleport defer to="body">
       <transition name="fade">
-        <div v-if="showCollabDialog" class="glass-modal-overlay" @click.self="showCollabDialog = false">
+        <div v-if="showCollabDialog" role="dialog" aria-modal="true" aria-label="协作者管理" class="glass-modal-overlay" @click.self="showCollabDialog = false" @keydown.escape="showCollabDialog = false">
           <div class="glass-sheet collab-sheet">
             <header class="sheet-header">
               <div class="header-content">
@@ -357,7 +358,7 @@ onBeforeUnmount(() => {
   padding: 14px 18px;
   background: var(--workbench-header-bg, var(--color-panel-bg));
   border: 1px solid var(--workbench-header-border, var(--color-card-stroke));
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   box-shadow: var(--workbench-header-shadow, var(--shadow-whisper));
   backdrop-filter: blur(18px) saturate(135%);
   -webkit-backdrop-filter: blur(18px) saturate(135%);
@@ -442,14 +443,14 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   flex-shrink: 0;
   transition: background 0.3s;
-  box-shadow: 0 0 0 4px rgba(196, 58, 49, 0.08);
+  box-shadow: 0 0 0 4px var(--color-accent-muted);
 }
 
-.sync-dot--saved { background: #22c55e; }
-.sync-dot--syncing { background: #f59e0b; animation: pulse 1.2s ease-in-out infinite; }
+.sync-dot--saved { background: var(--color-success); }
+.sync-dot--syncing { background: var(--color-warning); animation: pulse 1.2s ease-in-out infinite; }
 .sync-dot--pending { background: var(--color-neutral-4); }
-.sync-dot--error { background: #ef4444; }
-.sync-dot--conflict { background: #f97316; animation: pulse 0.6s ease-in-out infinite; }
+.sync-dot--error { background: var(--color-error); }
+.sync-dot--conflict { background: var(--color-warning); animation: pulse 0.6s ease-in-out infinite; }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
@@ -468,13 +469,49 @@ onBeforeUnmount(() => {
   gap: 6px;
 }
 
+.topbar__primary-tools {
+  display: inline-flex;
+  align-items: stretch;
+  padding: 3px;
+  border: 1px solid var(--workbench-line-soft, var(--color-neutral-4));
+  border-radius: var(--radius-lg);
+  background: var(--workbench-panel-muted, var(--color-neutral-1));
+  box-shadow: inset 0 1px 0 var(--glass-border-highlight, rgba(255, 255, 255, 0.72));
+}
+
+.topbar__primary-tools > .btn,
+.topbar__primary-tools > .dropdown > .btn {
+  min-height: 34px;
+  padding: 7px 13px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-neutral-7);
+}
+
+.topbar__primary-tools > :not(:first-child) {
+  border-left: 1px solid var(--workbench-line-soft, var(--color-neutral-4));
+}
+
+.topbar__primary-tools > .btn:hover,
+.topbar__primary-tools > .dropdown > .btn:hover,
+.topbar__primary-tools > .dropdown > .dropdown-trigger[aria-expanded='true'] {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+  border-color: transparent;
+}
+
+.topbar__primary-tools .dropdown-menu {
+  top: calc(100% + 11px);
+}
+
 /* ── Buttons ── */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 7px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
   font-size: 13px;
@@ -499,6 +536,12 @@ onBeforeUnmount(() => {
 .btn--secondary:hover {
   background: var(--workbench-panel-strong, var(--color-neutral-2));
   border-color: var(--color-neutral-5);
+}
+
+.btn:focus-visible,
+.user-profile-pill:focus-visible {
+  outline: 3px solid var(--color-accent-muted);
+  outline-offset: 2px;
 }
 
 .caret {
@@ -544,7 +587,7 @@ onBeforeUnmount(() => {
   gap: 10px;
   padding: 9px 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   font-size: 13px;
   font-weight: 500;
@@ -624,7 +667,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   font-size: 0.8rem;
   font-weight: 800;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   color: var(--color-neutral-9);
 }
 
@@ -694,13 +737,13 @@ onBeforeUnmount(() => {
 .glass-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.2);
+  background: var(--color-overlay);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: var(--z-modal);
   padding: 24px;
 }
 
@@ -738,7 +781,7 @@ onBeforeUnmount(() => {
   width: 44px;
   height: 44px;
   background: var(--color-accent-muted);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;

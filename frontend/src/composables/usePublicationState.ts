@@ -13,6 +13,7 @@ import { layoutPublication } from '../lib/layout'
 import { resolveKinshipTerm, getKinshipLabel } from '../lib/kinship'
 import { suggestLineageNote } from '../lib/lineageLabels'
 import { getPersonStatusLabel, isPersonDeceased } from '../lib/personStatus'
+import { normalizePublicationTextInPlace } from '../lib/textNormalization'
 import { useDevAudit } from './useDevAudit'
 
 function joinMetaParts(parts: Array<string | undefined>): string {
@@ -34,6 +35,7 @@ export function usePublicationState(
   }
 
   const cloned = structuredClone(initialPublication)
+  normalizePublicationTextInPlace(cloned)
   freezePeople(cloned)
   const publication = reactive<PublicationData>(cloned)
   const settings = reactive<PublicationSettings>(structuredClone(initialSettings))
@@ -47,6 +49,9 @@ export function usePublicationState(
     Object.keys(target).forEach((key) => {
       delete (target as Record<string, unknown>)[key]
     })
+    if ('people' in source && 'title' in source && 'subtitle' in source) {
+      normalizePublicationTextInPlace(source as unknown as PublicationData)
+    }
     if ('people' in source) {
       freezePeople(source as unknown as PublicationData)
     }
