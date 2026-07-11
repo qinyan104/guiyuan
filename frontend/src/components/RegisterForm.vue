@@ -25,6 +25,19 @@ async function onSubmit() {
   errorMsg.value = ''
   successMsg.value = ''
 
+  const username = form.username.trim()
+  if (username.length < 3) {
+    errorMsg.value = '账号至少需要 3 个字符'
+    return
+  }
+  if (username.length > 50) {
+    errorMsg.value = '账号不能超过 50 个字符'
+    return
+  }
+  if (form.password.length < 8) {
+    errorMsg.value = '密码至少需要 8 个字符'
+    return
+  }
   if (form.password !== form.confirmPassword) {
     errorMsg.value = '两次输入的密码不一致'
     return
@@ -34,9 +47,9 @@ async function onSubmit() {
 
   try {
     await register({
-      username: form.username,
+      username,
       password: form.password,
-      nickname: form.nickname || undefined,
+      nickname: form.nickname?.trim() || undefined,
     })
     successMsg.value = '注册成功，正在返回登录页'
     setTimeout(() => {
@@ -203,7 +216,7 @@ async function onSubmit() {
   --glass-seal-bg: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.3));
   --glass-feature-bg: rgba(255, 255, 255, 0.4);
   --glass-pill-bg: rgba(0, 0, 0, 0.05);
-  --glass-pill-active: #fff;
+  --glass-pill-active: var(--color-text-on-accent);
   --glass-input-bg: rgba(255, 255, 255, 0.5);
   --glass-input-border: rgba(255, 255, 255, 0.6);
   --glass-input-focus: rgba(255, 255, 255, 0.9);
@@ -325,7 +338,7 @@ async function onSubmit() {
   background: var(--color-neutral-3);
   border: 1px solid var(--color-neutral-2);
   border-radius: 12px;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 1.25rem;
   font-weight: bold;
   color: var(--color-neutral-9);
@@ -366,7 +379,7 @@ async function onSubmit() {
 .hero-title {
   font-size: 3.2rem;
   line-height: 1.3;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   color: var(--color-neutral-9);
   margin: 0;
   letter-spacing: 0.05em;
@@ -500,7 +513,7 @@ async function onSubmit() {
   font-size: 2.2rem;
   margin: 0 0 0.5rem;
   color: var(--color-neutral-9);
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
 }
 
 .form-desc {
@@ -620,7 +633,7 @@ async function onSubmit() {
 .submit-btn {
   position: relative;
   background: linear-gradient(135deg, var(--color-success) 0%, var(--color-neutral-7) 100%);
-  color: #fff;
+  color: var(--color-text-on-accent);
   border: none;
   padding: 1.25rem;
   border-radius: 18px;
@@ -699,7 +712,7 @@ async function onSubmit() {
   align-items: center;
   gap: 0.75rem;
   background: rgba(255, 59, 48, 0.15);
-  color: #ff3b30;
+  color: var(--color-error);
   padding: 1rem;
   border-radius: 14px;
   font-size: 0.95rem;

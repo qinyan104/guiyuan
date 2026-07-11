@@ -13,6 +13,7 @@ import {
   type PersonAccountRow,
 } from '../api/account'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import PoeticHeader from '../components/PoeticHeader.vue'
 
 const props = defineProps<{ pubId: number }>()
 
@@ -167,22 +168,18 @@ function genderLabel(g: string) {
 <template>
   <div class="admin-accounts-root">
     <div class="admin-accounts-view">
-      <header class="poetic-header">
-        <div class="poetic-header__main">
-          <div class="poetic-eyebrow">族谱管理</div>
-          <h1 class="poetic-title">族人账号</h1>
-        </div>
-        <div class="poetic-header__extra">
-          <button class="bento-btn" :disabled="cleaningOrphans || !hasOrphans" @click="handleCleanupOrphans">
+      <PoeticHeader eyebrow="族谱管理" title="族人账号">
+        <template #extra>
+          <button class="btn" :disabled="cleaningOrphans || !hasOrphans" @click="handleCleanupOrphans">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             {{ cleaningOrphans ? '清理中...' : '清理空悬' }}
           </button>
-          <button class="bento-btn primary" :disabled="deriving" @click="handleDerive">
+          <button class="btn btn--primary" :disabled="deriving" @click="handleDerive">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             {{ deriving ? '派生中...' : '派生账号' }}
           </button>
-        </div>
-      </header>
+        </template>
+      </PoeticHeader>
 
       <!-- Derived Result -->
       <transition name="glass-pop">
@@ -216,11 +213,11 @@ function genderLabel(g: string) {
         <transition name="glass-pop">
           <div v-if="selectedAccountIds.size > 0" class="batch-bar">
             <span class="batch-count">已选 {{ selectedAccountIds.size }} 项</span>
-            <button class="bento-btn small danger" :disabled="batchDeleting" @click="handleBatchDelete">
+            <button class="btn btn--sm btn--danger" :disabled="batchDeleting" @click="handleBatchDelete">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               删除所选
             </button>
-            <button class="bento-btn small" @click="selectedAccountIds = new Set()">取消</button>
+            <button class="btn btn--sm" @click="selectedAccountIds = new Set()">取消</button>
           </div>
         </transition>
 
@@ -259,16 +256,16 @@ function genderLabel(g: string) {
           <span class="mono">{{ row.username || '-' }}</span>
           <span class="actions-cell">
             <template v-if="!row.deceased && row.accountStatus === 'active'">
-              <button class="bento-btn small warning" @click="requestToggle(row, 'disable')">停用</button>
-              <button class="bento-btn small" @click="handleResetPassword(row)">重置密码</button>
-              <button class="bento-btn small danger" @click="requestDelete(row)">删除</button>
+              <button class="btn btn--sm btn--warning" @click="requestToggle(row, 'disable')">停用</button>
+              <button class="btn btn--sm" @click="handleResetPassword(row)">重置密码</button>
+              <button class="btn btn--sm btn--danger" @click="requestDelete(row)">删除</button>
             </template>
             <template v-else-if="!row.deceased && row.accountStatus === 'disabled'">
-              <button class="bento-btn small success" @click="requestToggle(row, 'enable')">启用</button>
-              <button class="bento-btn small danger" @click="requestDelete(row)">删除</button>
+              <button class="btn btn--sm btn--success" @click="requestToggle(row, 'enable')">启用</button>
+              <button class="btn btn--sm btn--danger" @click="requestDelete(row)">删除</button>
             </template>
             <template v-else-if="row.accountStatus === 'orphaned'">
-              <button class="bento-btn small danger" @click="requestDelete(row)">删除记录</button>
+              <button class="btn btn--sm btn--danger" @click="requestDelete(row)">删除记录</button>
             </template>
             <span v-else class="muted">不可操作</span>
           </span>
@@ -446,26 +443,6 @@ function genderLabel(g: string) {
 }
 
 /* ── 按钮 ── */
-.btn-text {
-  padding: 5px 10px;
-  font-size: var(--text-label-12);
-  font-weight: 500;
-  color: var(--color-accent);
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--duration-fast);
-}
-
-.btn-text:hover { background: var(--color-accent-muted); }
-
-.btn-text--danger {
-  color: var(--color-error);
-}
-
-.btn-text--danger:hover { background: rgba(196, 58, 49, 0.08); }
-
 .action-btn {
   padding: 6px 14px;
   font-size: var(--text-label-12);
@@ -492,7 +469,7 @@ function genderLabel(g: string) {
 
 .action-btn.confirm {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-text-on-accent);
   border-color: var(--color-accent);
 }
 

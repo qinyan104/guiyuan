@@ -300,7 +300,7 @@ onUnmounted(() => {
 <style>
 /* ---------- dropdown panel (teleported to body) ---------- */
 .app-select__dropdown {
-  z-index: 2147483647;
+  z-index: var(--z-critical);
   overflow-y: auto;
   background: var(--bg-panel-strong, #fffcf0);
   border: 1px solid var(--line-soft, rgba(117, 90, 57, 0.18));

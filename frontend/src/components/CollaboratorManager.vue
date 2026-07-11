@@ -174,6 +174,7 @@ function toggleSelectAccount(personDbId: number) {
 async function handleBatchDelete() {
   const ids = [...selectedAccountIds.value]
   if (ids.length === 0) return
+  batchDeleting.value = true
   try {
     const count = await batchDeleteAccounts(props.publicationId, ids)
     showToast(`已批量删除 ${count} 个账号`)
@@ -475,7 +476,7 @@ onUnmounted(() => {
           <div class="role-select-group">
             <AppSelect v-model="newRole" variant="inline" :options="[{value:'EDITOR',label:'编辑者'},{value:'VIEWER',label:'浏览者'}]" />
             <button
-              class="btn-add"
+              class="btn btn--primary btn--sm"
               :disabled="!selectedUser || adding"
               @click="handleAdd"
             >
@@ -549,7 +550,7 @@ onUnmounted(() => {
                   @change="(v: string) => requestInlineRoleChange(record, v as 'EDITOR' | 'VIEWER')"
                 />
                 <button
-                  class="btn-remove"
+                  class="btn btn--text btn--danger"
                   title="移除协作者"
                   @click="handleRemove(record)"
                 >
@@ -668,11 +669,11 @@ onUnmounted(() => {
           <Transition name="slide">
             <div v-if="selectedAccountIds.size > 0" class="batch-bar">
               <span class="batch-count">已选 {{ selectedAccountIds.size }} 项</span>
-              <button class="btn-text btn-text--danger" :disabled="batchDeleting" @click="handleBatchDelete">
+              <button class="btn btn--text btn--danger" :disabled="batchDeleting" @click="handleBatchDelete">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 删除所选
               </button>
-              <button class="btn-text" @click="selectedAccountIds = new Set()">取消选择</button>
+              <button class="btn btn--text" @click="selectedAccountIds = new Set()">取消选择</button>
             </div>
           </Transition>
           <div class="account-table-head">
@@ -716,22 +717,22 @@ onUnmounted(() => {
                 <span class="action-na">&mdash;</span>
               </template>
               <template v-else-if="person.accountStatus === 'orphaned'">
-                <button class="btn-text btn-text--danger" @click="handleDeleteAccount(person)">删除记录</button>
+                <button class="btn btn--text btn--danger" @click="handleDeleteAccount(person)">删除记录</button>
               </template>
               <template v-else-if="!person.accountStatus">
                 <span class="action-na">待派生</span>
               </template>
               <template v-else-if="person.accountStatus === 'active'">
-                <button class="btn-text" @click="handleResetPassword(person)">重置密码</button>
+                <button class="btn btn--text" @click="handleResetPassword(person)">重置密码</button>
                 <span class="action-sep"></span>
-                <button class="btn-text btn-text--danger" @click="handleToggleAccount(person)">停用</button>
+                <button class="btn btn--text btn--danger" @click="handleToggleAccount(person)">停用</button>
                 <span class="action-sep"></span>
-                <button class="btn-text btn-text--danger" @click="handleDeleteAccount(person)">删除</button>
+                <button class="btn btn--text btn--danger" @click="handleDeleteAccount(person)">删除</button>
               </template>
               <template v-else>
-                <button class="btn-text" @click="handleToggleAccount(person)">启用</button>
+                <button class="btn btn--text" @click="handleToggleAccount(person)">启用</button>
                 <span class="action-sep"></span>
-                <button class="btn-text btn-text--danger" @click="handleDeleteAccount(person)">删除</button>
+                <button class="btn btn--text btn--danger" @click="handleDeleteAccount(person)">删除</button>
               </template>
             </span>
           </div>
@@ -1164,31 +1165,6 @@ onUnmounted(() => {
   gap: 8px;
 }
 
-.btn-add {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-accent);
-  background: var(--color-accent);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-
-.btn-add:hover {
-  filter: brightness(1.08);
-}
-
-.btn-add:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 /* ── Search dropdown ── */
 .search-dropdown {
   position: absolute;
@@ -1282,7 +1258,7 @@ onUnmounted(() => {
 }
 
 .user-avatar.owner {
-  background: linear-gradient(135deg, #c43a31, #a8322b);
+  background: var(--color-accent-gradient);
   box-shadow: 0 2px 8px rgba(196, 58, 49, 0.1);
 }
 
@@ -1334,26 +1310,6 @@ onUnmounted(() => {
 .owner-badge {
   background: rgba(196, 58, 49, 0.08);
   color: var(--color-accent);
-}
-
-.btn-remove {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--color-neutral-5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-remove:hover {
-  color: var(--color-error);
-  background: rgba(196, 58, 49, 0.08);
-  border-color: rgba(196, 58, 49, 0.15);
 }
 
 /* ── Privacy section ── */
@@ -1482,8 +1438,8 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.status-pill.active .dot { background: #22c55e; }
-.status-pill.active { color: #166534; }
+.status-pill.active .dot { background: var(--color-success); }
+.status-pill.active { color: var(--color-success); }
 .status-pill.disabled .dot { background: var(--color-neutral-5); }
 .status-pill.orphaned .dot { background: var(--color-warning); }
 .status-pill.orphaned { color: #92400e; }
@@ -1497,30 +1453,6 @@ onUnmounted(() => {
   gap: 6px;
   white-space: nowrap;
   flex-shrink: 0;
-}
-
-.btn-text {
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-accent);
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-text:hover {
-  background: var(--color-accent-muted);
-}
-
-.btn-text--danger {
-  color: var(--color-error);
-}
-
-.btn-text--danger:hover {
-  background: rgba(196, 58, 49, 0.08);
 }
 
 .action-sep {
@@ -1556,7 +1488,7 @@ onUnmounted(() => {
 
 .btn--primary {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-text-on-accent);
   border-color: var(--color-accent);
 }
 

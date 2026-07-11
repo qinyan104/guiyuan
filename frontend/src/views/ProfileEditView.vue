@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { getMyProfile, submitProfileChange, type MyProfile, type MyProfilePerson } from '../api/profile'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import PoeticHeader from '../components/PoeticHeader.vue'
 
 const loading = ref(true)
 const profile = ref<MyProfile | null>(null)
@@ -209,17 +210,12 @@ function genderLabel(g: string) {
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
         </svg>
         <span>修改已提交，等待管理员审核。</span>
-        <button class="bento-btn small" @click="submitSuccess = false; loadProfile()">刷新状态</button>
+        <button class="btn" @click="submitSuccess = false; loadProfile()">刷新状态</button>
       </div>
 
       <!-- Main content -->
       <template v-else-if="profile">
-        <header class="poetic-header">
-          <div class="poetic-header__main">
-            <div class="poetic-eyebrow">{{ profile.publication.title }}</div>
-            <h1 class="poetic-title">个人信息</h1>
-          </div>
-        </header>
+        <PoeticHeader :eyebrow="profile.publication.title" title="个人信息" />
 
         <div class="edit-layout">
           <!-- Form -->
@@ -274,11 +270,11 @@ function genderLabel(g: string) {
             </div>
 
             <div class="form-actions">
-              <button class="bento-btn" :disabled="!hasChanges || profile.hasPendingChanges" @click="resetForm">
+              <button class="btn" :disabled="!hasChanges || profile.hasPendingChanges" @click="resetForm">
                 重置
               </button>
               <button
-                class="bento-btn primary"
+                class="btn btn--primary"
                 :disabled="!hasChanges || submitting || profile.hasPendingChanges"
                 @click="handleSubmit"
               >
@@ -349,12 +345,6 @@ function genderLabel(g: string) {
 .profile-edit-view {
   max-width: 1000px;
   margin: 0 auto;
-}
-.poetic-header {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 1.5rem;
-  align-items: start;
 }
 .bento-card {
   background: var(--surface, #fff);
@@ -435,31 +425,7 @@ function genderLabel(g: string) {
   gap: 0.75rem;
   margin-top: 1rem;
 }
-.bento-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  border: 1px solid var(--border, rgba(0,0,0,0.1));
-  border-radius: 10px;
-  background: var(--surface, #fff);
-  color: var(--text, #1a1a1a);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.bento-btn:hover { background: var(--surface-hover, #f5f5f5); }
-.bento-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.bento-btn.primary {
-  background: var(--accent, #6366f1);
-  color: #fff;
-  border-color: transparent;
-}
-.bento-btn.small {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
-}
+
 .preview-panel {
   position: sticky;
   top: 2rem;
@@ -498,7 +464,7 @@ function genderLabel(g: string) {
   width: 100%;
   height: 100%;
   background: var(--accent, #6366f1);
-  color: #fff;
+  color: var(--color-text-on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -525,12 +491,12 @@ function genderLabel(g: string) {
   font-weight: 500;
 }
 .card-status.alive {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--color-success-muted);
+  color: var(--color-success);
 }
 .card-status.deceased {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-6);
 }
 .card-details {
   border-top: 1px solid var(--border, rgba(0,0,0,0.06));
@@ -561,14 +527,14 @@ function genderLabel(g: string) {
   font-size: 0.9rem;
 }
 .pending-banner {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fbbf24;
+  background: var(--color-warning-muted);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
 }
 .success-banner {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #4ade80;
+  background: var(--color-success-muted);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
 }
 .empty-state {
   text-align: center;

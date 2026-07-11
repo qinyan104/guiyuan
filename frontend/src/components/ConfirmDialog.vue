@@ -11,10 +11,11 @@
  *   - tone: "default" | "danger" | "warning"
  *   - confirmLabel: 确认按钮文字（默认 "确认"）
  *   - cancelLabel: 取消按钮文字（默认 "取消"）
- *
- * 样式由 interaction-baseline.css 提供。
  */
-defineProps<{
+import { ref, toRef, watch } from 'vue'
+import { useFocusTrap } from '../composables/useFocusTrap'
+
+const props = defineProps<{
   modelValue: boolean
   title: string
   message: string
@@ -30,6 +31,11 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+const dialogRef = ref<HTMLElement | null>(null)
+const active = toRef(props, 'modelValue')
+
+useFocusTrap(dialogRef, active, () => onCancel())
+
 function onConfirm() {
   emit("confirm")
   emit("update:modelValue", false)
@@ -39,42 +45,63 @@ function onCancel() {
   emit("cancel")
   emit("update:modelValue", false)
 }
+
+watch(() => props.modelValue, (v) => {
+  document.body.style.overflow = v ? 'hidden' : ''
+})
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="modelValue" class="confirm-overlay" @click.self="onCancel">
-      <div
-        class="confirm-dialog"
-        :class="{
-          [`tone-${tone || 'default'}`]: true,
-          'dialog-sm': size === 'sm',
-          'dialog-lg': size === 'lg',
-        }"
-      >
-        <h3 class="confirm-title">{{ title }}</h3>
-        <p class="confirm-message">{{ message }}</p>
-        <div class="confirm-actions">
-          <button
-            class="bento-btn ghost"
-            data-role="cancel"
-            type="button"
-            @click="onCancel"
-          >
-            {{ cancelLabel || "取消" }}
-          </button>
-          <button
-            class="bento-btn"
-            :class="tone === 'danger' ? 'danger' : tone === 'warning' ? 'warning' : 'primary'"
-            data-role="confirm"
-            type="button"
-            @click="onConfirm"
-          >
-            {{ confirmLabel || "确认" }}
-          </button>
+    <Transition name="confirm-dialog">
+      <div v-if="modelValue" class="confirm-overlay" @click.self="onCancel">
+        <div
+          ref="dialogRef"
+          class="confirm-dialog"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="title"
+          tabindex="-1"
+          :class="{
+            [`tone-${tone || 'default'}`]: true,
+            'dialog-sm': size === 'sm',
+            'dialog-lg': size === 'lg',
+          }"
+        >
+          <div v-if="tone === 'danger'" class="confirm-icon confirm-icon--danger">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div v-else-if="tone === 'warning'" class="confirm-icon confirm-icon--warning">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </div>
+          <h3 class="confirm-title">{{ title }}</h3>
+          <p class="confirm-message">{{ message }}</p>
+          <div class="confirm-actions">
+            <button
+              class="btn btn--ghost"
+              data-role="cancel"
+              type="button"
+              @click="onCancel"
+            >
+              {{ cancelLabel || "取消" }}
+            </button>
+            <button
+              class="btn"
+              :class="tone === 'danger' ? 'btn--danger' : tone === 'warning' ? 'btn--secondary' : 'btn--primary'"
+              data-role="confirm"
+              type="button"
+              @click="onConfirm"
+            >
+              {{ confirmLabel || "确认" }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>
 
@@ -83,8 +110,8 @@ function onCancel() {
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10000;
-  background: var(--color-overlay, rgba(0, 0, 0, 0.35));
+  z-index: var(--z-critical);
+  background: var(--color-overlay);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -95,27 +122,48 @@ function onCancel() {
 .confirm-dialog {
   width: 100%;
   max-width: 400px;
-  background: var(--color-panel-bg, #fff);
-  border: 1px solid var(--color-card-stroke, #e5e7eb);
-  border-radius: var(--radius-xl, 16px);
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-2xl);
   padding: 32px;
   box-shadow: var(--shadow-whisper);
   margin: 16px;
+  outline: none;
+}
+
+.confirm-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+}
+
+.confirm-icon--danger {
+  background: var(--color-error-muted);
+  color: var(--color-error);
+}
+
+.confirm-icon--warning {
+  background: var(--color-warning-muted);
+  color: var(--color-warning);
 }
 
 .confirm-title {
   margin: 0 0 12px;
   font-family: var(--font-serif);
-  font-size: var(--text-title-20, 20px);
+  font-size: var(--text-title-20);
   font-weight: 500;
-  color: var(--color-neutral-10, #1a1a1a);
+  color: var(--color-neutral-10);
   text-align: center;
 }
 
 .confirm-message {
   margin: 0 0 24px;
-  font-size: var(--text-copy-14, 14px);
-  color: var(--color-neutral-7, #6b7280);
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-7);
   text-align: center;
   line-height: 1.6;
 }
@@ -132,11 +180,11 @@ function onCancel() {
 
 /* ── Tone variants ── */
 .tone-danger .confirm-title {
-  color: var(--color-error, #dc2626);
+  color: var(--color-error);
 }
 
 .tone-warning .confirm-title {
-  color: var(--color-warning, #d97706);
+  color: var(--color-warning);
 }
 
 /* ── Size variants ── */
@@ -149,5 +197,37 @@ function onCancel() {
   max-width: 520px;
   padding: 40px;
 }
-</style>
 
+/* ── Transition ── */
+.confirm-dialog-enter-active {
+  transition: opacity var(--duration-panel) var(--ease-breath);
+}
+
+.confirm-dialog-enter-active .confirm-dialog {
+  transition: transform var(--duration-panel) var(--ease-breath),
+              opacity var(--duration-panel) var(--ease-breath);
+}
+
+.confirm-dialog-leave-active {
+  transition: opacity var(--duration-fast) var(--ease-breath);
+}
+
+.confirm-dialog-leave-active .confirm-dialog {
+  transition: transform var(--duration-fast) var(--ease-breath),
+              opacity var(--duration-fast) var(--ease-breath);
+}
+
+.confirm-dialog-enter-from { opacity: 0; }
+.confirm-dialog-enter-from .confirm-dialog { opacity: 0; transform: translateY(12px) scale(0.96); }
+.confirm-dialog-leave-to { opacity: 0; }
+.confirm-dialog-leave-to .confirm-dialog { opacity: 0; transform: translateY(8px) scale(0.98); }
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-dialog-enter-active,
+  .confirm-dialog-leave-active,
+  .confirm-dialog-enter-active .confirm-dialog,
+  .confirm-dialog-leave-active .confirm-dialog {
+    transition: none;
+  }
+}
+</style>

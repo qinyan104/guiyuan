@@ -139,7 +139,7 @@ onBeforeUnmount(() => {
     </aside>
 
     <!-- Main Spatial Content Area -->
-    <main class="spatial-content">
+    <main class="spatial-content panel-glass">
       <!-- Top Action Bar -->
       <header class="top-action-bar">
         <GlobalSearch />
@@ -228,8 +228,8 @@ onBeforeUnmount(() => {
 [data-theme="dark"] .spatial-workspace,
 [data-theme="dark"] .spatial-workspace {
   --glass-bg: var(--color-neutral-2);
-  --glass-border-highlight: rgba(255,255,255,0.06);
-  --glass-border-shadow: rgba(255,255,255,0.04);
+  --glass-border-highlight: var(--color-neutral-5);
+  --glass-border-shadow: var(--color-neutral-4);
   --glass-seal-bg: linear-gradient(135deg, var(--color-neutral-3), var(--color-neutral-2));
   --glass-pill-bg: var(--color-neutral-4);
   --glow-opacity: 0.05;
@@ -309,7 +309,7 @@ onBeforeUnmount(() => {
   background: var(--glass-seal-bg);
   border: 1px solid var(--glass-border-highlight);
   border-radius: 12px;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 1.3rem;
   font-weight: bold;
   color: var(--color-neutral-9);
@@ -326,7 +326,7 @@ onBeforeUnmount(() => {
   font-size: 1.05rem;
   color: var(--color-neutral-9);
   letter-spacing: 0.05em;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
 }
 
 .logo-subtitle {
@@ -351,7 +351,7 @@ onBeforeUnmount(() => {
   color: var(--color-neutral-6);
   opacity: 0.5;
   letter-spacing: 0.2em;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   writing-mode: vertical-rl;
   height: 120px;
   margin: 0;
@@ -375,7 +375,7 @@ onBeforeUnmount(() => {
   background: transparent;
   border-radius: 16px;
   color: var(--color-neutral-7);
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 1.05rem;
   font-weight: 500;
   cursor: pointer;
@@ -447,13 +447,6 @@ onBeforeUnmount(() => {
   min-width: 0;
   border-radius: 24px;
   overflow: hidden;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-  box-shadow: 
-    0 24px 48px -12px rgba(0,0,0,0.1),
-    inset 0 1px 0 var(--glass-border-highlight),
-    inset 0 -1px 0 var(--glass-border-shadow);
 }
 
 /* ── Top Action Bar ── */
@@ -500,7 +493,7 @@ onBeforeUnmount(() => {
 }
 .user-profile-pill:hover,
 .user-profile-pill.is-open {
-  background: rgba(0,0,0,0.04);
+  background: var(--color-neutral-2);
 }
 [data-theme="dark"] .user-profile-pill:hover,
 [data-theme="dark"] .user-profile-pill:hover,
@@ -530,11 +523,11 @@ onBeforeUnmount(() => {
   justify-content: center;
   font-size: 0.8rem;
   font-weight: 800;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   color: var(--color-neutral-9);
 }
 [data-theme="dark"] .avatar-text {
-  background: rgba(40,40,40,1);
+  background: var(--color-neutral-3);
   color: #fff;
 }
 
@@ -571,8 +564,8 @@ onBeforeUnmount(() => {
 
 [data-theme="dark"] .user-popover,
 [data-theme="dark"] .user-popover {
-  background: rgba(20, 20, 20, 0.85);
-  border-color: rgba(255,255,255,0.1);
+  background: var(--color-neutral-1);
+  border-color: var(--color-neutral-5);
   box-shadow: var(--shadow-whisper);
 }
 
@@ -619,7 +612,7 @@ onBeforeUnmount(() => {
   background: rgba(0,0,0,0.04);
 }
 .menu-item.danger {
-  color: #ef4444;
+  color: var(--color-error);
 }
 .menu-item.danger:hover {
   background: rgba(239, 68, 68, 0.1);
@@ -704,7 +697,7 @@ onBeforeUnmount(() => {
   right: 5%;
   top: 50%;
   transform: translateY(-50%);
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 28vh;
   font-weight: 500;
   color: var(--color-neutral-9);

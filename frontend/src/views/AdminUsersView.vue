@@ -12,8 +12,10 @@ import {
 import { isSuperAdmin } from '../api/auth'
 import { useLexiconStore } from '../stores/lexicon'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import PoeticHeader from '../components/PoeticHeader.vue'
 
 const { lexicon } = useLexiconStore()
+const usersQuote = computed(() => lexicon.users.quote.replace(/\\n/g, '<br/>'))
 const users = ref<AdminUser[]>([])
 const loading = ref(true)
 
@@ -225,19 +227,19 @@ function formatDate(dateStr: string) {
 <template>
   <div class="admin-users-view-root">
     <div class="admin-users-view">
-      <header class="poetic-header">
-        <div class="poetic-header__main">
-          <div class="poetic-eyebrow">{{ lexicon.users.headerEyebrow }}</div>
-          <h1 class="poetic-title">{{ lexicon.users.headerTitle }}<span class="text-italic">{{ lexicon.users.headerTitleItalic }}</span></h1>
-        </div>
-        <div class="poetic-header__extra" style="display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
-          <p class="poetic-quote" v-html="lexicon.users.quote.replace(/\\n/g, '<br/>')"></p>
-          <button class="bento-btn primary" @click="showCreateForm = true">
+      <PoeticHeader
+        :eyebrow="lexicon.users.headerEyebrow"
+        :title="lexicon.users.headerTitle"
+        :title-italic="lexicon.users.headerTitleItalic"
+      >
+        <template #extra>
+          <p class="poetic-quote" v-html="usersQuote"></p>
+          <button class="btn btn--primary" @click="showCreateForm = true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             添加编委
           </button>
-        </div>
-      </header>
+        </template>
+      </PoeticHeader>
 
       <!-- Search -->
       <div class="search-bar">
@@ -263,11 +265,11 @@ function formatDate(dateStr: string) {
       <transition name="glass-pop">
         <div v-if="selectedUserIds.size > 0" class="batch-bar">
           <span class="batch-count">已选 {{ selectedUserIds.size }} 人</span>
-          <button class="bento-btn small danger" :disabled="batchDeleting" @click="handleBatchDelete">
+          <button class="btn btn--sm btn--danger" :disabled="batchDeleting" @click="handleBatchDelete">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             {{ batchDeleting ? '删除中...' : '批量删除' }}
           </button>
-          <button class="bento-btn small" @click="selectedUserIds = new Set()">取消选择</button>
+          <button class="btn btn--sm" @click="selectedUserIds = new Set()">取消选择</button>
         </div>
       </transition>
 
@@ -304,8 +306,8 @@ function formatDate(dateStr: string) {
               </label>
             </div>
             <div class="actions">
-              <button class="bento-btn ghost" @click="showCreateForm = false">取消</button>
-              <button class="bento-btn primary" @click="handleCreate">确认创建</button>
+              <button class="btn btn--ghost" @click="showCreateForm = false">取消</button>
+              <button class="btn btn--primary" @click="handleCreate">确认创建</button>
             </div>
           </div>
         </div>
@@ -417,7 +419,7 @@ function formatDate(dateStr: string) {
       <!-- Reset Password Dialog -->
       <Teleport to="body">
         <transition name="glass-pop">
-          <div v-if="resetUserId !== null" class="glass-dialog-overlay" @click.self="resetUserId = null">
+          <div v-if="resetUserId !== null" class="glass-dialog-overlay" role="dialog" aria-modal="true" aria-label="重置密码" @click.self="resetUserId = null" @keydown.escape="resetUserId = null">
             <div class="glass-dialog">
               <h2 class="dialog-title">重置密码</h2>
               <div class="dialog-field">
@@ -425,8 +427,8 @@ function formatDate(dateStr: string) {
                 <input v-model="resetNewPassword" type="password" placeholder="输入新密码" @keyup.enter="handleResetPassword" />
               </div>
               <div class="dialog-actions">
-                <button class="bento-btn ghost" @click="resetUserId = null">取消</button>
-                <button class="bento-btn primary" @click="handleResetPassword">确认重置</button>
+                <button class="btn btn--ghost" @click="resetUserId = null">取消</button>
+                <button class="btn btn--primary" @click="handleResetPassword">确认重置</button>
               </div>
             </div>
           </div>
@@ -447,13 +449,13 @@ function formatDate(dateStr: string) {
       <!-- Delete Confirm Dialog -->
       <Teleport to="body">
         <transition name="glass-pop">
-          <div v-if="deleteUserId !== null" class="glass-dialog-overlay" @click.self="deleteUserId = null">
+          <div v-if="deleteUserId !== null" class="glass-dialog-overlay" role="dialog" aria-modal="true" aria-label="确认删除编委" @click.self="deleteUserId = null" @keydown.escape="deleteUserId = null">
             <div class="glass-dialog danger-mode">
               <h2 class="dialog-title">确认删除编委</h2>
               <p class="dialog-desc">此操作将永久移除该编委的系统访问权限，该操作不可撤销。</p>
               <div class="dialog-actions">
-                <button class="bento-btn ghost" @click="deleteUserId = null">保留</button>
-                <button class="bento-btn danger" @click="handleDelete(deleteUserId!)">确认删除</button>
+                <button class="btn btn--ghost" @click="deleteUserId = null">保留</button>
+                <button class="btn btn--danger" @click="handleDelete(deleteUserId!)">确认删除</button>
               </div>
             </div>
           </div>
@@ -525,7 +527,7 @@ function formatDate(dateStr: string) {
 
 .glass-tab.is-active .tab-count {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-text-on-accent);
 }
 
 /* ── Cards ── */
@@ -696,19 +698,19 @@ function formatDate(dateStr: string) {
 
 .user-avatar.super_admin {
   background: linear-gradient(135deg, #c43a31, #a8322b);
-  color: #fff;
+  color: var(--color-text-on-accent);
   box-shadow: 0 2px 8px rgba(196, 58, 49, 0.3);
 }
 
 .user-avatar.admin {
   background: linear-gradient(135deg, #3d6896, #2d5178);
-  color: #fff;
+  color: var(--color-text-on-accent);
   box-shadow: 0 2px 8px rgba(61, 104, 150, 0.25);
 }
 
 .user-avatar.user {
   background: linear-gradient(135deg, #787670, #5c5a55);
-  color: #fff;
+  color: var(--color-text-on-accent);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -866,7 +868,7 @@ function formatDate(dateStr: string) {
 .icon-btn {
   width: 34px;
   height: 34px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
   display: flex;
@@ -895,66 +897,11 @@ function formatDate(dateStr: string) {
   border-color: rgba(196, 58, 49, 0.15);
 }
 
-/* ── 按钮体系 ── */
-.bento-btn {
-  padding: 8px 20px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-neutral-4);
-  background: var(--color-neutral-2);
-  color: var(--color-neutral-9);
-  font-size: var(--text-copy-14);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--duration-fast);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.bento-btn:hover { background: var(--color-neutral-3); }
-
-.bento-btn.primary {
-  background: var(--color-accent);
-  color: #fff;
-  border-color: var(--color-accent);
-}
-
-.bento-btn.primary:hover { filter: brightness(1.08); }
-
-.bento-btn.ghost {
-  background: transparent;
-  border-color: transparent;
-  color: var(--color-neutral-7);
-}
-
-.bento-btn.ghost:hover {
-  background: var(--color-neutral-3);
-  color: var(--color-neutral-9);
-}
-
-.bento-btn.danger {
-  background: var(--color-error);
-  color: #fff;
-  border-color: var(--color-error);
-}
-
-.bento-btn.danger:hover { filter: brightness(1.08); }
-
-.bento-btn.small {
-  padding: 5px 14px;
-  font-size: var(--text-label-12);
-}
-
-.bento-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 /* ── 对话框 ── */
 .glass-dialog-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: var(--z-critical);
   background: var(--color-overlay);
   backdrop-filter: blur(4px);
   display: flex;
@@ -1142,7 +1089,7 @@ function formatDate(dateStr: string) {
   top: 24px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 20000;
+  z-index: var(--z-toast);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1155,15 +1102,15 @@ function formatDate(dateStr: string) {
 }
 
 .toast.success {
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
+  background: var(--color-success-muted);
+  color: var(--color-success-text, #065f46);
+  border: 1px solid var(--color-success-border, #a7f3d0);
 }
 
 .toast.error {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  background: var(--color-error-muted);
+  color: var(--color-error-text, #991b1b);
+  border: 1px solid var(--color-error-border, #fecaca);
 }
 
 .toast-fade-enter-active,

@@ -55,7 +55,7 @@ function restoreEditorSnapshot(snapshot: EditorSnapshot) {
 
 function applyPublicationSnapshot(publication: PublicationData, settings: PublicationSettings) {
   pub.replaceReactiveObject(pub.publication, publication)
-  pub.replaceReactiveObject(pub.settings, settings)
+  pub.replaceReactiveObject(pub.settings, { ...defaultSettings, ...settings })
 }
 
 const history = useEditorHistory({

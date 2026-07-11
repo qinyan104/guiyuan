@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   listPublications,
@@ -15,10 +15,12 @@ import ShareLinkManager from '../components/ShareLinkManager.vue'
 import CollaboratorManager from '../components/CollaboratorManager.vue'
 import { useLexiconStore } from '../stores/lexicon'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
+import PoeticHeader from '../components/PoeticHeader.vue'
 import { useFeedback } from '../composables/useFeedback'
 const router = useRouter()
 const feedback = useFeedback()
 const { lexicon } = useLexiconStore()
+const publicationsQuote = computed(() => lexicon.publications.quote.replace(/\\n/g, '<br/>'))
 
 const publications = ref<PublicationSummary[]>([])
 const loading = ref(true)
@@ -173,7 +175,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
     const id = await createPublication(sample.publication, defaultSettings, baseTitle + ' (副本)')
     router.push({ name: 'workbench', params: { id } })
   } catch (err: any) {
-    console.error('[template clone] failed:', err)
+    if (import.meta.env.DEV) console.error('[template clone] failed:', err)
     feedback.setError('创建失败: ' + (err?.message || '未知错误'))
   } finally {
     cloningSampleId.value = null
@@ -186,20 +188,19 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
     <div class="gallery-stage">
     <FeedbackStrip :status-message="feedback.statusMessage.value" :error-message="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
       <!-- Header -->
-      <header class="poetic-header">
-        <div class="poetic-header__main">
-          <div class="poetic-eyebrow">{{ lexicon.publications.headerEyebrow }}</div>
-          <h1 class="poetic-title">{{ lexicon.publications.headerTitle }}<span class="text-italic">{{ lexicon.publications.headerTitleItalic }}</span></h1>
-        </div>
-        
-        <div class="poetic-header__extra" style="display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
-          <p class="poetic-quote" v-html="lexicon.publications.quote.replace(/\\n/g, '<br/>')"></p>
-          <button class="glass-pill-btn primary-action" @click="showCreateDialog = true">
+      <PoeticHeader
+        :eyebrow="lexicon.publications.headerEyebrow"
+        :title="lexicon.publications.headerTitle"
+        :title-italic="lexicon.publications.headerTitleItalic"
+      >
+        <template #extra>
+          <p class="poetic-quote" v-html="publicationsQuote"></p>
+          <button class="btn btn--primary" @click="showCreateDialog = true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             新建宗谱存档
           </button>
-        </div>
-      </header>
+        </template>
+      </PoeticHeader>
 
       <div v-if="loading" class="loading-state">
         <div class="spinner"></div>
@@ -214,7 +215,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
               <span class="dot-ember"></span> 经典王朝世系模板
             </div>
             <div class="template-grid">
-              <div v-for="sample in builtinSamples" :key="sample.id" class="glass-card template-card" @click="handleViewSample(sample)">
+              <div v-for="sample in builtinSamples" :key="sample.id" class="panel-glass template-card" @click="handleViewSample(sample)">
                 <div class="template-bg"></div>
                 <div class="template-content">
                   <h3 class="template-title">{{ sample.publication.title }}</h3>
@@ -235,7 +236,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
             <h3 class="empty-title">书卷空余，待君挥墨</h3>
             <p class="empty-desc">尚未收录任何宗族典藏，您可以开宗立派，或从上方经典模板中演化。</p>
             <div class="empty-actions">
-              <button class="bento-btn primary" @click="showCreateDialog = true">新建宗谱存档</button>
+              <button class="btn btn--primary" @click="showCreateDialog = true">新建宗谱存档</button>
             </div>
           </div>
 
@@ -246,7 +247,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
             </div>
 
             <div class="archive-grid">
-              <article v-for="pub in publications" :key="pub.id" class="glass-card archive-card" @click="openPublication(pub.id)">
+              <article v-for="pub in publications" :key="pub.id" class="panel-glass archive-card" @click="openPublication(pub.id)">
                 <div class="archive-body">
                   <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
                   <p v-if="pub.subtitle" class="archive-subtitle">{{ pub.subtitle }}</p>
@@ -279,8 +280,8 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                   <div v-if="deleteConfirmId === pub.id" class="delete-overlay" @click.stop>
                     <p>确定要删除「{{ pub.title }}」吗？此操作不可撤销。</p>
                     <div class="delete-btns">
-                      <button class="glass-pill-btn danger" :disabled="deletingId === pub.id" @click="handleDelete(pub.id)">{{ deletingId === pub.id ? '删除中...' : '确认删除' }}</button>
-                      <button class="glass-pill-btn" @click="deleteConfirmId = null">取消</button>
+                      <button class="btn btn--danger" :disabled="deletingId === pub.id" @click="handleDelete(pub.id)">{{ deletingId === pub.id ? '删除中...' : '确认删除' }}</button>
+                      <button class="btn" @click="deleteConfirmId = null">取消</button>
                     </div>
                   </div>
                 </transition>
@@ -294,7 +295,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
       <Teleport to="body">
         <!-- Create Archive Sheet -->
         <transition name="sheet-slide">
-          <div v-if="showCreateDialog" class="glass-modal-overlay" @click.self="showCreateDialog = false">
+          <div v-if="showCreateDialog" class="glass-modal-overlay" role="dialog" aria-modal="true" aria-label="新建宗谱存档" @click.self="showCreateDialog = false" @keydown.escape="showCreateDialog = false">
             <div class="glass-sheet">
               <header class="sheet-header">
                 <h2 class="sheet-title">开宗立派</h2>
@@ -311,8 +312,8 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                 </div>
               </div>
               <footer class="sheet-footer">
-                <button class="glass-pill-btn" @click="showCreateDialog = false">取消</button>
-                <button class="glass-pill-btn primary" :disabled="creating" @click="handleCreate">{{ creating ? '创建中...' : '建档立案' }}</button>
+                <button class="btn" @click="showCreateDialog = false">取消</button>
+                <button class="btn btn--primary" :disabled="creating" @click="handleCreate">{{ creating ? '创建中...' : '建档立案' }}</button>
               </footer>
             </div>
           </div>
@@ -320,7 +321,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
         <!-- Edit Metadata Sheet -->
         <transition name="sheet-slide">
-          <div v-if="showEditDialog" class="glass-modal-overlay" @click.self="showEditDialog = false">
+          <div v-if="showEditDialog" class="glass-modal-overlay" role="dialog" aria-modal="true" aria-label="修缮档案属性" @click.self="showEditDialog = false" @keydown.escape="showEditDialog = false">
             <div class="glass-sheet large">
               <header class="sheet-header">
                 <h2 class="sheet-title">修缮档案属性</h2>
@@ -353,8 +354,8 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                 </div>
               </div>
               <footer class="sheet-footer">
-                <button class="glass-pill-btn" @click="showEditDialog = false">放弃修改</button>
-                <button class="glass-pill-btn primary" :disabled="saving" @click="handleEditSave">{{ saving ? '保存中...' : '封装保存' }}</button>
+                <button class="btn" @click="showEditDialog = false">放弃修改</button>
+                <button class="btn btn--primary" :disabled="saving" @click="handleEditSave">{{ saving ? '保存中...' : '封装保存' }}</button>
               </footer>
             </div>
           </div>
@@ -362,7 +363,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
         <!-- Collaborator Manager Sheet -->
         <transition name="sheet-slide">
-          <div v-if="showCollabDialog && collabDialogPubId" class="glass-modal-overlay" @click.self="showCollabDialog = false">
+          <div v-if="showCollabDialog && collabDialogPubId" class="glass-modal-overlay" role="dialog" aria-modal="true" aria-label="协作者管理" @click.self="showCollabDialog = false" @keydown.escape="showCollabDialog = false">
             <div class="glass-sheet large">
               <header class="sheet-header">
                 <h2 class="sheet-title">协作者管理</h2>
@@ -377,7 +378,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
         <!-- Share Link Manager Sheet -->
         <transition name="sheet-slide">
-          <div v-if="showShareDialog && shareDialogPubId" class="glass-modal-overlay" @click.self="showShareDialog = false">
+          <div v-if="showShareDialog && shareDialogPubId" class="glass-modal-overlay" role="dialog" aria-modal="true" aria-label="分享链接管理" @click.self="showShareDialog = false" @keydown.escape="showShareDialog = false">
             <div class="glass-sheet">
               <header class="sheet-header">
                 <h2 class="sheet-title">分享链接管理</h2>
@@ -419,7 +420,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 .header-title {
   font-size: 2.5rem;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-weight: 500;
   color: var(--color-neutral-9);
   margin: 0 0 0.5rem;
@@ -434,42 +435,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   margin-bottom: 0.5rem;
 }
 
-/* ── Glass Pill Button ── */
-.glass-pill-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
-  border-radius: 999px;
-  border: 1px solid var(--color-neutral-4);
-  background: var(--color-neutral-2);
-  font-size: var(--text-copy-13);
-  font-weight: 500;
-  color: var(--color-neutral-8);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-breath);
-}
-.glass-pill-btn:hover {
-  background: var(--color-neutral-9);
-  color: var(--color-neutral-1);
-  border-color: var(--color-neutral-9);
-}
-.glass-pill-btn.primary {
-  background: var(--color-neutral-9);
-  color: var(--color-neutral-1);
-  border-color: var(--color-neutral-9);
-}
-.glass-pill-btn.primary:hover {
-  opacity: 0.85;
-}
-.glass-pill-btn.danger {
-  background: var(--color-error);
-  color: #fff;
-  border-color: var(--color-error);
-}
-.glass-pill-btn.danger:hover {
-  opacity: 0.85;
-}
+
 
 /* ── Sections ── */
 .gallery-section {
@@ -490,29 +456,15 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 .dot-ink { width: 6px; height: 6px; border-radius: 50%; background: var(--color-info); }
 
 /* ── Glass Cards ── */
-.glass-card {
-  background: var(--color-card-fill);
-  border: 1px solid var(--color-card-stroke);
+.panel-glass {
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 
-    0 12px 32px -12px rgba(0,0,0,0.05),
-    inset 0 0 0 1px var(--color-neutral-4);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
   position: relative;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
   cursor: pointer;
 }
-.glass-card:hover {
+.panel-glass:hover {
   transform: translateY(-4px);
-  box-shadow: 0 24px 48px -12px rgba(0,0,0,0.1);
-}
-[data-theme="dark"] .glass-card,
-[data-theme="dark"] .glass-card {
-  background: rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
 }
 
 /* ── Template Grid ── */
@@ -539,7 +491,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   z-index: 1;
 }
 .template-title {
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 1.3rem;
   margin: 0 0 0.25rem;
   color: var(--color-neutral-9);
@@ -694,10 +646,6 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   display: flex;
   gap: 12px;
 }
-.delete-btns .glass-pill-btn {
-  font-size: var(--text-copy-13);
-  padding: 8px 20px;
-}
 
 .empty-gallery {
   padding: 4rem 2rem;
@@ -723,7 +671,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 3rem;
   color: var(--color-accent);
   border: 3px solid currentColor;
@@ -733,7 +681,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   box-shadow: inset 0 0 0 2px var(--color-card-fill);
 }
 .empty-title {
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 1.4rem;
   font-weight: 500;
   color: var(--color-neutral-9);
@@ -745,28 +693,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   margin: 0 0 24px;
 }
 
-/* ── Bento Button ── */
-.bento-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-.bento-btn.primary {
-  background: var(--color-neutral-9);
-  color: var(--bg-panel, #fff);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-.bento-btn.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-whisper);
-}
+
 
 /* ── Glass Modals ── */
 .glass-modal-overlay {
@@ -778,7 +705,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: var(--z-modal);
   padding: 24px;
 }
 [data-theme="dark"] .glass-modal-overlay,
@@ -806,7 +733,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 [data-theme="dark"] .glass-sheet {
   background: var(--color-neutral-2);
-  border-color: rgba(255,255,255,0.06);
+  border-color: var(--color-card-stroke);
 }
 
 .sheet-header {

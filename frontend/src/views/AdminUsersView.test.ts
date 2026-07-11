@@ -48,7 +48,7 @@ describe('AdminUsersView', () => {
     expect(adminDeleteUser).not.toHaveBeenCalled()
     expect(document.body.textContent).toContain('确认删除编委')
 
-    const confirmButton = document.body.querySelector('.glass-dialog.danger-mode .bento-btn.danger') as HTMLButtonElement
+    const confirmButton = document.body.querySelector('.glass-dialog.danger-mode .btn.btn--danger') as HTMLButtonElement
     confirmButton.click()
     await flushPromises()
 

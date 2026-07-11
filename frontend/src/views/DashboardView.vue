@@ -5,6 +5,7 @@ import { useLexiconStore } from '../stores/lexicon'
 import { listPublications, createPublication, type PublicationSummary } from '../api/publication'
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
 import { isAdmin, isSuperAdmin } from '../api/auth'
+import PoeticHeader from '../components/PoeticHeader.vue'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import { useFeedback } from '../composables/useFeedback'
 import { adminListUsers, adminBackupDatabase } from '../api/admin'
@@ -88,15 +89,15 @@ async function handleCreateFromDashboard() {
   <div class="dashboard-view-root">
     <div class="dashboard-stage">
     <FeedbackStrip :status-message="feedback.statusMessage.value" :error-message="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
-      <header class="poetic-header">
-        <div class="poetic-header__main">
-          <div class="poetic-eyebrow">{{ lexicon.dashboard.headerEyebrow }}</div>
-          <h1 class="poetic-title">{{ lexicon.dashboard.headerTitle }}<span class="text-italic">{{ lexicon.dashboard.headerTitleItalic }}</span></h1>
-        </div>
-        <div class="poetic-header__extra">
+      <PoeticHeader
+        :eyebrow="lexicon.dashboard.headerEyebrow"
+        :title="lexicon.dashboard.headerTitle"
+        :title-italic="lexicon.dashboard.headerTitleItalic"
+      >
+        <template #extra>
           <p class="poetic-quote" v-html="lexicon.dashboard.quote.replace(/\\n/g, '<br/>')"></p>
-        </div>
-      </header>
+        </template>
+      </PoeticHeader>
 
       <div v-if="loading" class="loading-state">
         <div class="spinner"></div>
@@ -111,14 +112,14 @@ async function handleCreateFromDashboard() {
           <h2 class="error-title">加载失败</h2>
           <p class="error-desc">{{ pageError }}</p>
           <div class="error-actions">
-            <button class="welcome-btn primary" @click="loadDashboard">重试</button>
+            <button class="btn btn--primary" @click="loadDashboard">重试</button>
           </div>
         </div>
       </div>
 
       <div v-else-if="pubCount > 0" class="bento-grid">
                 <!-- Box A: Latest Publication (Hero) -->
-        <div v-if="latestPub" class="bento-card card-hero" @click="openPublication(latestPub.id)">
+        <div v-if="latestPub" class="bento-card panel-glass card-hero" @click="openPublication(latestPub.id)">
           <div class="hero-bg-layer"></div>
           <div class="hero-accent-line"></div>
           <div class="card-glass-panel">
@@ -127,27 +128,27 @@ async function handleCreateFromDashboard() {
             <p class="hero-pub-subtitle">{{ latestPub.subtitle || '暂无副标题' }}</p>
             <div class="hero-footer">
               <span class="hero-date">{{ formatDate(latestPub.updatedAt) }} 更新</span>
-              <button class="ghost-pill" @click.stop="openPublication(latestPub.id)">
+              <button class="btn btn--primary" @click.stop="openPublication(latestPub.id)">
                 继续编撰 
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
             </div>
           </div>
         </div>
-        <div v-else class="bento-card card-hero empty-hero" @click="router.push({ name: 'publications' })">
+        <div v-else class="bento-card panel-glass card-hero empty-hero" @click="router.push({ name: 'publications' })">
           <div class="hero-bg-layer"></div>
           <div class="hero-accent-line"></div>
           <div class="card-glass-panel">
             <span class="card-eyebrow">起步</span>
             <h2 class="hero-pub-title">尚未创建族谱</h2>
             <div class="hero-footer">
-              <button class="ghost-pill" @click.stop="router.push({ name: 'publications' })">立即创建</button>
+              <button class="btn btn--primary" @click.stop="router.push({ name: 'publications' })">立即创建</button>
             </div>
           </div>
         </div>
 
         <!-- Box B: Total Stats -->
-        <div class="bento-card card-stat card-dark" @click="router.push({ name: 'publications' })">
+        <div class="bento-card panel-glass card-stat card-dark" @click="router.push({ name: 'publications' })">
           <div class="stat-content">
             <span class="stat-value">{{ pubCount }}</span>
             <span class="stat-label">馆藏总卷数</span>
@@ -156,7 +157,7 @@ async function handleCreateFromDashboard() {
         </div>
 
         <!-- Box C: Action (Quick Create) -->
-        <div class="bento-card card-action" @click="showCreateDialog = true">
+        <div class="bento-card panel-glass card-action" @click="showCreateDialog = true">
           <div class="action-shimmer"></div>
           <div class="action-content">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
@@ -165,7 +166,7 @@ async function handleCreateFromDashboard() {
         </div>
 
         <!-- Box D: Recent History -->
-        <div class="bento-card card-history">
+        <div class="bento-card panel-glass card-history">
           <div class="history-header">
             <span class="card-eyebrow">近期活跃</span>
             <button class="link-btn" @click="router.push({ name: 'publications' })">查看全部</button>
@@ -184,7 +185,7 @@ async function handleCreateFromDashboard() {
         </div>
 
         <!-- Box E: Users (If Admin) -->
-        <div v-if="isAdmin()" class="bento-card card-users" @click="router.push({ name: 'admin-users' })">
+        <div v-if="isAdmin()" class="bento-card panel-glass card-users" @click="router.push({ name: 'admin-users' })">
           <div class="stat-content">
             <span class="stat-value small">{{ userCount }}</span>
             <span class="stat-label">编委人数</span>
@@ -198,7 +199,7 @@ async function handleCreateFromDashboard() {
         </div>
 
         <!-- Box F: Backup (If SuperAdmin) -->
-        <div v-if="isSuperAdmin()" class="bento-card card-backup" @click="handleBackup">
+        <div v-if="isSuperAdmin()" class="bento-card panel-glass card-backup" @click="handleBackup">
           <div class="action-content">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             <span class="action-title">{{ backupLoading ? '正在归档...' : '数据归档' }}</span>
@@ -215,14 +216,14 @@ async function handleCreateFromDashboard() {
             <h2 class="welcome-title">欢迎来到数字档案馆</h2>
             <p class="welcome-desc">创建您的第一个族谱，开启家族编修之旅。</p>
             <div class="welcome-actions">
-              <button class="welcome-btn primary" @click="showCreateDialog = true">
+              <button class="btn btn--primary" @click="showCreateDialog = true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                 创建第一个族谱
               </button>
-              <button class="welcome-btn secondary" @click="router.push({ name: 'publications' })">
+              <button class="btn btn--secondary" @click="router.push({ name: 'publications' })">
                 浏览示例模板
               </button>
-              <button class="welcome-btn ghost" @click="router.push({ name: 'publications' })">
+              <button class="btn btn--ghost" @click="router.push({ name: 'publications' })">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                 导入族谱数据
               </button>
@@ -234,18 +235,20 @@ async function handleCreateFromDashboard() {
 
     <!-- Create dialog -->
     <Teleport to="body">
-      <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
-        <div class="dialog-panel">
-          <h3>创建新族谱</h3>
-          <p style="color: var(--color-neutral-6); margin: 8px 0 20px;">输入族谱名称后即可开始编撰。</p>
-          <input v-model="newTitle" placeholder="族谱名称..." class="glass-input" @keyup.enter="handleCreateFromDashboard" />
-          <input v-model="newSubtitle" placeholder="副标题（可选）..." class="glass-input" style="margin-top: 12px;" />
-          <div class="dialog-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
-            <button class="bento-btn" @click="showCreateDialog = false">取消</button>
-            <button class="bento-btn primary" @click="handleCreateFromDashboard">创建</button>
+      <Transition name="base-dialog">
+        <div v-if="showCreateDialog" class="dialog-overlay" role="dialog" aria-modal="true" aria-label="创建新族谱" @click.self="showCreateDialog = false" @keydown.escape="showCreateDialog = false">
+          <div class="dialog-panel" tabindex="-1">
+            <h3>创建新族谱</h3>
+            <p style="color: var(--color-neutral-6); margin: 8px 0 20px;">输入族谱名称后即可开始编撰。</p>
+            <input v-model="newTitle" placeholder="族谱名称..." class="glass-input" @keyup.enter="handleCreateFromDashboard" />
+            <input v-model="newSubtitle" placeholder="副标题（可选）..." class="glass-input" style="margin-top: 12px;" />
+            <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+              <button class="btn btn--ghost" @click="showCreateDialog = false">取消</button>
+              <button class="btn btn--primary" @click="handleCreateFromDashboard">创建</button>
+            </div>
           </div>
         </div>
-      </div>
+      </Transition>
     </Teleport>
   </div>
 </template>
@@ -272,7 +275,7 @@ async function handleCreateFromDashboard() {
 
 .header-title {
   font-size: 2.2rem;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-weight: 500;
   color: var(--color-neutral-9);
   margin: 0;
@@ -287,15 +290,8 @@ async function handleCreateFromDashboard() {
 }
 
 .bento-card {
-  background: var(--color-card-fill);
-  border: 1px solid var(--color-card-stroke);
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 
-    0 12px 32px -12px rgba(0,0,0,0.05),
-    inset 0 0 0 1px var(--color-neutral-4);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
   position: relative;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
   cursor: pointer;
@@ -303,15 +299,9 @@ async function handleCreateFromDashboard() {
   flex-direction: column;
 }
 
-[data-theme="dark"] .bento-card {
-  background: rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
-}
 
 .bento-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 24px 48px -12px rgba(0,0,0,0.1);
 }
 
 
@@ -384,12 +374,12 @@ async function handleCreateFromDashboard() {
 .hero-accent-line {
   position: absolute;
   left: 0;
-  top: 10%;
-  bottom: 10%;
-  width: 3px;
-  background: var(--color-accent);
+  top: 8%;
+  bottom: 8%;
+  width: 4px;
+  background: var(--color-accent-gradient);
   border-radius: 0 4px 4px 0;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 [data-theme="dark"] .hero-bg-layer {
   background: var(--color-neutral-2);
@@ -403,7 +393,7 @@ async function handleCreateFromDashboard() {
 
 
 .hero-pub-title {
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 3rem;
   font-weight: 500;
   color: var(--color-neutral-9);
@@ -431,35 +421,7 @@ async function handleCreateFromDashboard() {
   padding-bottom: 0.5rem;
 }
 
-.ghost-pill {
-  background: transparent;
-  border: 1px solid var(--color-neutral-5);
-  border-radius: 999px;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--color-neutral-9);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-.ghost-pill:hover {
-  background: var(--color-neutral-9);
-  color: var(--color-card-fill);
-  border-color: transparent;
-}
-[data-theme="dark"] .ghost-pill {
-  background: rgba(0,0,0,0.4);
-  border-color: rgba(255,255,255,0.1);
-  color: #fff;
-}
-[data-theme="dark"] .ghost-pill:hover {
-  background: #fff;
-  color: #000;
-}
+
 
 /* Stat Box */
 .card-dark {
@@ -474,23 +436,24 @@ async function handleCreateFromDashboard() {
   flex-direction: column;
 }
 .stat-value {
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 5rem;
   line-height: 1;
   font-weight: 300;
-  background: linear-gradient(135deg, #d4af37, #f3e5ab, #d4af37);
+  background: linear-gradient(135deg, var(--color-warning), var(--color-accent-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  background-clip: text;
 }
 .card-users .stat-value {
-  background: linear-gradient(135deg, var(--color-neutral-9), var(--color-neutral-7));
+  background: linear-gradient(135deg, var(--color-neutral-10), var(--color-neutral-8));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-shadow: none;
 }
 [data-theme="dark"] .card-users .stat-value {
-  background: linear-gradient(135deg, #fff, #aaa);
+  background: linear-gradient(135deg, var(--color-text-on-accent), var(--color-neutral-6));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -515,7 +478,7 @@ async function handleCreateFromDashboard() {
 /* Action Box */
 .card-action {
   background: var(--color-accent-gradient);
-  color: #fff;
+  color: var(--color-text-on-accent);
   border: none;
   box-shadow: var(--shadow-accent);
   justify-content: center;
@@ -764,22 +727,22 @@ async function handleCreateFromDashboard() {
   background: var(--color-card-fill);
   backdrop-filter: blur(40px) saturate(180%);
   border-radius: 32px;
-  border: 1px solid rgba(255, 59, 48, 0.2);
+  border: 1px solid var(--color-error-ghost);
   box-shadow: 0 32px 64px rgba(0,0,0,0.08);
   padding: 48px 40px;
   text-align: center;
 }
 [data-theme="dark"] .error-card {
   background: rgba(0,0,0,0.5);
-  border-color: rgba(255, 59, 48, 0.3);
+  border-color: var(--color-error-ghost);
 }
 .error-icon {
-  color: #ff3b30;
+  color: var(--color-error);
   margin-bottom: 16px;
   opacity: 0.7;
 }
 .error-title {
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 1.5rem;
   font-weight: 500;
   color: var(--color-neutral-9);
@@ -841,14 +804,14 @@ async function handleCreateFromDashboard() {
   justify-content: center;
   background: var(--color-accent-gradient);
   border-radius: 20px;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 2rem;
-  color: #fff;
+  color: var(--color-text-on-accent);
   margin-bottom: 24px;
   box-shadow: var(--shadow-whisper);
 }
 .welcome-title {
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 1.8rem;
   font-weight: 500;
   color: var(--color-neutral-9);
@@ -867,43 +830,37 @@ async function handleCreateFromDashboard() {
   width: 100%;
   max-width: 320px;
 }
-.welcome-btn {
+
+
+/* Create dialog */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 14px 24px;
-  border-radius: 14px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
+  z-index: var(--z-modal);
+  backdrop-filter: blur(4px);
 }
-.welcome-btn.primary {
-  background: var(--color-accent-gradient);
-  color: #fff;
-  box-shadow: var(--shadow-accent);
-}
-.welcome-btn.primary:hover {
-  transform: translateY(-2px);
+
+.dialog-panel {
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-2xl);
+  padding: 32px;
   box-shadow: var(--shadow-whisper);
+  max-width: 420px;
+  width: 90%;
+  outline: none;
 }
-.welcome-btn.secondary {
-  background: var(--color-neutral-9);
-  color: var(--color-card-fill);
-}
-.welcome-btn.secondary:hover {
-  transform: translateY(-2px);
-}
-.welcome-btn.ghost {
-  background: transparent;
-  color: var(--color-neutral-6);
-  border: 1px solid var(--color-neutral-4);
-}
-.welcome-btn.ghost:hover {
-  background: rgba(0,0,0,0.03);
-  color: var(--color-neutral-9);
+
+.dialog-panel h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-serif);
+  font-size: var(--text-title-20);
+  font-weight: 500;
+  color: var(--color-neutral-10);
 }
 </style>
 

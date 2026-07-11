@@ -132,10 +132,10 @@ onMounted(load)
         <code>{{ newShareUrl }}</code>
       </div>
       <div class="token-actions">
-        <button class="btn btn--sm btn--primary" @click="copyShareUrl">
+        <button class="btn btn--sm btn--primary" :aria-label="newTokenCopied ? '已复制链接' : '复制分享链接'" @click="copyShareUrl">
           {{ newTokenCopied ? '已复制' : '复制链接' }}
         </button>
-        <button class="btn btn--sm" @click="dismissNewToken">关闭</button>
+        <button class="btn btn--sm" aria-label="关闭新链接提示" @click="dismissNewToken">关闭</button>
       </div>
     </div>
 
@@ -209,8 +209,8 @@ onMounted(load)
 .error-msg {
   padding: 8px 12px;
   margin-bottom: 12px;
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--color-error-subtle);
+  color: var(--color-error);
   border-radius: 8px;
   font-size: 0.875rem;
 }
@@ -218,15 +218,15 @@ onMounted(load)
 .new-token-card {
   padding: 16px;
   margin-bottom: 16px;
-  background: #fffbeb;
-  border: 1px solid #fbbf24;
+  background: var(--color-warning-subtle);
+  border: 1px solid var(--color-warning);
   border-radius: 12px;
 }
 
 .token-warning {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #92400e;
+  color: var(--color-warning);
   margin-bottom: 8px;
 }
 
@@ -268,14 +268,14 @@ onMounted(load)
 .form-field input[type="number"] {
   width: 60px;
   padding: 4px 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-neutral-5);
   border-radius: 6px;
 }
 
 .loading, .empty {
   text-align: center;
   padding: 16px;
-  color: #999;
+  color: var(--color-neutral-6);
   font-size: 0.875rem;
 }
 
@@ -304,14 +304,14 @@ onMounted(load)
 
 .link-meta {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--color-neutral-7);
 }
 
 .btn {
   padding: 6px 14px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-neutral-5);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-neutral-1);
   cursor: pointer;
   font-size: 0.8rem;
 }
@@ -322,9 +322,9 @@ onMounted(load)
 }
 
 .btn--primary {
-  background: #3b82f6;
-  color: #fff;
-  border-color: #3b82f6;
+  background: var(--color-accent);
+  color: var(--color-neutral-1);
+  border-color: var(--color-accent);
 }
 
 .btn--primary:disabled {
@@ -333,13 +333,13 @@ onMounted(load)
 }
 
 .btn--danger {
-  background: #fff;
-  color: #dc2626;
-  border-color: #fca5a5;
+  background: var(--color-neutral-1);
+  color: var(--color-error);
+  border-color: var(--color-error-muted);
 }
 
 .btn--danger:hover {
-  background: #fef2f2;
+  background: var(--color-error-subtle);
 }
 </style>
 

@@ -195,9 +195,12 @@ describe('App auth bootstrap', () => {
     
     await wrapper.vm.$nextTick()
     
-    expect(wrapper.text()).toContain('数据版本冲突')
-    expect(wrapper.text()).toContain('Conflict!')
-    expect(wrapper.find('button').text()).toBe('立即刷新')
+    // BaseDialog teleports to body, so check document body
+    expect(document.body.textContent).toContain('数据版本冲突')
+    expect(document.body.textContent).toContain('Conflict!')
+    const buttons = document.body.querySelectorAll('button')
+    const reloadBtn = Array.from(buttons).find(b => b.textContent?.includes('立即刷新'))
+    expect(reloadBtn).toBeTruthy()
   })
 })
 

@@ -371,10 +371,10 @@ onUnmounted(() => {
 <style scoped>
 /* ── Panel ── */
 .branch-mount-panel {
-  border: 1px solid rgba(120,95,65,0.12);
+  border: 1px solid var(--color-card-stroke);
   border-radius: 12px;
   padding: 16px;
-  background: #fff;
+  background: var(--color-neutral-1);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -385,7 +385,7 @@ onUnmounted(() => {
   position: absolute;
   left: 0; top: 12px; bottom: 12px;
   width: 3px;
-  background: #916331;
+  background: var(--color-warning);
   border-radius: 0 3px 3px 0;
 }
 
@@ -419,7 +419,7 @@ onUnmounted(() => {
   width: 38px;
   height: 22px;
   border-radius: 11px;
-  background: rgba(120,120,128,.16);
+  background: var(--color-neutral-4);
   position: relative;
   cursor: pointer;
   transition: background .2s;
@@ -431,12 +431,12 @@ onUnmounted(() => {
   top: 2px; left: 2px;
   width: 18px; height: 18px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-neutral-1);
   box-shadow: 0 1px 3px rgba(0,0,0,.15);
   transition: transform .2s;
 }
 .branch-mount-toggle input[type="checkbox"]:checked {
-  background: #34C759;
+  background: var(--color-success);
 }
 .branch-mount-toggle input[type="checkbox"]:checked::after {
   transform: translateX(16px);
@@ -456,8 +456,8 @@ onUnmounted(() => {
   gap: 8px;
   border-radius: 10px;
   padding: 14px;
-  background: rgba(120,95,65,0.04);
-  border: 1px solid rgba(120,95,65,0.08);
+  background: var(--color-neutral-2);
+  border: 1px solid var(--color-card-stroke);
 }
 
 .branch-mount-field > span:first-child,
@@ -477,10 +477,10 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  border: 1px solid rgba(120,95,65,0.12);
+  border: 1px solid var(--color-card-stroke);
   border-radius: 8px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--color-neutral-1);
   color: var(--color-neutral-9);
   font-size: 13px;
   font-family: inherit;
@@ -488,7 +488,7 @@ onUnmounted(() => {
   text-align: left;
   transition: border-color .15s, box-shadow .15s;
 }
-.custom-select__trigger:hover { border-color: rgba(120,95,65,0.24); }
+.custom-select__trigger:hover { border-color: var(--color-neutral-4); }
 .custom-select.is-open .custom-select__trigger {
   border-color: var(--color-warning);
   box-shadow: var(--shadow-ring);
@@ -503,8 +503,8 @@ onUnmounted(() => {
 .custom-select.is-open .chevron { transform: rotate(180deg); }
 
 .custom-select__options {
-  background: #fff;
-  border: 1px solid rgba(120,95,65,0.12);
+  background: var(--color-neutral-1);
+  border: 1px solid var(--color-card-stroke);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,.12);
   z-index: 200;
@@ -513,7 +513,7 @@ onUnmounted(() => {
   padding: 6px;
 }
 .custom-select__options::-webkit-scrollbar { width: 4px; }
-.custom-select__options::-webkit-scrollbar-thumb { background: rgba(120,95,65,0.15); border-radius: 4px; }
+.custom-select__options::-webkit-scrollbar-thumb { background: var(--color-neutral-4); border-radius: 4px; }
 
 .custom-select__group label {
   display: block;
@@ -538,22 +538,22 @@ onUnmounted(() => {
   color: var(--color-neutral-9);
   transition: background .12s;
 }
-.custom-select__option:hover { background: rgba(145,99,49,0.08); }
+.custom-select__option:hover { background: var(--color-warning-ghost); }
 
 .custom-select__option--clear {
-  color: #c43a31;
-  border-top: 1px solid rgba(120,95,65,0.08);
+  color: var(--color-error);
+  border-top: 1px solid var(--color-card-stroke);
   margin-top: 4px;
   border-radius: 0 0 7px 7px;
   font-weight: 500;
 }
-.custom-select__option--clear:hover { background: rgba(255,59,48,.06); }
+.custom-select__option--clear:hover { background: var(--color-error-ghost); }
 
 /* ── Subtree ── */
 .subtree-config {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid rgba(120,95,65,0.08);
+  border-top: 1px solid var(--color-card-stroke);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -562,9 +562,9 @@ onUnmounted(() => {
 .subtree-info .label { font-size: 10px; font-weight: 500; color: var(--color-neutral-6); }
 .root-display { display: flex; align-items: center; gap: 6px; }
 .root-name { font-size: 13px; color: var(--color-warning); font-weight: 500; }
-.root-none { font-size: 12px; color: #b8a898; font-style: normal; }
+.root-none { font-size: 12px; color: var(--color-neutral-6); font-style: normal; }
 .clear-root-btn {
-  background: rgba(120,95,65,0.1);
+  background: var(--color-card-stroke);
   border: none;
   width: 18px; height: 18px;
   border-radius: 50%;
@@ -577,13 +577,13 @@ onUnmounted(() => {
   font-family: inherit;
   line-height: 1;
 }
-.clear-root-btn:hover { background: rgba(196,58,49,0.12); color: #c43a31; }
+.clear-root-btn:hover { background: var(--color-error-ghost); color: var(--color-error); }
 
 .select-root-btn {
   width: 100%;
   padding: 7px 12px;
-  border: 1px solid rgba(145,99,49,0.2);
-  background: rgba(145,99,49,0.04);
+  border: 1px solid var(--color-warning-ghost);
+  background: var(--color-warning-ghost);
   color: var(--color-warning);
   border-radius: 8px;
   font-size: 12px;
@@ -592,7 +592,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all .15s;
 }
-.select-root-btn:hover { background: rgba(145,99,49,0.1); border-color: rgba(145,99,49,0.3); }
+.select-root-btn:hover { background: var(--color-warning-ghost); border-color: var(--color-warning-ghost); }
 
 /* ── Meta ── */
 .branch-mount-meta strong { font-size: 14px; color: var(--color-neutral-9); font-weight: 500; }
@@ -627,18 +627,18 @@ onUnmounted(() => {
 .relation-btn {
   padding: 6px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(120,95,65,0.12);
-  background: #fff;
+  border: 1px solid var(--color-card-stroke);
+  background: var(--color-neutral-1);
   color: var(--color-neutral-9);
   font-size: 13px;
   font-family: inherit;
   cursor: pointer;
   transition: all .15s;
 }
-.relation-btn:hover { background: rgba(145,99,49,0.06); }
+.relation-btn:hover { background: var(--color-warning-ghost); }
 .relation-btn--accent {
-  background: #c43a31;
-  color: #fff;
+  background: var(--color-error);
+  color: var(--color-text-on-accent);
   border: none;
   font-weight: 500;
 }

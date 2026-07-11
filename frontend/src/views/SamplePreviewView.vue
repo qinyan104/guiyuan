@@ -257,7 +257,7 @@ function handleUpdateZoom(zoom: number) {
 }
 
 .sample-title {
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 1.15rem;
   font-weight: 500;
   color: var(--text-main, #1a1a1a);

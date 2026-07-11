@@ -1,8 +1,9 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getAccessToken } from './api/tokenStore'
 import { bootstrapAuthSession } from './api/authSession'
+import { getAccessToken } from './api/tokenStore'
+import BaseDialog from './components/BaseDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -43,14 +44,12 @@ onMounted(async () => {
   <router-view v-else />
 
   <!-- 并发冲突弹窗 -->
-  <div v-if="conflictMessage" class="conflict-overlay" @click.self="conflictMessage = null">
-    <div class="conflict-modal">
-      <span class="conflict-icon">⚠️</span>
-      <h3>数据版本冲突</h3>
-      <p>{{ conflictMessage }}</p>
+  <BaseDialog :visible="!!conflictMessage" title="数据版本冲突" z-index="var(--z-critical)" @update:visible="conflictMessage = null">
+    <p style="color: var(--color-neutral-7); margin: 0 0 16px; text-align: center;">{{ conflictMessage }}</p>
+    <template #footer>
       <button class="btn btn--primary" @click="handleReload">立即刷新</button>
-    </div>
-  </div>
+    </template>
+  </BaseDialog>
 </template>
 
 <style scoped>
@@ -85,46 +84,5 @@ onMounted(async () => {
   to { transform: rotate(360deg); }
 }
 
-/* ── 冲突弹窗 ── */
-.conflict-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--color-overlay);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
 
-.conflict-modal {
-  background: var(--color-panel-bg);
-  padding: 32px;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-whisper);
-  max-width: 420px;
-  width: 90%;
-  text-align: center;
-  border: 1px solid var(--color-card-stroke);
-}
-
-.conflict-icon {
-  font-size: 40px;
-  display: block;
-  margin-bottom: 12px;
-}
-
-.conflict-modal h3 {
-  margin: 0 0 8px;
-  color: var(--color-neutral-10);
-  font-family: var(--font-serif);
-  font-size: var(--text-title-20);
-  font-weight: 500;
-}
-
-.conflict-modal p {
-  margin: 0 0 24px;
-  color: var(--color-neutral-7);
-  font-size: var(--text-copy-14);
-}
 </style>

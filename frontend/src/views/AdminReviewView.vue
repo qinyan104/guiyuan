@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { listReviews, approveReview, rejectReview, batchReview, type ReviewItem } from '../api/review'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import PoeticHeader from '../components/PoeticHeader.vue'
 
 const props = defineProps<{ pubId: number }>()
 
@@ -140,17 +141,12 @@ function formatTime(t: string | null) {
 <template>
   <div class="admin-reviews-root">
     <div class="admin-reviews-view">
-      <header class="poetic-header">
-        <div class="poetic-header__main">
-          <div class="poetic-eyebrow">族谱管理</div>
-          <h1 class="poetic-title">审批中心</h1>
-        </div>
-        <div v-if="selectedIds.size > 0" class="batch-actions">
-          <span class="selected-count">已选 {{ selectedIds.size }} 条</span>
-          <button class="bento-btn small success" @click="handleBatch('approve')">批量通过</button>
-          <button class="bento-btn small warning" @click="handleBatch('reject')">批量拒绝</button>
-        </div>
-      </header>
+      <PoeticHeader eyebrow="族谱管理" title="审批中心" />
+      <div v-if="selectedIds.size > 0" class="batch-actions">
+        <span class="selected-count">已选 {{ selectedIds.size }} 条</span>
+        <button class="btn btn--sm btn--success" @click="handleBatch('approve')">批量通过</button>
+        <button class="btn btn--sm btn--warning" @click="handleBatch('reject')">批量拒绝</button>
+      </div>
 
       <!-- Tabs -->
       <div class="glass-tabs">
@@ -226,11 +222,11 @@ function formatTime(t: string | null) {
               </div>
 
               <div v-if="item.status === 'pending'" class="detail-actions">
-                <button class="bento-btn success" @click="requestApprove(item.id)">
+                <button class="btn btn--success" @click="requestApprove(item.id)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                   通过
                 </button>
-                <button class="bento-btn warning" @click="requestReject(item.id)">
+                <button class="btn btn--warning" @click="requestReject(item.id)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                   拒绝
                 </button>
@@ -241,7 +237,7 @@ function formatTime(t: string | null) {
 
         <!-- Select all (pending tab only) -->
         <div v-if="activeTab === 'pending' || activeTab === 'all'" class="select-all-row">
-          <button class="bento-btn small" @click="selectAll">
+          <button class="btn btn--sm" @click="selectAll">
             {{ selectedIds.size === reviews.filter(r => r.status === 'pending').length && selectedIds.size > 0 ? '取消全选' : '全选待审批' }}
           </button>
         </div>
@@ -275,8 +271,8 @@ function formatTime(t: string | null) {
           <h3>填写拒绝原因</h3>
           <textarea v-model="rejectReason" rows="3" placeholder="请说明拒绝理由，将反馈给提交人..." autofocus></textarea>
           <div class="reject-input-actions">
-            <button class="bento-btn" @click="showRejectDialog = false">取消</button>
-            <button class="bento-btn warning" :disabled="!rejectReason.trim()" @click="confirmReject">确认拒绝</button>
+            <button class="btn" @click="showRejectDialog = false">取消</button>
+            <button class="btn btn--warning" :disabled="!rejectReason.trim()" @click="confirmReject">确认拒绝</button>
           </div>
         </div>
       </div>
@@ -313,10 +309,10 @@ function formatTime(t: string | null) {
 }
 .glass-tab {
   padding: 0.5rem 1rem;
-  border: 1px solid var(--border, rgba(0,0,0,0.08));
+  border: 1px solid var(--color-card-stroke);
   border-radius: 9999px;
-  background: var(--surface, #fff);
-  color: var(--text, #1a1a1a);
+  background: var(--color-neutral-1);
+  color: var(--color-neutral-10);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -326,11 +322,11 @@ function formatTime(t: string | null) {
   transition: all 0.15s;
 }
 .glass-tab:hover {
-  background: var(--surface-hover, #f5f5f5);
+  background: var(--color-neutral-2);
 }
 .glass-tab.is-active {
-  background: var(--accent, #6366f1);
-  color: #fff;
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
   border-color: transparent;
 }
 .tab-count {
@@ -343,14 +339,14 @@ function formatTime(t: string | null) {
   gap: 0.5rem;
 }
 .review-item {
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, rgba(0,0,0,0.08));
+  background: var(--color-neutral-1);
+  border: 1px solid var(--color-card-stroke);
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.15s;
 }
 .review-item:hover {
-  border-color: var(--border-hover, rgba(0,0,0,0.15));
+  border-color: var(--color-neutral-4);
 }
 .review-row {
   display: flex;
@@ -380,7 +376,7 @@ function formatTime(t: string | null) {
 .field-tag {
   font-size: 0.75rem;
   padding: 0.1rem 0.5rem;
-  background: var(--surface-alt, rgba(0,0,0,0.04));
+  background: var(--color-neutral-2);
   border-radius: 9999px;
   opacity: 0.7;
 }
@@ -401,16 +397,16 @@ function formatTime(t: string | null) {
   font-weight: 500;
 }
 .badge.pending {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
 }
 .badge.approved {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
 }
 .badge.rejected {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
 }
 .time {
   font-size: 0.8rem;
@@ -418,7 +414,7 @@ function formatTime(t: string | null) {
 }
 .review-detail {
   padding: 0 1rem 1rem;
-  border-top: 1px solid var(--border, rgba(0,0,0,0.06));
+  border-top: 1px solid var(--color-card-stroke);
 }
 .diff-view {
   display: flex;
@@ -433,12 +429,12 @@ function formatTime(t: string | null) {
   font-size: 0.85rem;
 }
 .diff-old {
-  background: #fee2e2;
-  border: 1px solid #fca5a5;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
 }
 .diff-new {
-  background: #dcfce7;
-  border: 1px solid #86efac;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
 }
 .diff-label {
   font-size: 0.7rem;
@@ -457,10 +453,10 @@ function formatTime(t: string | null) {
 .reject-reason {
   margin-top: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #fef2f2;
+  background: var(--color-error-bg);
   border-radius: 8px;
   font-size: 0.85rem;
-  color: #991b1b;
+  color: var(--color-error-text);
 }
 .detail-actions {
   display: flex;
@@ -472,36 +468,6 @@ function formatTime(t: string | null) {
   display: flex;
   justify-content: center;
 }
-.bento-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  border: 1px solid var(--border, rgba(0,0,0,0.1));
-  border-radius: 10px;
-  background: var(--surface, #fff);
-  color: var(--text, #1a1a1a);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.bento-btn:hover { background: var(--surface-hover, #f5f5f5); }
-.bento-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.bento-btn.small {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
-}
-.bento-btn.success {
-  color: #15803d;
-  border-color: #4ade80;
-  background: #dcfce7;
-}
-.bento-btn.warning {
-  color: #b45309;
-  border-color: #fbbf24;
-  background: #fef3c7;
-}
 .reject-input-overlay {
   position: fixed;
   inset: 0;
@@ -512,7 +478,7 @@ function formatTime(t: string | null) {
   z-index: 1000;
 }
 .reject-input-card {
-  background: var(--surface, #fff);
+  background: var(--color-neutral-1);
   border-radius: 16px;
   padding: 1.5rem;
   width: 90%;
@@ -526,7 +492,7 @@ function formatTime(t: string | null) {
 .reject-input-card textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid var(--border, rgba(0,0,0,0.12));
+  border: 1px solid var(--color-card-stroke);
   border-radius: 8px;
   font-family: inherit;
   font-size: 0.9rem;
@@ -552,8 +518,8 @@ function formatTime(t: string | null) {
 .spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid var(--border, rgba(0,0,0,0.1));
-  border-top-color: var(--accent, #6366f1);
+  border: 3px solid var(--color-card-stroke);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }

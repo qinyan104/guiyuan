@@ -76,7 +76,7 @@ describe('PublicationListView', () => {
     expect(deletePublication).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('确认删除')
 
-    await wrapper.get('.delete-overlay button.danger').trigger('click')
+    await wrapper.get('.delete-overlay .btn--danger').trigger('click')
     expect(deletePublication).toHaveBeenCalledWith(7)
   })
 })

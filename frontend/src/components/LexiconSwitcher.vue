@@ -41,7 +41,7 @@ onBeforeUnmount(() => {
     </button>
 
     <Transition name="glass-pop">
-      <div v-if="open" class="theme-dropdown">
+      <div v-if="open" class="theme-dropdown panel-glass">
         <div class="dropdown-header">
           <span class="dropdown-title">语境意境 / LEXICON</span>
         </div>
@@ -97,11 +97,6 @@ onBeforeUnmount(() => {
   right: 0;
   width: 220px;
   border-radius: 16px;
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  box-shadow: var(--shadow-whisper), var(--shadow-ring);
   padding: 6px;
   z-index: 9999;
   transform-origin: top right;

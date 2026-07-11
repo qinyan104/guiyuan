@@ -70,3 +70,65 @@ function dismiss() {
     <button type="button" @click="dismiss">关闭</button>
   </div>
 </template>
+
+<style scoped>
+/* ── Feedback Strip ── */
+.feedback-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  font-size: var(--text-copy-14);
+  line-height: 1.4;
+  background: var(--color-success-bg, #ecfdf5);
+  color: var(--color-success-text, #065f46);
+  border: 1px solid var(--color-success-border, #a7f3d0);
+}
+
+.feedback-strip strong {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.feedback-strip span {
+  flex: 1;
+}
+
+.feedback-strip button {
+  flex-shrink: 0;
+  padding: 2px 10px;
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-7);
+  font-size: var(--text-label-12);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.feedback-strip button:hover {
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-9);
+}
+
+.feedback-strip--error {
+  background: var(--color-error-bg, #fef2f2);
+  color: var(--color-error-text, #991b1b);
+  border-color: var(--color-error-border, #fecaca);
+}
+
+.feedback-strip--warning {
+  background: var(--color-warning-bg, #fffbeb);
+  color: var(--color-warning-text, #92400e);
+  border-color: var(--color-warning-border, #fde68a);
+}
+
+.feedback-strip--info {
+  background: var(--color-info-bg, #eff6ff);
+  color: var(--color-info-text, #1e40af);
+  border-color: var(--color-info-border, #bfdbfe);
+}
+</style>

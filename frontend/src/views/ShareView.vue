@@ -22,6 +22,9 @@ const DEFAULT_SETTINGS: PublicationSettings = {
   siblingGap: 40,
   partnerGap: 20,
   fontScale: 1,
+  compactNameSize: 22,
+  compactNameColor: '#1D1D1F',
+  compactLineColor: '#B5A99A',
   zoom: 1,
   showCard: true,
   showBirth: true,
@@ -59,7 +62,7 @@ async function load() {
     ])
     meta.value = metaData
     const publicationData = data.publication as PublicationData
-    const settingsData = (data.settings || DEFAULT_SETTINGS) as PublicationSettings
+    const settingsData = { ...DEFAULT_SETTINGS, ...(data.settings || {}) } as PublicationSettings
 
     // Rewrite photo URLs to use share proxy
     for (const person of Object.values(publicationData.people)) {

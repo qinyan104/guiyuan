@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { listLogs, type AuditLogEntry } from '../api/audit'
 import { useLexiconStore } from '../stores/lexicon'
+import PoeticHeader from '../components/PoeticHeader.vue'
 
 const { lexicon } = useLexiconStore()
 const logs = ref<AuditLogEntry[]>([])
@@ -54,21 +55,21 @@ function actionToNarrative(action: string): string {
 <template>
   <div class="audit-log-view-root">
     <div class="audit-log-view">
-      <header class="poetic-header">
-        <div class="poetic-header__main">
-          <div class="poetic-eyebrow">{{ lexicon.logs.headerEyebrow }}</div>
-          <h1 class="poetic-title">{{ lexicon.logs.headerTitle }}<span class="text-italic">{{ lexicon.logs.headerTitleItalic }}</span></h1>
-        </div>
-        <div class="poetic-header__extra" style="display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
+      <PoeticHeader
+        :eyebrow="lexicon.logs.headerEyebrow"
+        :title="lexicon.logs.headerTitle"
+        :title-italic="lexicon.logs.headerTitleItalic"
+      >
+        <template #extra>
           <p class="poetic-quote" v-html="lexicon.logs.quote.replace(/\\n/g, '<br/>')"></p>
-          <button class="bento-btn ghost" title="刷新日志" @click="loadLogs">
+          <button class="btn btn--ghost" title="刷新日志" @click="loadLogs">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
             刷新记录
           </button>
-        </div>
-      </header>
+        </template>
+      </PoeticHeader>
 
-      <div v-if="errorMsg" class="audit-notice bento-card">
+      <div v-if="errorMsg" class="audit-notice bento-card panel-glass">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
         {{ errorMsg }}
       </div>
@@ -78,12 +79,12 @@ function actionToNarrative(action: string): string {
         <span>追溯纪事中...</span>
       </div>
 
-      <div v-else-if="logs.length === 0 && !errorMsg" class="bento-card empty-state">
+      <div v-else-if="logs.length === 0 && !errorMsg" class="bento-card panel-glass empty-state">
         <div class="empty-icon">⚬</div>
         <span>暂无操作记录</span>
       </div>
 
-      <div v-else-if="logs.length > 0" class="bento-card chronicle-card">
+      <div v-else-if="logs.length > 0" class="bento-card panel-glass chronicle-card">
         <div class="chronicle-body">
           <div v-for="log in logs" :key="log.id" class="chronicle-row">
             <div class="chronicle-time">
@@ -110,39 +111,9 @@ function actionToNarrative(action: string): string {
   gap: 20px;
 }
 
-.bento-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-.bento-btn.ghost {
-  background: var(--glass-panel-bg, rgba(255,255,255,0.4));
-  color: var(--text-main);
-  border: 1px solid var(--glass-border-highlight, rgba(0,0,0,0.1));
-}
-.bento-btn.ghost:hover {
-  background: var(--bg-panel, #fff);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-
 /* ── Glass Bento Cards ── */
 .bento-card {
-  background: var(--color-card-fill);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--color-card-stroke);
   border-radius: 20px;
-  box-shadow: var(--shadow-whisper);
   padding: 24px;
 }
 
@@ -222,7 +193,7 @@ function actionToNarrative(action: string): string {
   width: 120px;
   text-align: right;
   padding-right: 32px;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   color: var(--text-soft);
   letter-spacing: 0.05em;
   padding-top: 2px;
@@ -256,7 +227,7 @@ function actionToNarrative(action: string): string {
 .chronicle-content {
   flex: 1;
   padding-left: 32px;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 0.95rem;
   color: var(--text-main);
   line-height: 1.6;

@@ -445,8 +445,8 @@ onMounted(loadActivities)
 }
 
 .activity-tag--success {
-  background: rgba(22, 163, 74, 0.08);
-  color: #16a34a;
+  background: var(--color-success-muted);
+  color: var(--color-success);
 }
 
 .activity-tag--warning {
@@ -508,8 +508,8 @@ onMounted(loadActivities)
 }
 
 .activity-diff__field b {
-  color: #16a34a;
-  background: rgba(22, 163, 74, 0.06);
+  color: var(--color-success);
+  background: var(--color-success-muted);
   border-radius: 4px;
   padding: 2px 8px;
   font-weight: 500;

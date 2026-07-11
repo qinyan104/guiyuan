@@ -121,7 +121,7 @@ onBeforeUnmount(() => {
     </div>
 
     <transition name="glass-pop">
-      <div v-if="isOpen && query.trim()" class="search-dropdown">
+      <div v-if="isOpen && query.trim()" class="search-dropdown panel-glass">
         <!-- Loading state -->
         <div v-if="isLoading" class="dropdown-status">
           搜索中...
@@ -192,23 +192,23 @@ onBeforeUnmount(() => {
   position: relative;
   display: flex;
   align-items: center;
-  background: var(--glass-pill-bg, rgba(255, 255, 255, 0.5));
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.6));
+  background: var(--glass-pill-bg, var(--color-neutral-1));
+  border: 1px solid var(--glass-border-highlight, var(--color-neutral-1));
   border-radius: 999px;
   padding: 0 16px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 12px var(--color-neutral-2);
 }
 
 .search-input-wrapper:focus-within {
-  border-color: var(--accent-signal, #a96e35);
+  border-color: var(--accent-signal, var(--color-accent));
   box-shadow: var(--shadow-ring);
-  background: var(--glass-bg, rgba(255, 255, 255, 0.4));
+  background: var(--glass-bg, var(--color-neutral-1));
 }
 
 .search-icon {
   flex-shrink: 0;
-  color: var(--text-soft, #888);
+  color: var(--text-soft, var(--color-neutral-5));
   margin-right: 10px;
 }
 
@@ -219,13 +219,13 @@ onBeforeUnmount(() => {
   padding: 10px 0;
   font-size: 0.85rem;
   font-weight: 500;
-  color: var(--text-main, #1a1a1a);
+  color: var(--text-main, var(--color-neutral-9));
   outline: none;
   letter-spacing: 0.02em;
 }
 
 .search-input::placeholder {
-  color: var(--text-soft, #888);
+  color: var(--text-soft, var(--color-neutral-5));
   font-weight: 400;
   letter-spacing: 0.02em;
 }
@@ -234,8 +234,8 @@ onBeforeUnmount(() => {
 .search-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid var(--glass-border-shadow, rgba(255, 255, 255, 0.15));
-  border-top-color: var(--accent-signal, #a96e35);
+  border: 2px solid var(--glass-border-shadow, var(--color-neutral-2));
+  border-top-color: var(--accent-signal, var(--color-accent));
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
   flex-shrink: 0;
@@ -254,11 +254,6 @@ onBeforeUnmount(() => {
   max-height: 400px;
   overflow-y: auto;
   border-radius: 16px;
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  box-shadow: var(--shadow-whisper), var(--shadow-ring);
   z-index: 9999;
   padding: 8px;
 }
@@ -272,19 +267,19 @@ onBeforeUnmount(() => {
 }
 
 .search-dropdown::-webkit-scrollbar-thumb {
-  background: var(--glass-border-shadow, rgba(0, 0, 0, 0.1));
+  background: var(--glass-border-shadow, var(--color-neutral-3));
   border-radius: 3px;
 }
 
 .search-dropdown::-webkit-scrollbar-thumb:hover {
-  background: var(--text-soft, #888);
+  background: var(--text-soft, var(--color-neutral-5));
 }
 
 .dropdown-status {
   padding: 24px 16px;
   text-align: center;
   font-size: 0.85rem;
-  color: var(--text-soft, #888);
+  color: var(--text-soft, var(--color-neutral-5));
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -293,7 +288,7 @@ onBeforeUnmount(() => {
 .result-section + .result-section {
   margin-top: 4px;
   padding-top: 4px;
-  border-top: 1px solid var(--glass-border-shadow, rgba(0, 0, 0, 0.05));
+  border-top: 1px solid var(--glass-border-shadow, var(--color-card-stroke));
 }
 
 .section-header {
@@ -302,7 +297,7 @@ onBeforeUnmount(() => {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--text-soft, #888);
+  color: var(--text-soft, var(--color-neutral-5));
   font-family: monospace;
 }
 
@@ -322,7 +317,7 @@ onBeforeUnmount(() => {
 }
 
 .result-item:hover {
-  background: var(--glass-pill-bg, rgba(0, 0, 0, 0.04));
+  background: var(--glass-pill-bg, var(--color-neutral-1));
 }
 
 .result-item-icon {
@@ -333,8 +328,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: var(--glass-pill-bg, rgba(255, 255, 255, 0.5));
-  color: var(--accent-signal, #a96e35);
+  background: var(--glass-pill-bg, var(--color-neutral-1));
+  color: var(--accent-signal, var(--color-accent));
 }
 
 .result-item-content {
@@ -348,7 +343,7 @@ onBeforeUnmount(() => {
 .result-item-title {
   font-size: 0.85rem;
   font-weight: 500;
-  color: var(--text-main, #1a1a1a);
+  color: var(--text-main, var(--color-neutral-9));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -357,7 +352,7 @@ onBeforeUnmount(() => {
 .result-item-subtitle,
 .result-item-context {
   font-size: 0.75rem;
-  color: var(--text-soft, #888);
+  color: var(--text-soft, var(--color-neutral-5));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
