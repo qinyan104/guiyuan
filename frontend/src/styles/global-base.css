@@ -225,6 +225,7 @@ input[type="radio"] {
 
 .card:hover {
   box-shadow: var(--shadow-ring);
+  transform: translateY(-2px);
 }
 
 /* 按钮基础变体 */
@@ -241,6 +242,11 @@ input[type="radio"] {
   white-space: nowrap;
   user-select: none;
   cursor: pointer;
+}
+
+.btn:active {
+  transform: scale(0.98);
+  transition-duration: 50ms;
 }
 
 .btn--primary {
@@ -273,7 +279,29 @@ input[type="radio"] {
 
 .btn--danger {
   background: var(--color-error);
-  color: #fff;
+  color: var(--color-text-on-accent);
+}
+
+.btn--danger:hover {
+  filter: brightness(1.1);
+}
+
+.btn--warning {
+  background: var(--color-warning);
+  color: var(--color-text-on-accent);
+}
+
+.btn--warning:hover {
+  filter: brightness(1.1);
+}
+
+.btn--success {
+  background: var(--color-success);
+  color: var(--color-text-on-accent);
+}
+
+.btn--success:hover {
+  filter: brightness(1.1);
 }
 
 .btn--sm {
@@ -465,14 +493,31 @@ input[type="radio"] {
 }
 
 [data-theme="dark"] ::selection {
-  background-color: rgba(224, 149, 164, 0.25);
+  background-color: var(--color-accent-muted);
   color: var(--color-neutral-10);
 }
 
 [data-theme="dark"] input:focus,
 [data-theme="dark"] textarea:focus,
 [data-theme="dark"] select:focus {
-  box-shadow: 0 0 0 3px rgba(224, 149, 164, 0.2);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   减弱动效
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+
+  .card,
+  .card:hover,
+  .btn,
+  a {
+    transition: none;
+  }
 }
 
 

@@ -24,7 +24,7 @@ const app = createApp(App)
 app.component('AppSelect', AppSelect)
 
 app.config.errorHandler = (err, _instance, info) => {
-  console.error('[全局错误]', err, info)
+  if (import.meta.env.DEV) console.error('[全局错误]', err, info)
 }
 
 const pinia = createPinia()

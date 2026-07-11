@@ -1,0 +1,82 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+  "files": {
+    "includes": [
+      "src/**",
+      "!!dist/**",
+      "!!node_modules/**",
+      "!!e2e/**",
+      "!!test-results/**"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120,
+    "lineEnding": "lf"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "noUnusedImports": "warn",
+        "noUnusedFunctionParameters": "warn",
+        "useExhaustiveDependencies": "warn",
+        "useHookAtTopLevel": "off",
+        "noVoidTypeReturn": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noAssignInExpressions": "warn",
+        "noDoubleEquals": "error",
+        "noConsole": "off",
+        "noEmptyBlockStatements": "warn"
+      },
+      "style": {
+        "noUselessElse": "warn",
+        "useConst": "warn",
+        "useImportType": "warn",
+        "noNonNullAssertion": "warn",
+        "useDefaultSwitchClause": "warn"
+      },
+      "complexity": {
+        "noExcessiveNestedTestSuites": "warn",
+        "noUselessFragments": "warn"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "warn",
+        "noGlobalEval": "error"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all",
+      "arrowParentheses": "asNeeded"
+    }
+  },
+  "css": {
+    "formatter": {
+      "enabled": true
+    },
+    "linter": {
+      "enabled": true
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["*.vue"],
+      "javascript": {
+        "formatter": {
+          "quoteStyle": "single",
+          "semicolons": "asNeeded"
+        }
+      }
+    }
+  ]
+}
