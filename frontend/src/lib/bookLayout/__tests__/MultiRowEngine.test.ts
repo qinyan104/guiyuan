@@ -212,6 +212,9 @@ describe("layoutMultiRows", () => {
     const entry = makeEntry({ formattedText: "测试" })
     const input = makeMultiRowInput([entry], "bamboo")
 
-    expect(() => layoutMultiRows(input)).toThrow()
+    const pages = layoutMultiRows(input)
+
+    expect(pages).toHaveLength(1)
+    expect(pages[0]?.columns.length).toBeGreaterThan(0)
   })
 })
