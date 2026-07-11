@@ -18,6 +18,7 @@ import type {
   RowGlyphs,
 } from "./types"
 import { getTextArea } from "./CanvasConfig"
+import { layoutColumns } from "./ColumnFlowEngine"
 import { getFontMetricsEngine } from "./FontMetricsEngine"
 
 /**
@@ -28,7 +29,6 @@ export function layoutMultiRows(input: LayoutInput): PageGlyphs[] {
   const { entries, canvas, options } = input
   if (!canvas.multiRows?.enabled) {
     // 回退到普通列流模式
-    const { layoutColumns } = require("./ColumnFlowEngine")
     return layoutColumns(input)
   }
 
