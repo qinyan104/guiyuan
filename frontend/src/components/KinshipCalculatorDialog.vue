@@ -367,7 +367,7 @@ function avatarLetter(name: string): string {
           <div v-if="selectedA && selectedB && pathNodes.length > 0" class="kinship-path-section">
             <div class="kinship-path-section__label">关系路径</div>
             <div class="kinship-path-chain">
-              <template v-for="node in pathNodes" :key="node.id">
+              <template v-for="(node, idx) in pathNodes" :key="node.id">
                 <div
                   class="kinship-path-node"
                   :class="{

@@ -215,6 +215,6 @@ describe("layoutMultiRows", () => {
     const pages = layoutMultiRows(input)
 
     expect(pages).toHaveLength(1)
-    expect(pages[0]?.columns.length).toBeGreaterThan(0)
+    expect(pages[0]?.columns?.length ?? 0).toBeGreaterThan(0)
   })
 })
