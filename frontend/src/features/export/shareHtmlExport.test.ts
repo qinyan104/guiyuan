@@ -5,6 +5,7 @@ import type {
   PublicationLayout,
   PublicationSettings,
 } from '../../types/family'
+import { defaultSettings } from '../../data/sampleFamily'
 
 vi.mock('../persistence/draftPersistence', () => ({
   createPortablePublication: vi.fn(async (publication: PublicationData) => publication),
@@ -51,6 +52,7 @@ const samplePublication: PublicationData = {
 }
 
 const sampleSettings: PublicationSettings = {
+  ...defaultSettings,
   paper: 'A4',
   layoutMode: 'modern',
   cardWidth: 240,
@@ -59,14 +61,6 @@ const sampleSettings: PublicationSettings = {
   partnerGap: 32,
   fontScale: 1,
   zoom: 1,
-  showCard: true,
-  showBirth: true,
-  showDeath: true,
-  showAge: true,
-  showNote: true,
-  showStatus: true,
-  showLineage: true,
-  showPhoto: true,
   paddingX: 40,
   paddingY: 40,
 }

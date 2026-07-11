@@ -52,12 +52,20 @@ const renderer = getCanvasRenderer()
 
 // 预加载字体 + 纹理
 // 预加载所有可用字体
-renderer.preloadFont("qiji-combo", "/vrain/fonts/qiji-combo.ttf")
-renderer.preloadFont("HanaMinA", "/vrain/fonts/HanaMinA.ttf")
-renderer.preloadFont("HanaMinB", "/vrain/fonts/HanaMinB.ttf")
-renderer.preloadFont("XiaolaiMonoSC", "/vrain/fonts/XiaolaiMonoSC-Regular.ttf")
-renderer.preloadFont("WenYue-GuTiFangSong", "/vrain/fonts/WenYue-GuTiFangSong-JRFC-2.otf")
-renderer.preloadFont("PingXianZhenSong", "/vrain/fonts/PingXianZhenSong.ttf")
+const fontLoadPromises = [
+  renderer.preloadFont("qiji-combo", "/vrain/fonts/qiji-combo.ttf"),
+  renderer.preloadFont("HanaMinA", "/vrain/fonts/HanaMinA.ttf"),
+  renderer.preloadFont("HanaMinB", "/vrain/fonts/HanaMinB.ttf"),
+  renderer.preloadFont("XiaolaiMonoSC", "/vrain/fonts/XiaolaiMonoSC-Regular.ttf"),
+  renderer.preloadFont("WenYue-GuTiFangSong", "/vrain/fonts/WenYue-GuTiFangSong-JRFC-2.otf"),
+  renderer.preloadFont("PingXianZhenSong", "/vrain/fonts/PingXianZhenSong.ttf"),
+]
+const fontsReady = Promise.all(fontLoadPromises).then(() => {
+  fontsLoaded.value = true
+}).catch(() => {
+  console.warn("Some fonts failed to load, falling back to system fonts")
+  fontsLoaded.value = true // 即使失败也标记为已加载，使用回退字体
+})
 renderer.preloadImages([
   "/vrain/canvas/paper.jpg",
   "/vrain/canvas/3leaves.png",
@@ -66,6 +74,7 @@ renderer.preloadImages([
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const composedPages = ref<ComposedPage[]>([])
 const layoutReady = ref(false)
+const fontsLoaded = ref(false)
 /** 当前渲染参数（renderCanvas 中更新） */
 const currentTotalScale = ref(1)
 const currentFitScale = ref(0)
@@ -313,7 +322,9 @@ function handleMouseUp(e: MouseEvent) {
 
 // ── 生命周期 ──
 
-onMounted(() => {
+onMounted(async () => {
+  // 等待字体加载完成
+  await fontsReady
   runLayout()
   nextTick(() => renderCanvas())
   document.addEventListener("keydown", onKeydown)
@@ -358,6 +369,16 @@ watch(
 watch(
   () => props.hoveredPersonId,
   () => nextTick(() => renderCanvas()),
+)
+
+// 字体加载完成后重新渲染（如果组件已挂载）
+watch(
+  () => fontsLoaded.value,
+  (loaded) => {
+    if (loaded && composedPages.value.length > 0) {
+      nextTick(() => renderCanvas())
+    }
+  },
 )
 
 defineExpose({

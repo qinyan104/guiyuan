@@ -1,8 +1,8 @@
 ﻿<!-- src/features/export/ExportDialog.vue -->
 <template>
   <div v-if="modelValue" class="export-dialog-backdrop" @click.self="$emit('update:modelValue', false)">
-    <div class="export-dialog">
-      <button class="close-btn" @click="$emit('update:modelValue', false)">&times;</button>
+    <div class="export-dialog panel-glass" role="dialog" aria-modal="true" aria-label="导出">
+      <button class="close-btn" aria-label="关闭" @click="$emit('update:modelValue', false)">&times;</button>
       <header class="dialog-header">
         <span class="dialog-eyebrow">导出</span>
         <h2>导出与分享</h2>
@@ -89,10 +89,10 @@ const passwordStrength = computed(() => {
   if (/\d/.test(pwd)) score++
   if (/[^a-zA-Z0-9]/.test(pwd)) score++
 
-  if (score <= 1) return { level: 'weak', label: '弱', color: '#e74c3c', percent: 25 }
-  if (score <= 2) return { level: 'fair', label: '一般', color: '#f39c12', percent: 50 }
-  if (score <= 3) return { level: 'medium', label: '中等', color: '#e67e22', percent: 70 }
-  return { level: 'strong', label: '强', color: '#27ae60', percent: 100 }
+  if (score <= 1) return { level: 'weak', label: '弱', color: 'var(--color-error)', percent: 25 }
+  if (score <= 2) return { level: 'fair', label: '一般', color: 'var(--color-warning)', percent: 50 }
+  if (score <= 3) return { level: 'medium', label: '中等', color: 'var(--color-caution)', percent: 70 }
+  return { level: 'strong', label: '强', color: 'var(--color-success)', percent: 100 }
 })
 
 function emitExportShareHtml() {
@@ -110,24 +110,16 @@ function emitExportShareHtml() {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: var(--z-modal);
   animation: fadeIn 0.2s ease-out;
 }
 
 .export-dialog {
   position: relative;
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.72));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
   padding: 36px 40px;
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   min-width: 480px;
   max-width: 540px;
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.06),
-    0 8px 24px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
   animation: slideUp 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
@@ -149,7 +141,7 @@ function emitExportShareHtml() {
 
 .dialog-header h2 {
   margin: 0;
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-family: var(--font-serif);
   font-size: 1.4rem;
   font-weight: 500;
   letter-spacing: 0.05em;
@@ -163,7 +155,7 @@ function emitExportShareHtml() {
   width: 32px;
   height: 32px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--scrim-subtle, rgba(0, 0, 0, 0.04));
   border: none;
   font-size: 1.1rem;
   color: var(--text-soft, #8f8878);
@@ -176,7 +168,7 @@ function emitExportShareHtml() {
 }
 
 .close-btn:hover {
-  background: rgba(0, 0, 0, 0.08);
+  background: var(--scrim-hover, rgba(0, 0, 0, 0.08));
   color: var(--text-main, #241a10);
 }
 
@@ -184,7 +176,7 @@ function emitExportShareHtml() {
   display: flex;
   gap: 6px;
   margin-bottom: 28px;
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--scrim-subtlest, rgba(0, 0, 0, 0.03));
   border-radius: 14px;
   padding: 4px;
 }
@@ -196,7 +188,7 @@ function emitExportShareHtml() {
   background: transparent;
   border-radius: 12px;
   font-family: 'Manrope', sans-serif;
-  font-size: 0.78rem;
+  font-size: var(--text-label-12);
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--text-soft, #8f8878);
@@ -282,7 +274,7 @@ function emitExportShareHtml() {
   flex: 1;
   height: 4px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--scrim-subtle, rgba(0, 0, 0, 0.06));
   overflow: hidden;
 }
 
@@ -309,7 +301,7 @@ function emitExportShareHtml() {
   padding: 14px 24px;
   border-radius: 999px;
   font-family: 'Manrope', sans-serif;
-  font-size: 0.82rem;
+  font-size: var(--text-copy-13);
   font-weight: 500;
   letter-spacing: 0.04em;
   cursor: pointer;
@@ -323,7 +315,7 @@ function emitExportShareHtml() {
 }
 
 .btn--primary {
-  background: var(--btn-primary-bg, linear-gradient(135deg, #3e2a18 0%, #7f5631 100%));
+  background: var(--btn-primary-bg, var(--color-accent));
   color: var(--btn-primary-color, #fff8ee);
   box-shadow: var(--shadow-whisper);
 }
@@ -347,6 +339,16 @@ function emitExportShareHtml() {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(12px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 </style>
 

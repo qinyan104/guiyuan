@@ -265,7 +265,7 @@ function showUndoNotice() {
       </div>
 
             <div class="editor-footer" v-if="pageData?.entries?.length">
-        <button class="btn-save-relayout" :disabled="relayouting" @click="emit('saveAndRelayout')">
+        <button class="btn btn--primary" :disabled="relayouting" @click="emit('saveAndRelayout')">
           {{ relayouting ? '正在保存...' : '保存并重新排版' }}
         </button>
       </div>
@@ -535,7 +535,7 @@ function showUndoNotice() {
 }
 .setting-btn.on {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-text-on-accent);
   border-color: var(--color-accent);
 }
 
@@ -618,7 +618,7 @@ function showUndoNotice() {
   width: 100%;
   padding: 9px 0;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-text-on-accent);
   border: none;
   border-radius: var(--radius-md);
   font-size: 13px;

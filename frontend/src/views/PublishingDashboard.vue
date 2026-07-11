@@ -140,7 +140,7 @@ export function formatTime(iso: string): string {
   <div class="publishing-dashboard">
     <header class="dashboard-header">
       <div class="header-top">
-        <button class="btn-back-dashboard" @click="handleBack">← 返回画布</button>
+        <button class="btn btn--ghost" @click="handleBack">← 返回画布</button>
         <h1 class="dashboard-title">出版工作室 · {{ pubTitle || '加载中...' }}</h1>
       </div>
       <div class="header-actions">
@@ -158,7 +158,7 @@ export function formatTime(iso: string): string {
           <option value="oldest">最旧优先</option>
           <option value="name">按名称</option>
         </select>
-        <button class="btn-create" :disabled="effectivePublicationId == null" @click="showCreateDialog = true">+ 新建草稿</button>
+        <button class="btn btn--primary" :disabled="effectivePublicationId == null" @click="showCreateDialog = true">+ 新建草稿</button>
       </div>
     </header>
 
@@ -175,12 +175,12 @@ export function formatTime(iso: string): string {
       <div class="empty-icon">📜</div>
       <p class="empty-title">还没有出版草稿</p>
       <p class="empty-hint">创建您的第一本草稿，开始编排家族世系录</p>
-      <button class="btn-create btn-create--large" @click="showCreateDialog = true">+ 新建第一本草稿</button>
+      <button class="btn btn--primary" @click="showCreateDialog = true">+ 新建第一本草稿</button>
     </div>
 
     <div v-else-if="filteredDrafts.length === 0 && searchQuery.trim()" class="dashboard-state dashboard-empty">
       <p>没有匹配「{{ searchQuery }}」的草稿</p>
-      <button class="btn-back-dashboard" style="margin-top:12px" @click="searchQuery = ''">清除搜索</button>
+      <button class="btn btn--ghost" style="margin-top:12px" @click="searchQuery = ''">清除搜索</button>
     </div>
 
     <div v-else class="draft-grid">
@@ -204,15 +204,15 @@ export function formatTime(iso: string): string {
           </div>
         </div>
         <div class="card-actions" @click.stop>
-          <button class="btn-edit" @click="router.push('/publishing/' + draft.id)">编辑</button>
-          <button class="btn-delete" @click="handleDelete(draft)">删除</button>
+          <button class="btn btn--secondary" @click="router.push('/publishing/' + draft.id)">编辑</button>
+          <button class="btn btn--text btn--danger" @click="handleDelete(draft)">删除</button>
         </div>
       </div>
     </div>
   </div>
 
   <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
-    <div class="dialog-box">
+    <div class="dialog-box panel-glass">
       <h3 class="dialog-title">新建草稿</h3>
       <label class="dialog-label">标题</label>
       <input
@@ -222,8 +222,8 @@ export function formatTime(iso: string): string {
         @keyup.enter="handleCreate"
       />
       <div class="dialog-actions">
-        <button class="btn-cancel" @click="showCreateDialog = false">取消</button>
-        <button class="btn-confirm" @click="handleCreate">创建</button>
+        <button class="btn btn--ghost" @click="showCreateDialog = false">取消</button>
+        <button class="btn btn--primary" @click="handleCreate">创建</button>
       </div>
     </div>
   </div>
@@ -265,21 +265,6 @@ export function formatTime(iso: string): string {
   font-size: var(--text-title-20);
   font-weight: 500;
   color: var(--color-neutral-10);
-}
-
-.btn-back-dashboard {
-  background: transparent;
-  border: none;
-  color: var(--color-accent);
-  font-size: var(--text-label-12);
-  cursor: pointer;
-  padding: 4px 0;
-  white-space: nowrap;
-  transition: opacity var(--duration-fast) var(--ease-breath);
-}
-
-.btn-back-dashboard:hover {
-  opacity: 0.8;
 }
 
 /* search */
@@ -341,39 +326,6 @@ export function formatTime(iso: string): string {
 .sort-select:focus {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
-}
-
-.btn-create {
-  padding: 10px 20px;
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-lg);
-  font-size: var(--text-label-12);
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: var(--shadow-whisper);
-  transition: transform var(--duration-fast) var(--ease-breath),
-              box-shadow var(--duration-fast) var(--ease-breath);
-  white-space: nowrap;
-}
-
-.btn-create:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 28px rgba(196, 58, 49, 0.18);
-}
-
-.btn-create:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.btn-create--large {
-  margin-top: 20px;
-  padding: 12px 28px;
-  font-size: 14px;
 }
 
 /* states */
@@ -503,39 +455,6 @@ export function formatTime(iso: string): string {
   flex-shrink: 0;
 }
 
-.btn-edit {
-  padding: 8px 14px;
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: opacity var(--duration-fast) var(--ease-breath);
-}
-
-.btn-edit:hover {
-  opacity: 0.9;
-}
-
-.btn-delete {
-  padding: 8px 14px;
-  background: transparent;
-  color: var(--color-neutral-7);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-breath);
-}
-
-.btn-delete:hover {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-  background: var(--color-accent-muted);
-}
-
 /* dialog */
 .dialog-overlay {
   position: fixed;
@@ -550,14 +469,9 @@ export function formatTime(iso: string): string {
 }
 
 .dialog-box {
-  background: var(--color-neutral-1);
-  border: 1px solid var(--color-card-stroke);
   border-radius: var(--radius-xl);
   padding: 26px 28px;
   width: min(420px, calc(100vw - 32px));
-  box-shadow: 0 24px 48px rgba(36, 35, 31, 0.12);
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
 }
 
 .dialog-title {
@@ -598,32 +512,6 @@ export function formatTime(iso: string): string {
   margin-top: 22px;
 }
 
-.btn-cancel {
-  padding: 8px 16px;
-  background: transparent;
-  color: var(--color-neutral-7);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.btn-confirm {
-  padding: 8px 16px;
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.btn-confirm:hover,
-.btn-cancel:hover {
-  transform: translateY(-1px);
-}
-
 @media (max-width: 720px) {
   .publishing-dashboard {
     padding: 20px 16px 28px;
@@ -645,15 +533,6 @@ export function formatTime(iso: string): string {
 
   .sort-select {
     width: 100%;
-  }
-
-  .btn-create,
-  .btn-create--large {
-    width: 100%;
-  }
-
-  .btn-back-dashboard {
-    align-self: flex-start;
   }
 
   .draft-card {

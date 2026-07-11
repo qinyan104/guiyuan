@@ -6,6 +6,7 @@ import {
   serializeSvg,
 } from './publicationExport'
 import { createPortablePublication } from '../persistence/draftPersistence'
+import { isPersonDeceased } from '../../lib/personStatus'
 
 export interface ShareHtmlOptions {
   publication: PublicationData
@@ -107,7 +108,7 @@ function buildThemeCss(themeVars: Record<string, string>): string {
 function buildStatsHtml(pub: PublicationData): string {
   const people = Object.values(pub.people)
   const total = people.length
-  const deceased = people.filter(p => p.deceased).length
+  const deceased = people.filter(p => isPersonDeceased(p)).length
   const alive = total - deceased
 
   const parts: string[] = [`<span>\u5171 ${total} \u4eba</span>`]
@@ -185,7 +186,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
 
     html += '<div class="detail-header">';
     if (person.avatarUrl && person.avatarUrl.startsWith('data:')) {
-      html += '<img class="detail-photo" src="' + person.avatarUrl + '" alt="' + escapeAttr(person.name) + '">';
+      html += '<img class="detail-photo" src="' + escapeAttr(person.avatarUrl) + '" alt="' + escapeAttr(person.name) + '">';
     }
     html += '<h3>' + escapeHtml(person.name) + '</h3>';
     html += '<span class="detail-gender">' + (person.gender === 'male' ? '男' : person.gender === 'female' ? '女' : '未知') + '</span>';

@@ -184,7 +184,7 @@ function openTpl() {
 .tpl-btn:hover { background: var(--color-neutral-3); border-color: var(--color-accent); }
 .tpl-caret { font-size: 8px; color: var(--color-neutral-5); margin-left: 2px; }
 
-.tpl-backdrop { position: fixed; inset: 0; z-index: 998; }
+.tpl-backdrop { position: fixed; inset: 0; z-index: var(--z-overlay); }
 .tpl-menu {
   background: var(--color-panel-bg);
   backdrop-filter: blur(20px) saturate(1.4);

@@ -73,11 +73,11 @@ onUnmounted(() => {
   <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
   <div class="biography-editor">
     <header class="bio-header">
-      <button class="btn-back" @click="goBack">← 返回草稿</button>
+      <button class="btn btn--ghost" @click="goBack">← 返回草稿</button>
       <span class="bio-person-name">{{ personLabel }}</span>
       <span class="bio-label">传记编辑</span>
       <div class="header-spacer" />
-      <button class="btn-save" @click="save">保存</button>
+      <button class="btn btn--primary" @click="save">保存</button>
       <span v-if="lastSaved" class="last-saved">上次保存: {{ lastSaved }}</span>
     </header>
 
@@ -121,15 +121,6 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.btn-back {
-  background: transparent;
-  border: none;
-  color: var(--color-accent);
-  font-size: var(--text-copy-14);
-  cursor: pointer;
-}
-.btn-back:hover { text-decoration: underline; }
-
 .bio-person-name {
   font-size: var(--text-copy-13);
   color: var(--color-neutral-6);
@@ -143,17 +134,6 @@ onUnmounted(() => {
 }
 
 .header-spacer { flex: 1; }
-
-.btn-save {
-  padding: 6px 16px;
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  font-size: var(--text-copy-13);
-  cursor: pointer;
-}
-.btn-save:hover { filter: brightness(0.9); }
 
 .last-saved {
   font-size: 11px;

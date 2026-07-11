@@ -107,7 +107,7 @@ onMounted(async () => {
     pubLoadError.value = ""
   } catch (e: any) {
     pubLoadError.value = "无法加载族谱数据，请检查网络后重试"
-    console.error("Failed to load publication:", e)
+    if (import.meta.env.DEV) console.error("Failed to load publication:", e)
   }
 
   try {
@@ -562,14 +562,14 @@ const statusText = computed(() => {
 
   <div v-else-if="!draft" class="studio-loading">
     <p>草稿未找到</p>
-    <button class="btn-back-link" @click="handleBack">返回列表</button>
+    <button class="btn btn--ghost" @click="handleBack">返回列表</button>
   </div>
 
   <div v-else class="publishing-studio">
     <div v-if="pubLoadError" class="studio-error-banner">
       <span class="studio-error-icon">⚠️</span>
       <span>{{ pubLoadError }}</span>
-      <button class="btn-retry" @click="retryLoadPublication">重试加载</button>
+      <button class="btn btn--primary" @click="retryLoadPublication">重试加载</button>
     </div>
 
     <StudioToolbar
@@ -799,19 +799,6 @@ const statusText = computed(() => {
   font-size: 16px;
 }
 
-.btn-back-link {
-  margin-top: 12px;
-  background: transparent;
-  border: none;
-  color: var(--color-accent);
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.btn-back-link:hover {
-  text-decoration: underline;
-}
-
 .canvas-notice {
   position: absolute;
   top: 18px;
@@ -878,20 +865,4 @@ const statusText = computed(() => {
   font-size: 16px;
 }
 
-.btn-retry {
-  margin-left: auto;
-  padding: 4px 12px;
-  border: 1px solid var(--color-accent);
-  border-radius: 6px;
-  background: var(--color-accent);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: opacity 0.14s ease;
-}
-
-.btn-retry:hover {
-  opacity: 0.85;
-}
 </style>
