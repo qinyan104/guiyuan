@@ -123,15 +123,25 @@ describe('validateSettings', () => {
       ]),
     )
   })
+
+  it('rejects an empty compact color value', () => {
+    const bad = { ...defaultSettings, compactNameColor: '' }
+    expect(validateSettings(bad)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'invalid-settings', path: 'settings.compactNameColor' }),
+      ]),
+    )
+  })
 })
 
 describe('normalizeSettings', () => {
   it('clamps out-of-range values back to valid bounds', () => {
-    const raw = { ...defaultSettings, zoom: 0.01, cardWidth: 999, paddingY: -50 }
+    const raw = { ...defaultSettings, zoom: 0.01, cardWidth: 999, compactNameSize: 99, paddingY: -50 }
     const result = normalizeSettings(raw)
 
     expect(result.zoom).toBe(0.10)
     expect(result.cardWidth).toBe(176)
+    expect(result.compactNameSize).toBe(36)
     expect(result.paddingY).toBe(48)
   })
 
@@ -142,6 +152,7 @@ describe('normalizeSettings', () => {
     expect(result.siblingGap).toBe(defaultSettings.siblingGap)
     expect(result.zoom).toBe(defaultSettings.zoom)
     expect(result.fontScale).toBe(defaultSettings.fontScale)
+    expect(result.compactNameSize).toBe(defaultSettings.compactNameSize)
     expect(result.paddingX).toBe(defaultSettings.paddingX)
     expect(result.paddingY).toBe(defaultSettings.paddingY)
   })

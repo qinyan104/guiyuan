@@ -37,13 +37,30 @@ function mountPanels() {
 }
 
 describe('WorkbenchPanels', () => {
-  it('exposes one canvas toolbar and keeps validation feedback inline', async () => {
+  it('exposes one canvas toolbar and shows validation feedback in a dialog', async () => {
     const wrapper = mountPanels()
 
     const toolbar = wrapper.get('[role="toolbar"][aria-label="画布工具"]')
     await toolbar.get('button[aria-pressed="false"]:nth-of-type(3)').trigger('click')
 
     expect(wrapper.emitted('toggle-validation')).toHaveLength(1)
-    expect(wrapper.find('.val-dialog-overlay').exists()).toBe(false)
+
+    await wrapper.setProps({ validationOpen: true })
+
+    const dialog = wrapper.get('.validation-dialog-window')
+    expect(wrapper.find('.validation-panel-section').exists()).toBe(false)
+    expect(wrapper.find('.validation-dialog-overlay').exists()).toBe(true)
+    expect(dialog.attributes('role')).toBe('dialog')
+    expect(dialog.attributes('aria-modal')).toBe('true')
+  })
+
+  it('closes the validation dialog before locating a finding on the canvas', async () => {
+    const wrapper = mountPanels()
+
+    await wrapper.setProps({ validationOpen: true })
+    await wrapper.getComponent({ name: 'ValidationPanel' }).vm.$emit('locate-person', 'p2')
+
+    expect(wrapper.emitted('close-validation')).toHaveLength(1)
+    expect(wrapper.emitted('locate-person')).toEqual([['p2']])
   })
 })

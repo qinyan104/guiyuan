@@ -54,6 +54,36 @@ describe('calculateRevealPan', () => {
     })
   })
 
+  it('centers a card on the viewport when center is requested even with safe insets', () => {
+    expect(
+      calculateRevealPan({
+        viewportWidth: 1200,
+        viewportHeight: 800,
+        layoutWidth: 2400,
+        layoutHeight: 1600,
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        padding: 40,
+        center: true,
+        leftInset: 240,
+        topInset: 84,
+        bottomInset: 48,
+        card: {
+          personId: 'p2',
+          x: 1100,
+          y: 700,
+          width: 160,
+          height: 280,
+        },
+      }),
+    ).toEqual({
+      panX: 20,
+      panY: -40,
+      changed: true,
+    })
+  })
+
   it('respects the right inset used by the editor drawer', () => {
     expect(
       calculateRevealPan({

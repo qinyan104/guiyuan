@@ -125,7 +125,7 @@ export async function createPortablePublication(publication: PublicationData): P
         })
         person.avatarUrl = base64
       } catch (e) {
-        console.error(`无法转换图片为 Base64 (person: ${person.name}):`, e)
+        if (import.meta.env.DEV) console.error(`无法转换图片为 Base64 (person: ${person.name}):`, e)
       }
     }
   })

@@ -10,10 +10,9 @@ import type {
 } from '../types/family'
 import { findFamilyEntryPersonId, resolveFamilyBranchMode } from '../lib/familyBranchMode'
 import { layoutPublication } from '../lib/layout'
-import { resolveKinshipTerm, getKinshipLabel } from '../lib/kinship'
+import { resolveKinshipTermExtended, getKinshipLabelExtended } from '../lib/kinship'
 import { suggestLineageNote } from '../lib/lineageLabels'
 import { getPersonStatusLabel, isPersonDeceased } from '../lib/personStatus'
-import { normalizePublicationTextInPlace } from '../lib/textNormalization'
 import { useDevAudit } from './useDevAudit'
 
 function joinMetaParts(parts: Array<string | undefined>): string {
@@ -35,7 +34,6 @@ export function usePublicationState(
   }
 
   const cloned = structuredClone(initialPublication)
-  normalizePublicationTextInPlace(cloned)
   freezePeople(cloned)
   const publication = reactive<PublicationData>(cloned)
   const settings = reactive<PublicationSettings>(structuredClone(initialSettings))
@@ -49,9 +47,6 @@ export function usePublicationState(
     Object.keys(target).forEach((key) => {
       delete (target as Record<string, unknown>)[key]
     })
-    if ('people' in source && 'title' in source && 'subtitle' in source) {
-      normalizePublicationTextInPlace(source as unknown as PublicationData)
-    }
     if ('people' in source) {
       freezePeople(source as unknown as PublicationData)
     }
@@ -124,7 +119,7 @@ export function usePublicationState(
     const selected = selectedPersonId.value
     const hovered = hoveredPersonId.value
     if (!selected || !hovered || selected === hovered) return null
-    return resolveKinshipTerm(publication, selected, hovered)
+    return resolveKinshipTermExtended(publication, selected, hovered)
   })
   const aliveCount = computed(() => peopleList.value.filter((person) => !isPersonDeceased(person)).length)
   const deceasedCount = computed(() => totalPeople.value - aliveCount.value)
@@ -277,7 +272,7 @@ export function usePublicationState(
       if (pid === _viewerPersonId.value) {
         map[pid] = '本人'
       } else {
-        const label = getKinshipLabel(publication, _viewerPersonId.value, pid)
+        const label = getKinshipLabelExtended(publication, _viewerPersonId.value, pid)
         if (label && label !== '未知关系') {
           map[pid] = label
         }

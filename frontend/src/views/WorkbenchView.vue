@@ -53,11 +53,15 @@ function onConfirmDialogResult(result: boolean) {
 
 defineExpose({ confirmAsync })
 
-// Clean up pending confirm promise on unmount
+// Clean up pending confirm promise and timers on unmount
 onBeforeUnmount(() => {
   if (confirmResolve) {
     confirmResolve(false)
     confirmResolve = null
+  }
+  if (egoScrollTimer) {
+    clearTimeout(egoScrollTimer)
+    egoScrollTimer = null
   }
 })
 
@@ -71,7 +75,7 @@ const feedback = useFeedback()
 const canvasRef = ref<InstanceType<typeof PublicationCanvas> | null>(null)
 
 // ─── Canvas Controls ────────────────────────────────────────────
-function revealPersonInCanvas(personId: string) {
+function revealPersonInCanvas(personId: string, options: { center?: boolean } = {}) {
   nextTick(() => {
     const leftInset = panels.historyOpen.value ? 388 : panels.layoutPanelOpen.value ? 360 : 24
     const rightInset = 24
@@ -82,6 +86,7 @@ function revealPersonInCanvas(personId: string) {
       rightInset,
       topInset: 84,
       bottomInset: 48,
+      center: options.center,
     })
   })
 }
@@ -97,12 +102,13 @@ function adjustZoom(delta: number) {
 }
 
 let egoScrolled = false
+let egoScrollTimer: ReturnType<typeof setTimeout> | null = null
 watch(
   () => context.pub.viewerPersonId?.value,
   (egoId) => {
     if (egoId && !egoScrolled) {
       egoScrolled = true
-      setTimeout(() => revealPersonInCanvas(egoId), 600)
+      egoScrollTimer = setTimeout(() => revealPersonInCanvas(egoId), 600)
     }
   },
   { immediate: true },
@@ -186,6 +192,11 @@ function revealSelectedPerson() {
   if (context.pub.selectedPerson.value) {
     revealPersonInCanvas(context.pub.selectedPerson.value.id)
   }
+}
+
+function locateAndSelectPerson(personId: string) {
+  context.pub.selectedPersonId.value = personId
+  revealPersonInCanvas(personId, { center: true })
 }
 
 // ─── Navigation ─────────────────────────────────────────────────
@@ -288,7 +299,7 @@ watch(
           @close-layout="panels.layoutPanelOpen.value = false" @open-kinship="showKinshipDialog = true"
           @close-history="panels.historyOpen.value = false"
           @close-validation="validationOpen = false"
-          @locate-person="revealPersonInCanvas"
+          @locate-person="locateAndSelectPerson"
         />
 
         <PublicationCanvas
@@ -327,6 +338,7 @@ watch(
           :branchMode="context.pub.selectedBranchMode.value"
           :parentActionLabel="context.pub.parentActionLabel.value"
           :branchActionLabel="personEditor.editorBranchActionLabel.value"
+          :kinshipLabel="context.pub.kinshipNotes?.value?.[context.pub.selectedPersonId.value] ?? null"
           @close="closeEditor"
           @select-person="handleSelectPerson"
           @add-spouse="relActions.addSpouse"

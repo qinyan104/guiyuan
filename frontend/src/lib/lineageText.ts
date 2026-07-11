@@ -1,4 +1,4 @@
-﻿import type { LineageEntry, LineagePage } from "../types/publishing"
+import type { LineageEntry, LineagePage } from "../types/publishing"
 import type { FamilyUnit, Gender, Person, PublicationData } from "../types/family"
 import { getCanvasConfig, getTextArea } from "./bookLayout/CanvasConfig"
 
@@ -288,7 +288,6 @@ function calcEntriesPerPage(opts: LayoutOptions, canvasId?: string): number {
   // 有模板时按实际文本区计算
   if (canvasId) {
     try {
-      const { getCanvasConfig } = require("./CanvasConfig")
       const cfg = getCanvasConfig(canvasId)
       const ta = getTextArea(cfg)
       const pxFontSize = fontSize * 4 / 3

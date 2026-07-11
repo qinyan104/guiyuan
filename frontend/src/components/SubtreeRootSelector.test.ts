@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { PublicationLoadResult } from '../api/publication'
 import type { PublicationSettings } from '../types/family'
+import { defaultSettings } from '../data/sampleFamily'
 
 const { mockGetPublication } = vi.hoisted(() => ({
   mockGetPublication: vi.fn(),
@@ -31,7 +32,7 @@ vi.mock('./PublicationCanvas.vue', () => ({
 import SubtreeRootSelector from './SubtreeRootSelector.vue'
 
 const previewSettings: PublicationSettings = {
-  paper: 'A3',
+  ...defaultSettings,
   layoutMode: 'su',
   cardWidth: 222,
   generationGap: 88,
@@ -39,13 +40,7 @@ const previewSettings: PublicationSettings = {
   partnerGap: 18,
   fontScale: 1.1,
   zoom: 1,
-  showCard: true,
-  showBirth: true,
-  showDeath: true,
-  showAge: true,
   showNote: false,
-  showStatus: true,
-  showLineage: true,
   showPhoto: false,
   paddingX: 28,
   paddingY: 36,

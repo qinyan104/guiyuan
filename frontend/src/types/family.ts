@@ -63,6 +63,9 @@ export interface PublicationSettings {
   siblingGap: number
   partnerGap: number
   fontScale: number
+  compactNameSize: number
+  compactNameColor: string
+  compactLineColor: string
   zoom: number
   showCard: boolean
   showBirth: boolean

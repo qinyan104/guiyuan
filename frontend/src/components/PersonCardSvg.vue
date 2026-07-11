@@ -61,12 +61,6 @@ const imperialBadge = computed(() => {
   return null
 })
 
-const knotColor = computed(() => {
-  if (props.person.gender === 'male') return '#4b7bec'
-  if (props.person.gender === 'female') return '#eb3b5a'
-  return '#a5b1c2'
-})
-
 const lineageBadge = computed(() => {
   if (props.card.lineageRole === 'married-out') {
     return '外嫁'
@@ -130,6 +124,17 @@ const nameFontSize = computed(() => {
   if (count >= 7) return 21 * props.settings.fontScale
   if (count >= 5) return 24 * props.settings.fontScale
   return 28 * props.settings.fontScale
+})
+
+const compactNameFontSize = computed(() => props.settings.compactNameSize)
+const compactNameColor = computed(() => props.settings.compactNameColor || '#1D1D1F')
+const compactLineColor = computed(() => props.settings.compactLineColor || '#B5A99A')
+const compactNameStartY = computed(() => compactNameFontSize.value + 10)
+const compactNameStep = computed(() => {
+  const size = compactNameFontSize.value
+  if (props.person.name.length === 2) return size * 1.9
+  if (props.person.name.length === 3) return size * 1.55
+  return size * 1.28
 })
 
 const noteFontSize = computed(() => 13 * props.settings.fontScale)
@@ -200,8 +205,8 @@ function handleMouseLeave() {
       class="person-card__panel"
       :width="card.width"
       :height="card.height"
-      :rx="isOu ? 4 : 22"
-      :ry="isOu ? 4 : 22"
+      :rx="isOu ? 4 : 24"
+      :ry="isOu ? 4 : 24"
     />
 
 
@@ -296,7 +301,7 @@ function handleMouseLeave() {
         y1="0"
         :x2="card.width / 2"
         :y2="card.height - 10"
-        stroke="var(--line-soft, rgba(0,0,0,0.15))"
+        :stroke="compactLineColor"
         stroke-width="1.5"
       />
 
@@ -307,7 +312,7 @@ function handleMouseLeave() {
         cy="0"
         r="4.5"
         fill="var(--bg-panel, #ffffff)"
-        :stroke="knotColor"
+        :stroke="compactLineColor"
         stroke-width="1.5"
       />
       <circle
@@ -315,20 +320,20 @@ function handleMouseLeave() {
         :cx="card.width / 2"
         cy="0"
         r="2"
-        :fill="knotColor"
+        :fill="compactLineColor"
       />
 
       <!-- Refined Compact Name (Solemn and Grand Typography) -->
       <text
         class="person-card__name--compact"
         :x="card.width / 2"
-        :y="32 * settings.fontScale"
+        :y="compactNameStartY"
         text-anchor="middle"
         :style="{
-          fontSize: `${22 * settings.fontScale}px`,
+          fontSize: `${compactNameFontSize}px`,
           fontWeight: selected ? 600 : 500,
-          fontFamily: '\'Noto Serif SC\', \'Songti SC\', \'STZhongsong\', serif',
-          fill: selected ? 'var(--color-accent, #c43a31)' : 'var(--text-main, #1d1d1f)',
+          fontFamily: 'var(--font-serif)',
+          fill: selected ? 'var(--color-accent, #c43a31)' : compactNameColor,
           transition: 'fill 0.2s ease, font-weight 0.2s ease'
         }"
       >
@@ -336,15 +341,26 @@ function handleMouseLeave() {
           v-for="(char, index) in person.name"
           :key="index"
           :x="card.width / 2"
-          :dy="index === 0 ? 0 : (
-            person.name.length === 2 ? 42 * settings.fontScale :
-            person.name.length === 3 ? 34 * settings.fontScale :
-            28 * settings.fontScale
-          )"
+          :dy="index === 0 ? 0 : compactNameStep"
         >
           {{ char }}
         </tspan>
       </text>
+
+      <!-- Kinship Note (Compact — small label below name) -->
+      <text
+        v-if="kinshipNote"
+        class="person-card__kinship--compact"
+        :x="card.width / 2"
+        :y="card.height - 4"
+        text-anchor="middle"
+        :style="{
+          fontSize: `${9 * settings.fontScale}px`,
+          fontFamily: 'var(--font-sans)',
+          fill: 'var(--color-accent, #c43a31)',
+          opacity: 0.85
+        }"
+      >{{ kinshipNote }}</text>
 
       <!-- Lineage Badge (Compact Vertical Tag at Top Right) -->
       <g v-if="settings.showLineage && lineageBadge">
@@ -365,7 +381,7 @@ function handleMouseLeave() {
           :style="{
             fontSize: `${10 * settings.fontScale}px`,
             fontWeight: 500,
-            fontFamily: '\'Noto Serif SC\', \'Songti SC\', \'STZhongsong\', serif',
+            fontFamily: 'var(--font-serif)',
             fill: 'var(--text-soft, #86868b)'
           }"
         >
@@ -399,7 +415,7 @@ function handleMouseLeave() {
           :style="{
             fontSize: `${10 * settings.fontScale}px`,
             fontWeight: 500,
-            fontFamily: '\'Noto Serif SC\', \'Songti SC\', \'STZhongsong\', serif',
+            fontFamily: 'var(--font-serif)',
             fill: 'var(--accent-amber, #0071e3)'
           }"
         >
@@ -615,7 +631,7 @@ function handleMouseLeave() {
 }
 
 .person-card__name {
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-family: var(--font-serif), "SimSun", "STSong", "Songti SC", serif;
   font-weight: 600;
   fill: var(--card-name-fill);
   letter-spacing: 0.08em;
@@ -632,29 +648,29 @@ function handleMouseLeave() {
 }
 
 .person-card__imperial-ribbon {
-  stroke: rgba(255, 255, 255, 0.16);
+  stroke: color-mix(in srgb, var(--color-neutral-1) 16%, transparent);
   stroke-width: 0.8;
 }
 
 .person-card__imperial-ribbon--emperor {
-  fill: #c6932f;
+  fill: var(--color-warning);
 }
 
 .person-card__imperial-ribbon--heir {
-  fill: #9a4d36;
+  fill: var(--color-accent-deep);
 }
 
 .person-card__imperial-label {
   font-family: 'Manrope', sans-serif;
   font-weight: 800;
   letter-spacing: 0.12em;
-  fill: #fffaf0;
+  fill: var(--color-neutral-1);
 }
 
 .person-card__note,
 .person-card__detail,
 .person-card__lineage-text {
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-family: var(--font-serif);
   fill: var(--card-detail-fill);
 }
 
@@ -684,12 +700,12 @@ function handleMouseLeave() {
 }
 
 .person-card--emperor .person-card__accent-frame--emperor {
-  stroke: rgba(198, 147, 47, 0.92);
+  stroke: color-mix(in srgb, var(--color-warning) 92%, transparent);
   stroke-width: 2.6;
 }
 
 .person-card--emperor .person-card__panel {
-  stroke: rgba(198, 147, 47, 0.56);
+  stroke: color-mix(in srgb, var(--color-warning) 56%, transparent);
   stroke-width: 2.2;
 }
 
@@ -701,17 +717,17 @@ function handleMouseLeave() {
 
 .person-card--emperor .person-card__lineage-pill {
   fill: none;
-  stroke: rgba(198, 147, 47, 0.26);
+  stroke: color-mix(in srgb, var(--color-warning) 26%, transparent);
 }
 
 .person-card--heir .person-card__accent-frame--heir {
-  stroke: rgba(154, 77, 54, 0.82);
+  stroke: color-mix(in srgb, var(--color-accent-deep) 82%, transparent);
   stroke-width: 2.2;
   stroke-dasharray: 8 5;
 }
 
 .person-card--heir .person-card__panel {
-  stroke: rgba(154, 77, 54, 0.48);
+  stroke: color-mix(in srgb, var(--color-accent-deep) 48%, transparent);
   stroke-width: 2;
 }
 
@@ -723,7 +739,7 @@ function handleMouseLeave() {
 
 .person-card--heir .person-card__lineage-pill {
   fill: none;
-  stroke: rgba(154, 77, 54, 0.22);
+  stroke: color-mix(in srgb, var(--color-accent-deep) 22%, transparent);
 }
 
 .person-card--consort .person-card__panel {
@@ -791,17 +807,17 @@ function handleMouseLeave() {
 }
 
 .person-card--ego .person-card__panel {
-  stroke: #f59e0b;
+  stroke: var(--color-warning);
   stroke-width: 2.8;
-  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.35));
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--color-warning) 35%, transparent));
 }
 
 .person-card--ego .person-card__header {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  background: linear-gradient(135deg, var(--color-neutral-1), color-mix(in srgb, var(--color-warning) 35%, var(--color-neutral-1)));
 }
 
 .is-mount-point .person-card__panel {
-  stroke: #2d59a2;
+  stroke: var(--color-male);
   stroke-width: 3px;
   stroke-dasharray: 4;
 }

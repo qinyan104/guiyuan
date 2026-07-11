@@ -6,6 +6,7 @@ export interface RevealPersonOptions {
   rightInset?: number
   topInset?: number
   bottomInset?: number
+  center?: boolean
 }
 
 export interface CalculateRevealPanInput extends RevealPersonOptions {
@@ -75,8 +76,10 @@ export function calculateRevealPan(input: CalculateRevealPanInput): RevealPanRes
   const cardTop = input.viewportHeight / 2 + input.panY + (input.card.y - input.layoutHeight / 2) * input.zoom
   const cardRight = cardLeft + input.card.width * input.zoom
   const cardBottom = cardTop + input.card.height * input.zoom
-  const deltaX = shiftAxis(cardLeft, cardRight, safeX.start, safeX.end, safeX.center, safeX.span)
-  const deltaY = shiftAxis(cardTop, cardBottom, safeY.start, safeY.end, safeY.center, safeY.span)
+  const cardCenterX = (cardLeft + cardRight) / 2
+  const cardCenterY = (cardTop + cardBottom) / 2
+  const deltaX = input.center ? input.viewportWidth / 2 - cardCenterX : shiftAxis(cardLeft, cardRight, safeX.start, safeX.end, safeX.center, safeX.span)
+  const deltaY = input.center ? input.viewportHeight / 2 - cardCenterY : shiftAxis(cardTop, cardBottom, safeY.start, safeY.end, safeY.center, safeY.span)
 
   return {
     panX: input.panX + deltaX,

@@ -184,7 +184,7 @@ watch(() => props.pubId, runValidation)
 .vp-summary-chip.active { border-color: var(--accent-signal, #ab6d30); background: rgba(171,109,48,0.06); }
 .chip--error.active { border-color: #ef4444; background: rgba(239,68,68,0.06); color: #dc2626; }
 .chip--warning.active { border-color: #f59e0b; background: rgba(245,158,11,0.06); color: #d97706; }
-.chip--info.active { border-color: #3b82f6; background: rgba(59,130,246,0.06); color: #2563eb; }
+.chip--info.active { border-color: var(--color-info); background: var(--color-info-muted); color: var(--color-info); }
 
 .chip-icon { font-size: 10px; }
 .chip-count { font-weight: 700; }
@@ -238,7 +238,7 @@ watch(() => props.pubId, runValidation)
 
 .finding--error { border-left: 3px solid #ef4444; }
 .finding--warning { border-left: 3px solid #f59e0b; }
-.finding--info { border-left: 3px solid #3b82f6; }
+.finding--info { border-left: 3px solid var(--color-info); }
 
 .finding-icon { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
 

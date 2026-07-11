@@ -1,4 +1,5 @@
 import http from '../../api/http'
+import { getAccessToken } from '../../api/tokenStore'
 import type { ApiResponse } from '../../types/api'
 
 export interface GedcomImportResult {
@@ -59,7 +60,7 @@ export async function mergeGedcom(pubId: number, file: File): Promise<GedcomMerg
  * 触发浏览器下载 GEDCOM 文件
  */
 export function downloadGedcom(pubId: number): void {
-  const token = localStorage.getItem('token')
+  const token = getAccessToken()
   const baseUrl = http.defaults.baseURL || ''
   const url = `${baseUrl}/publications/${pubId}/gedcom`
 

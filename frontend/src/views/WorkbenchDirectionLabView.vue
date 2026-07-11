@@ -114,7 +114,7 @@ import { workbenchDirections } from '../features/design/workbenchDirections'
 
 .lab-hero__title {
   margin: 0;
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: clamp(32px, 4.8vw, 54px);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -199,7 +199,7 @@ import { workbenchDirections } from '../features/design/workbenchDirections'
 
 .direction-card__title {
   margin: 0;
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 28px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -297,7 +297,7 @@ import { workbenchDirections } from '../features/design/workbenchDirections'
 
 .decision-panel h2 {
   margin: 0;
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 28px;
   font-weight: 600;
   letter-spacing: 0.04em;

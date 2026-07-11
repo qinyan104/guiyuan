@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import WorkbenchView from './WorkbenchView.vue'
+import { defaultSettings } from '../data/sampleFamily'
 import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import type { PublicationContext } from '../types/family'
 
@@ -132,6 +133,11 @@ vi.mock('../components/WorkbenchPanels.vue', () => ({
 vi.mock('../components/PublicationCanvas.vue', () => ({
   default: {
     name: 'PublicationCanvas',
+    setup(_props: unknown, { expose }: { expose: (exposed: Record<string, unknown>) => void }) {
+      const revealPerson = vi.fn()
+      expose({ revealPerson })
+      return { revealPerson }
+    },
     template: '<div class="mock-canvas" @keydown.prevent="$emit(\'keydown\', $event)"><slot /></div>',
     props: [
       'publication', 'settings', 'layout', 'selectedPersonId',
@@ -218,6 +224,7 @@ function createContextStub(
         info: {},
       },
       settings: {
+        ...defaultSettings,
         paper: 'A4' as const,
         layoutMode: 'modern' as const,
         cardWidth: 142,
@@ -226,9 +233,12 @@ function createContextStub(
         partnerGap: 10,
         fontScale: 1,
         zoom: zoom.value,
+        showBirth: false,
         showDeath: false,
         showAge: false,
         showNote: false,
+        showStatus: false,
+        showLineage: false,
         showPhoto: false,
         paddingX: 10,
         paddingY: 10,
@@ -499,6 +509,23 @@ describe('WorkbenchView', () => {
       await wrapper.vm.$nextTick()
 
       expect((ctx.pub as any).hoveredPersonId.value).toBe('p2')
+    })
+
+    it('selects and centers the person when WorkbenchPanels emits locate-person', async () => {
+      const ctx = createContextStub({ selectedPersonId: 'p1' })
+      const wrapper = mountView(ctx)
+
+      const canvas = wrapper.findComponent({ name: 'PublicationCanvas' })
+      const panels = wrapper.findComponent({ name: 'WorkbenchPanels' })
+      await panels.vm.$emit('locate-person', 'p2')
+      await wrapper.vm.$nextTick()
+      await wrapper.vm.$nextTick()
+
+      expect(ctx.pub.selectedPersonId.value).toBe('p2')
+      expect(canvas.vm.revealPerson).toHaveBeenCalledWith(
+        'p2',
+        expect.objectContaining({ center: true }),
+      )
     })
   })
 })

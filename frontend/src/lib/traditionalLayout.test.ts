@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { layoutPublication } from "./layout"
 import type { PublicationData, Person, FamilyUnit, PublicationSettings } from "../types/family"
+import { defaultSettings } from "../data/sampleFamily"
 
 function p(id: string, name: string, gender: "male" | "female" = "male"): Person {
   return { id, name, gender }
@@ -12,7 +13,7 @@ function f(id: string, adults: string[], children: string[]): FamilyUnit {
 
 function settings(): PublicationSettings {
   return {
-    paper: "A3",
+    ...defaultSettings,
     layoutMode: "su",
     cardWidth: 222,
     generationGap: 88,
@@ -20,13 +21,7 @@ function settings(): PublicationSettings {
     partnerGap: 18,
     fontScale: 1.1,
     zoom: 1,
-    showCard: true,
-    showBirth: true,
-    showDeath: true,
-    showAge: true,
     showNote: false,
-    showStatus: true,
-    showLineage: true,
     showPhoto: false,
     paddingX: 28,
     paddingY: 36,

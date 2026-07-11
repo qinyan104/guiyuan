@@ -30,7 +30,9 @@ const displayVisible = computed({
 function onFileSelect(e: Event) {
   const input = e.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
-    selectedFile.value = input.files[0]
+    const file = input.files[0]
+    if (file.size > 10 * 1024 * 1024) { error.value = '文件过大，请上传 10MB 以内的文件'; return }
+    selectedFile.value = file
     error.value = null
     result.value = null
   }
@@ -40,7 +42,9 @@ function onDrop(e: DragEvent) {
   isDragOver.value = false
   const files = e.dataTransfer?.files
   if (files && files.length > 0) {
-    selectedFile.value = files[0]
+    const file = files[0]
+    if (file.size > 10 * 1024 * 1024) { error.value = '文件过大，请上传 10MB 以内的文件'; return }
+    selectedFile.value = file
     error.value = null
     result.value = null
   }
@@ -99,7 +103,15 @@ function handleClose() {
 <template>
   <Teleport to="body">
     <Transition name="dialog-fade">
-      <div v-if="displayVisible" class="gedcom-overlay" @click.self="handleClose">
+      <div
+        v-if="displayVisible"
+        class="gedcom-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-label="GEDCOM 导入"
+        @click.self="handleClose"
+        @keydown.escape="handleClose"
+      >
         <div class="gedcom-dialog">
           <header class="gedcom-dialog__header">
             <h2>导入 GEDCOM 文件</h2>
@@ -246,11 +258,11 @@ function handleClose() {
 .gedcom-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-overlay);
   backdrop-filter: blur(4px);
 }
 
@@ -259,9 +271,9 @@ function handleClose() {
   max-width: 92vw;
   max-height: 85vh;
   overflow-y: auto;
-  background: var(--bg-paper, #fff9ef);
+  background: var(--color-neutral-1);
   border: 1px solid var(--border-color, rgba(111, 89, 67, 0.2));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
 }
 
@@ -319,8 +331,8 @@ function handleClose() {
 
 .drop-zone:hover,
 .drop-zone--active {
-  border-color: var(--accent-signal, #ab6d30);
-  background: rgba(171, 109, 48, 0.04);
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
 }
 
 .drop-zone__icon {
@@ -387,8 +399,8 @@ function handleClose() {
 }
 
 .change-file-btn:hover {
-  border-color: var(--accent-signal, #ab6d30);
-  color: var(--accent-signal, #ab6d30);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 /* 导入模式 */
@@ -410,7 +422,7 @@ function handleClose() {
 }
 
 .mode-option:hover {
-  border-color: var(--accent-signal, #ab6d30);
+  border-color: var(--color-accent);
 }
 
 .mode-option--disabled {
@@ -420,7 +432,7 @@ function handleClose() {
 
 .mode-option input[type="radio"] {
   margin-top: 3px;
-  accent-color: var(--accent-signal, #ab6d30);
+  accent-color: var(--color-accent);
 }
 
 .mode-option__label {
@@ -460,7 +472,7 @@ function handleClose() {
 .import-btn {
   width: 100%;
   padding: 12px;
-  background: var(--accent-signal, #ab6d30);
+  background: var(--color-accent);
   border: none;
   border-radius: 8px;
   font-size: 15px;
@@ -519,7 +531,7 @@ function handleClose() {
 .stat__value {
   font-size: 28px;
   font-weight: 700;
-  color: var(--accent-signal, #ab6d30);
+  color: var(--color-accent);
 }
 
 .stat__label {
@@ -559,7 +571,7 @@ function handleClose() {
 .go-btn {
   flex: 1;
   padding: 10px 16px;
-  background: var(--accent-signal, #ab6d30);
+  background: var(--color-accent);
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -583,8 +595,8 @@ function handleClose() {
 }
 
 .again-btn:hover {
-  border-color: var(--accent-signal, #ab6d30);
-  color: var(--accent-signal, #ab6d30);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 /* 过渡动画 */
@@ -596,5 +608,19 @@ function handleClose() {
 .dialog-fade-enter-from,
 .dialog-fade-leave-to {
   opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .close-btn,
+  .drop-zone,
+  .mode-option,
+  .import-btn {
+    transition: none;
+  }
+
+  .dialog-fade-enter-active,
+  .dialog-fade-leave-active {
+    transition: none;
+  }
 }
 </style>

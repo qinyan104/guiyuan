@@ -1,7 +1,11 @@
-﻿<script setup lang="ts">
-import { ref, computed } from "vue"
+<script setup lang="ts">
+import { ref, computed, watch } from "vue"
 import type { PublicationData, Person } from "../types/family"
-import { resolveKinshipTermExtended, findRelationshipPathExtended } from "../lib/kinship"
+import {
+  findRelationshipPathExtended,
+  getSupportedKinshipTermGroups,
+  resolveKinshipTermExtended,
+} from "../lib/kinship"
 import type { KinshipPath } from "../lib/kinship"
 
 const props = defineProps<{
@@ -13,12 +17,26 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const selectedA = ref('')
+function getInitialCallerId() {
+  const id = props.egoPersonId
+  return id && props.publication.people[id] ? id : ''
+}
+
+const selectedA = ref(getInitialCallerId())
 const selectedB = ref("")
 const searchA = ref("")
 const searchB = ref("")
 const showDropdownA = ref(false)
 const showDropdownB = ref(false)
+const kinshipTermGroups = getSupportedKinshipTermGroups()
+const supportedTermCount = new Set(kinshipTermGroups.flatMap((group) => group.terms)).size
+
+watch(
+  () => props.egoPersonId,
+  () => {
+    if (!selectedA.value) selectedA.value = getInitialCallerId()
+  },
+)
 
 const people = computed(() => {
   return Object.entries(props.publication.people).map(([id, person]) => ({
@@ -44,6 +62,9 @@ const filteredB = computed(() => filterPeople(searchB.value))
 function personById(id: string): Person | undefined {
   return props.publication.people[id]
 }
+
+const selectedAPerson = computed(() => personById(selectedA.value))
+const selectedBPerson = computed(() => personById(selectedB.value))
 
 const result = computed(() => {
   if (!selectedA.value || !selectedB.value) return null
@@ -93,6 +114,22 @@ const ageComparison = computed(() => {
     if (yb < ya) return { older: "B", diff: ya - yb }
   }
   return null
+})
+
+const relationshipLineLabel = computed(() => {
+  const p = relationshipPath.value
+  if (!p) return ""
+  if (p.isInLaw) return "姻亲关系"
+  if (!p.bloodPath) return "亲属关系"
+  if (p.bloodPath.upSteps === 0 || p.bloodPath.downSteps === 0) return "直系血亲"
+  return p.bloodPath.isPatrilineal ? "父系血亲" : "母系血亲"
+})
+
+const generationLabel = computed(() => {
+  const term = result.value
+  if (!term) return ""
+  if (term.generationGap === 0) return "同辈"
+  return `${Math.abs(term.generationGap)}代差`
 })
 
 const pathNodes = computed(() => {
@@ -165,7 +202,7 @@ const pathDescription = computed(() => {
       if (ip.spousesUsed.includes(id)) return `${name}(配偶)`
       return name
     }).join(" -> ")
-    return `${aName} 与 ${bName} 通过姻亲关系相连: ${pathNames}`
+    return `${aName} 与 ${bName} 通过姻亲关系相连：${pathNames}`
   }
 
   return ""
@@ -195,7 +232,6 @@ function avatarLetter(name: string): string {
 </script>
 <template>
   <Teleport to="body">
-  <Transition name="kinship-fade">
     <div class="kinship-overlay" @click.self="emit('close')">
       <div
         class="kinship-dialog"
@@ -331,8 +367,15 @@ function avatarLetter(name: string): string {
           <div v-if="selectedA && selectedB && pathNodes.length > 0" class="kinship-path-section">
             <div class="kinship-path-section__label">关系路径</div>
             <div class="kinship-path-chain">
-              <template v-for="(node, idx) in pathNodes" :key="node.id">
-                <div class="kinship-path-node" :class="{ 'kinship-path-node--endpoint': node.isEndpoint, 'kinship-path-node--ancestor': node.isAncestor }">
+              <template v-for="node in pathNodes" :key="node.id">
+                <div
+                  class="kinship-path-node"
+                  :class="{
+                    'kinship-path-node--endpoint': node.isEndpoint,
+                    'kinship-path-node--ancestor': node.isAncestor,
+                    'kinship-path-node--spouse': node.isSpouse,
+                  }"
+                >
                   <span class="kinship-path-node__avatar" :class="node.person?.gender === 'female' ? 'avatar--female' : 'avatar--male'">
                     {{ avatarLetter(node.person?.name ?? '?') }}
                   </span>
@@ -340,6 +383,7 @@ function avatarLetter(name: string): string {
                   <span v-if="node.isA" class="kinship-path-node__tag kinship-path-node__tag--a">A</span>
                   <span v-else-if="node.isB" class="kinship-path-node__tag kinship-path-node__tag--b">B</span>
                   <span v-else-if="node.isAncestor" class="kinship-path-node__tag kinship-path-node__tag--ancestor">共同祖先</span>
+                  <span v-else-if="node.isSpouse" class="kinship-path-node__tag kinship-path-node__tag--spouse">配偶</span>
                 </div>
                 <div v-if="idx < pathNodes.length - 1" class="kinship-path-edge">
                   <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="kinship-path-edge__arrow">
@@ -353,6 +397,11 @@ function avatarLetter(name: string): string {
 
           <!-- Result -->
           <div v-if="selectedA && selectedB && result" class="kinship-result">
+            <div class="kinship-result__who">
+              <span class="kinship-result__who-a">{{ selectedAPerson?.name ?? '未知' }}</span>
+              <span class="kinship-result__who-label">称呼</span>
+              <span class="kinship-result__who-b">{{ selectedBPerson?.name ?? '未知' }}</span>
+            </div>
             <div class="kinship-result__term">{{ result.term }}</div>
             <div v-if="result.description" class="kinship-result__desc">{{ result.description }}</div>
 
@@ -365,9 +414,9 @@ function avatarLetter(name: string): string {
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="8 2 8 8 12 10"/></svg>
                 {{ ageComparison.older === 'A' ? personById(selectedA)?.name : personById(selectedB)?.name }} 年长 {{ ageComparison.diff }} 岁
               </span>
-              <span v-if="relationshipPath" class="kinship-chip">
+              <span v-if="relationshipPath" class="kinship-chip" :class="{ 'chip--inlaw': relationshipPath.isInLaw }">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="12" rx="2"/><line x1="5" y1="2" x2="5" y2="14"/></svg>
-                {{ relationshipPath.bloodPath?.isPatrilineal ? '父系' : '母系' }}亲属 · {{ result.generationGap === 0 ? '同辈' : Math.abs(result.generationGap) + '代差' }}
+                {{ relationshipLineLabel }} · {{ generationLabel }}
               </span>
             </div>
           </div>
@@ -393,10 +442,24 @@ function avatarLetter(name: string): string {
             </div>
             <p>选择两位族人，查看他们之间的亲戚关系</p>
           </div>
+
+          <details class="kinship-coverage">
+            <summary class="kinship-coverage__summary">
+              <span>称谓覆盖</span>
+              <strong>{{ supportedTermCount }} 个</strong>
+            </summary>
+            <div class="kinship-coverage__groups">
+              <section v-for="group in kinshipTermGroups" :key="group.label" class="kinship-coverage__group">
+                <h3>{{ group.label }}</h3>
+                <div class="kinship-coverage__terms">
+                  <span v-for="term in group.terms" :key="term">{{ term }}</span>
+                </div>
+              </section>
+            </div>
+          </details>
         </div>
       </div>
     </div>
-  </Transition>
   </Teleport>
 </template>
 <style scoped>
@@ -413,10 +476,10 @@ function avatarLetter(name: string): string {
 .kinship-dialog {
   width: min(760px, 100%);
   max-height: min(760px, calc(100dvh - 48px));
-  background: var(--bg-panel-strong, #fefcf7);
+  background: var(--bg-panel-strong, var(--color-panel-bg));
   border: 1px solid var(--color-card-stroke);
   border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-float);
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
   overflow: auto;
 }
 
@@ -427,7 +490,7 @@ function avatarLetter(name: string): string {
   z-index: 4;
   display: flex; align-items: flex-start; justify-content: space-between;
   padding: 22px 24px 18px;
-  background: color-mix(in srgb, var(--bg-panel-strong, #fefcf7) 94%, transparent);
+  background: color-mix(in srgb, var(--bg-panel-strong, var(--color-panel-bg)) 94%, transparent);
   border-bottom: 1px solid var(--color-card-stroke);
   backdrop-filter: blur(16px);
 }
@@ -440,22 +503,22 @@ function avatarLetter(name: string): string {
 .kinship-dialog__title p {
   margin: 0;
   color: var(--color-accent);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--text-label-12);
+  font-weight: 500;
   letter-spacing: 0.14em;
 }
 
 .kinship-dialog__title h2 {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: 24px; font-weight: 600;
-  color: var(--text-main, #3a3229);
+  font-size: var(--text-title-24); font-weight: 500;
+  color: var(--text-main, var(--color-neutral-9));
   letter-spacing: 0.03em;
 }
 
 .kinship-dialog__title span {
-  color: var(--text-soft, #a89880);
-  font-size: 12px;
+  color: var(--text-soft, var(--color-neutral-6));
+  font-size: var(--text-label-12);
   line-height: 1.55;
 }
 
@@ -497,7 +560,7 @@ function avatarLetter(name: string): string {
 
 .kinship-selector__label {
   display: block;
-  font-size: 11px; font-weight: 700;
+  font-size: var(--text-label-12); font-weight: 500;
   letter-spacing: 0.1em;
   color: var(--color-neutral-7);
   margin-bottom: 8px;
@@ -511,24 +574,24 @@ function avatarLetter(name: string): string {
 .kinship-selector__search-icon {
   position: absolute; left: 12px;
   width: 15px; height: 15px;
-  color: var(--text-soft, #a89880);
+  color: var(--text-soft, var(--color-neutral-6));
   pointer-events: none; z-index: 1;
 }
 
 .kinship-selector__input {
   width: 100%;
   padding: 10px 12px 10px 36px;
-  border: 1.5px solid var(--line-soft, rgba(122, 95, 65, 0.16));
+  border: 1.5px solid var(--line-soft, var(--color-card-stroke));
   border-radius: 12px;
-  font-size: 14px; font-family: inherit;
-  background: var(--bg-paper, rgba(255, 255, 252, 0.94));
-  color: var(--text-main, #3a3229);
+  font-size: var(--text-copy-14); font-family: inherit;
+  background: var(--bg-paper, var(--color-neutral-1));
+  color: var(--text-main, var(--color-neutral-9));
   outline: none;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 .kinship-selector__input:focus {
-  border-color: var(--accent-amber, rgba(145, 99, 49, 0.4));
-  box-shadow: 0 0 0 3px var(--line-soft, rgba(130, 99, 68, 0.1));
+  border-color: var(--accent-amber, var(--color-warning));
+  box-shadow: var(--shadow-ring);
 }
 
 /* ── Selected Person Card ── */
@@ -536,29 +599,29 @@ function avatarLetter(name: string): string {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 14px;
   border-radius: 14px;
-  border: 1.5px solid var(--line-soft, rgba(122, 95, 65, 0.16));
-  background: var(--bg-paper, white);
+  border: 1.5px solid var(--line-soft, var(--color-card-stroke));
+  background: var(--bg-paper, var(--color-neutral-1));
   cursor: pointer;
   transition: border-color 150ms;
 }
-.kinship-selected-person:hover { border-color: var(--accent-amber, rgba(169, 110, 53, 0.3)); }
+.kinship-selected-person:hover { border-color: var(--accent-amber, var(--color-warning)); }
 
 .kinship-selected-person__avatar {
   width: 40px; height: 40px; border-radius: 11px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px; font-weight: 500; flex-shrink: 0;
+  font-size: var(--text-copy-16); font-weight: 500; flex-shrink: 0;
 }
 
 .kinship-selected-person__info {
   display: flex; flex-direction: column; gap: 2px; min-width: 0;
 }
 .kinship-selected-person__name {
-  font-size: 15px; font-weight: 500;
-  color: var(--text-main, #3a3229);
+  font-size: var(--text-copy-15); font-weight: 500;
+  color: var(--text-main, var(--color-neutral-9));
   font-family: var(--font-serif);
 }
 .kinship-selected-person__meta {
-  font-size: 12px; color: var(--text-soft, #a89880);
+  font-size: var(--text-label-12); color: var(--text-soft, var(--color-neutral-6));
 }
 
 /* ── Avatar Colors ── */
@@ -568,39 +631,39 @@ function avatarLetter(name: string): string {
 /* ── Dropdown ── */
 .kinship-dropdown {
   position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-  background: var(--bg-panel-strong, #fffdf9);
-  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.14));
+  background: var(--bg-panel-strong, var(--color-panel-bg));
+  border: 1px solid var(--line-soft, var(--color-card-stroke));
   border-radius: 12px;
   max-height: 260px; overflow-y: auto;
   z-index: 10;
-  box-shadow: 0 12px 28px rgba(82, 57, 28, 0.1);
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
 }
 
 .kinship-dropdown__item {
   display: flex; align-items: center; gap: 10px;
   width: 100%; padding: 9px 14px;
   text-align: left; background: none; border: none;
-  font-size: 14px; font-family: inherit;
+  font-size: var(--text-copy-14); font-family: inherit;
   cursor: pointer; color: var(--text-main);
   transition: background 120ms ease;
 }
-.kinship-dropdown__item:hover { background: rgba(169, 110, 53, 0.06); }
+.kinship-dropdown__item:hover { background: var(--color-warning-muted); }
 .kinship-dropdown__item:first-child { border-radius: 12px 12px 0 0; }
 .kinship-dropdown__item:last-child { border-radius: 0 0 12px 12px; }
 
 .kinship-dropdown__avatar {
   width: 28px; height: 28px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 500; flex-shrink: 0;
+  font-size: var(--text-caption-10); font-weight: 500; flex-shrink: 0;
 }
 
 .kinship-dropdown__info { display: flex; flex-direction: column; gap: 1px; }
 .kinship-dropdown__name { color: var(--text-main); font-weight: 500; }
-.kinship-dropdown__meta { font-size: 11px; color: var(--text-soft); }
+.kinship-dropdown__meta { font-size: var(--text-caption-10); color: var(--text-soft); }
 
 .kinship-dropdown__empty {
   padding: 14px; text-align: center;
-  color: var(--text-soft); font-size: 13px;
+  color: var(--text-soft); font-size: var(--text-copy-13);
 }
 
 /* ── Swap Button ── */
@@ -608,16 +671,16 @@ function avatarLetter(name: string): string {
   flex-shrink: 0; margin-top: 19px;
   display: inline-flex; align-items: center; justify-content: center;
   width: 38px; height: 38px;
-  border: 1.5px solid var(--line-soft, rgba(122, 95, 65, 0.16));
+  border: 1.5px solid var(--line-soft, var(--color-card-stroke));
   border-radius: 12px;
-  background: var(--bg-paper, white);
+  background: var(--bg-paper, var(--color-neutral-1));
   cursor: pointer;
-  color: var(--text-soft, #a89880);
+  color: var(--text-soft, var(--color-neutral-6));
   transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .kinship-swap:hover {
-  border-color: var(--accent-amber, rgba(145, 99, 49, 0.35));
-  color: var(--accent-amber, #916331);
+  border-color: var(--accent-amber, var(--color-warning));
+  color: var(--accent-amber, var(--color-warning));
   transform: scale(1.06);
 }
 
@@ -630,9 +693,9 @@ function avatarLetter(name: string): string {
 }
 
 .kinship-path-section__label {
-  font-size: 11px; font-weight: 500; text-transform: uppercase;
+  font-size: var(--text-label-12); font-weight: 500; text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-soft, #a89880);
+  color: var(--text-soft, var(--color-neutral-6));
   margin-bottom: 12px;
 }
 
@@ -641,7 +704,7 @@ function avatarLetter(name: string): string {
   gap: 0; padding: 16px 12px;
   background: color-mix(in srgb, var(--color-neutral-2) 58%, transparent);
   border-radius: 14px;
-  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.12));
+  border: 1px solid var(--line-soft, var(--color-card-stroke));
   overflow-x: auto;
 }
 
@@ -653,47 +716,51 @@ function avatarLetter(name: string): string {
 .kinship-path-node__avatar {
   width: 36px; height: 36px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 500;
+  font-size: var(--text-copy-13); font-weight: 500;
 }
 
 .kinship-path-node__name {
-  font-size: 11px; font-weight: 500; color: var(--text-sub, #6b5e4e);
+  font-size: var(--text-label-12); font-weight: 500; color: var(--text-sub, var(--color-neutral-7));
   max-width: 64px; text-align: center; line-height: 1.3;
 }
 
 .kinship-path-node__tag {
   position: absolute; top: -6px;
-  font-size: 9px; font-weight: 500; letter-spacing: 0.05em;
+  font-size: var(--text-caption-10); font-weight: 500; letter-spacing: 0.05em;
   padding: 1px 6px; border-radius: 8px;
   white-space: nowrap;
 }
 .kinship-path-node__tag--a { background: var(--color-male-muted); color: var(--color-male); right: 50%; transform: translateX(50%); }
 .kinship-path-node__tag--b { background: var(--color-female-muted); color: var(--color-female); right: 50%; transform: translateX(50%); }
 .kinship-path-node__tag--ancestor { background: var(--color-warning-muted); color: var(--color-warning); }
+.kinship-path-node__tag--spouse { background: var(--color-error-muted); color: var(--color-error); }
 
 .kinship-path-node--endpoint .kinship-path-node__avatar {
-  box-shadow: 0 0 0 2.5px var(--accent-amber, #916331), 0 2px 8px rgba(180, 130, 60, 0.25);
+  outline: 2.5px solid var(--accent-amber, var(--color-warning));
+  outline-offset: 1px;
 }
 .kinship-path-node--endpoint .kinship-path-node__name {
-  color: var(--accent-amber, #916331); font-weight: 500;
+  color: var(--accent-amber, var(--color-warning)); font-weight: 500;
 }
 .kinship-path-node--ancestor .kinship-path-node__avatar {
-  box-shadow: 0 0 0 2.5px rgba(180, 130, 60, 0.5);
+  outline: 2.5px solid var(--color-warning-muted);
+  outline-offset: 1px;
 }
 
 .kinship-path-node--spouse .kinship-path-node__avatar {
-  box-shadow: 0 0 0 2.5px rgba(196, 122, 90, 0.5);
-  border: 2px dashed rgba(196, 122, 90, 0.4);
+  outline: 2.5px solid var(--color-error-muted);
+  outline-offset: 1px;
+  border: 2px dashed var(--color-error);
 }
 
 .kinship-path-edge {
   flex-shrink: 0; padding: 0 4px;
-  color: var(--text-soft, #c4b8a6);
+  color: var(--text-soft, var(--color-neutral-6));
 }
 
 .kinship-path-desc {
   margin-top: 12px;
-  font-size: 13px; color: var(--text-sub, #6b5e4e);
+  font-size: var(--text-copy-13); color: var(--text-sub, var(--color-neutral-7));
   text-align: center; line-height: 1.7;
 }
 
@@ -711,8 +778,8 @@ function avatarLetter(name: string): string {
 }
 
 .kinship-result__who {
-  font-size: 15px; color: var(--text-sub, #6b5e4e);
-  margin-bottom: 16px; display: flex;
+  font-size: var(--text-copy-15); color: var(--text-sub, var(--color-neutral-7));
+  margin-bottom: 12px; display: flex;
   align-items: center; justify-content: center;
   gap: 6px; flex-wrap: wrap;
 }
@@ -720,24 +787,24 @@ function avatarLetter(name: string): string {
 .kinship-result__who-a,
 .kinship-result__who-b {
   font-family: var(--font-serif);
-  font-weight: 500; font-size: 17px;
-  color: var(--text-main, #3a3229);
+  font-weight: 500; font-size: var(--text-copy-16);
+  color: var(--text-main, var(--color-neutral-9));
 }
 
 .kinship-result__who-label {
-  color: var(--text-soft, #a89880);
+  color: var(--text-soft, var(--color-neutral-6));
 }
 
 .kinship-result__term {
   font-family: var(--font-serif);
-  font-size: 48px; font-weight: 600;
+  font-size: var(--text-display-48); font-weight: 500;
   color: var(--color-accent);
   letter-spacing: 0.08em; line-height: 1.1;
 }
 
 .kinship-result__desc {
   margin-top: 8px;
-  font-size: 14px; color: var(--text-soft, #a89880);
+  font-size: var(--text-copy-14); color: var(--text-soft, var(--color-neutral-6));
 }
 
 .kinship-result__chips {
@@ -748,33 +815,85 @@ function avatarLetter(name: string): string {
 .kinship-chip {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 5px 12px; border-radius: 20px;
-  font-size: 12px; font-weight: 500;
-  background: rgba(124, 98, 69, 0.06);
-  color: var(--text-sub, #6b5e4e);
+  font-size: var(--text-label-12); font-weight: 500;
+  background: var(--color-neutral-2);
+  color: var(--text-sub, var(--color-neutral-7));
 }
 
 .chip--inlaw {
-  background: rgba(196, 122, 90, 0.1);
-  color: #a8624a;
+  background: var(--color-error-muted);
+  color: var(--color-error);
 }
 
 /* ── Detail Toggle ── */
-.kinship-detail-toggle {
-  margin-top: 24px; text-align: left;
-  border-top: 1px solid var(--line-soft, rgba(124, 98, 69, 0.1));
+/* ── Term Coverage ── */
+.kinship-coverage {
+  order: 4;
+  margin-top: 16px;
   padding-top: 14px;
+  border-top: 1px solid var(--color-card-stroke);
 }
-.kinship-detail-toggle summary {
-  font-size: 12px; font-weight: 500; color: var(--text-soft);
-  cursor: pointer; user-select: none;
-  display: inline-block;
+
+.kinship-coverage__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  color: var(--text-sub, var(--color-neutral-7));
+  font-size: var(--text-label-12);
+  font-weight: 500;
+  list-style: none;
 }
-.kinship-detail-toggle summary:hover { color: var(--text-sub); }
-.kinship-detail-text {
-  margin-top: 10px; font-size: 13px; color: var(--text-sub);
-  line-height: 1.8; padding: 10px 14px;
-  background: rgba(124, 98, 69, 0.03);
-  border-radius: 10px;
+
+.kinship-coverage__summary::-webkit-details-marker {
+  display: none;
+}
+
+.kinship-coverage__summary strong {
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-8);
+  font-size: var(--text-label-12);
+  font-weight: 500;
+}
+
+.kinship-coverage__groups {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.kinship-coverage__group {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-neutral-2) 52%, transparent);
+}
+
+.kinship-coverage__group h3 {
+  margin: 0;
+  color: var(--text-main, var(--color-neutral-9));
+  font-size: var(--text-label-12);
+  font-weight: 500;
+}
+
+.kinship-coverage__terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kinship-coverage__terms span {
+  padding: 2px 7px;
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-1);
+  color: var(--text-sub, var(--color-neutral-7));
+  font-size: var(--text-label-12);
+  line-height: var(--leading-label);
 }
 
 /* ── Empty State ── */
@@ -784,7 +903,7 @@ function avatarLetter(name: string): string {
 }
 .kinship-empty__icon { margin-bottom: 14px; }
 .kinship-empty p {
-  font-size: 14px; color: var(--text-soft, #a89880);
+  font-size: var(--text-copy-14); color: var(--text-soft, var(--color-neutral-6));
   margin: 0;
 }
 
@@ -809,7 +928,7 @@ function avatarLetter(name: string): string {
   .kinship-selectors { flex-direction: column; }
   .kinship-swap { transform: rotate(90deg); margin-top: 8px; align-self: center; }
   .kinship-swap:hover { transform: rotate(90deg) scale(1.06); }
-  .kinship-result__term { font-size: 36px; }
+  .kinship-result__term { font-size: var(--text-display-36); }
 }
 
 @media (prefers-reduced-motion: reduce) {

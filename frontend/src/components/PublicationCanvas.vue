@@ -137,17 +137,27 @@ let inertiaRafId: number | null = null
 let pinchMidX = 0
 let pinchMidY = 0
 
+onBeforeUnmount(() => {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null }
+  if (inertiaRafId !== null) { cancelAnimationFrame(inertiaRafId); inertiaRafId = null }
+})
+
 const MINIMAP_WIDTH = 220
 const MINIMAP_HEIGHT = 164
 const DRAG_SELECT_THRESHOLD = 5
 
-const MINIMAP_COLORS = {
-  male: '#5b6e8a',
-  female: '#c47a5a',
-  unknown: '#b5a99a',
-  hovered: '#8f5f35',
-  selected: '#d4a853',
+function resolveCssVar(varName: string, fallback: string): string {
+  if (typeof document === 'undefined') return fallback
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback
 }
+
+const MINIMAP_COLORS = computed(() => ({
+  male: resolveCssVar('--color-male', '#5b6e8a'),
+  female: resolveCssVar('--color-female', '#c47a5a'),
+  unknown: resolveCssVar('--color-neutral-6', '#b5a99a'),
+  hovered: resolveCssVar('--color-warning', '#8f5f35'),
+  selected: resolveCssVar('--color-accent', '#d4a853'),
+}))
 
 const stageStyle = computed(() => ({
   width: `${props.layout.width * props.settings.zoom}px`,
@@ -162,11 +172,13 @@ const viewportStyle = computed(() => ({
 }))
 
 const cameraStyle = computed(() => ({
+  left: '50%',
+  top: '50%',
   transform: `translate3d(calc(-50% + ${props.panX}px), calc(-50% + ${props.panY}px), 0)`,
 }))
 
 const minimapData = computed(() => {
-  const padding = 12
+  const padding = 16
   const scale = Math.min((MINIMAP_WIDTH - padding * 2) / props.layout.width, (MINIMAP_HEIGHT - padding * 2) / props.layout.height)
   const paperWidth = props.layout.width * scale
   const paperHeight = props.layout.height * scale
@@ -217,11 +229,11 @@ function drawMinimapCanvas() {
       const isHovered = card.personId === props.hoveredPersonId
 
       if (isSelected) {
-        ctx.fillStyle = MINIMAP_COLORS.selected
+        ctx.fillStyle = MINIMAP_COLORS.value.selected
       } else if (isHovered) {
-        ctx.fillStyle = MINIMAP_COLORS.hovered
+        ctx.fillStyle = MINIMAP_COLORS.value.hovered
       } else {
-        ctx.fillStyle = person?.gender === 'female' ? MINIMAP_COLORS.female : person?.gender === 'male' ? MINIMAP_COLORS.male : MINIMAP_COLORS.unknown
+        ctx.fillStyle = person?.gender === 'female' ? MINIMAP_COLORS.value.female : person?.gender === 'male' ? MINIMAP_COLORS.value.male : MINIMAP_COLORS.value.unknown
       }
 
       const x = (card.x + card.width / 2) * scale
@@ -234,7 +246,7 @@ function drawMinimapCanvas() {
 }
 
 watch(
-  () => [props.layout.cards, props.selectedPersonId, props.hoveredPersonId, minimapData.value.scale],
+  () => [props.layout.cards, props.selectedPersonId, props.hoveredPersonId, minimapData.value.scale, MINIMAP_COLORS.value],
   () => {
     drawMinimapCanvas()
   },
@@ -514,8 +526,14 @@ function resetView() {
     setPan(0, 0)
     return
   }
-  // 找到始祖（y 最小的卡片）并居中到屏幕正中央
-  const rootCard = props.layout.cards.reduce((min, card) => card.y < min.y ? card : min)
+  const focusFamily = props.publication.families[props.publication.focusFamilyId]
+  const rootPersonId = focusFamily?.adults.find((adultId) => Boolean(adultId))
+  const rootCard =
+    (rootPersonId ? props.layout.cards.find((card) => card.personId === rootPersonId) : undefined) ??
+    props.layout.cards.reduce((min, card) => {
+      if (card.y !== min.y) return card.y < min.y ? card : min
+      return card.x < min.x ? card : min
+    })
   const cx = rootCard.x + rootCard.width / 2
   const cy = rootCard.y + rootCard.height / 2
   setPan(
@@ -554,7 +572,7 @@ function resetView() {
         >
           <defs>
             <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#6d4f31" flood-opacity="0.18" />
+              <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="var(--color-shadow, #6d4f31)" flood-opacity="0.18" />
             </filter>
             <!-- Ou Grid Pattern -->
             <pattern v-if="isOu" id="ou-grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -597,7 +615,7 @@ function resetView() {
               :selected="card.personId === selectedPersonId"
               :hovered="card.personId === hoveredPersonId"
               :subdued="Boolean((selectedPersonId || hoveredPersonId) && card.personId !== selectedPersonId && card.personId !== hoveredPersonId)"
-              :kinshipNote="kinshipNotes?.[card.personId] ?? null"
+              :kinshipNote="card.personId === hoveredPersonId && relationshipToSelected ? relationshipToSelected.term + (relationshipToSelected.description ? ' · ' + relationshipToSelected.description : '') : kinshipNotes?.[card.personId] ?? null"
               @select="handleSelect"
               @hover="handleHoverPerson"
             />
@@ -678,19 +696,8 @@ function resetView() {
   pointer-events: none;
 }
 
-.canvas-viewport::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 180ms ease;
-}
-
 .canvas-viewport--dragging {
-  cursor: default;
+  cursor: grabbing;
   user-select: none;
 }
 
@@ -702,11 +709,11 @@ function resetView() {
 
 .canvas-minimap {
   position: absolute;
-  right: 18px;
-  bottom: 18px;
+  right: 16px;
+  bottom: 16px;
   z-index: 26;
   width: 220px;
-  padding: 12px;
+  padding: 16px;
   border-radius: 20px;
   background: var(--minimap-bg);
   border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.16));
@@ -720,7 +727,7 @@ function resetView() {
   justify-content: space-between;
   gap: 10px;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .canvas-minimap__header span {

@@ -150,7 +150,7 @@ defineProps<{
   border-radius: 28px;
   min-height: 700px;
   overflow: hidden;
-  border: 1px solid rgba(104, 88, 73, 0.12);
+  border: 1px solid var(--color-card-stroke);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.55),
     0 28px 44px rgba(72, 49, 25, 0.08);
@@ -186,7 +186,7 @@ defineProps<{
   gap: 12px;
   align-items: center;
   padding: 18px 20px;
-  border-bottom: 1px solid rgba(108, 92, 77, 0.08);
+  border-bottom: 1px solid var(--color-card-stroke);
 }
 
 .direction-preview--compact .prototype-topbar {
@@ -207,9 +207,9 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #b84b3b;
-  color: #fff7f2;
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  font-family: var(--font-serif);
   font-size: 20px;
   font-weight: 600;
   flex-shrink: 0;
@@ -222,7 +222,7 @@ defineProps<{
 }
 
 .prototype-brand__copy strong {
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 22px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -236,7 +236,7 @@ defineProps<{
 .drawer-head span,
 .activity-toast__meta {
   font-size: 12px;
-  color: #7f7267;
+  color: var(--color-neutral-6);
 }
 
 .prototype-actions {
@@ -252,16 +252,16 @@ defineProps<{
   align-items: center;
   padding: 7px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(108, 92, 77, 0.12);
-  background: rgba(255, 252, 247, 0.76);
+  border: 1px solid var(--color-card-stroke);
+  background: var(--color-card-fill);
   font-size: 12px;
-  color: #574c42;
+  color: var(--color-neutral-8);
 }
 
 .action-chip--strong {
-  background: #b84b3b;
-  border-color: #b84b3b;
-  color: #fff7f2;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-text-on-accent);
 }
 
 .prototype-body {
@@ -277,8 +277,8 @@ defineProps<{
 
 .prototype-rail {
   padding: 16px 12px;
-  border-right: 1px solid rgba(108, 92, 77, 0.08);
-  background: rgba(255, 255, 255, 0.34);
+  border-right: 1px solid var(--color-card-stroke);
+  background: var(--color-card-fill);
 }
 
 .prototype-rail--collab {
@@ -298,7 +298,7 @@ defineProps<{
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #9d8876;
+  color: var(--color-neutral-5);
 }
 
 .rail-pills,
@@ -318,9 +318,9 @@ defineProps<{
   height: 26px;
   padding: 0 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.76);
+  background: var(--color-card-fill);
   font-size: 11px;
-  color: #56483e;
+  color: var(--color-neutral-8);
 }
 
 .avatar-stack span {
@@ -335,7 +335,7 @@ defineProps<{
   gap: 8px;
   font-size: 11px;
   line-height: 1.6;
-  color: #6f6358;
+  color: var(--color-neutral-7);
 }
 
 .prototype-canvas {
@@ -437,7 +437,7 @@ defineProps<{
 .activity-toast {
   position: absolute;
   border-radius: 18px;
-  border: 1px solid rgba(108, 92, 77, 0.12);
+  border: 1px solid var(--color-card-stroke);
   box-shadow: 0 18px 28px rgba(72, 49, 25, 0.08);
 }
 
@@ -446,7 +446,7 @@ defineProps<{
   right: 24px;
   width: 240px;
   padding: 16px 18px;
-  background: rgba(255, 249, 238, 0.88);
+  background: var(--color-card-fill);
 }
 
 .direction-preview--compact .floating-note {
@@ -461,17 +461,17 @@ defineProps<{
 .drawer-head strong,
 .activity-toast__title {
   display: block;
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 18px;
   font-weight: 600;
-  color: #2c241d;
+  color: var(--color-neutral-10);
 }
 
 .floating-note p {
   margin: 8px 0 0;
   font-size: 12px;
   line-height: 1.7;
-  color: #6d6155;
+  color: var(--color-neutral-7);
 }
 
 .focus-band {
@@ -481,7 +481,7 @@ defineProps<{
   gap: 4px;
   min-width: 220px;
   padding: 16px 18px;
-  background: rgba(255, 252, 247, 0.9);
+  background: var(--color-card-fill);
 }
 
 .direction-preview--compact .focus-band {
@@ -494,7 +494,7 @@ defineProps<{
 .focus-band span,
 .focus-band em {
   font-size: 12px;
-  color: #786b60;
+  color: var(--color-neutral-6);
   font-style: normal;
 }
 
@@ -503,7 +503,7 @@ defineProps<{
   bottom: 20px;
   width: 220px;
   padding: 14px 16px;
-  background: rgba(245, 250, 250, 0.92);
+  background: var(--color-card-fill);
 }
 
 .direction-preview--compact .activity-toast {
@@ -520,8 +520,8 @@ defineProps<{
   width: 164px;
   height: 136px;
   border-radius: 22px;
-  border: 1px solid rgba(108, 92, 77, 0.12);
-  background: rgba(255, 253, 248, 0.76);
+  border: 1px solid var(--color-card-stroke);
+  background: var(--color-card-fill);
   backdrop-filter: blur(8px);
 }
 
@@ -540,13 +540,13 @@ defineProps<{
   position: absolute;
   inset: 16px;
   border-radius: 12px;
-  border: 1px dashed rgba(184, 75, 59, 0.36);
+  border: 1px dashed var(--color-accent-ghost);
 }
 
 .prototype-drawer {
   padding: 18px 16px;
-  border-left: 1px solid rgba(108, 92, 77, 0.08);
-  background: rgba(255, 252, 247, 0.72);
+  border-left: 1px solid var(--color-card-stroke);
+  background: var(--color-card-fill);
 }
 
 .direction-preview--compact .prototype-drawer {
@@ -554,7 +554,7 @@ defineProps<{
 }
 
 .prototype-drawer--collab {
-  background: rgba(250, 253, 252, 0.74);
+  background: var(--color-card-fill);
 }
 
 .drawer-head {
@@ -570,9 +570,9 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(184, 75, 59, 0.1);
-  color: #8f3d34;
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
+  background: var(--color-accent-ghost);
+  color: var(--color-accent-deep);
+  font-family: var(--font-serif);
   font-size: 20px;
   font-weight: 600;
 }
@@ -590,8 +590,8 @@ defineProps<{
 .field-box,
 .comment-block {
   border-radius: 14px;
-  border: 1px solid rgba(108, 92, 77, 0.1);
-  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--color-card-stroke);
+  background: var(--color-card-fill);
 }
 
 .field-box {
@@ -606,7 +606,7 @@ defineProps<{
   margin: 6px 0 0;
   font-size: 12px;
   line-height: 1.7;
-  color: #65594f;
+  color: var(--color-neutral-7);
 }
 
 @media (max-width: 980px) {
@@ -622,7 +622,7 @@ defineProps<{
   .prototype-rail,
   .prototype-drawer {
     border: none;
-    border-top: 1px solid rgba(108, 92, 77, 0.08);
+    border-top: 1px solid var(--color-card-stroke);
   }
 
   .prototype-canvas {

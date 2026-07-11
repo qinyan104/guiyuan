@@ -12,6 +12,11 @@ export interface KinshipTerm {
   isElder: boolean
 }
 
+export interface KinshipTermGroup {
+  label: string
+  terms: string[]
+}
+
 export interface KinshipPath {
   path: string[]
   commonAncestorId: string
@@ -108,15 +113,26 @@ function buildGraph(publication: PublicationData): KinshipGraph {
 }
 
 // Module-level cache: avoids rebuilding the graph on every kinship call.
-// Invalidates when publication.revision changes.
+// Invalidates when the people/families structure changes.
 let _cachedGraph: KinshipGraph | null = null
-let _cachedRevision = -1
+let _cachedFingerprint = ''
+
+function getDataFingerprint(pub: PublicationData): string {
+  const pids = Object.keys(pub.people).sort().join(',')
+  const fids = Object.keys(pub.families).sort().join(',')
+  return `${pids}|${fids}`
+}
+
+export function invalidateKinshipCache(): void {
+  _cachedGraph = null
+  _cachedFingerprint = ''
+}
 
 function getCachedGraph(publication: PublicationData): KinshipGraph {
-  const rev = publication.revision ?? 0
-  if (_cachedGraph && _cachedRevision === rev) return _cachedGraph
+  const fp = getDataFingerprint(publication)
+  if (_cachedGraph && _cachedFingerprint === fp) return _cachedGraph
   _cachedGraph = buildGraph(publication)
-  _cachedRevision = rev
+  _cachedFingerprint = fp
   return _cachedGraph
 }
 
@@ -277,6 +293,8 @@ const DIRECT_ELDER_PATRI: Record<string, TermEntry> = {
   "female_2": { term: "奶奶", description: "祖母" },
   "male_3": { term: "曾祖父", description: "曾祖父" },
   "female_3": { term: "曾祖母", description: "曾祖母" },
+  "male_4": { term: "高祖父", description: "高祖父" },
+  "female_4": { term: "高祖母", description: "高祖母" },
 }
 
 // Matrilineal direct line terms (母系直系)
@@ -287,6 +305,8 @@ const DIRECT_ELDER_MATRI: Record<string, TermEntry> = {
   "female_2": { term: "外婆", description: "外祖母" },
   "male_3": { term: "外曾祖父", description: "外曾祖父" },
   "female_3": { term: "外曾祖母", description: "外曾祖母" },
+  "male_4": { term: "外高祖父", description: "外高祖父" },
+  "female_4": { term: "外高祖母", description: "外高祖母" },
 }
 
 // Patrilineal direct line younger terms (父系直系晚辈)
@@ -297,6 +317,8 @@ const DIRECT_YOUNGER_PATRI: Record<string, TermEntry> = {
   "female_2": { term: "孙女", description: "孙女" },
   "male_3": { term: "曾孙", description: "曾孙" },
   "female_3": { term: "曾孙女", description: "曾孙女" },
+  "male_4": { term: "玄孙", description: "玄孙" },
+  "female_4": { term: "玄孙女", description: "玄孙女" },
 }
 
 // Matrilineal direct line younger terms (母系直系晚辈)
@@ -307,13 +329,17 @@ const DIRECT_YOUNGER_MATRI: Record<string, TermEntry> = {
   "female_2": { term: "外孙女", description: "外孙女" },
   "male_3": { term: "外曾孙", description: "外曾孙" },
   "female_3": { term: "外曾孙女", description: "外曾孙女" },
+  "male_4": { term: "外玄孙", description: "外玄孙" },
+  "female_4": { term: "外玄孙女", description: "外玄孙女" },
 }
 
 const SIBLING: Record<string, TermEntry> = {
   "male_older": { term: "哥哥", description: "亲哥哥" },
   "male_younger": { term: "弟弟", description: "亲弟弟" },
+  "male_unknown": { term: "兄弟", description: "亲兄弟" },
   "female_older": { term: "姐姐", description: "亲姐姐" },
   "female_younger": { term: "妹妹", description: "亲妹妹" },
+  "female_unknown": { term: "姐妹", description: "亲姐妹" },
 }
 
 const TANG_COUSIN: Record<string, TermEntry> = {
@@ -462,8 +488,10 @@ function resolveElderOneGeneration(
         }
       }
       // Not a direct sibling → 堂伯/堂叔
-      const entry = ELDER_1_TANG["male"]
-      if (entry) return { term: entry.term, description: entry.description, generationGap: 1, isElder: true }
+      const older = isOlderSibling(graph, personAId, alterConnectorId ?? "")
+      if (older === true) return { term: "堂叔", description: "父亲的堂弟", generationGap: 1, isElder: true }
+      if (older === false) return { term: "堂伯", description: "父亲的堂兄", generationGap: 1, isElder: true }
+      return { term: "堂伯叔", description: "父亲的堂兄弟", generationGap: 1, isElder: true }
     }
     // Fallback
     const older2 = isOlderSibling(graph, personAId, alterConnectorId ?? "")
@@ -695,13 +723,14 @@ const FEMALE_HUSBAND: Record<string, string> = {
   "姨妈": "姨父", "表姨": "表姨父", "姨": "姨父", "女儿": "女婿",
   "堂姐": "堂姐夫", "堂妹": "堂妹夫", "表姐": "表姐夫", "表妹": "表妹夫",
   "孙女": "孙女婿", "外孙女": "外孙女婿",
+  "玄孙女": "玄孙女婿", "外玄孙女": "外玄孙女婿",
 }
 
 /** Male-relative wife term map */
 const MALE_WIFE: Record<string, string> = {
   "哥哥": "嫂子", "弟弟": "弟媳", "叔叔": "婶婶", "舅舅": "舅妈", "表舅": "表舅妈",
-  "儿子": "儿媳", "孙子": "孙媳", "外孙": "外孙媳",
-  "伯父": "伯母", "伯": "伯母", "堂伯叔": "堂伯母",
+  "儿子": "儿媳", "孙子": "孙媳", "外孙": "外孙媳", "玄孙": "玄孙媳", "外玄孙": "外玄孙媳",
+  "伯父": "伯母", "伯": "伯母", "堂伯叔": "堂伯母", "堂伯": "堂伯母", "堂叔": "堂婶",
   "堂哥": "堂嫂", "堂弟": "堂弟媳", "表哥": "表嫂", "表弟": "表弟媳",
   "堂侄": "堂侄媳", "表侄": "表侄媳",
 }
@@ -751,8 +780,8 @@ function classifyInLaw(
 
     // Sibling-in-law
     const SIB_MAP: Record<string, { f: string; m: string }> = {
-      "哥哥": { f: "大伯", m: "大舅" }, "弟弟": { f: "小叔", m: "小舅" },
-      "姐姐": { f: "大姑", m: "大姨" }, "妹妹": { f: "小姑", m: "小姨" },
+      "哥哥": { f: "大伯", m: "大舅子" }, "弟弟": { f: "小叔", m: "小舅子" },
+      "姐姐": { f: "大姑子", m: "大姨子" }, "妹妹": { f: "小姑子", m: "小姨子" },
     }
     const sb = SIB_MAP[relTerm.term]
     if (sb) return { term: isWoman ? sb.f : sb.m, description: relTerm.description, generationGap: 0, isElder: relTerm.isElder }
@@ -816,7 +845,97 @@ export function findRelationshipPathExtended(
   if (conn && conn.spousesUsed.length > 0) return { isInLaw: true, inLawPath: { path: conn.path, spousesUsed: conn.spousesUsed } }
   return null
 }
+
+function uniqueTerms(terms: string[]): string[] {
+  return Array.from(new Set(terms.filter(Boolean)))
+}
+
+function tableTerms(table: Record<string, TermEntry>): string[] {
+  return Object.values(table).map((entry) => entry.term)
+}
+
+function termGroup(label: string, terms: string[]): KinshipTermGroup {
+  return { label, terms: uniqueTerms(terms) }
+}
+
+export function getSupportedKinshipTermGroups(): KinshipTermGroup[] {
+  return [
+    termGroup('直系长辈', [
+      ...tableTerms(DIRECT_ELDER_PATRI),
+      ...tableTerms(DIRECT_ELDER_MATRI),
+      '远祖',
+      '外远祖',
+    ]),
+    termGroup('直系晚辈', [
+      ...tableTerms(DIRECT_YOUNGER_PATRI),
+      ...tableTerms(DIRECT_YOUNGER_MATRI),
+      '远孙',
+      '外远孙',
+    ]),
+    termGroup('旁系长辈', [
+      ...tableTerms(PATERNAL_ELDER_1),
+      ...tableTerms(MATERNAL_ELDER_1),
+      ...tableTerms(ELDER_2),
+      ...tableTerms(ELDER_1_TANG),
+      ...tableTerms(ELDER_1_BIAO),
+      '伯父',
+      '叔叔',
+      '堂伯',
+      '堂叔',
+      '堂伯叔',
+      '父系长辈',
+      '母系长辈',
+      '堂祖辈',
+      '外祖辈',
+    ]),
+    termGroup('旁系同辈', [
+      ...tableTerms(SIBLING),
+      ...tableTerms(TANG_COUSIN),
+      ...tableTerms(BIAO_COUSIN),
+    ]),
+    termGroup('旁系晚辈', [
+      ...tableTerms(YOUNGER_1),
+      ...tableTerms(YOUNGER_1_TANG),
+      ...tableTerms(YOUNGER_1_BIAO),
+    ]),
+    termGroup('姻亲称谓', [
+      ...Object.values(FEMALE_HUSBAND),
+      ...Object.values(MALE_WIFE),
+      '丈夫',
+      '妻子',
+      '配偶',
+      '公公',
+      '婆婆',
+      '岳父',
+      '岳母',
+      '大伯',
+      '小叔',
+      '大姑子',
+      '小姑子',
+      '大舅子',
+      '小舅子',
+      '大姨子',
+      '小姨子',
+      '连襟',
+      '妯娌',
+      '亲家公',
+      '亲家母',
+      '亲家',
+      '姻亲',
+    ]),
+    termGroup('自身', ['本人']),
+  ]
+}
+
+export function getSupportedKinshipTerms(): string[] {
+  return uniqueTerms(getSupportedKinshipTermGroups().flatMap((group) => group.terms))
+}
+
 export function getKinshipLabel(publication: PublicationData, personAId: string, personBId: string): string {
   const result = resolveKinshipTerm(publication, personAId, personBId)
+  return result?.term ?? "未知关系"
+}
+export function getKinshipLabelExtended(publication: PublicationData, personAId: string, personBId: string): string {
+  const result = resolveKinshipTermExtended(publication, personAId, personBId)
   return result?.term ?? "未知关系"
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, onMounted, ref, toRef, watch } from 'vue'
 import type { KinshipTerm } from '../lib/kinship'
+import { useFocusTrap } from '../composables/useFocusTrap'
 import type { PublicationSettings } from '../types/family'
 import ValidationPanel from '../features/validation/ValidationPanel.vue'
 
@@ -51,6 +52,20 @@ const emit = defineEmits<{
   (event: 'update-settings', patch: Partial<PublicationSettings>): void
 }>()
 
+const validationDialogRef = ref<HTMLElement | null>(null)
+const validationOpenRef = toRef(props, 'validationOpen')
+
+function closeValidationDialog() {
+  emit('close-validation')
+}
+
+function handleValidationLocate(personId: string) {
+  closeValidationDialog()
+  emit('locate-person', personId)
+}
+
+useFocusTrap(validationDialogRef, validationOpenRef, closeValidationDialog)
+
 function updateSetting<K extends keyof PublicationSettings>(key: K, value: PublicationSettings[K]) {
   emit('update-settings', { [key]: value } as Partial<PublicationSettings>)
 }
@@ -71,12 +86,11 @@ function sliderFill(value: number, min: number, max: number): string {
 function onClickOutside(e: MouseEvent) {
   const target = e.target as Element | null
   if (!target) return
-  if (target.closest('.layout-panel') || target.closest('.history-panel') || target.closest('.validation-panel-section') || target.closest('.tool-btn--panel')) {
+  if (target.closest('.layout-panel') || target.closest('.history-panel') || target.closest('.validation-dialog-window') || target.closest('.tool-btn--panel')) {
     return
   }
   if (props.layoutPanelOpen) emit('close-layout')
   if (props.historyOpen) emit('close-history')
-  if (props.validationOpen) emit('close-validation')
 }
 
 onMounted(() => {
@@ -85,7 +99,16 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', onClickOutside, { capture: true })
+  document.body.style.overflow = ''
 })
+
+watch(
+  () => props.validationOpen,
+  (open) => {
+    document.body.style.overflow = open ? 'hidden' : ''
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -454,23 +477,38 @@ onBeforeUnmount(() => {
     </section>
   </Transition>
 
-  <Transition name="float-panel">
-    <section v-if="validationOpen" class="validation-panel-section floating-panel--left" @mousedown.stop>
-      <div class="floating-panel__header">
-        <div>
-          <p class="floating-panel__eyebrow">质量</p>
-          <h2>数据校验</h2>
-        </div>
-        <button class="floating-panel__close" type="button" @click="$emit('close-validation')" aria-label="关闭">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11" /><line x1="11" y1="3" x2="3" y2="11" /></svg>
-        </button>
+  <Teleport to="body">
+    <Transition name="validation-dialog">
+      <div v-if="validationOpen" class="validation-dialog-overlay" @click.self="closeValidationDialog">
+        <section
+          ref="validationDialogRef"
+          class="validation-dialog-window"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="validation-dialog-title"
+          tabindex="-1"
+          @click.stop
+          @mousedown.stop
+        >
+          <div class="validation-dialog-header">
+            <div>
+              <p class="validation-dialog-eyebrow">质量</p>
+              <h2 id="validation-dialog-title">数据校验</h2>
+            </div>
+            <button class="validation-dialog-close" type="button" @click="closeValidationDialog" aria-label="关闭">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11" /><line x1="11" y1="3" x2="3" y2="11" /></svg>
+            </button>
+          </div>
+          <div class="validation-dialog-body">
+            <ValidationPanel
+              :pubId="pubId"
+              @locate-person="handleValidationLocate"
+            />
+          </div>
+        </section>
       </div>
-      <ValidationPanel
-        :pubId="pubId"
-        @locate-person="$emit('locate-person', $event)"
-      />
-    </section>
-  </Transition>
+    </Transition>
+  </Teleport>
 
 </template>
 
@@ -899,6 +937,99 @@ onBeforeUnmount(() => {
 .floating-panel__close:active {
   transform: scale(0.96);
   transition-duration: 50ms;
+}
+
+.validation-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--color-overlay);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.validation-dialog-window {
+  width: min(640px, calc(100vw - 32px));
+  max-height: min(720px, calc(100dvh - 32px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-2xl);
+  background: var(--color-panel-bg);
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
+  outline: none;
+}
+
+.validation-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 14px;
+  border-bottom: 1px solid var(--color-card-stroke);
+  flex-shrink: 0;
+}
+
+.validation-dialog-eyebrow {
+  margin: 0 0 4px;
+  color: var(--color-accent);
+  font-size: var(--text-label-12);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: var(--leading-label);
+}
+
+.validation-dialog-header h2 {
+  margin: 0;
+  color: var(--color-neutral-10);
+  font-family: var(--font-serif);
+  font-size: var(--text-title-20);
+  font-weight: 600;
+  line-height: var(--leading-title);
+}
+
+.validation-dialog-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-neutral-6);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-breath),
+    color var(--duration-fast) var(--ease-breath),
+    transform var(--duration-fast) var(--ease-breath);
+}
+
+.validation-dialog-close:hover {
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-9);
+}
+
+.validation-dialog-close:active {
+  transform: scale(0.94);
+}
+
+.validation-dialog-body {
+  min-height: 0;
+  overflow: auto;
+}
+
+.validation-dialog-body :deep(.validation-panel) {
+  padding: 18px 20px 20px;
+}
+
+.validation-dialog-body :deep(.vp-findings) {
+  max-height: min(52vh, 420px);
+  padding-right: 4px;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1747,6 +1878,23 @@ onBeforeUnmount(() => {
     width: min(336px, calc(100vw - 24px));
   }
 
+  .validation-dialog-overlay {
+    padding: 12px;
+  }
+
+  .validation-dialog-window {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  .validation-dialog-header {
+    padding: 18px 18px 12px;
+  }
+
+  .validation-dialog-body :deep(.validation-panel) {
+    padding: 16px 18px 18px;
+  }
+
   .lp-overview__stats,
   .lp-toggles--grid {
     grid-template-columns: 1fr;
@@ -1814,5 +1962,37 @@ onBeforeUnmount(() => {
 .float-panel-leave-to {
   opacity: 0;
   transform: translateY(-12px) scale(0.97);
+}
+
+.validation-dialog-enter-active,
+.validation-dialog-leave-active {
+  transition: opacity var(--duration-panel) var(--ease-breath);
+}
+
+.validation-dialog-enter-active .validation-dialog-window,
+.validation-dialog-leave-active .validation-dialog-window {
+  transition:
+    opacity var(--duration-panel) var(--ease-breath),
+    transform var(--duration-panel) var(--ease-breath);
+}
+
+.validation-dialog-enter-from,
+.validation-dialog-leave-to {
+  opacity: 0;
+}
+
+.validation-dialog-enter-from .validation-dialog-window,
+.validation-dialog-leave-to .validation-dialog-window {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .validation-dialog-enter-active,
+  .validation-dialog-leave-active,
+  .validation-dialog-enter-active .validation-dialog-window,
+  .validation-dialog-leave-active .validation-dialog-window {
+    transition: none;
+  }
 }
 </style>

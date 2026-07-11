@@ -146,16 +146,16 @@ onMounted(() => {
 .selector-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: var(--z-critical);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
+  background: color-mix(in srgb, var(--color-neutral-10) 60%, transparent);
   backdrop-filter: blur(4px);
 }
 
 .selector-dialog {
-  background: var(--bg-panel-strong, #fdfaf6);
+  background: var(--bg-panel-strong, var(--color-neutral-1));
   width: 90vw;
   height: 90vh;
   border-radius: 16px;
@@ -163,13 +163,13 @@ onMounted(() => {
   flex-direction: column;
   overflow: hidden;
   box-shadow: var(--shadow-whisper);
-  border: 1px solid var(--line-soft, #e0d5c1);
+  border: 1px solid var(--line-soft, var(--color-neutral-4));
 }
 
 .selector-header {
   padding: 20px 24px;
-  background: var(--bg-panel, #fff);
-  border-bottom: 1px solid var(--line-soft, #eee);
+  background: var(--bg-panel, var(--color-neutral-1));
+  border-bottom: 1px solid var(--line-soft, var(--color-neutral-2));
 }
 
 .header-main {
@@ -182,13 +182,13 @@ onMounted(() => {
 .header-main h3 {
   margin: 0;
   font-size: 1.25rem;
-  color: var(--text-main, #333);
+  color: var(--text-main, var(--color-neutral-9));
 }
 
 .pub-title {
   font-size: 0.9rem;
-  color: var(--text-soft, #888);
-  background: var(--bg-paper, #f5f5f5);
+  color: var(--text-soft, var(--color-neutral-6));
+  background: var(--bg-paper, var(--color-neutral-2));
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -196,14 +196,14 @@ onMounted(() => {
 .header-hint {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--text-sub, #666);
+  color: var(--text-sub, var(--color-neutral-7));
 }
 
 .selector-content {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: var(--bg-shell, #fcf9f2);
+  background: var(--bg-shell, var(--color-neutral-1));
 }
 
 .state-placeholder {
@@ -213,13 +213,13 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-soft, #888);
+  color: var(--text-soft, var(--color-neutral-6));
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--line-soft, #f3f3f3);
+  border: 3px solid var(--line-soft, var(--color-neutral-2));
   border-top: 3px solid var(--accent-signal, #8b4513);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -238,8 +238,8 @@ onMounted(() => {
 
 .selector-footer {
   padding: 16px 24px;
-  background: var(--bg-panel, #fff);
-  border-top: 1px solid var(--line-soft, #eee);
+  background: var(--bg-panel, var(--color-neutral-1));
+  border-top: 1px solid var(--line-soft, var(--color-neutral-2));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -247,7 +247,7 @@ onMounted(() => {
 
 .selection-status {
   font-size: 0.95rem;
-  color: var(--text-sub, #555);
+  color: var(--text-sub, var(--color-neutral-7));
 }
 
 .selected-name {
@@ -270,17 +270,17 @@ onMounted(() => {
 }
 
 .action-btn.cancel {
-  background: var(--bg-paper, #f5f5f5);
-  color: var(--text-main, #666);
+  background: var(--bg-paper, var(--color-neutral-2));
+  color: var(--text-main, var(--color-neutral-7));
 }
 
 .action-btn.cancel:hover {
-  background: var(--bg-panel, #eee);
+  background: var(--bg-panel, var(--color-neutral-2));
 }
 
 .action-btn.confirm {
   background: var(--btn-primary-bg, #8b4513);
-  color: var(--btn-primary-color, #fff);
+  color: var(--btn-primary-color, var(--color-text-on-accent));
 }
 
 .action-btn.confirm:hover:not(:disabled) {

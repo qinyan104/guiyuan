@@ -193,7 +193,7 @@ const nextDirection = computed(() =>
 
 .detail-hero__title {
   margin: 0;
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: clamp(34px, 4.8vw, 58px);
   font-weight: 600;
   letter-spacing: 0.04em;
