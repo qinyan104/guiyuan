@@ -33,8 +33,8 @@ backend/vrain_py/
 release/.env
 
 # AI tool artifacts
-# AI tool artifacts
 .codex/
+.claude/
 .github/
 .superpowers/
 .antigravitycli/
@@ -53,3 +53,6 @@ tmp_*.cjs
 # Temp files
 backend/tmp-*.json
 index.html
+
+# Local debug output
+debug.log
