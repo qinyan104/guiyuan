@@ -20,6 +20,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
@@ -42,6 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
 @Import(WebConfig.class)
 @WithMockUser
+@TestPropertySource(properties = "app.photo.max-file-size-bytes=4")
 class PhotoControllerTest {
 
     @Autowired
@@ -131,6 +133,25 @@ class PhotoControllerTest {
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value("仅支持 JPG、PNG、GIF、WebP 格式的图片"));
 
+        verify(personRepository, never()).findByPublicationIdAndPersonId(any(), any());
+    }
+
+    @Test
+    void uploadPhotoTooLarge() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "photo.jpg", "image/jpeg", new byte[]{1, 2, 3, 4, 5});
+
+        mockMvc.perform(multipart("/api/photos")
+                .file(file)
+                .param("personId", "p1")
+                .param("publicationId", "10")
+                .requestAttr("currentUsername", "admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.containsString("图片大小不能超过")));
+
+        verify(userRepository, never()).findByUsername(any());
         verify(personRepository, never()).findByPublicationIdAndPersonId(any(), any());
     }
 

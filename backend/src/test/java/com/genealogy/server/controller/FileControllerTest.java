@@ -12,6 +12,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -22,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
 @Import(WebConfig.class)
 @WithMockUser
+@TestPropertySource(properties = "app.upload.max-file-size-bytes=4")
 public class FileControllerTest {
 
     @Autowired
@@ -82,6 +84,18 @@ public class FileControllerTest {
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value(
                         org.hamcrest.Matchers.containsString("不支持的文件格式")));
+    }
+
+    @Test
+    public void testUploadFileTooLarge() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "large.jpg", "image/jpeg", new byte[]{1, 2, 3, 4, 5});
+
+        mockMvc.perform(multipart("/api/upload").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.containsString("文件大小不能超过")));
     }
 
     @Test
