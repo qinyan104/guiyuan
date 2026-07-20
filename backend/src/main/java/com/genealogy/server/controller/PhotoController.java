@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,13 +46,16 @@ public class PhotoController {
     private final PersonRepository personRepository;
     private final UserRepository userRepository;
     private final PublicationAuthorizationService authorizationService;
+    private final long maxPhotoSizeBytes;
 
     public PhotoController(PhotoRepository photoRepository, PersonRepository personRepository,
-                           UserRepository userRepository, PublicationAuthorizationService authorizationService) {
+                           UserRepository userRepository, PublicationAuthorizationService authorizationService,
+                           @Value("${app.photo.max-file-size-bytes:10485760}") long maxPhotoSizeBytes) {
         this.photoRepository = photoRepository;
         this.personRepository = personRepository;
         this.userRepository = userRepository;
         this.authorizationService = authorizationService;
+        this.maxPhotoSizeBytes = maxPhotoSizeBytes;
     }
 
     private UserSubject resolveSubject(HttpServletRequest request) {
@@ -75,6 +79,10 @@ public class PhotoController {
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
             return ApiResponse.error("仅支持 JPG、PNG、GIF、WebP 格式的图片");
+        }
+
+        if (file.getSize() > maxPhotoSizeBytes) {
+            return ApiResponse.error("图片大小不能超过 " + formatMegabytes(maxPhotoSizeBytes));
         }
 
         UserSubject subject = resolveSubject(request);
@@ -137,5 +145,9 @@ public class PhotoController {
         photoRepository.delete(photo);
 
         return ApiResponse.success("删除成功", null);
+    }
+    private String formatMegabytes(long bytes) {
+        long megabytes = Math.max(1, bytes / (1024 * 1024));
+        return megabytes + "MB";
     }
 }

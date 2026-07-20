@@ -11,9 +11,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Set;
 import java.util.UUID;
 
@@ -31,9 +33,12 @@ public class FileController {
     );
 
     private final String uploadDir;
+    private final long maxFileSizeBytes;
 
-    public FileController(@Value("${app.upload.dir:uploads}") String uploadDir) {
+    public FileController(@Value("${app.upload.dir:uploads}") String uploadDir,
+                          @Value("${app.upload.max-file-size-bytes:26214400}") long maxFileSizeBytes) {
         this.uploadDir = new File(uploadDir).getAbsolutePath() + File.separator;
+        this.maxFileSizeBytes = maxFileSizeBytes;
     }
 
     @Operation(summary = "上传文件", description = "上传图片或PDF文件")
@@ -42,6 +47,10 @@ public class FileController {
                                           HttpServletRequest request) {
         if (file.isEmpty()) {
             return ApiResponse.error("文件不能为空");
+        }
+
+        if (file.getSize() > maxFileSizeBytes) {
+            return ApiResponse.error("文件大小不能超过 " + formatMegabytes(maxFileSizeBytes));
         }
 
         String originalFilename = file.getOriginalFilename();
@@ -67,7 +76,9 @@ public class FileController {
 
             String newFilename = UUID.randomUUID().toString() + extension;
             Path path = Paths.get(uploadDir + newFilename);
-            Files.write(path, file.getBytes());
+            try (InputStream inputStream = file.getInputStream()) {
+                Files.copy(inputStream, path, StandardCopyOption.REPLACE_EXISTING);
+            }
 
             String baseUrl = request.getScheme() + "://" + request.getServerName()
                     + ":" + request.getServerPort();
@@ -77,5 +88,9 @@ public class FileController {
         } catch (IOException e) {
             return ApiResponse.error("文件上传失败，请稍后重试");
         }
+    }
+    private String formatMegabytes(long bytes) {
+        long megabytes = Math.max(1, bytes / (1024 * 1024));
+        return megabytes + "MB";
     }
 }
