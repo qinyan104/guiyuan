@@ -476,25 +476,25 @@ watch(
 
 [data-theme="dark"] .app-shell {
   --workbench-shell-bg:
-    radial-gradient(circle at top, rgba(224, 112, 104, 0.12), transparent 24%),
-    linear-gradient(180deg, rgba(18, 18, 18, 0.98), rgba(12, 12, 12, 0.96));
-  --workbench-header-bg: rgba(24, 24, 24, 0.84);
-  --workbench-header-border: rgba(255, 255, 255, 0.08);
+    radial-gradient(circle at top, var(--color-accent-muted), transparent 24%),
+    linear-gradient(180deg, var(--color-neutral-1), #11100f);
+  --workbench-header-bg: var(--color-panel-glass-bg);
+  --workbench-header-border: var(--color-panel-glass-border);
   --workbench-header-shadow:
     0 18px 40px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --workbench-panel-bg: rgba(28, 28, 28, 0.8);
-  --workbench-panel-strong: rgba(38, 38, 38, 0.88);
-  --workbench-panel-muted: rgba(32, 32, 32, 0.82);
-  --workbench-line-soft: rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 var(--color-panel-glass-inset-shadow);
+  --workbench-panel-bg: rgba(22, 21, 19, 0.82);
+  --workbench-panel-strong: rgba(36, 34, 32, 0.9);
+  --workbench-panel-muted: rgba(24, 23, 21, 0.86);
+  --workbench-line-soft: var(--color-card-stroke);
   --workbench-text-main: var(--color-neutral-10);
   --workbench-text-sub: var(--color-neutral-8);
   --workbench-text-soft: var(--color-neutral-7);
-  --workbench-accent-strong: #e07068;
-  --workbench-accent-bg: linear-gradient(135deg, #9f463d, #e07068);
-  --glass-border-highlight: rgba(255, 255, 255, 0.12);
-  --glass-border-shadow: rgba(0, 0, 0, 0.3);
-  --bg-paper: rgba(40, 40, 40, 0.76);
+  --workbench-accent-strong: var(--color-accent);
+  --workbench-accent-bg: var(--color-accent-gradient);
+  --glass-border-highlight: var(--color-panel-glass-border);
+  --glass-border-shadow: var(--color-panel-glass-border-shadow);
+  --bg-paper: rgba(22, 21, 19, 0.76);
 }
 
 [data-theme="dark"] .app-shell::before {
@@ -503,16 +503,16 @@ watch(
 
 [data-theme="dark"] .editor-workspace {
   background:
-    linear-gradient(180deg, rgba(24, 24, 24, 0.9), rgba(15, 15, 15, 0.96)),
+    linear-gradient(180deg, rgba(22, 21, 19, 0.92), rgba(12, 12, 11, 0.96)),
     var(--workspace-bg);
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-card-stroke);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 var(--color-panel-glass-inset-shadow),
     0 24px 48px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .editor-workspace::after {
-  border-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-card-stroke);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 22%);
 }
 

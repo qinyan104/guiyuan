@@ -1906,6 +1906,27 @@ watch(
 [data-theme="dark"] .layout-panel,
 [data-theme="dark"] .history-panel {
   background: var(--color-panel-bg);
+  border-color: var(--color-card-stroke);
+}
+
+[data-theme="dark"] .lp-overview,
+[data-theme="dark"] .lp-surface,
+[data-theme="dark"] .lp-stat,
+[data-theme="dark"] .lp-color-row,
+[data-theme="dark"] .lp-toggle {
+  background: var(--color-neutral-2);
+  border-color: var(--color-card-stroke);
+  box-shadow: inset 0 1px 0 var(--color-panel-glass-inset-shadow);
+}
+
+[data-theme="dark"] .lp-section-icon,
+[data-theme="dark"] .lp-toggle--emphasis {
+  background: var(--color-accent-muted);
+  border-color: rgba(232, 93, 75, 0.18);
+}
+
+[data-theme="dark"] .lp-toggle:hover {
+  background: var(--color-neutral-3);
   border-color: var(--color-neutral-5);
 }
 

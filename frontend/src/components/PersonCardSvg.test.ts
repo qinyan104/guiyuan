@@ -44,4 +44,23 @@ describe('PersonCardSvg', () => {
     expect(nameStyle).toContain('font-size: 30px;')
     expect(nameStyle).toContain('fill: rgb(34, 68, 102);')
   })
+
+  it('uses a theme-aware compact name color for the default compact setting', () => {
+    const settings: PublicationSettings = {
+      ...defaultSettings,
+      showCard: false,
+    }
+
+    const wrapper = mount(PersonCardSvg, {
+      props: {
+        person,
+        card,
+        settings,
+        selected: false,
+      },
+    })
+
+    const nameStyle = wrapper.get('.person-card__name--compact').attributes('style')
+    expect(nameStyle).toContain('fill: var(--card-compact-name-fill, var(--card-name-fill, #1D1D1F));')
+  })
 })

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * 归源 · 全局基础样式 (Global Base)
  *
  * 替代旧版 style.css（67KB）。本文件只包含：
@@ -219,13 +219,13 @@ input[type="radio"] {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-whisper);
   border: 1px solid var(--color-card-stroke);
-  transition: box-shadow var(--duration-normal) var(--ease-breath),
-              transform var(--duration-normal) var(--ease-breath);
+  transition: box-shadow var(--duration-normal) var(--ease-spring-gentle),
+              transform var(--duration-normal) var(--ease-spring-gentle);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-ring);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
+  transform: translateY(-4px);
 }
 
 /* 按钮基础变体 */
@@ -234,38 +234,42 @@ input[type="radio"] {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 16px;
+  padding: 8px 18px;
   font-size: var(--text-copy-14);
   font-weight: 500;
   border-radius: var(--radius-md);
-  transition: all var(--duration-fast) var(--ease-breath);
+  transition: all var(--duration-normal) var(--ease-spring-gentle);
   white-space: nowrap;
   user-select: none;
   cursor: pointer;
 }
 
 .btn:active {
-  transform: scale(0.98);
-  transition-duration: 50ms;
+  transform: scale(0.97);
+  transition-duration: 80ms;
 }
 
 .btn--primary {
-  background: var(--color-accent);
-  color: #fff;
+  background: var(--color-accent-gradient);
+  color: var(--color-text-on-accent);
+  box-shadow: var(--shadow-accent);
 }
 
 .btn--primary:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
+  box-shadow: 0 8px 24px rgba(198, 60, 46, 0.22);
 }
 
 .btn--secondary {
-  background: var(--color-neutral-3);
+  background: var(--color-neutral-2);
   color: var(--color-neutral-9);
   border: 1px solid var(--color-neutral-5);
 }
 
 .btn--secondary:hover {
-  background: var(--color-neutral-4);
+  background: var(--color-neutral-3);
+  border-color: var(--color-neutral-6);
+  color: var(--color-neutral-10);
 }
 
 .btn--ghost {
@@ -274,7 +278,7 @@ input[type="radio"] {
 
 .btn--ghost:hover {
   background: var(--color-neutral-3);
-  color: var(--color-neutral-9);
+  color: var(--color-neutral-10);
 }
 
 .btn--danger {
@@ -283,7 +287,8 @@ input[type="radio"] {
 }
 
 .btn--danger:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
+  box-shadow: 0 8px 20px rgba(181, 61, 88, 0.18);
 }
 
 .btn--warning {
@@ -292,7 +297,8 @@ input[type="radio"] {
 }
 
 .btn--warning:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
+  box-shadow: 0 8px 20px rgba(180, 138, 68, 0.18);
 }
 
 .btn--success {
@@ -301,18 +307,20 @@ input[type="radio"] {
 }
 
 .btn--success:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
+  box-shadow: 0 8px 20px rgba(61, 127, 94, 0.18);
 }
 
 .btn--sm {
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-size: var(--text-label-12);
 }
 
 .btn:disabled {
-  opacity: 0.45;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
   filter: none;
+  box-shadow: none;
 }
 
 /* 标签 / 芯片 */
@@ -489,7 +497,7 @@ input[type="radio"] {
 
 [data-theme="dark"] {
   --color-card-fill: var(--color-neutral-2);
-  --color-card-stroke: rgba(255, 255, 255, 0.06);
+  --color-card-stroke: rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="dark"] ::selection {
@@ -528,49 +536,50 @@ input[type="radio"] {
 
 /* 琉璃卡片 — 主表面 */
 .card-glass {
-  background: rgba(249, 248, 245, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-bottom-color: rgba(168, 166, 159, 0.18);
+  background: var(--color-glass-bg);
+  border: 1px solid var(--color-glass-border-highlight);
+  border-bottom-color: var(--color-glass-border-shadow);
   border-radius: var(--radius-xl);
   box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.5) inset,
-    0 8px 32px rgba(36, 35, 31, 0.06),
-    0 2px 8px rgba(36, 35, 31, 0.04);
+    0 2px 0 var(--color-glass-inset-shadow) inset,
+    0 8px 32px var(--color-glass-shadow-deep),
+    0 2px 8px var(--color-glass-shadow-soft);
   backdrop-filter: blur(18px) saturate(120%);
   -webkit-backdrop-filter: blur(18px) saturate(120%);
-  transition: box-shadow var(--duration-normal) var(--ease-breath),
-              transform var(--duration-normal) var(--ease-breath);
+  transition: box-shadow var(--duration-normal) var(--ease-spring-gentle),
+              transform var(--duration-normal) var(--ease-spring-gentle);
 }
 
 .card-glass:hover {
+  transform: translateY(-2px);
   box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.5) inset,
-    0 12px 40px rgba(36, 35, 31, 0.1),
-    0 4px 12px rgba(36, 35, 31, 0.06);
+    0 2px 0 var(--color-glass-inset-shadow) inset,
+    0 12px 40px var(--color-glass-shadow-deep),
+    0 4px 12px var(--color-glass-shadow-soft);
 }
 
 /* 琉璃面板 — 更透明的浮层（对话框/弹出层） */
 .panel-glass {
-  background: rgba(249, 248, 245, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-bottom-color: rgba(168, 166, 159, 0.14);
+  background: var(--color-panel-glass-bg);
+  border: 1px solid var(--color-panel-glass-border);
+  border-bottom-color: var(--color-panel-glass-border-shadow);
   border-radius: var(--radius-xl);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.6) inset,
-    0 16px 48px rgba(36, 35, 31, 0.12),
-    0 4px 16px rgba(36, 35, 31, 0.06);
+    0 1px 0 var(--color-panel-glass-inset-shadow) inset,
+    0 16px 48px var(--color-panel-glass-shadow-deep),
+    0 4px 16px var(--color-panel-glass-shadow-soft);
   backdrop-filter: blur(24px) saturate(140%);
   -webkit-backdrop-filter: blur(24px) saturate(140%);
 }
 
 /* 琉璃暗色卡片 — 深底反光 */
 .card-glass-dark {
-  background: rgba(36, 35, 31, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-glass-dark-bg);
+  border: 1px solid var(--color-glass-dark-border);
   border-radius: var(--radius-xl);
   box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.06) inset,
-    0 8px 32px rgba(0, 0, 0, 0.2);
+    0 2px 0 var(--color-glass-dark-inset-shadow) inset,
+    0 8px 32px var(--color-glass-dark-shadow);
   backdrop-filter: blur(18px) saturate(120%);
   -webkit-backdrop-filter: blur(18px) saturate(120%);
   color: var(--color-neutral-1);
@@ -578,38 +587,7 @@ input[type="radio"] {
 
 /* 琉璃覆盖层 — 模态框遮罩 */
 .overlay-glass {
-  background: rgba(36, 35, 31, 0.25);
+  background: var(--color-glass-overlay);
   backdrop-filter: blur(8px) saturate(120%);
   -webkit-backdrop-filter: blur(8px) saturate(120%);
-}
-
-/* 暗色模式适配 */
-[data-theme="dark"] .card-glass {
-  background: rgba(30, 30, 30, 0.72);
-  border-color: rgba(255, 255, 255, 0.06);
-  box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.03) inset,
-    0 8px 32px rgba(0, 0, 0, 0.25);
-}
-
-[data-theme="dark"] .card-glass:hover {
-  box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.03) inset,
-    0 12px 40px rgba(0, 0, 0, 0.35);
-}
-
-[data-theme="dark"] .panel-glass {
-  background: rgba(30, 30, 30, 0.88);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 16px 48px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="dark"] .card-glass-dark {
-  background: rgba(20, 20, 20, 0.92);
-}
-
-[data-theme="dark"] .overlay-glass {
-  background: rgba(0, 0, 0, 0.5);
 }

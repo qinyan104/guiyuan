@@ -126,8 +126,17 @@ const nameFontSize = computed(() => {
   return 28 * props.settings.fontScale
 })
 
+const DEFAULT_COMPACT_NAME_COLOR = '#1D1D1F'
 const compactNameFontSize = computed(() => props.settings.compactNameSize)
-const compactNameColor = computed(() => props.settings.compactNameColor || '#1D1D1F')
+const compactNameColor = computed(() => {
+  const configuredColor = props.settings.compactNameColor?.trim()
+
+  if (!configuredColor || configuredColor.toLowerCase() === DEFAULT_COMPACT_NAME_COLOR.toLowerCase()) {
+    return `var(--card-compact-name-fill, var(--card-name-fill, ${DEFAULT_COMPACT_NAME_COLOR}))`
+  }
+
+  return configuredColor
+})
 const compactLineColor = computed(() => props.settings.compactLineColor || '#B5A99A')
 const compactNameStartY = computed(() => compactNameFontSize.value + 10)
 const compactNameStep = computed(() => {
@@ -802,8 +811,39 @@ function handleMouseLeave() {
   font-weight: 600;
 }
 
-.person-card--subdued {
-  opacity: 0.54;
+.person-card--subdued .person-card__panel,
+.person-card--subdued .person-card__header,
+.person-card--subdued .person-card__seal,
+.person-card--subdued .person-card__seal-mark,
+.person-card--subdued .person-card__note-pill,
+.person-card--subdued .person-card__detail-band,
+.person-card--subdued .person-card__lineage-pill,
+.person-card--subdued .person-card__drop-line,
+.person-card--subdued .person-card__knot-ring,
+.person-card--subdued .person-card__knot-core {
+  opacity: 0.58;
+}
+
+.person-card--subdued .person-card__status,
+.person-card--subdued .person-card__note,
+.person-card--subdued .person-card__detail,
+.person-card--subdued .person-card__lineage-text,
+.person-card--subdued .person-card__kinship--compact {
+  opacity: 0.72;
+}
+
+.person-card--subdued .person-card__name,
+.person-card--subdued .person-card__name--compact {
+  opacity: 1;
+}
+
+:global([data-theme="dark"] .person-card .person-card__name),
+:global([data-theme="dark"] .person-card .person-card__name--compact),
+:global([data-theme="dark"] .person-card--hovered .person-card__name),
+:global([data-theme="dark"] .person-card--hovered .person-card__name--compact),
+:global([data-theme="dark"] .person-card:hover .person-card__name--compact),
+:global([data-theme="dark"] .person-card--selected .person-card__name--compact) {
+  fill: #fff !important;
 }
 
 .person-card--ego .person-card__panel {

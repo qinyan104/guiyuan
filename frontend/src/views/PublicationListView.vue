@@ -631,7 +631,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   border-radius: 24px;
 }
 [data-theme="dark"] .delete-overlay {
-  background: rgba(20, 20, 20, 0.96);
+  background: var(--color-panel-bg);
 }
 .delete-overlay p {
   font-size: var(--text-copy-14);
@@ -710,7 +710,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 [data-theme="dark"] .glass-modal-overlay,
 [data-theme="dark"] .glass-modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-overlay);
 }
 
 .glass-sheet {
@@ -732,7 +732,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   max-height: 65vh;
 }
 [data-theme="dark"] .glass-sheet {
-  background: var(--color-neutral-2);
+  background: var(--color-panel-bg);
   border-color: var(--color-card-stroke);
 }
 

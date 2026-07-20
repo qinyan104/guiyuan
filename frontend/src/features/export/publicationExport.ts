@@ -53,7 +53,7 @@ const EXPORT_SVG_STYLE = `
   }
 
   .tree-lines line {
-    stroke: var(--tree-line-color, rgba(95, 73, 50, 0.88));
+    stroke: var(--tree-line-color, #000);
     stroke-width: 2.2;
     stroke-linecap: round;
   }

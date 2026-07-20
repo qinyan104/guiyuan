@@ -299,12 +299,12 @@ watch([() => props.person.birth, () => props.person.death], ([b, d]) => {
 :deep(.app-select__option.selected) { color:var(--color-accent); font-weight:600; }
 :deep(.app-select__option.selected::after) { background:var(--color-accent); }
 
-[data-theme="dark"] .ak-overlay { background:rgba(0,0,0,.42); }
-[data-theme="dark"] .ak-card { background:rgba(24,24,24,.94); border-color:rgba(255,255,255,.06); box-shadow:0 24px 64px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.04); }
-[data-theme="dark"] .ak-bar { border-bottom-color:rgba(255,255,255,.08); background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)); }
-[data-theme="dark"] .ak-left { border-right-color:rgba(255,255,255,.08); background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); }
-[data-theme="dark"] .ak-av { background:var(--color-neutral-3); border-color:rgba(255,255,255,.08); }
-[data-theme="dark"] .ak-context__chip { background:rgba(38,38,38,.88); border-color:rgba(255,255,255,.08); color:var(--color-neutral-8); }
+[data-theme="dark"] .ak-overlay { background:var(--color-overlay); }
+[data-theme="dark"] .ak-card { background:var(--color-panel-bg); border-color:var(--color-card-stroke); box-shadow:var(--shadow-whisper), var(--shadow-ring), inset 0 1px 0 var(--color-panel-glass-inset-shadow); }
+[data-theme="dark"] .ak-bar { border-bottom-color:var(--color-card-stroke); background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)); }
+[data-theme="dark"] .ak-left { border-right-color:var(--color-card-stroke); background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); }
+[data-theme="dark"] .ak-av { background:var(--color-neutral-3); border-color:var(--color-card-stroke); }
+[data-theme="dark"] .ak-context__chip { background:var(--color-neutral-3); border-color:var(--color-card-stroke); color:var(--color-neutral-8); }
 
 @media (max-width: 900px) {
   .ak-card { width:min(100vw - 20px, 860px); max-height:92vh; }

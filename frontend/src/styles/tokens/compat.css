@@ -45,6 +45,7 @@
   --card-panel-fill: var(--color-card-fill);
   --card-panel-stroke: var(--color-neutral-4);
   --card-name-fill: var(--color-neutral-10);
+  --card-compact-name-fill: var(--card-name-fill);
   --card-status-fill: var(--color-neutral-7);
   --card-detail-fill: var(--color-neutral-8);
   --card-inner-stroke: var(--color-neutral-4);
@@ -58,7 +59,7 @@
   --card-dark-color: var(--color-neutral-1);
 
   /* ── 树连线 ── */
-  --tree-line-color: var(--color-tree-line);
+  --tree-line-color: #000;
 
   /* ── 画布 ── */
   --canvas-grid-color: var(--color-canvas-grid);
@@ -151,15 +152,50 @@
    ═══════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] {
-  --card-dark-bg: var(--color-neutral-5);
-  --card-dark-color: var(--color-neutral-1);
-  --glass-input-bg: var(--color-neutral-3);
+  --bg-shell: var(--color-neutral-1);
+  --bg-panel: var(--color-neutral-2);
+  --bg-panel-strong: var(--color-neutral-3);
+  --bg-paper: var(--color-neutral-2);
+  --bg-hover: var(--color-neutral-3);
+  --bg-hover-light: var(--color-neutral-3);
+
+  --line-soft: var(--color-card-stroke);
+  --border-color: var(--color-card-stroke);
+  --divider: var(--color-card-stroke);
+  --tree-line-color: #fff;
+
+  --surface: var(--color-neutral-2);
+  --surface-alt: var(--color-neutral-3);
+
+  --card-panel-stroke: var(--color-card-stroke);
+  --card-name-fill: #fff;
+  --card-compact-name-fill: #fff;
+  --card-status-fill: var(--color-neutral-8);
+  --card-detail-fill: var(--color-neutral-9);
+  --card-inner-stroke: var(--color-card-stroke);
+  --card-header-fill: var(--color-neutral-3);
+  --card-dark-bg: var(--color-neutral-3);
+  --card-dark-color: var(--color-neutral-9);
+
+  --glass-bg: var(--color-glass-bg);
+  --glass-panel-bg: var(--color-panel-glass-bg);
+  --glass-border-highlight: var(--color-panel-glass-border);
+  --glass-border-shadow: var(--color-panel-glass-border-shadow);
+  --glass-brand-bg: var(--color-neutral-2);
+  --glass-form-bg: var(--color-neutral-2);
+  --glass-seal-bg: var(--color-neutral-3);
+  --glass-input-bg: var(--color-neutral-2);
   --glass-input-border: var(--color-neutral-5);
-  --glass-pill-bg: var(--color-neutral-4);
-  --danger-bg: rgba(224, 112, 104, 0.12);
-  --danger-border: rgba(224, 112, 104, 0.24);
-  --feedback-bg: rgba(126, 192, 154, 0.1);
-  --feedback-border: rgba(126, 192, 154, 0.22);
-  --feedback-error-bg: rgba(224, 112, 104, 0.1);
-  --feedback-error-border: rgba(224, 112, 104, 0.22);
+  --glass-pill-bg: var(--color-neutral-3);
+
+  --danger-bg: var(--color-error-muted);
+  --danger-border: rgba(220, 108, 133, 0.24);
+  --feedback-bg: var(--color-success-muted);
+  --feedback-border: rgba(99, 178, 135, 0.22);
+  --feedback-error-bg: var(--color-error-muted);
+  --feedback-error-border: rgba(220, 108, 133, 0.22);
+
+  --status-success-bg: var(--color-success-muted);
+  --status-warning-bg: var(--color-warning-muted);
+  --status-danger-bg: var(--color-error-muted);
 }

@@ -227,12 +227,16 @@ onBeforeUnmount(() => {
 
 [data-theme="dark"] .spatial-workspace,
 [data-theme="dark"] .spatial-workspace {
-  --glass-bg: var(--color-neutral-2);
-  --glass-border-highlight: var(--color-neutral-5);
-  --glass-border-shadow: var(--color-neutral-4);
+  --glass-bg: var(--color-panel-glass-bg);
+  --glass-border-highlight: var(--color-panel-glass-border);
+  --glass-border-shadow: var(--color-panel-glass-border-shadow);
   --glass-seal-bg: linear-gradient(135deg, var(--color-neutral-3), var(--color-neutral-2));
-  --glass-pill-bg: var(--color-neutral-4);
-  --glow-opacity: 0.05;
+  --glass-pill-bg: var(--color-neutral-3);
+  --glow-opacity: 0.04;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.025), transparent 28%),
+    linear-gradient(225deg, rgba(255, 255, 255, 0.018), transparent 32%),
+    var(--bg-shell);
 }
 
 /* ── Ambient Background ── */
@@ -499,7 +503,7 @@ onBeforeUnmount(() => {
 [data-theme="dark"] .user-profile-pill:hover,
 [data-theme="dark"] .user-profile-pill.is-open,
 [data-theme="dark"] .user-profile-pill.is-open {
-  background: rgba(255,255,255,0.08);
+  background: var(--color-neutral-3);
 }
 
 .avatar-ring {
@@ -528,7 +532,7 @@ onBeforeUnmount(() => {
 }
 [data-theme="dark"] .avatar-text {
   background: var(--color-neutral-3);
-  color: #fff;
+  color: var(--color-neutral-10);
 }
 
 .username {
@@ -564,9 +568,9 @@ onBeforeUnmount(() => {
 
 [data-theme="dark"] .user-popover,
 [data-theme="dark"] .user-popover {
-  background: var(--color-neutral-1);
-  border-color: var(--color-neutral-5);
-  box-shadow: var(--shadow-whisper);
+  background: var(--color-panel-glass-bg);
+  border-color: var(--color-panel-glass-border);
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
 }
 
 .popover-header {
@@ -620,11 +624,11 @@ onBeforeUnmount(() => {
 
 [data-theme="dark"] .menu-item:hover,
 [data-theme="dark"] .menu-item:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--color-neutral-3);
 }
 [data-theme="dark"] .menu-item.danger:hover,
 [data-theme="dark"] .menu-item.danger:hover {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--color-error-muted);
 }
 
 .menu-divider {

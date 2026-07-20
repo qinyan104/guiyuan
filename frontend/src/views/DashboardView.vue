@@ -367,8 +367,8 @@ async function handleCreateFromDashboard() {
 }
 
 [data-theme="dark"] .card-glass-panel {
-  background: rgba(30, 30, 30, 0.6);
-  border-color: rgba(255, 255, 255, 0.06);
+  background: var(--color-glass-bg);
+  border-color: var(--color-glass-border-highlight);
 }
 
 .hero-accent-line {
@@ -425,11 +425,15 @@ async function handleCreateFromDashboard() {
 
 /* Stat Box */
 .card-dark {
-  background: var(--color-neutral-8);
-  color: var(--color-card-fill);
+  background: var(--card-dark-bg, var(--color-neutral-8));
+  color: var(--card-dark-color, var(--color-card-fill));
   padding: 2rem;
   justify-content: space-between;
   border: none;
+}
+
+[data-theme="dark"] .card-dark {
+  border: 1px solid var(--color-card-stroke);
 }
 .stat-content {
   display: flex;
@@ -552,7 +556,7 @@ async function handleCreateFromDashboard() {
   z-index: 0;
 }
 [data-theme="dark"] .history-list::before {
-  background: rgba(255,255,255,0.1);
+  background: var(--color-card-stroke);
 }
 
 .history-item {
@@ -579,7 +583,7 @@ async function handleCreateFromDashboard() {
   transition: transform 0.2s;
 }
 [data-theme="dark"] .history-thread {
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.5);
+  box-shadow: 0 0 0 4px var(--color-card-fill);
 }
 
 .history-item:hover {
@@ -590,7 +594,7 @@ async function handleCreateFromDashboard() {
   transform: translateY(-50%) scale(1.5);
 }
 [data-theme="dark"] .history-item:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--color-neutral-3);
 }
 
 .history-time {
@@ -663,10 +667,10 @@ async function handleCreateFromDashboard() {
   border-style: solid;
 }
 [data-theme="dark"] .card-backup {
-  border-color: rgba(255,255,255,0.2);
+  border-color: var(--color-card-stroke);
 }
 [data-theme="dark"] .card-backup:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--color-neutral-3);
 }
 
 /* Loading State */
@@ -733,7 +737,7 @@ async function handleCreateFromDashboard() {
   text-align: center;
 }
 [data-theme="dark"] .error-card {
-  background: rgba(0,0,0,0.5);
+  background: var(--color-panel-bg);
   border-color: var(--color-error-ghost);
 }
 .error-icon {

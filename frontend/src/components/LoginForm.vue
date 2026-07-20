@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { reactive, ref } from 'vue'
 
 import { login, type LoginRequest } from '../api/auth'
@@ -162,7 +162,7 @@ async function onSubmit() {
   min-height: 540px;
   background: var(--color-card-fill);
   border-radius: var(--radius-2xl);
-  box-shadow: 0 8px 48px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03);
+  box-shadow: var(--shadow-whisper);
   border: 1px solid var(--color-card-stroke);
   overflow: hidden;
 }
@@ -185,7 +185,7 @@ async function onSubmit() {
   top: -30%; left: -20%;
   width: 140%; height: 160%;
   background: radial-gradient(ellipse at 60% 40%, var(--color-accent-muted) 0%, transparent 60%),
-              radial-gradient(ellipse at 30% 70%, rgba(168,166,159,0.06) 0%, transparent 50%);
+              radial-gradient(ellipse at 30% 70%, var(--bg-landing-vignette) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -218,12 +218,12 @@ async function onSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
-  color: #fff;
+  background: var(--color-accent-gradient);
+  color: var(--color-text-on-accent);
   font-family: var(--font-serif);
   font-size: var(--text-title-24);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-whisper);
+  box-shadow: var(--shadow-accent);
 }
 
 .logo-text {
@@ -326,7 +326,23 @@ async function onSubmit() {
   align-items: center;
   background: var(--color-neutral-1);
   background-image:
-    radial-gradient(ellipse at 80% 20%, rgba(196,58,49,0.03) 0%, transparent 50%);
+    radial-gradient(ellipse at 80% 20%, var(--bg-landing-glow) 0%, transparent 50%);
+}
+
+:global([data-theme="dark"] .brand-section) {
+  background: #181715;
+  border-right-color: rgba(255, 255, 255, 0.08);
+}
+
+:global([data-theme="dark"] .brand-section::before) {
+  background: radial-gradient(ellipse at 60% 40%, rgba(232, 93, 75, 0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 30% 70%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+}
+
+:global([data-theme="dark"] .form-section) {
+  background: #11100f;
+  background-image:
+    radial-gradient(ellipse at 80% 20%, rgba(232, 93, 75, 0.035) 0%, transparent 50%);
 }
 
 .form-wrapper {
@@ -500,14 +516,14 @@ async function onSubmit() {
   align-items: center;
   gap: 8px;
   padding: 14px;
-  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
-  color: #fff;
+  background: var(--color-accent-gradient);
+  color: var(--color-text-on-accent);
   border: none;
   border-radius: var(--radius-lg);
   font-size: var(--text-copy-15);
   font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(196, 58, 49, 0.1);
+  box-shadow: var(--shadow-accent);
   transition: filter var(--duration-fast) var(--ease-breath),
               transform var(--duration-fast) var(--ease-breath);
 }
@@ -540,8 +556,8 @@ async function onSubmit() {
 .error-banner {
   margin-top: 16px;
   padding: 12px 16px;
-  background: rgba(166, 73, 83, 0.1);
-  border: 1px solid rgba(166, 73, 83, 0.2);
+  background: var(--color-error-muted);
+  border: 1px solid var(--color-error);
   border-radius: var(--radius-md);
   color: var(--color-error);
   font-size: var(--text-copy-14);
