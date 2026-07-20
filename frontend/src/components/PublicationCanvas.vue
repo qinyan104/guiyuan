@@ -28,6 +28,7 @@ const emit = defineEmits<{
 
 const svgRef = ref<SVGSVGElement | null>(null)
 const viewportRef = ref<HTMLDivElement | null>(null)
+const cameraRef = ref<HTMLDivElement | null>(null)
 const minimapContainerRef = ref<HTMLDivElement | null>(null)
 const minimapCanvasRef = ref<HTMLCanvasElement | null>(null)
 const isDragging = ref(false)
@@ -114,9 +115,29 @@ const junctions = computed(() => {
 })
 
 
-function setPan(x: number, y: number) {
-  emit('update:panX', x)
-  emit('update:panY', y)
+function cameraTransform(x: number, y: number) {
+  return `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0)`
+}
+
+let localPanX = props.panX
+let localPanY = props.panY
+
+function applyLocalViewport() {
+  cameraRef.value?.style.setProperty('transform', cameraTransform(localPanX, localPanY))
+  viewportRef.value?.style.setProperty('--grid-offset-x', `${localPanX}px`)
+  viewportRef.value?.style.setProperty('--grid-offset-y', `${localPanY}px`)
+}
+
+function commitViewport() {
+  if (localPanX !== props.panX) emit('update:panX', localPanX)
+  if (localPanY !== props.panY) emit('update:panY', localPanY)
+}
+
+function setPan(x: number, y: number, commit = false) {
+  localPanX = x
+  localPanY = y
+  applyLocalViewport()
+  if (commit) commitViewport()
 }
 
 let pendingSelectPersonId = ''
@@ -174,8 +195,17 @@ const viewportStyle = computed(() => ({
 const cameraStyle = computed(() => ({
   left: '50%',
   top: '50%',
-  transform: `translate3d(calc(-50% + ${props.panX}px), calc(-50% + ${props.panY}px), 0)`,
+  transform: cameraTransform(props.panX, props.panY),
 }))
+
+watch(
+  () => [props.panX, props.panY],
+  () => {
+    localPanX = props.panX
+    localPanY = props.panY
+    applyLocalViewport()
+  },
+)
 
 const minimapData = computed(() => {
   const padding = 16
@@ -278,8 +308,8 @@ function getCardScreenPosition(personId: string) {
   const card = props.layout.cards.find((item) => item.personId === personId)
   if (!card) return null
   return {
-    x: (card.x + card.width / 2) * props.settings.zoom * CARD_TO_SCREEN_RATIO + props.panX,
-    y: (card.y + card.height / 2) * props.settings.zoom * CARD_TO_SCREEN_RATIO + props.panY,
+    x: (card.x + card.width / 2) * props.settings.zoom * CARD_TO_SCREEN_RATIO + localPanX,
+    y: (card.y + card.height / 2) * props.settings.zoom * CARD_TO_SCREEN_RATIO + localPanY,
   }
 }
 
@@ -293,14 +323,13 @@ function revealPerson(personId: string, options: RevealPersonOptions = {}) {
     layoutWidth: props.layout.width,
     layoutHeight: props.layout.height,
     zoom: props.settings.zoom,
-    panX: props.panX,
-    panY: props.panY,
+    panX: localPanX,
+    panY: localPanY,
     card,
     ...options,
   })
   if (!result.changed) return false
-  emit('update:panX', result.panX)
-  emit('update:panY', result.panY)
+  setPan(result.panX, result.panY, true)
   return true
 }
 
@@ -322,8 +351,8 @@ function handlePointerDown(event: PointerEvent) {
   isDragging.value = true
   dragStartX = event.clientX
   dragStartY = event.clientY
-  panStartX = props.panX
-  panStartY = props.panY
+  panStartX = localPanX
+  panStartY = localPanY
   lastMoveTime = 0
   velocityX = 0
   velocityY = 0
@@ -371,7 +400,10 @@ function startInertia() {
   cancelInertia()
   const vx = velocityX
   const vy = velocityY
-  if (Math.abs(vx) < INERTIA_STOP_THRESHOLD && Math.abs(vy) < INERTIA_STOP_THRESHOLD) return
+  if (Math.abs(vx) < INERTIA_STOP_THRESHOLD && Math.abs(vy) < INERTIA_STOP_THRESHOLD) {
+    commitViewport()
+    return
+  }
   let cvx = vx
   let cvy = vy
   function step() {
@@ -379,9 +411,10 @@ function startInertia() {
     cvy *= INERTIA_FRICTION
     if (Math.abs(cvx) < INERTIA_STOP_THRESHOLD && Math.abs(cvy) < INERTIA_STOP_THRESHOLD) {
       inertiaRafId = null
+      commitViewport()
       return
     }
-    setPan(props.panX + cvx, props.panY + cvy)
+    setPan(localPanX + cvx, localPanY + cvy)
     inertiaRafId = requestAnimationFrame(step)
   }
   inertiaRafId = requestAnimationFrame(step)
@@ -405,6 +438,8 @@ function finishDrag(event: PointerEvent) {
     handleSelect(selectPersonId)
   } else if (totalDrag > DRAG_SELECT_THRESHOLD) {
     startInertia()
+  } else {
+    commitViewport()
   }
 }
 
@@ -427,14 +462,13 @@ function handleWheel(event: WheelEvent) {
   const rect = viewportRef.value.getBoundingClientRect()
   const pointerX = event.clientX - rect.left
   const pointerY = event.clientY - rect.top
-  const worldX = props.layout.width / 2 + (pointerX - rect.width / 2 - props.panX) / currentZoom
-  const worldY = props.layout.height / 2 + (pointerY - rect.height / 2 - props.panY) / currentZoom
+  const worldX = props.layout.width / 2 + (pointerX - rect.width / 2 - localPanX) / currentZoom
+  const worldY = props.layout.height / 2 + (pointerY - rect.height / 2 - localPanY) / currentZoom
 
   const nextPanX = pointerX - rect.width / 2 - (worldX - props.layout.width / 2) * nextZoom
   const nextPanY = pointerY - rect.height / 2 - (worldY - props.layout.height / 2) * nextZoom
 
-  setPan(nextPanX, nextPanY)
-
+  setPan(nextPanX, nextPanY, true)
   emit('update-zoom', nextZoom)
 }
 
@@ -464,13 +498,13 @@ function handleTouchMove(event: TouchEvent) {
     const rect = viewportRef.value.getBoundingClientRect()
     const midX = pinchMidX - rect.left
     const midY = pinchMidY - rect.top
-    const worldX = props.layout.width / 2 + (midX - rect.width / 2 - props.panX) / props.settings.zoom
-    const worldY = props.layout.height / 2 + (midY - rect.height / 2 - props.panY) / props.settings.zoom
+    const worldX = props.layout.width / 2 + (midX - rect.width / 2 - localPanX) / props.settings.zoom
+    const worldY = props.layout.height / 2 + (midY - rect.height / 2 - localPanY) / props.settings.zoom
 
     const nextPanX = midX - rect.width / 2 - (worldX - props.layout.width / 2) * nextZoom
     const nextPanY = midY - rect.height / 2 - (worldY - props.layout.height / 2) * nextZoom
 
-    setPan(nextPanX, nextPanY)
+    setPan(nextPanX, nextPanY, true)
     emit('update-zoom', nextZoom)
   }
 }
@@ -519,11 +553,12 @@ function handleMinimapPointerUp(event: PointerEvent) {
   if (minimapContainerRef.value?.hasPointerCapture(event.pointerId)) {
     minimapContainerRef.value.releasePointerCapture(event.pointerId)
   }
+  commitViewport()
 }
 
 function resetView() {
   if (!props.layout.cards.length) {
-    setPan(0, 0)
+    setPan(0, 0, true)
     return
   }
   const focusFamily = props.publication.families[props.publication.focusFamilyId]
@@ -538,7 +573,8 @@ function resetView() {
   const cy = rootCard.y + rootCard.height / 2
   setPan(
     (props.layout.width / 2 - cx) * props.settings.zoom,
-    (props.layout.height / 2 - cy) * props.settings.zoom
+    (props.layout.height / 2 - cy) * props.settings.zoom,
+    true,
   )
 }
 
@@ -560,7 +596,7 @@ function resetView() {
     @touchstart.passive="handleTouchStart"
     @touchmove.prevent="handleTouchMove"
   >
-    <div class="canvas-camera" :style="cameraStyle">
+    <div ref="cameraRef" class="canvas-camera" :style="cameraStyle">
       <div id="publication-canvas-root" class="publication-stage" :style="stageStyle">
         <svg
           ref="svgRef"
@@ -587,6 +623,7 @@ function resetView() {
             <line
               v-for="(line, index) in layout.lines"
               :key="`line-${index}`"
+              :class="{ 'tree-lines__line--spousal': line.type === 'spousal' }"
               :x1="line.x1"
               :y1="line.y1"
               :x2="line.x2"
@@ -793,6 +830,11 @@ function resetView() {
   stroke: var(--tree-line-color);
   stroke-width: 2.6;
   stroke-linecap: round;
+}
+
+.tree-lines line.tree-lines__line--spousal {
+  stroke-width: 2.2;
+  stroke-linecap: butt;
 }
 
 @media (max-width: 980px) {
