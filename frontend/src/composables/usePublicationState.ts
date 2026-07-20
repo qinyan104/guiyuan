@@ -15,6 +15,8 @@ import { suggestLineageNote } from '../lib/lineageLabels'
 import { getPersonStatusLabel, isPersonDeceased } from '../lib/personStatus'
 import { useDevAudit } from './useDevAudit'
 
+const KINSHIP_NOTES_MAX_PEOPLE = 300
+
 function joinMetaParts(parts: Array<string | undefined>): string {
   return parts.filter((value): value is string => Boolean(value?.trim())).join(' · ')
 }
@@ -267,8 +269,11 @@ export function usePublicationState(
 
   const kinshipNotes = computed(() => {
     if (!_viewerPersonId.value) return null as Record<string, string> | null
+    const personIds = Object.keys(publication.people)
+    // ponytail: full-card kinship labels are O(n * kinship); show them only while the graph is small.
+    if (personIds.length > KINSHIP_NOTES_MAX_PEOPLE) return null
     const map: Record<string, string> = {}
-    for (const pid of Object.keys(publication.people)) {
+    for (const pid of personIds) {
       if (pid === _viewerPersonId.value) {
         map[pid] = '本人'
       } else {
@@ -280,6 +285,14 @@ export function usePublicationState(
     }
     return map
   })
+
+  function getKinshipNote(personId: string): string | null {
+    const viewerId = _viewerPersonId.value
+    if (!viewerId || !personId) return null
+    if (personId === viewerId) return '本人'
+    const label = getKinshipLabelExtended(publication, viewerId, personId)
+    return label && label !== '未知关系' ? label : null
+  }
 
   // Focus family
   const focusFamily = computed(() =>
@@ -353,6 +366,7 @@ export function usePublicationState(
     selectedChildItems,
     selectedPersonLineageSuggestion,
     kinshipNotes,
+    getKinshipNote,
     setViewerPersonId,
     viewerPersonId: _viewerPersonId,
     selectedPersonMeta,

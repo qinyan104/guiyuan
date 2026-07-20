@@ -164,6 +164,8 @@ const personEditor = usePersonEditor(context.pub, () => {
   fileOps.hasUnsavedFileChanges.value = true
 })
 
+const selectedKinshipLabel = computed(() => context.pub.getKinshipNote(context.pub.selectedPersonId.value))
+
 // ─── UI Action Handlers ─────────────────────────────────────────
 function handleSelectPerson(personId: string) {
   if (context.pub.selectedPersonId.value === personId) {
@@ -338,7 +340,7 @@ watch(
           :branchMode="context.pub.selectedBranchMode.value"
           :parentActionLabel="context.pub.parentActionLabel.value"
           :branchActionLabel="personEditor.editorBranchActionLabel.value"
-          :kinshipLabel="context.pub.kinshipNotes?.value?.[context.pub.selectedPersonId.value] ?? null"
+          :kinshipLabel="selectedKinshipLabel"
           @close="closeEditor"
           @select-person="handleSelectPerson"
           @add-spouse="relActions.addSpouse"
