@@ -23,6 +23,7 @@ const conflictDraftSaved = ref(false)
 const conflictDraft = ref<ConflictDraft | null>(null)
 const serverRevision = ref<number | null>(null)
 const lastSyncedSignature = ref('')
+const baselineReady = ref(false)
 
 // Viewport state to persist camera across views
 const viewportPan = ref({ x: 0, y: 0 })
@@ -63,25 +64,40 @@ const history = useEditorHistory({
   restoreSnapshot: restoreEditorSnapshot,
 })
 
-function buildPersistedSignature() {
-  const publicationSnapshot = JSON.parse(JSON.stringify(pub.publication)) as PublicationData
+function buildSignature(publication: PublicationData, settings: PublicationSettings) {
+  const publicationSnapshot = JSON.parse(JSON.stringify(publication)) as PublicationData
   delete (publicationSnapshot as Partial<PublicationData>).revision
 
   return JSON.stringify({
     publication: publicationSnapshot,
-    settings: JSON.parse(JSON.stringify(pub.settings)) as PublicationSettings,
+    settings: {
+      ...(JSON.parse(JSON.stringify(settings)) as PublicationSettings),
+      zoom: 0,
+    },
   })
 }
 
-const persistedSignature = computed(() => buildPersistedSignature())
+function buildPersistedSignature() {
+  return buildSignature(pub.publication as unknown as PublicationData, pub.settings as PublicationSettings)
+}
+
+const persistedSignature = computed(() => baselineReady.value ? buildPersistedSignature() : lastSyncedSignature.value)
 
 let serverSaveTimeout: ReturnType<typeof setTimeout> | null = null
+let baselineInitTimeout: ReturnType<typeof setTimeout> | null = null
 let saveRequestedWhileSyncing = false
 
 function clearScheduledSave() {
   if (serverSaveTimeout) {
     clearTimeout(serverSaveTimeout)
     serverSaveTimeout = null
+  }
+}
+
+function clearBaselineInit() {
+  if (baselineInitTimeout) {
+    clearTimeout(baselineInitTimeout)
+    baselineInitTimeout = null
   }
 }
 
@@ -153,9 +169,27 @@ async function saveToServer() {
   }
 }
 
+function initializeLargeStateAfterPaint(
+  myGeneration: number,
+  publication: PublicationData,
+  settings: PublicationSettings,
+) {
+  clearBaselineInit()
+  // ponytail: defer O(n) JSON snapshots so large trees render before bookkeeping runs.
+  baselineInitTimeout = setTimeout(async () => {
+    baselineInitTimeout = null
+    if (myGeneration !== loadGeneration || loading.value) return
+    lastSyncedSignature.value = buildSignature(publication, settings)
+    baselineReady.value = true
+    history.initializeHistoryBaseline()
+    await detectViewerPerson()
+  }, 600)
+}
+
 watch(
   persistedSignature,
   (nextSignature) => {
+    if (!baselineReady.value) return
     history.scheduleHistoryCommit()
     if (!serverPublicationId.value || loading.value || syncStatus.value === 'conflict') return
     if (nextSignature === lastSyncedSignature.value) return
@@ -211,7 +245,9 @@ async function load() {
 
   const myGeneration = ++loadGeneration
   loading.value = true
+  baselineReady.value = false
   clearScheduledSave()
+  clearBaselineInit()
 
   try {
     const result = await getPublication(targetId)
@@ -231,9 +267,9 @@ async function load() {
     conflictDraftSaved.value = false
     conflictDraft.value = getConflictDraft(result.id)
     syncStatus.value = 'saved'
-    lastSyncedSignature.value = persistedSignature.value
-    history.initializeHistoryBaseline()
-    await detectViewerPerson()
+    lastSyncedSignature.value = `revision:${result.revision}`
+    loading.value = false
+    initializeLargeStateAfterPaint(myGeneration, result.publication, { ...defaultSettings, ...result.settings })
   } catch (err: any) {
     // Don't show error for stale requests
     if (myGeneration !== loadGeneration) return
@@ -313,6 +349,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleHistoryShortcut)
   history.disposeHistory()
   clearScheduledSave()
+  clearBaselineInit()
 })
 
 defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflictDraft, dismissConflictDraft })
