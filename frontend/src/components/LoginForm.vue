@@ -335,14 +335,14 @@ async function onSubmit() {
 }
 
 :global([data-theme="dark"] .brand-section::before) {
-  background: radial-gradient(ellipse at 60% 40%, rgba(232, 93, 75, 0.06) 0%, transparent 60%),
+  background: radial-gradient(ellipse at 60% 40%, rgba(217, 85, 69, 0.06) 0%, transparent 60%),
               radial-gradient(ellipse at 30% 70%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
 }
 
 :global([data-theme="dark"] .form-section) {
   background: #11100f;
   background-image:
-    radial-gradient(ellipse at 80% 20%, rgba(232, 93, 75, 0.035) 0%, transparent 50%);
+    radial-gradient(ellipse at 80% 20%, rgba(217, 85, 69, 0.035) 0%, transparent 50%);
 }
 
 .form-wrapper {
