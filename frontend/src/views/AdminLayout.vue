@@ -3,17 +3,18 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { useLexiconStore } from '../stores/lexicon'
-import { logout, getUsername, isAdmin } from '../api/auth'
+import { logout, getUsername, getRole, isAdmin } from '../api/auth'
 import DarkModeToggle from '../components/DarkModeToggle.vue'
 import LexiconSwitcher from '../components/LexiconSwitcher.vue'
 import GlobalSearch from '../components/GlobalSearch.vue'
+import UserAvatar from '../components/UserAvatar.vue'
 
 const router = useRouter()
 const route = useRoute()
 
 const { lexicon } = useLexiconStore()
 const currentUsername = computed(() => getUsername() ?? '')
-const userInitials = computed(() => currentUsername.value ? currentUsername.value.charAt(0).toUpperCase() : '总')
+const avatarTone = computed(() => (getRole() ?? 'USER').toLowerCase())
 
 interface NavItem {
   key: string
@@ -153,9 +154,7 @@ onBeforeUnmount(() => {
           <!-- User Profile Dropdown -->
           <div ref="userDropdownRoot" class="user-dropdown-container">
             <button class="user-profile-pill" :class="{'is-open': userDropdownOpen}" @click="toggleUserDropdown">
-              <div class="avatar-ring">
-                <span class="avatar-text">{{ userInitials }}</span>
-              </div>
+              <UserAvatar :name="currentUsername || '总编'" :tone="avatarTone" />
               <span class="username">{{ currentUsername || '总编' }}</span>
               <svg class="dropdown-chevron" :class="{'rotated': userDropdownOpen}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
             </button>
@@ -170,7 +169,7 @@ onBeforeUnmount(() => {
                 <div class="popover-menu">
                   <button class="menu-item" @click="goToSettings">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-                    偏好设置
+                    账户设置
                   </button>
                   <div class="menu-divider"></div>
                   <button class="menu-item danger" @click="handleLogout">
@@ -504,35 +503,6 @@ onBeforeUnmount(() => {
 [data-theme="dark"] .user-profile-pill.is-open,
 [data-theme="dark"] .user-profile-pill.is-open {
   background: var(--color-neutral-3);
-}
-
-.avatar-ring {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-neutral-6), var(--color-neutral-4));
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatar-text {
-  width: 100%;
-  height: 100%;
-  background: var(--color-accent-muted); color: var(--color-accent);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 800;
-  font-family: var(--font-serif);
-  color: var(--color-neutral-9);
-}
-[data-theme="dark"] .avatar-text {
-  background: var(--color-neutral-3);
-  color: var(--color-neutral-10);
 }
 
 .username {

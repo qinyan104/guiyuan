@@ -73,6 +73,19 @@ public class ProfileService {
     }
 
     @Transactional
+    public void updateMyName(Long userId, String name) {
+        if (name == null || name.isBlank()) {
+            throw new BadRequestException("姓名不能为空");
+        }
+        PersonAccount pa = personAccountRepository.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundException("当前账号未关联族谱人物"));
+        Person person = personRepository.findById(pa.getPersonDbId())
+                .orElseThrow(() -> new NotFoundException("关联的人物记录不存在"));
+        person.setName(name.trim());
+        personRepository.save(person);
+    }
+
+    @Transactional
     public void submitProfileChange(Long userId, Map<String, Object> changes) {
         PersonAccount pa = personAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new NotFoundException("当前账号未关联族谱人物"));

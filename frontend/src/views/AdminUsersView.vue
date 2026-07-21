@@ -13,6 +13,7 @@ import { isSuperAdmin } from '../api/auth'
 import { useLexiconStore } from '../stores/lexicon'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PoeticHeader from '../components/PoeticHeader.vue'
+import UserAvatar from '../components/UserAvatar.vue'
 
 const { lexicon } = useLexiconStore()
 const usersQuote = computed(() => lexicon.users.quote.replace(/\\n/g, '<br/>'))
@@ -337,9 +338,7 @@ function formatDate(dateStr: string) {
             </label>
             <span class="col-id">{{ String(user.id).padStart(4, '0') }}</span>
             <div class="col-user">
-              <div class="user-avatar" :class="user.role.toLowerCase()">
-                {{ user.nickname ? user.nickname.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase() }}
-              </div>
+              <UserAvatar :name="user.nickname || user.username" :tone="user.role.toLowerCase()" size="md" />
               <div class="user-info">
                 <span class="uname">
                   {{ user.username }}
@@ -681,37 +680,6 @@ function formatDate(dateStr: string) {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.user-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-title-18);
-  font-weight: 500;
-  flex-shrink: 0;
-  letter-spacing: -0.02em;
-}
-
-.user-avatar.super_admin {
-  background: linear-gradient(135deg, #c43a31, #a8322b);
-  color: var(--color-text-on-accent);
-  box-shadow: 0 2px 8px rgba(196, 58, 49, 0.3);
-}
-
-.user-avatar.admin {
-  background: linear-gradient(135deg, #3d6896, #2d5178);
-  color: var(--color-text-on-accent);
-  box-shadow: 0 2px 8px rgba(61, 104, 150, 0.25);
-}
-
-.user-avatar.user {
-  background: linear-gradient(135deg, #787670, #5c5a55);
-  color: var(--color-text-on-accent);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .user-info {

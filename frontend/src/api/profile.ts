@@ -48,3 +48,8 @@ export async function submitProfileChange(changes: Record<string, unknown>): Pro
   const resp = await http.put<ApiResponse<null>>('/profile/me', { changes })
   if (resp.data.code !== 200) throw new Error(resp.data.message || '提交修改失败')
 }
+
+export async function updateMyProfileName(name: string): Promise<void> {
+  const resp = await http.put<ApiResponse<null>>('/profile/me/name', { name })
+  if (resp.data.code !== 200) throw new Error(resp.data.message || '姓名修改失败')
+}

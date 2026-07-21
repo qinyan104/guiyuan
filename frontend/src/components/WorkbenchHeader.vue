@@ -2,6 +2,8 @@
 import { ref, inject, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DarkModeToggle from './DarkModeToggle.vue'
+import UserAvatar from './UserAvatar.vue'
+import { getRole } from '../api/auth'
 import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import CollaboratorManager from './CollaboratorManager.vue'
 import ExportDialog from '../features/export/ExportDialog.vue'
@@ -100,10 +102,7 @@ const emit = defineEmits<{
 }>()
 
 const userDropdownOpen = ref(false)
-const userInitials = computed(() => {
-  const name = props.currentUsername || '总'
-  return name.charAt(0).toUpperCase()
-})
+const avatarTone = computed(() => (getRole() ?? 'USER').toLowerCase())
 function closeTransientUi() {
   activeMenu.value = null
   userDropdownOpen.value = false
@@ -282,9 +281,7 @@ onBeforeUnmount(() => {
 
         <div class="user-dropdown-container">
           <button type="button" class="user-profile-pill" :class="{'is-open': userDropdownOpen}" @click="toggleUserDropdown">
-            <div class="avatar-ring">
-              <span class="avatar-text">{{ userInitials }}</span>
-            </div>
+            <UserAvatar :name="currentUsername || '总编'" :tone="avatarTone" />
             <span class="username">{{ currentUsername || '总编' }}</span>
             <svg class="dropdown-chevron" :class="{'rotated': userDropdownOpen}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
           </button>
@@ -647,31 +644,6 @@ onBeforeUnmount(() => {
 .user-profile-pill.is-open {
   background: var(--workbench-panel-strong, var(--color-neutral-2));
   border-color: var(--color-neutral-5);
-}
-
-.avatar-ring {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--glass-border-highlight, rgba(255,255,255,0.8)), var(--glass-border-shadow, rgba(0,0,0,0.05)));
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatar-text {
-  width: 100%;
-  height: 100%;
-  background: var(--workbench-panel-strong, #fff);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 800;
-  font-family: var(--font-serif);
-  color: var(--color-neutral-9);
 }
 
 .username {

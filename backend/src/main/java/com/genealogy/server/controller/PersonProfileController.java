@@ -52,4 +52,12 @@ public class PersonProfileController {
         profileService.submitProfileChange(userId, changes);
         return ApiResponse.success("修改已提交，等待管理员审核", null);
     }
+
+    @Operation(summary = "修改我的姓名", description = "直接修改当前用户关联人物的姓名")
+    @PutMapping("/me/name")
+    public ApiResponse<Void> updateMyName(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        Long userId = resolveUserId(request);
+        profileService.updateMyName(userId, body.get("name"));
+        return ApiResponse.success("姓名已更新", null);
+    }
 }

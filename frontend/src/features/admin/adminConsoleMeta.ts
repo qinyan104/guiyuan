@@ -27,9 +27,9 @@ const ADMIN_PAGE_META: AdminPageMeta[] = [
   {
     routeName: 'settings',
     icon: 'settings',
-    sectionTitle: '系统偏好',
-    pageTitle: '偏好设置',
-    sidebarLabel: '设置',
+    sectionTitle: '个人账户',
+    pageTitle: '账户设置',
+    sidebarLabel: '账户',
   },
   {
     routeName: 'admin-users',

@@ -2,10 +2,11 @@
 import { useFeedback } from '../composables/useFeedback'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import { ref, computed, onMounted } from 'vue'
-import { getUsername, isSuperAdmin } from '../api/auth'
-import { changePassword, changeNickname, uploadAvatar, getMyProfile } from '../api/profile'
+import { getRole, getUsername, isSuperAdmin } from '../api/auth'
+import { changePassword, uploadAvatar, getMyProfile, updateMyProfileName } from '../api/profile'
 import { downloadBackup, adminRestoreDatabase } from '../api/admin'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import UserAvatar from '../components/UserAvatar.vue'
 
 const feedback = useFeedback()
 
@@ -13,10 +14,16 @@ const feedback = useFeedback()
 const avatarUrl = ref('')
 const avatarUploading = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const currentUsername = ref(getUsername() ?? '')
+const currentRole = ref(getRole() ?? '')
+const profileNameDraft = ref('')
+const originalProfileName = ref('')
 
 onMounted(async () => {
   try {
     const profile = await getMyProfile()
+    originalProfileName.value = profile.person?.name ?? ''
+    profileNameDraft.value = originalProfileName.value
     if (profile.person?.avatarUrl) {
       avatarUrl.value = profile.person.avatarUrl
     }
@@ -42,21 +49,28 @@ async function handleAvatarUpload(event: Event) {
   finally { avatarUploading.value = false; input.value = '' }
 }
 
-const currentUsername = ref(getUsername() ?? '')
-const userInitials = computed(() => currentUsername.value.charAt(0).toUpperCase())
+const avatarName = computed(() => profileNameDraft.value.trim() || originalProfileName.value.trim() || currentUsername.value)
+const avatarSrc = computed(() => avatarUrl.value ? avatarUrl.value + (avatarTimestamp.value ? '?t=' + avatarTimestamp.value : '') : '')
+const roleTone = computed(() => currentRole.value.toLowerCase())
+const roleLabel = computed(() => currentRole.value === 'SUPER_ADMIN' ? '超级管理员' : '编委')
 
-// ── Nickname ──
-const nickname = ref('')
-const nicknameMsg = ref('')
-const nicknameLoading = ref(false)
+// ── Name ──
+const nameMsg = ref('')
+const nameLoading = ref(false)
 
-async function handleChangeNickname() {
-  nicknameMsg.value = ''
-  if (!nickname.value.trim()) return
-  nicknameLoading.value = true
-  try { await changeNickname(nickname.value.trim()); nicknameMsg.value = '已更新' }
-  catch { nicknameMsg.value = '更新失败' }
-  finally { nicknameLoading.value = false }
+async function handleChangeName() {
+  nameMsg.value = ''
+  const nextName = profileNameDraft.value.trim()
+  if (!nextName) { nameMsg.value = '姓名不能为空'; return }
+  if (nextName === originalProfileName.value) { nameMsg.value = '姓名未修改'; return }
+  nameLoading.value = true
+  try {
+    await updateMyProfileName(nextName)
+    originalProfileName.value = nextName
+    nameMsg.value = '已更新'
+  }
+  catch { nameMsg.value = '提交失败' }
+  finally { nameLoading.value = false }
 }
 
 // ── Password ──
@@ -109,47 +123,64 @@ async function handleRestore() {
   <div class="root">
     <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
 
-    <section class="account-summary">
-      <button class="avatar" type="button" :disabled="avatarUploading" @click="fileInputRef?.click()">
-        <img v-if="avatarUrl" :src="avatarUrl + (avatarTimestamp ? '?t=' + avatarTimestamp : '')" alt="" />
-        <span v-else>{{ userInitials }}</span>
-        <em>{{ avatarUploading ? '上传中' : '更换头像' }}</em>
-      </button>
+    <section class="page-head">
       <div class="account-summary__main">
-        <span class="eyebrow">当前账户</span>
-        <h1>{{ currentUsername || '未命名用户' }}</h1>
-        <p>{{ isSuperAdmin() ? '超级管理员' : '编委' }}</p>
+        <h1>账户设置</h1>
+        <p>账号固定不变；姓名可直接修改。</p>
       </div>
-      <input ref="fileInputRef" type="file" accept="image/*" hidden @change="handleAvatarUpload" />
     </section>
 
-    <div class="settings-grid">
-      <section class="settings-card">
-        <div class="card-head">
-          <div>
-            <span class="eyebrow">Profile</span>
-            <h2>个人账户</h2>
-          </div>
-        </div>
-
-        <label class="field">
-          <span>显示名称</span>
-          <input v-model="nickname" type="text" placeholder="留空则使用登录账号" @keyup.enter="handleChangeNickname" />
-        </label>
-
-        <div class="actions">
-          <button class="btn btn--primary" :disabled="nicknameLoading" @click="handleChangeNickname">
-            {{ nicknameLoading ? '保存中…' : '保存显示名称' }}
+    <div class="account-layout">
+      <section class="settings-card profile-card">
+        <div class="profile-card__avatar">
+          <button class="avatar" type="button" :disabled="avatarUploading" @click="fileInputRef?.click()">
+            <UserAvatar :src="avatarSrc" :name="avatarName" :tone="roleTone" size="lg" />
+            <em>{{ avatarUploading ? '上传中' : '更换头像' }}</em>
+          </button>
+          <input ref="fileInputRef" type="file" accept="image/*" hidden @change="handleAvatarUpload" />
+          <button class="btn" type="button" :disabled="avatarUploading" @click="fileInputRef?.click()">
+            {{ avatarUploading ? '上传中…' : '上传头像' }}
           </button>
         </div>
-        <p v-if="nicknameMsg" class="msg ok">{{ nicknameMsg }}</p>
+
+        <div class="profile-card__body">
+          <div class="card-head">
+            <div>
+              <h2>个人资料</h2>
+            </div>
+            <span class="role-badge">{{ roleLabel }}</span>
+          </div>
+
+          <dl class="account-facts">
+            <div>
+              <dt>登录账号</dt>
+              <dd>{{ currentUsername || '未命名用户' }}</dd>
+            </div>
+            <div v-if="originalProfileName">
+              <dt>关联人物</dt>
+              <dd>{{ originalProfileName }}</dd>
+            </div>
+          </dl>
+
+          <label class="field">
+            <span>姓名</span>
+            <input v-model="profileNameDraft" type="text" placeholder="请输入姓名" @keyup.enter="handleChangeName" />
+          </label>
+
+          <div class="actions">
+            <button class="btn btn--primary" :disabled="nameLoading || profileNameDraft.trim() === originalProfileName" @click="handleChangeName">
+              {{ nameLoading ? '保存中…' : '保存姓名' }}
+            </button>
+          </div>
+          <p v-if="nameMsg" class="msg" :class="nameMsg.includes('失败') || nameMsg.includes('不能为空') ? 'err' : 'ok'">{{ nameMsg }}</p>
+        </div>
       </section>
 
       <section class="settings-card">
         <div class="card-head">
           <div>
             <span class="eyebrow">Security</span>
-            <h2>修改密码</h2>
+            <h2>登录密码</h2>
           </div>
         </div>
 
@@ -178,8 +209,7 @@ async function handleRestore() {
 
     <section v-if="isSuperAdmin()" class="admin-panel">
       <div class="section-head">
-        <span class="eyebrow">Admin</span>
-        <h2>系统维护</h2>
+        <h2>管理员工具</h2>
       </div>
 
       <div class="maintenance-grid">
@@ -223,7 +253,9 @@ async function handleRestore() {
 
 <style scoped>
 .root {
-  padding: 34px clamp(24px, 4vw, 48px) 56px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px clamp(18px, 3vw, 34px) 48px;
 }
 
 .eyebrow {
@@ -236,21 +268,14 @@ async function handleRestore() {
   text-transform: uppercase;
 }
 
-.account-summary,
 .settings-card {
   border: 1px solid var(--color-card-stroke);
   background: color-mix(in srgb, var(--color-panel-bg) 88%, var(--color-neutral-1));
   box-shadow: var(--shadow-whisper);
 }
 
-.account-summary {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  max-width: 980px;
-  padding: 18px;
-  border-radius: var(--radius-xl);
-  margin-bottom: 16px;
+.page-head {
+  margin-bottom: 18px;
 }
 
 .account-summary__main h1 {
@@ -267,40 +292,46 @@ async function handleRestore() {
   font-size: var(--text-copy-14);
 }
 
+.account-layout {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(420px, 1.15fr) minmax(340px, 0.85fr);
+  gap: 16px;
+}
+
+.profile-card {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 20px;
+}
+
+.profile-card__avatar {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
 .avatar {
   position: relative;
-  display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
-  flex-shrink: 0;
+  display: block;
+  width: max-content;
+  height: max-content;
+  padding: 0;
   overflow: hidden;
-  border: 1px solid var(--color-card-stroke);
-  border-radius: 18px;
-  background: var(--color-neutral-2);
-  color: var(--color-neutral-7);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
   cursor: pointer;
-}
-
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar span {
-  font-size: var(--text-title-24);
-  font-weight: 800;
 }
 
 .avatar em {
   position: absolute;
   inset-inline: 0;
   bottom: 0;
-  padding: 4px 2px;
+  padding: 6px 2px;
   background: color-mix(in srgb, var(--color-neutral-10) 70%, transparent);
   color: var(--color-neutral-1);
-  font-size: 10px;
+  font-size: var(--text-label-12);
   font-style: normal;
   text-align: center;
   opacity: 0;
@@ -312,21 +343,14 @@ async function handleRestore() {
   opacity: 1;
 }
 
-.settings-grid {
-  display: grid;
-  max-width: 980px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
 .maintenance-grid {
   display: grid;
-  max-width: 980px;
+  width: 100%;
 }
 
 .settings-card {
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 22px;
 }
 
 .settings-card--compact {
@@ -342,10 +366,46 @@ async function handleRestore() {
   margin-bottom: 18px;
 }
 
+.role-badge {
+  padding: 5px 9px;
+  border: 1px solid var(--color-card-stroke);
+  border-radius: 999px;
+  color: var(--color-neutral-6);
+  font-size: var(--text-label-12);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .section-head {
-  max-width: 980px;
+  width: 100%;
   margin-top: 24px;
   margin-bottom: 12px;
+}
+
+.account-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.account-facts div {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-2);
+}
+
+.account-facts dt {
+  color: var(--color-neutral-6);
+  font-size: var(--text-label-12);
+  font-weight: 700;
+}
+
+.account-facts dd {
+  margin: 4px 0 0;
+  color: var(--color-neutral-10);
+  font-size: var(--text-copy-14);
+  font-weight: 700;
 }
 
 .card-head h2,
@@ -400,6 +460,11 @@ input[type="file"] {
 input:focus {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+input:disabled {
+  color: var(--color-neutral-6);
+  background: var(--color-neutral-2);
 }
 
 .actions {
@@ -457,7 +522,7 @@ input:focus {
 }
 
 .admin-panel {
-  max-width: 980px;
+  width: 100%;
 }
 
 .database-card {
@@ -492,7 +557,9 @@ input:focus {
 .msg.err { color: var(--color-error); }
 
 @media (max-width: 820px) {
-  .settings-grid,
+  .account-layout,
+  .profile-card,
+  .account-facts,
   .database-action {
     grid-template-columns: 1fr;
   }
@@ -508,8 +575,8 @@ input:focus {
     padding-inline: 16px;
   }
 
-  .account-summary {
-    align-items: flex-start;
+  .profile-card__avatar {
+    justify-items: start;
   }
 }
 </style>
