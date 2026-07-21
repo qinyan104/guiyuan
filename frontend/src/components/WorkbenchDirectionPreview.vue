@@ -22,8 +22,8 @@ defineProps<{
         </div>
 
         <div class="prototype-actions">
-          <span class="action-chip">考据</span>
-          <span class="action-chip">付梓</span>
+          <span class="action-chip">导入</span>
+          <span class="action-chip">导出</span>
           <span class="action-chip action-chip--strong">
             {{ direction.id === 'collab' ? '共修动态' : '编辑人物' }}
           </span>
@@ -47,7 +47,7 @@ defineProps<{
             <div v-else class="rail-pills">
               <span>全览</span>
               <span>关系</span>
-              <span>纪略</span>
+              <span>统计</span>
             </div>
           </div>
 

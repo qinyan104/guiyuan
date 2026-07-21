@@ -46,33 +46,33 @@ describe('WorkbenchHeader', () => {
     const wrapper = mountHeader()
 
     await wrapper.findAll('.dropdown-trigger')[0].trigger('click')
-    expect(wrapper.text()).toContain('引入前朝旧卷')
+    expect(wrapper.text()).toContain('导入 JSON')
 
     document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.text()).not.toContain('引入前朝旧卷')
+    expect(wrapper.text()).not.toContain('导入 JSON')
   })
 
   it('closes open menus when Escape is pressed', async () => {
     const wrapper = mountHeader()
 
     await wrapper.findAll('.dropdown-trigger')[1].trigger('click')
-    expect(wrapper.text()).toContain('出版工作室')
+    expect(wrapper.text()).toContain('出版排版')
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.text()).not.toContain('出版工作室')
+    expect(wrapper.text()).not.toContain('出版排版')
   })
 
   it('groups the four primary genealogy tools', () => {
     const wrapper = mountHeader()
     const group = wrapper.get('[role="group"][aria-label="谱系工具"]')
 
-    expect(group.text()).toContain('纪略')
-    expect(group.text()).toContain('编年')
-    expect(group.text()).toContain('考据')
-    expect(group.text()).toContain('付梓')
+    expect(group.text()).toContain('统计')
+    expect(group.text()).toContain('时间线')
+    expect(group.text()).toContain('导入')
+    expect(group.text()).toContain('导出')
   })
 })

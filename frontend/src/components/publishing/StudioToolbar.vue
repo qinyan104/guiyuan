@@ -92,7 +92,7 @@ function openTpl() {
         {{ autoLayouting ? '检索中...' : '检索数据' }}
       </button>
       <button class="tb-act tb-act--primary" :disabled="exporting" @click="emit('export')">
-        {{ exporting ? '正在导出...' : '付梓导出' }}
+        {{ exporting ? '正在导出...' : '导出' }}
       </button>
       <span class="tb-sep" />
       <button :class="['tb-tgl', { on: editorOpen }]" @click="emit('toggleEditor')" title="内容检查器">

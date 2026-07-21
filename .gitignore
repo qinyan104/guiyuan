@@ -42,6 +42,7 @@ release/.env
 .gstack/
 .od-skills/
 .reasonix/
+.mimocode/
 AGENTS.md
 CLAUDE.md
 DESIGN.md
