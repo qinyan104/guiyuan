@@ -4,7 +4,7 @@ import FeedbackStrip from '../components/FeedbackStrip.vue'
 import { ref, computed, onMounted } from 'vue'
 import { getUsername, isSuperAdmin } from '../api/auth'
 import { changePassword, changeNickname, uploadAvatar, getMyProfile } from '../api/profile'
-import { downloadBackup, adminRestoreDatabase, adminCheckConsistency, type ConsistencyIssue } from '../api/admin'
+import { downloadBackup, adminRestoreDatabase } from '../api/admin'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const feedback = useFeedback()
@@ -87,8 +87,6 @@ const backupError = ref('')
 const restoreFile = ref<File | null>(null)
 const restorePending = ref(false)
 const showRestoreConfirm = ref(false)
-const consistencyResult = ref<ConsistencyIssue[]>([])
-const consistencyRunning = ref(false)
 
 async function handleBackup() {
   backupError.value = ''; backupLoading.value = true
@@ -101,23 +99,9 @@ function onFileSelected(e: Event) { const t = e.target as HTMLInputElement; if (
 async function handleRestore() {
   if (!restoreFile.value) return
   restorePending.value = true
-  try { const msg = await adminRestoreDatabase(restoreFile.value); feedback.errorMessage.value = msg; window.location.reload() }
+  try { const msg = await adminRestoreDatabase(restoreFile.value); feedback.statusMessage.value = msg; window.location.reload() }
   catch (e: any) { feedback.errorMessage.value = e.message || '数据库还原失败' }
   finally { restorePending.value = false }
-}
-
-const groupedIssues = computed(() => {
-  const g: Record<string, ConsistencyIssue[]> = {}
-  for (const i of consistencyResult.value) { if (!g[i.type]) g[i.type] = []; g[i.type].push(i) }
-  return g
-})
-const typeLabels: Record<string, string> = { orphan: '孤立人物', date_conflict: '生卒日期矛盾', status_conflict: '在世状态矛盾', empty_family: '空家族' }
-
-async function handleConsistencyCheck() {
-  consistencyRunning.value = true
-  try { const r = await adminCheckConsistency(); consistencyResult.value = r.issues }
-  catch (e: any) { feedback.errorMessage.value = e.message || '检查失败' }
-  finally { consistencyRunning.value = false }
 }
 </script>
 
@@ -125,85 +109,107 @@ async function handleConsistencyCheck() {
   <div class="root">
     <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
 
-    <header class="hero">
-      <h1>偏好设置</h1>
-      <p class="hero-sub">管理账户与系统配置。</p>
-    </header>
-
-    <!-- Profile -->
-    <section class="card card--profile">
-      <div class="avatar" @click="fileInputRef?.click()">
-        <img v-if="avatarUrl" :src="avatarUrl + (avatarTimestamp ? '?t=' + avatarTimestamp : '')" />
+    <section class="account-summary">
+      <button class="avatar" type="button" :disabled="avatarUploading" @click="fileInputRef?.click()">
+        <img v-if="avatarUrl" :src="avatarUrl + (avatarTimestamp ? '?t=' + avatarTimestamp : '')" alt="" />
         <span v-else>{{ userInitials }}</span>
+        <em>{{ avatarUploading ? '上传中' : '更换头像' }}</em>
+      </button>
+      <div class="account-summary__main">
+        <span class="eyebrow">当前账户</span>
+        <h1>{{ currentUsername || '未命名用户' }}</h1>
+        <p>{{ isSuperAdmin() ? '超级管理员' : '编委' }}</p>
       </div>
       <input ref="fileInputRef" type="file" accept="image/*" hidden @change="handleAvatarUpload" />
-      <div>
-        <h2>{{ currentUsername }}</h2>
-        <span>编委</span>
-      </div>
     </section>
 
-    <!-- Account -->
-    <div class="grid-2">
-      <section class="card">
-        <h3>身份标识</h3>
-        <p>对外展示的名称，留空则使用登录账号。</p>
-        <div class="row">
-          <input v-model="nickname" type="text" placeholder="输入身份标识…" @keyup.enter="handleChangeNickname" />
-          <button class="btn" :disabled="nicknameLoading" @click="handleChangeNickname">{{ nicknameLoading ? '…' : '保存' }}</button>
+    <div class="settings-grid">
+      <section class="settings-card">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">Profile</span>
+            <h2>个人账户</h2>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>显示名称</span>
+          <input v-model="nickname" type="text" placeholder="留空则使用登录账号" @keyup.enter="handleChangeNickname" />
+        </label>
+
+        <div class="actions">
+          <button class="btn btn--primary" :disabled="nicknameLoading" @click="handleChangeNickname">
+            {{ nicknameLoading ? '保存中…' : '保存显示名称' }}
+          </button>
         </div>
         <p v-if="nicknameMsg" class="msg ok">{{ nicknameMsg }}</p>
       </section>
 
-      <section class="card">
-        <h3>通行密钥</h3>
-        <p>修改登录密码。新密码至少 4 个字符。</p>
-        <div class="col">
-          <input v-model="oldPassword" type="password" placeholder="当前密码" />
-          <div class="row">
-            <input v-model="newPassword" type="password" placeholder="新密码" />
-            <input v-model="confirmPassword" type="password" placeholder="确认新密码" @keyup.enter="handleChangePassword" />
+      <section class="settings-card">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">Security</span>
+            <h2>修改密码</h2>
           </div>
-          <button class="btn" :disabled="passwordLoading" @click="handleChangePassword">{{ passwordLoading ? '…' : '更新密码' }}</button>
+        </div>
+
+        <label class="field">
+          <span>当前密码</span>
+          <input v-model="oldPassword" type="password" placeholder="输入当前密码" />
+        </label>
+        <label class="field">
+          <span>新密码</span>
+          <input v-model="newPassword" type="password" placeholder="至少 4 个字符" />
+        </label>
+        <label class="field">
+          <span>确认新密码</span>
+          <input v-model="confirmPassword" type="password" placeholder="再次输入新密码" @keyup.enter="handleChangePassword" />
+        </label>
+
+        <div class="actions">
+          <button class="btn btn--primary" :disabled="passwordLoading" @click="handleChangePassword">
+            {{ passwordLoading ? '更新中…' : '更新密码' }}
+          </button>
         </div>
         <p v-if="passwordError" class="msg err">{{ passwordError }}</p>
         <p v-if="passwordMsg" class="msg ok">{{ passwordMsg }}</p>
       </section>
     </div>
 
-    <!-- Admin -->
-    <template v-if="isSuperAdmin()">
-      <div class="grid-2">
-        <section class="card">
-          <h3>数据备份</h3>
-          <p>导出完整数据库备份。</p>
-          <button class="btn" :disabled="backupLoading" @click="handleBackup">{{ backupLoading ? '生成中…' : '下载备份' }}</button>
-          <p v-if="backupError" class="msg err">{{ backupError }}</p>
-        </section>
+    <section v-if="isSuperAdmin()" class="admin-panel">
+      <div class="section-head">
+        <span class="eyebrow">Admin</span>
+        <h2>系统维护</h2>
+      </div>
 
-        <section class="card">
-          <h3>数据库还原</h3>
-          <p>从 SQL 备份文件还原。<strong>不可逆。</strong></p>
-          <div class="row">
-            <input type="file" accept=".sql" @change="onFileSelected" />
-            <button class="btn btn--danger" :disabled="!restoreFile || restorePending" @click="showRestoreConfirm = true">{{ restorePending ? '还原中…' : '还原' }}</button>
+      <div class="maintenance-grid">
+        <section class="settings-card settings-card--compact database-card">
+          <div class="database-action">
+            <div>
+              <h3>数据备份</h3>
+              <p>导出完整数据库备份文件，建议在还原前先下载一份最新备份。</p>
+            </div>
+            <button class="btn" :disabled="backupLoading" @click="handleBackup">
+              {{ backupLoading ? '生成中…' : '下载备份' }}
+            </button>
+          </div>
+          <p v-if="backupError" class="msg err">{{ backupError }}</p>
+
+          <div class="database-action database-action--danger">
+            <div>
+              <h3>数据库还原</h3>
+              <p>从 SQL 备份文件还原数据库。此操作不可逆。</p>
+            </div>
+            <div class="restore-row">
+              <input type="file" accept=".sql" @change="onFileSelected" />
+              <button class="btn btn--danger" :disabled="!restoreFile || restorePending" @click="showRestoreConfirm = true">
+                {{ restorePending ? '还原中…' : '还原数据库' }}
+              </button>
+            </div>
           </div>
         </section>
       </div>
-
-      <section class="card">
-        <h3>一致性检查</h3>
-        <p>扫描孤立人物、日期矛盾等问题。</p>
-        <button class="btn" :disabled="consistencyRunning" @click="handleConsistencyCheck">{{ consistencyRunning ? '检查中…' : '开始检查' }}</button>
-        <div v-if="consistencyResult.length > 0" class="issues">
-          <details v-for="(group, type) in groupedIssues" :key="type">
-            <summary>{{ typeLabels[type] || type }}（{{ group.length }}）</summary>
-            <ul><li v-for="i in group" :key="i.personId + i.detail">{{ i.personName || i.personId }} — {{ i.detail }}</li></ul>
-          </details>
-        </div>
-        <p v-else-if="consistencyResult.length === 0 && !consistencyRunning" class="msg ok">未发现问题。</p>
-      </section>
-    </template>
+    </section>
 
     <ConfirmDialog
       :modelValue="showRestoreConfirm" title="确认还原数据库" message="此操作不可逆。"
@@ -217,144 +223,293 @@ async function handleConsistencyCheck() {
 
 <style scoped>
 .root {
-  padding: 60px clamp(32px, 5vw, 64px) 80px;
+  padding: 34px clamp(24px, 4vw, 48px) 56px;
 }
 
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--color-accent);
+  font-size: var(--text-label-12);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-@media (max-width: 640px) {
-  .grid-2 { grid-template-columns: 1fr; }
-}
-
-/* ── Hero ── */
-.hero { margin-bottom: 40px; }
-.hero h1 {
-  font-family: var(--font-serif);
-  font-size: var(--text-display-36);
-  font-weight: 400;
-  color: var(--color-neutral-10);
-  margin: 0 0 8px;
-  letter-spacing: 0.04em;
-}
-.hero-sub {
-  font-size: var(--text-copy-14);
-  color: var(--color-neutral-6);
-  margin: 0;
-}
-
-/* ── Cards ── */
-.card {
-  background: var(--color-neutral-2);
+.account-summary,
+.settings-card {
   border: 1px solid var(--color-card-stroke);
+  background: color-mix(in srgb, var(--color-panel-bg) 88%, var(--color-neutral-1));
+  box-shadow: var(--shadow-whisper);
+}
+
+.account-summary {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: 980px;
+  padding: 18px;
   border-radius: var(--radius-xl);
-  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.account-summary__main h1 {
+  margin: 0;
+  color: var(--color-neutral-10);
+  font-size: var(--text-title-24);
+  font-weight: 700;
+  line-height: var(--leading-title);
+}
+
+.account-summary__main p {
+  margin: 5px 0 0;
+  color: var(--color-neutral-6);
+  font-size: var(--text-copy-14);
+}
+
+.avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-card-stroke);
+  border-radius: 18px;
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-7);
+  cursor: pointer;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar span {
+  font-size: var(--text-title-24);
+  font-weight: 800;
+}
+
+.avatar em {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  padding: 4px 2px;
+  background: color-mix(in srgb, var(--color-neutral-10) 70%, transparent);
+  color: var(--color-neutral-1);
+  font-size: 10px;
+  font-style: normal;
+  text-align: center;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-breath);
+}
+
+.avatar:hover em,
+.avatar:focus-visible em {
+  opacity: 1;
+}
+
+.settings-grid {
+  display: grid;
+  max-width: 980px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.maintenance-grid {
+  display: grid;
+  max-width: 980px;
+}
+
+.settings-card {
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.settings-card--compact {
+  padding: 18px;
+}
+
+.card-head,
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.section-head {
+  max-width: 980px;
+  margin-top: 24px;
   margin-bottom: 12px;
 }
-.card h3 {
-  font-family: var(--font-serif);
-  font-size: var(--text-copy-16);
-  font-weight: 400;
+
+.card-head h2,
+.section-head h2,
+.settings-card h3 {
+  margin: 0;
   color: var(--color-neutral-10);
-  margin: 0 0 4px;
+  font-size: var(--text-title-20);
+  font-weight: 700;
+  line-height: var(--leading-title);
 }
-.card p {
-  font-size: var(--text-copy-13);
+
+.settings-card h3 {
+  font-size: var(--text-copy-16);
+}
+
+.settings-card p {
+  margin: 0;
   color: var(--color-neutral-6);
-  margin: 0 0 16px;
+  font-size: var(--text-copy-13);
   line-height: 1.6;
 }
 
-/* ── Profile card ── */
-.card--profile {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  border-left: 3px solid var(--color-accent);
-}
-.avatar {
-  width: 64px; height: 64px;
-  border-radius: 50%;
-  background: var(--color-neutral-3);
-  cursor: pointer;
-  overflow: hidden;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity var(--duration-fast);
-}
-.avatar:hover { opacity: 0.75; }
-.avatar img { width: 100%; height: 100%; object-fit: cover; }
-.avatar span {
-  font-family: var(--font-serif);
-  font-size: var(--text-title-24);
-  color: var(--color-neutral-6);
-}
-.card--profile h2 {
-  font-family: var(--font-serif);
-  font-size: var(--text-title-20);
-  font-weight: 400;
-  color: var(--color-neutral-10);
-  margin: 0 0 2px;
-}
-.card--profile span {
-  font-size: var(--text-label-12);
-  color: var(--color-neutral-6);
-}
-
-/* ── Form ── */
-.row { display: flex; gap: 8px; }
-.col { display: flex; flex-direction: column; gap: 10px; }
-
-input[type="text"], input[type="password"] {
-  flex: 1;
-  padding: 9px 12px;
-  border: 1px solid var(--color-neutral-4);
-  border-radius: var(--radius-md);
-  background: var(--color-neutral-1);
-  font-size: var(--text-copy-14);
-  color: var(--color-neutral-9);
-  outline: none;
-  font-family: inherit;
-  transition: border-color var(--duration-fast) var(--ease-breath);
-}
-input:focus { border-color: var(--color-neutral-7); }
-input[type="file"] {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--color-neutral-4);
-  border-radius: var(--radius-md);
-  background: var(--color-neutral-1);
-  font-size: var(--text-copy-13);
+.field {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 12px;
   color: var(--color-neutral-7);
+  font-size: var(--text-label-12);
+  font-weight: 700;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="file"] {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-1);
+  color: var(--color-neutral-9);
+  font-family: inherit;
+  font-size: var(--text-copy-14);
+  outline: none;
+  transition:
+    border-color var(--duration-fast) var(--ease-breath),
+    box-shadow var(--duration-fast) var(--ease-breath);
+}
+
+input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
 }
 
 .btn {
-  padding: 9px 18px;
-  border: 1px solid var(--color-neutral-4);
-  border-radius: 999px;
-  background: var(--color-neutral-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-md);
   font-size: var(--text-copy-13);
-  font-weight: 500;
-  color: var(--color-neutral-8);
+  font-weight: 800;
+  background: var(--color-panel-bg);
+  color: var(--color-neutral-7);
   cursor: pointer;
-  white-space: nowrap;
-  transition: all var(--duration-fast) var(--ease-breath);
+  transition:
+    background var(--duration-fast) var(--ease-breath),
+    border-color var(--duration-fast) var(--ease-breath),
+    color var(--duration-fast) var(--ease-breath);
 }
-.btn:hover { background: var(--color-neutral-9); color: var(--color-neutral-1); border-color: var(--color-neutral-9); }
-.btn:disabled { opacity: 0.5; cursor: default; }
-.btn--danger:hover { background: var(--color-error); color: #fff; border-color: var(--color-error); }
 
-.msg { font-size: var(--text-copy-13); margin: 12px 0 0; }
+.btn:hover:not(:disabled) {
+  border-color: var(--color-neutral-6);
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-10);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn--primary {
+  background: var(--color-neutral-10);
+  border-color: var(--color-neutral-10);
+  color: var(--color-neutral-1);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.btn--danger {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: #fff;
+}
+
+.admin-panel {
+  max-width: 980px;
+}
+
+.database-card {
+  display: grid;
+  gap: 16px;
+}
+
+.database-action {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.database-action--danger {
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--color-error) 24%, var(--color-card-stroke));
+}
+
+.restore-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.msg {
+  margin: 12px 0 0;
+  font-size: var(--text-copy-13);
+}
+
 .msg.ok { color: var(--color-success); }
 .msg.err { color: var(--color-error); }
 
-.issues { margin-top: 14px; }
-.issues details { margin-bottom: 4px; }
-.issues summary { font-size: var(--text-copy-13); color: var(--color-neutral-8); cursor: pointer; }
-.issues ul { margin: 4px 0 0 16px; font-size: var(--text-copy-13); color: var(--color-neutral-7); }
+@media (max-width: 820px) {
+  .settings-grid,
+  .database-action {
+    grid-template-columns: 1fr;
+  }
+
+  .restore-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .root {
+    padding-inline: 16px;
+  }
+
+  .account-summary {
+    align-items: flex-start;
+  }
+}
 </style>

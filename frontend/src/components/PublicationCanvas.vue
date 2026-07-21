@@ -29,12 +29,9 @@ const emit = defineEmits<{
 const svgRef = ref<SVGSVGElement | null>(null)
 const viewportRef = ref<HTMLDivElement | null>(null)
 const cameraRef = ref<HTMLDivElement | null>(null)
-const minimapContainerRef = ref<HTMLDivElement | null>(null)
-const minimapCanvasRef = ref<HTMLCanvasElement | null>(null)
 const isDragging = ref(false)
 const viewportWidth = ref(0)
 const viewportHeight = ref(0)
-const isMinimapDragging = ref(false)
 
 // Theme adaptation
 const isSu = computed(() => false)
@@ -146,7 +143,6 @@ let dragStartY = 0
 let panStartX = 0
 let panStartY = 0
 let resizeObserver: ResizeObserver | null = null
-let rafId: number | null = null
 let pinchStartDist = 0
 let pinchStartZoom = 0
 let lastMoveTime = 0
@@ -159,26 +155,10 @@ let pinchMidX = 0
 let pinchMidY = 0
 
 onBeforeUnmount(() => {
-  if (rafId) { cancelAnimationFrame(rafId); rafId = null }
   if (inertiaRafId !== null) { cancelAnimationFrame(inertiaRafId); inertiaRafId = null }
 })
 
-const MINIMAP_WIDTH = 220
-const MINIMAP_HEIGHT = 164
 const DRAG_SELECT_THRESHOLD = 5
-
-function resolveCssVar(varName: string, fallback: string): string {
-  if (typeof document === 'undefined') return fallback
-  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback
-}
-
-const MINIMAP_COLORS = computed(() => ({
-  male: resolveCssVar('--color-male', '#5b6e8a'),
-  female: resolveCssVar('--color-female', '#c47a5a'),
-  unknown: resolveCssVar('--color-neutral-6', '#b5a99a'),
-  hovered: resolveCssVar('--color-warning', '#8f5f35'),
-  selected: resolveCssVar('--color-accent', '#d4a853'),
-}))
 
 const stageStyle = computed(() => ({
   width: `${props.layout.width * props.settings.zoom}px`,
@@ -205,82 +185,6 @@ watch(
     localPanY = props.panY
     applyLocalViewport()
   },
-)
-
-const minimapData = computed(() => {
-  const padding = 16
-  const scale = Math.min((MINIMAP_WIDTH - padding * 2) / props.layout.width, (MINIMAP_HEIGHT - padding * 2) / props.layout.height)
-  const paperWidth = props.layout.width * scale
-  const paperHeight = props.layout.height * scale
-  const paperOffsetX = (MINIMAP_WIDTH - paperWidth) / 2
-  const paperOffsetY = (MINIMAP_HEIGHT - paperHeight) / 2
-  const visibleWorldWidth = viewportWidth.value / props.settings.zoom
-  const visibleWorldHeight = viewportHeight.value / props.settings.zoom
-  const worldLeft = props.layout.width / 2 - visibleWorldWidth / 2 - props.panX / props.settings.zoom
-  const worldTop = props.layout.height / 2 - visibleWorldHeight / 2 - props.panY / props.settings.zoom
-  const worldRight = worldLeft + visibleWorldWidth
-  const worldBottom = worldTop + visibleWorldHeight
-  const clippedLeft = clamp(worldLeft, 0, props.layout.width)
-  const clippedTop = clamp(worldTop, 0, props.layout.height)
-  const clippedRight = clamp(worldRight, 0, props.layout.width)
-  const clippedBottom = clamp(worldBottom, 0, props.layout.height)
-
-  return {
-    scale,
-    paperWidth,
-    paperHeight,
-    paperOffsetX,
-    paperOffsetY,
-    viewportRect: {
-      x: paperOffsetX + clippedLeft * scale,
-      y: paperOffsetY + clippedTop * scale,
-      width: Math.max(16, (clippedRight - clippedLeft) * scale),
-      height: Math.max(16, (clippedBottom - clippedTop) * scale),
-    },
-  }
-})
-
-function drawMinimapCanvas() {
-  if (rafId) cancelAnimationFrame(rafId)
-  rafId = requestAnimationFrame(() => {
-    const canvas = minimapCanvasRef.value
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    const scale = minimapData.value.scale
-
-    props.layout.cards.forEach((card) => {
-      const person = props.publication.people[card.personId]
-      const isSelected = card.personId === props.selectedPersonId
-      const isHovered = card.personId === props.hoveredPersonId
-
-      if (isSelected) {
-        ctx.fillStyle = MINIMAP_COLORS.value.selected
-      } else if (isHovered) {
-        ctx.fillStyle = MINIMAP_COLORS.value.hovered
-      } else {
-        ctx.fillStyle = person?.gender === 'female' ? MINIMAP_COLORS.value.female : person?.gender === 'male' ? MINIMAP_COLORS.value.male : MINIMAP_COLORS.value.unknown
-      }
-
-      const x = (card.x + card.width / 2) * scale
-      const y = (card.y + card.height / 2) * scale
-      const size = isSelected ? 6 : isHovered ? 5.5 : 5
-
-      ctx.fillRect(x - size / 2, y - size / 2, size, size)
-    })
-  })
-}
-
-watch(
-  () => [props.layout.cards, props.selectedPersonId, props.hoveredPersonId, minimapData.value.scale, MINIMAP_COLORS.value],
-  () => {
-    drawMinimapCanvas()
-  },
-  { immediate: true, deep: true },
 )
 
 function clamp(value: number, min: number, max: number): number {
@@ -509,53 +413,6 @@ function handleTouchMove(event: TouchEvent) {
   }
 }
 
-function updatePanFromMinimap(clientX: number, clientY: number) {
-  if (!minimapContainerRef.value) {
-    return
-  }
-
-  const rect = minimapContainerRef.value.getBoundingClientRect()
-  const localX = clientX - rect.left
-  const localY = clientY - rect.top
-  const worldX = clamp((localX - minimapData.value.paperOffsetX) / minimapData.value.scale, 0, props.layout.width)
-  const worldY = clamp((localY - minimapData.value.paperOffsetY) / minimapData.value.scale, 0, props.layout.height)
-
-  setPan(
-    (props.layout.width / 2 - worldX) * props.settings.zoom,
-    (props.layout.height / 2 - worldY) * props.settings.zoom
-  )
-}
-
-function handleMinimapPointerDown(event: PointerEvent) {
-  event.stopPropagation()
-  isMinimapDragging.value = true
-  minimapContainerRef.value?.setPointerCapture(event.pointerId)
-  updatePanFromMinimap(event.clientX, event.clientY)
-}
-
-function handleMinimapPointerMove(event: PointerEvent) {
-  if (!isMinimapDragging.value) {
-    return
-  }
-
-  event.stopPropagation()
-  updatePanFromMinimap(event.clientX, event.clientY)
-}
-
-function handleMinimapPointerUp(event: PointerEvent) {
-  if (!isMinimapDragging.value) {
-    return
-  }
-
-  event.stopPropagation()
-  isMinimapDragging.value = false
-
-  if (minimapContainerRef.value?.hasPointerCapture(event.pointerId)) {
-    minimapContainerRef.value.releasePointerCapture(event.pointerId)
-  }
-  commitViewport()
-}
-
 function resetView() {
   if (!props.layout.cards.length) {
     setPan(0, 0, true)
@@ -660,49 +517,6 @@ function resetView() {
         </svg>
       </div>
     </div>
-
-    <div
-      ref="minimapContainerRef"
-      class="canvas-minimap"
-      @pointerdown="handleMinimapPointerDown"
-      @pointermove="handleMinimapPointerMove"
-      @pointerup="handleMinimapPointerUp"
-      @pointercancel="handleMinimapPointerUp"
-    >
-      <div class="canvas-minimap__header">
-        <span>Mini Map</span>
-        <strong>{{ Math.round(settings.zoom * 100) }}%</strong>
-      </div>
-
-      <div class="canvas-minimap__stage">
-        <div
-          class="canvas-minimap__paper"
-          :style="{
-            left: `${minimapData.paperOffsetX}px`,
-            top: `${minimapData.paperOffsetY}px`,
-            width: `${minimapData.paperWidth}px`,
-            height: `${minimapData.paperHeight}px`,
-          }"
-        >
-          <canvas
-            ref="minimapCanvasRef"
-            :width="minimapData.paperWidth"
-            :height="minimapData.paperHeight"
-            class="canvas-minimap__canvas"
-          />
-
-          <div
-            class="canvas-minimap__viewport"
-            :style="{
-              left: `${minimapData.viewportRect.x - minimapData.paperOffsetX}px`,
-              top: `${minimapData.viewportRect.y - minimapData.paperOffsetY}px`,
-              width: `${minimapData.viewportRect.width}px`,
-              height: `${minimapData.viewportRect.height}px`,
-            }"
-          />
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -744,74 +558,6 @@ function resetView() {
   will-change: transform;
 }
 
-.canvas-minimap {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  z-index: 26;
-  width: 220px;
-  padding: 16px;
-  border-radius: 20px;
-  background: var(--minimap-bg);
-  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.16));
-  box-shadow: 0 18px 28px rgba(82, 57, 28, 0.1);
-  user-select: none;
-  touch-action: none;
-}
-
-.canvas-minimap__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.canvas-minimap__header span {
-  color: var(--text-soft);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.canvas-minimap__header strong {
-  color: var(--text-main);
-  font-size: 13px;
-}
-
-.canvas-minimap__stage {
-  position: relative;
-  width: 100%;
-  height: 164px;
-  border-radius: 14px;
-  background:
-    linear-gradient(var(--canvas-grid-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--canvas-grid-color) 1px, transparent 1px),
-    var(--bg-panel-strong, rgba(237, 228, 208, 0.82));
-  background-size: 18px 18px;
-  overflow: hidden;
-}
-
-.canvas-minimap__paper {
-  position: absolute;
-  border-radius: 10px;
-  background: var(--bg-panel, rgba(249, 241, 227, 0.36));
-  border: 1px solid var(--line-soft, rgba(124, 98, 69, 0.1));
-}
-
-.canvas-minimap__canvas {
-  display: block;
-  pointer-events: none;
-}
-
-.canvas-minimap__viewport {
-  position: absolute;
-  border-radius: 8px;
-  border: 1.5px dashed var(--minimap-node-selected, rgba(180, 140, 70, 0.5));
-  background: transparent;
-  box-shadow: none;
-}
-
 .publication-stage {
   position: relative;
   background: transparent;
@@ -840,12 +586,6 @@ function resetView() {
 @media (max-width: 980px) {
   .canvas-viewport {
     min-height: calc(100vh - 152px);
-  }
-
-  .canvas-minimap {
-    right: 12px;
-    bottom: 12px;
-    width: min(220px, calc(100vw - 40px));
   }
 
 }

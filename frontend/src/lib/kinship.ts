@@ -118,9 +118,15 @@ let _cachedGraph: KinshipGraph | null = null
 let _cachedFingerprint = ''
 
 function getDataFingerprint(pub: PublicationData): string {
-  const pids = Object.keys(pub.people).sort().join(',')
-  const fids = Object.keys(pub.families).sort().join(',')
-  return `${pids}|${fids}`
+  const people = Object.entries(pub.people)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([id, person]) => [id, person.gender ?? '', person.birth ?? ''].join(':'))
+    .join(',')
+  const families = Object.entries(pub.families)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([id, family]) => [id, family.adults.join('+'), family.children.join('+')].join(':'))
+    .join(',')
+  return `${people}|${families}`
 }
 
 export function invalidateKinshipCache(): void {
@@ -230,20 +236,14 @@ function extractYear(birthStr?: string): number | null {
 }
 
 function isOlderSibling(graph: KinshipGraph, personAId: string, personBId: string): boolean | null {
-  // Check sibling order from graph
-  const siblings = graph.siblings.get(personAId)
-  if (siblings) {
-    const entry = siblings.find(s => s.siblingId === personBId)
-    if (entry) {
-      // Graph doesn't store order, fall through to birth year comparison
+  for (const family of graph.families.values()) {
+    const indexA = family.children.indexOf(personAId)
+    const indexB = family.children.indexOf(personBId)
+    if (indexA >= 0 && indexB >= 0 && indexA !== indexB) {
+      return indexA < indexB
     }
   }
-  // Check if they share a parent family and compare child order
-  const parentsA = graph.parents.get(personAId)
-  const parentsB = graph.parents.get(personBId)
-  if (parentsA && parentsB) {
-    // They might share a parent - check birth year
-  }
+
   const personA = graph.people.get(personAId)
   const personB = graph.people.get(personBId)
   if (!personA || !personB) return null
@@ -258,13 +258,7 @@ function isOlderSiblingInFamily(graph: KinshipGraph, personAId: string, personBI
   if (!siblings) return null
   const isSibling = siblings.some(s => s.siblingId === personBId)
   if (!isSibling) return null
-  const personA = graph.people.get(personAId)
-  const personB = graph.people.get(personBId)
-  if (!personA || !personB) return null
-  const yearA = extractYear(personA.birth)
-  const yearB = extractYear(personB.birth)
-  if (yearA !== null && yearB !== null) return yearA < yearB
-  return null
+  return isOlderSibling(graph, personAId, personBId)
 }
 
 function areSiblings(graph: KinshipGraph, personAId: string, personBId: string): boolean {
@@ -295,6 +289,16 @@ const DIRECT_ELDER_PATRI: Record<string, TermEntry> = {
   "female_3": { term: "曾祖母", description: "曾祖母" },
   "male_4": { term: "高祖父", description: "高祖父" },
   "female_4": { term: "高祖母", description: "高祖母" },
+  "male_5": { term: "天祖父", description: "天祖父" },
+  "female_5": { term: "天祖母", description: "天祖母" },
+  "male_6": { term: "烈祖父", description: "烈祖父" },
+  "female_6": { term: "烈祖母", description: "烈祖母" },
+  "male_7": { term: "太祖父", description: "太祖父" },
+  "female_7": { term: "太祖母", description: "太祖母" },
+  "male_8": { term: "远祖父", description: "远祖父" },
+  "female_8": { term: "远祖母", description: "远祖母" },
+  "male_9": { term: "鼻祖父", description: "鼻祖父" },
+  "female_9": { term: "鼻祖母", description: "鼻祖母" },
 }
 
 // Matrilineal direct line terms (母系直系)
@@ -307,6 +311,16 @@ const DIRECT_ELDER_MATRI: Record<string, TermEntry> = {
   "female_3": { term: "外曾祖母", description: "外曾祖母" },
   "male_4": { term: "外高祖父", description: "外高祖父" },
   "female_4": { term: "外高祖母", description: "外高祖母" },
+  "male_5": { term: "外天祖父", description: "外天祖父" },
+  "female_5": { term: "外天祖母", description: "外天祖母" },
+  "male_6": { term: "外烈祖父", description: "外烈祖父" },
+  "female_6": { term: "外烈祖母", description: "外烈祖母" },
+  "male_7": { term: "外太祖父", description: "外太祖父" },
+  "female_7": { term: "外太祖母", description: "外太祖母" },
+  "male_8": { term: "外远祖父", description: "外远祖父" },
+  "female_8": { term: "外远祖母", description: "外远祖母" },
+  "male_9": { term: "外鼻祖父", description: "外鼻祖父" },
+  "female_9": { term: "外鼻祖母", description: "外鼻祖母" },
 }
 
 // Patrilineal direct line younger terms (父系直系晚辈)
@@ -319,6 +333,16 @@ const DIRECT_YOUNGER_PATRI: Record<string, TermEntry> = {
   "female_3": { term: "曾孙女", description: "曾孙女" },
   "male_4": { term: "玄孙", description: "玄孙" },
   "female_4": { term: "玄孙女", description: "玄孙女" },
+  "male_5": { term: "来孙", description: "来孙" },
+  "female_5": { term: "来孙女", description: "来孙女" },
+  "male_6": { term: "晜孙", description: "晜孙" },
+  "female_6": { term: "晜孙女", description: "晜孙女" },
+  "male_7": { term: "仍孙", description: "仍孙" },
+  "female_7": { term: "仍孙女", description: "仍孙女" },
+  "male_8": { term: "云孙", description: "云孙" },
+  "female_8": { term: "云孙女", description: "云孙女" },
+  "male_9": { term: "耳孙", description: "耳孙" },
+  "female_9": { term: "耳孙女", description: "耳孙女" },
 }
 
 // Matrilineal direct line younger terms (母系直系晚辈)
@@ -331,6 +355,16 @@ const DIRECT_YOUNGER_MATRI: Record<string, TermEntry> = {
   "female_3": { term: "外曾孙女", description: "外曾孙女" },
   "male_4": { term: "外玄孙", description: "外玄孙" },
   "female_4": { term: "外玄孙女", description: "外玄孙女" },
+  "male_5": { term: "外来孙", description: "外来孙" },
+  "female_5": { term: "外来孙女", description: "外来孙女" },
+  "male_6": { term: "外晜孙", description: "外晜孙" },
+  "female_6": { term: "外晜孙女", description: "外晜孙女" },
+  "male_7": { term: "外仍孙", description: "外仍孙" },
+  "female_7": { term: "外仍孙女", description: "外仍孙女" },
+  "male_8": { term: "外云孙", description: "外云孙" },
+  "female_8": { term: "外云孙女", description: "外云孙女" },
+  "male_9": { term: "外耳孙", description: "外耳孙" },
+  "female_9": { term: "外耳孙女", description: "外耳孙女" },
 }
 
 const SIBLING: Record<string, TermEntry> = {
@@ -411,13 +445,13 @@ const ELDER_1_BIAO: Record<string, TermEntry> = {
 function resolveDirectLine(generationGap: number, alterGender: Gender, isMatrilineal: boolean): KinshipTerm | null {
   if (generationGap < 0) {
     const gap = Math.abs(generationGap)
-    if (gap > 3) return { term: isMatrilineal ? "外远祖" : "远祖", description: isMatrilineal ? "外远祖" : "远祖", generationGap, isElder: true }
+    if (gap > 9) return { term: isMatrilineal ? "外远祖" : "远祖", description: isMatrilineal ? "外远祖" : "远祖", generationGap, isElder: true }
     const key = `${alterGender}_${gap}`
     const table = isMatrilineal ? DIRECT_ELDER_MATRI : DIRECT_ELDER_PATRI
     const entry = table[key]
     if (entry) return { term: entry.term, description: entry.description, generationGap: Math.abs(generationGap), isElder: true }
   } else if (generationGap > 0) {
-    if (generationGap > 3) return { term: isMatrilineal ? "外远孙" : "远孙", description: isMatrilineal ? "外远孙" : "远孙", generationGap, isElder: false }
+    if (generationGap > 9) return { term: isMatrilineal ? "外远孙" : "远孙", description: isMatrilineal ? "外远孙" : "远孙", generationGap, isElder: false }
     const key = `${alterGender}_${generationGap}`
     const table = isMatrilineal ? DIRECT_YOUNGER_MATRI : DIRECT_YOUNGER_PATRI
     const entry = table[key]
@@ -585,9 +619,20 @@ function resolveYoungerOneGeneration(
   return null
 }
 
-function resolveElderMultiGeneration(generationGap: number, alterGender: Gender, isMatrilineal: boolean): KinshipTerm {
+function resolveElderMultiGeneration(
+  graph: KinshipGraph,
+  path: KinshipPath,
+  generationGap: number,
+  alterGender: Gender,
+  isMatrilineal: boolean,
+): KinshipTerm {
   const gap = Math.abs(generationGap)
   if (gap >= 2) {
+    if (gap === 2 && !isMatrilineal && alterGender === "male" && path.egoConnectorId && path.alterConnectorId) {
+      const older = isOlderSiblingInFamily(graph, path.egoConnectorId, path.alterConnectorId)
+      if (older === true) return { term: "叔祖父", description: "祖父的弟弟", generationGap: gap, isElder: true }
+      if (older === false) return { term: "伯祖父", description: "祖父的哥哥", generationGap: gap, isElder: true }
+    }
     const line = isMatrilineal ? "maternal" : "paternal"
     const key = `${line}_${alterGender}`
     const entry = ELDER_2[key]
@@ -665,7 +710,7 @@ export function resolveKinshipTerm(publication: PublicationData, personAId: stri
 
   // Multi-generational elder
   if (generationGap <= -2) {
-    return resolveElderMultiGeneration(generationGap, alterGender, isDirectMatrilineal)
+    return resolveElderMultiGeneration(graph, path, generationGap, alterGender, isDirectMatrilineal)
   }
 
   return null
@@ -722,17 +767,34 @@ const FEMALE_HUSBAND: Record<string, string> = {
   "姐姐": "姐夫", "妹妹": "妹夫", "姑姑": "姑父", "堂姑": "堂姑父",
   "姨妈": "姨父", "表姨": "表姨父", "姨": "姨父", "女儿": "女婿",
   "堂姐": "堂姐夫", "堂妹": "堂妹夫", "表姐": "表姐夫", "表妹": "表妹夫",
+  "侄女": "侄女婿", "外甥女": "外甥女婿", "堂侄女": "堂侄女婿", "表侄女": "表侄女婿",
   "孙女": "孙女婿", "外孙女": "外孙女婿",
+  "曾孙女": "曾孙女婿", "外曾孙女": "外曾孙女婿",
   "玄孙女": "玄孙女婿", "外玄孙女": "外玄孙女婿",
+  "来孙女": "来孙女婿", "外来孙女": "外来孙女婿",
+  "晜孙女": "晜孙女婿", "外晜孙女": "外晜孙女婿",
+  "仍孙女": "仍孙女婿", "外仍孙女": "外仍孙女婿",
+  "云孙女": "云孙女婿", "外云孙女": "外云孙女婿",
+  "耳孙女": "耳孙女婿", "外耳孙女": "外耳孙女婿",
+  "姑奶奶": "姑爷爷", "姨奶奶": "姨爷爷",
 }
 
 /** Male-relative wife term map */
 const MALE_WIFE: Record<string, string> = {
   "哥哥": "嫂子", "弟弟": "弟媳", "叔叔": "婶婶", "舅舅": "舅妈", "表舅": "表舅妈",
-  "儿子": "儿媳", "孙子": "孙媳", "外孙": "外孙媳", "玄孙": "玄孙媳", "外玄孙": "外玄孙媳",
+  "儿子": "儿媳", "侄子": "侄媳", "外甥": "外甥媳",
+  "孙子": "孙媳", "外孙": "外孙媳",
+  "曾孙": "曾孙媳", "外曾孙": "外曾孙媳",
+  "玄孙": "玄孙媳", "外玄孙": "外玄孙媳",
+  "来孙": "来孙媳", "外来孙": "外来孙媳",
+  "晜孙": "晜孙媳", "外晜孙": "外晜孙媳",
+  "仍孙": "仍孙媳", "外仍孙": "外仍孙媳",
+  "云孙": "云孙媳", "外云孙": "外云孙媳",
+  "耳孙": "耳孙媳", "外耳孙": "外耳孙媳",
   "伯父": "伯母", "伯": "伯母", "堂伯叔": "堂伯母", "堂伯": "堂伯母", "堂叔": "堂婶",
   "堂哥": "堂嫂", "堂弟": "堂弟媳", "表哥": "表嫂", "表弟": "表弟媳",
   "堂侄": "堂侄媳", "表侄": "表侄媳",
+  "伯祖父": "伯祖母", "叔祖父": "叔祖母", "舅公": "舅婆",
 }
 
 /** Classify in-law relationship */
@@ -820,7 +882,11 @@ function classifyInLaw(
     }
   }
 
-  return { term: "姻亲", description: "姻亲关系", generationGap: 0, isElder: false }
+  const connection = findAnyConnection(publication, personAId, personBId)
+  if (connection?.spousesUsed.length) {
+    return { term: "姻亲", description: "姻亲关系", generationGap: 0, isElder: false }
+  }
+  return null
 }
 
 /** Extended relationship resolver: blood first, then in-law */
@@ -880,6 +946,7 @@ export function getSupportedKinshipTermGroups(): KinshipTermGroup[] {
       ...tableTerms(ELDER_1_BIAO),
       '伯父',
       '叔叔',
+      '叔祖父',
       '堂伯',
       '堂叔',
       '堂伯叔',

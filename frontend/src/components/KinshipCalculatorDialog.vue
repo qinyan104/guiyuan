@@ -3,7 +3,6 @@ import { ref, computed, watch } from "vue"
 import type { PublicationData, Person } from "../types/family"
 import {
   findRelationshipPathExtended,
-  getSupportedKinshipTermGroups,
   resolveKinshipTermExtended,
 } from "../lib/kinship"
 import type { KinshipPath } from "../lib/kinship"
@@ -28,8 +27,6 @@ const searchA = ref("")
 const searchB = ref("")
 const showDropdownA = ref(false)
 const showDropdownB = ref(false)
-const kinshipTermGroups = getSupportedKinshipTermGroups()
-const supportedTermCount = new Set(kinshipTermGroups.flatMap((group) => group.terms)).size
 
 watch(
   () => props.egoPersonId,
@@ -442,21 +439,6 @@ function avatarLetter(name: string): string {
             </div>
             <p>选择两位族人，查看他们之间的亲戚关系</p>
           </div>
-
-          <details class="kinship-coverage">
-            <summary class="kinship-coverage__summary">
-              <span>称谓覆盖</span>
-              <strong>{{ supportedTermCount }} 个</strong>
-            </summary>
-            <div class="kinship-coverage__groups">
-              <section v-for="group in kinshipTermGroups" :key="group.label" class="kinship-coverage__group">
-                <h3>{{ group.label }}</h3>
-                <div class="kinship-coverage__terms">
-                  <span v-for="term in group.terms" :key="term">{{ term }}</span>
-                </div>
-              </section>
-            </div>
-          </details>
         </div>
       </div>
     </div>
@@ -823,77 +805,6 @@ function avatarLetter(name: string): string {
 .chip--inlaw {
   background: var(--color-error-muted);
   color: var(--color-error);
-}
-
-/* ── Detail Toggle ── */
-/* ── Term Coverage ── */
-.kinship-coverage {
-  order: 4;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--color-card-stroke);
-}
-
-.kinship-coverage__summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  cursor: pointer;
-  color: var(--text-sub, var(--color-neutral-7));
-  font-size: var(--text-label-12);
-  font-weight: 500;
-  list-style: none;
-}
-
-.kinship-coverage__summary::-webkit-details-marker {
-  display: none;
-}
-
-.kinship-coverage__summary strong {
-  padding: 2px 8px;
-  border-radius: var(--radius-md);
-  background: var(--color-neutral-2);
-  color: var(--color-neutral-8);
-  font-size: var(--text-label-12);
-  font-weight: 500;
-}
-
-.kinship-coverage__groups {
-  display: grid;
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.kinship-coverage__group {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--color-neutral-2) 52%, transparent);
-}
-
-.kinship-coverage__group h3 {
-  margin: 0;
-  color: var(--text-main, var(--color-neutral-9));
-  font-size: var(--text-label-12);
-  font-weight: 500;
-}
-
-.kinship-coverage__terms {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.kinship-coverage__terms span {
-  padding: 2px 7px;
-  border-radius: var(--radius-md);
-  background: var(--color-neutral-1);
-  color: var(--text-sub, var(--color-neutral-7));
-  font-size: var(--text-label-12);
-  line-height: var(--leading-label);
 }
 
 /* ── Empty State ── */

@@ -5,6 +5,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -31,26 +34,40 @@ public class BackupService {
 
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String filename = "genealogy_backup_" + timestamp + ".sql";
+        Path backupFile = Files.createTempFile("genealogy_backup_", ".sql");
+        Path errorFile = Files.createTempFile("genealogy_backup_", ".err");
 
-        ProcessBuilder pb = new ProcessBuilder(
-                "mysqldump",
-                "-h" + host,
-                "-P" + port,
-                "-u" + datasourceUsername,
-                "--default-character-set=utf8mb4",
-                "--single-transaction",
-                "--routines",
-                "--triggers",
-                dbName
-        );
-        pb.environment().put("MYSQL_PWD", datasourcePassword);
-        pb.redirectErrorStream(false);
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                    "mysqldump",
+                    "-h" + host,
+                    "-P" + port,
+                    "-u" + datasourceUsername,
+                    "--default-character-set=utf8mb4",
+                    "--single-transaction",
+                    "--routines",
+                    "--triggers",
+                    dbName
+            );
+            pb.environment().put("MYSQL_PWD", datasourcePassword);
+            pb.redirectOutput(backupFile.toFile());
+            pb.redirectError(errorFile.toFile());
 
-        Process process = pb.start();
-        InputStream inputStream = process.getInputStream();
-        int exitCode = process.waitFor();
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                String errorOutput = Files.readString(errorFile);
+                throw new IOException("数据库备份失败 (exit " + exitCode + "): " + errorOutput);
+            }
 
-        return new BackupResult(filename, inputStream, exitCode);
+            Files.deleteIfExists(errorFile);
+            InputStream inputStream = Files.newInputStream(backupFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
+            return new BackupResult(filename, inputStream, exitCode);
+        } catch (IOException | InterruptedException e) {
+            Files.deleteIfExists(backupFile);
+            Files.deleteIfExists(errorFile);
+            throw e;
+        }
     }
 
     public record BackupResult(String filename, InputStream inputStream, int exitCode) {}
@@ -99,26 +116,32 @@ public class BackupService {
         String dbName = extractDbName(datasourceUrl);
         String host = extractHost(datasourceUrl);
         int port = extractPort(datasourceUrl);
+        Path errorFile = Files.createTempFile("genealogy_restore_", ".err");
 
-        ProcessBuilder pb = new ProcessBuilder(
-            "mysql",
-            "-h" + host,
-            "-P" + port,
-            "-u" + datasourceUsername,
-            "--default-character-set=utf8mb4",
-            dbName
-        );
-        pb.environment().put("MYSQL_PWD", datasourcePassword);
-        pb.redirectErrorStream(true);
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                "mysql",
+                "-h" + host,
+                "-P" + port,
+                "-u" + datasourceUsername,
+                "--default-character-set=utf8mb4",
+                dbName
+            );
+            pb.environment().put("MYSQL_PWD", datasourcePassword);
+            pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+            pb.redirectError(errorFile.toFile());
 
-        Process process = pb.start();
-        try (var stdin = process.getOutputStream()) {
-            sqlStream.transferTo(stdin);
-        }
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            String errorOutput = new String(process.getInputStream().readAllBytes());
-            throw new IOException("数据库还原失败 (exit " + exitCode + "): " + errorOutput);
+            Process process = pb.start();
+            try (var stdin = process.getOutputStream()) {
+                sqlStream.transferTo(stdin);
+            }
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                String errorOutput = Files.readString(errorFile);
+                throw new IOException("数据库还原失败 (exit " + exitCode + "): " + errorOutput);
+            }
+        } finally {
+            Files.deleteIfExists(errorFile);
         }
     }
 }

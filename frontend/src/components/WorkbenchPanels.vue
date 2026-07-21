@@ -171,7 +171,7 @@ watch(
       @click="$emit('open-kinship')"
     >
       <svg class="tool-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2" /><circle cx="12" cy="11" r="2" /><path d="M4 7l-1 4 4 1" /><path d="M10 9l1-4-4-1" /></svg>
-      关系
+      称谓
     </button>
   </div>
 
@@ -227,34 +227,7 @@ watch(
         </button>
       </div>
 
-      <div class="lp-overview">
-        <span class="lp-mode-pill" :class="{ 'lp-mode-pill--compact': !settings.showCard }">
-          {{ settings.showCard ? '卡片模式' : '简式模式' }}
-        </span>
-        <strong>{{ settings.paper }} · {{ Math.round(zoom * 100) }}%</strong>
-      </div>
-
       <div class="lp-stack">
-        <div class="lp-section">
-          <div class="lp-section-head">
-            <div class="lp-section-icon">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2.5" y="3" width="11" height="10" rx="2" /><line x1="5" y1="6" x2="11" y2="6" /><line x1="5" y1="10" x2="9" y2="10" /></svg>
-            </div>
-            <div>
-              <p class="lp-section-title">画布基础</p>
-            </div>
-          </div>
-
-          <div class="lp-surface">
-            <label class="lp-field">
-              <span class="lp-label">纸张尺寸</span>
-              <div class="lp-select-wrap">
-                <AppSelect :model-value="settings.paper" :options="[{value:'A3',label:'A3 横向'},{value:'A4',label:'A4 横向'}]" @change="(v: string) => updateSetting('paper', v as PublicationSettings['paper'])" />
-              </div>
-            </label>
-          </div>
-        </div>
-
         <div class="lp-section">
           <div class="lp-section-head">
             <div class="lp-section-icon">
@@ -1039,25 +1012,28 @@ watch(
 .layout-panel {
   position: absolute;
   top: 74px;
+  bottom: 16px;
   left: 16px;
   z-index: 24;
   width: 336px;
-  padding: 18px;
+  box-sizing: border-box;
+  padding: 16px 16px 18px;
   background: var(--color-panel-bg);
+  background-clip: padding-box;
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
   border: 1px solid var(--color-neutral-4);
-  border-radius: 24px;
+  border-radius: 22px;
   box-shadow: var(--shadow-whisper), var(--shadow-ring);
-  max-height: calc(100vh - 200px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 /* ── Panel header overrides ── */
 
 .layout-panel :deep(.floating-panel__header) {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .layout-panel :deep(.floating-panel__eyebrow) {
@@ -1078,88 +1054,9 @@ watch(
   line-height: var(--leading-title);
 }
 
-.lp-overview {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 14px;
-  padding: 14px;
-  border-radius: 20px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.7)),
-    var(--color-neutral-1);
-  border: 1px solid var(--color-card-stroke);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
-}
-
-.lp-overview__lead {
-  display: grid;
-  gap: 7px;
-}
-
-.lp-overview__lead strong {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--color-neutral-10);
-}
-
-.lp-overview__lead p {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.65;
-  color: var(--color-neutral-7);
-}
-
-.lp-mode-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: fit-content;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(196, 58, 49, 0.1);
-  color: var(--color-accent);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.lp-mode-pill--compact {
-  background: rgba(117, 90, 55, 0.1);
-  color: var(--color-neutral-7);
-}
-
-.lp-overview__stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.lp-stat {
-  display: grid;
-  gap: 3px;
-  padding: 10px 10px 9px;
-  border-radius: 14px;
-  background: rgba(247, 242, 235, 0.86);
-  border: 1px solid var(--color-card-stroke);
-}
-
-.lp-stat small {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-neutral-6);
-}
-
-.lp-stat strong {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-neutral-9);
-}
-
 .lp-stack {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .layout-panel :deep(.floating-panel__close) {
@@ -1185,27 +1082,27 @@ watch(
 
 .lp-section {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .lp-section--last {
-  margin-bottom: 0;
+  padding-bottom: 4px;
 }
 
 .lp-section-head {
   display: grid;
-  grid-template-columns: 36px 1fr;
-  gap: 10px;
-  align-items: start;
+  grid-template-columns: 32px 1fr;
+  gap: 9px;
+  align-items: center;
 }
 
 .lp-section-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
   background: rgba(196, 58, 49, 0.08);
   color: var(--color-accent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
@@ -1223,27 +1120,14 @@ watch(
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-neutral-6);
-  margin: 0 0 8px;
-}
-
-.lp-caption {
-  margin: 0 0 10px;
-  font-size: 12px;
-  color: var(--color-neutral-6);
-}
-
-.lp-section-desc {
-  margin: 4px 0 0;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--color-neutral-6);
+  margin: 0;
 }
 
 .lp-surface {
   display: grid;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 18px;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
   background: rgba(250, 247, 242, 0.86);
   border: 1px solid var(--color-card-stroke);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
@@ -1265,10 +1149,6 @@ watch(
 
 .lp-field:last-child {
   margin-bottom: 0;
-}
-
-.lp-field--disabled {
-  opacity: 0.56;
 }
 
 .lp-label {
@@ -1298,15 +1178,6 @@ watch(
   font-size: 10px;
   margin-left: 1px;
   opacity: 0.7;
-}
-
-.lp-value--hex {
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.lp-select-wrap {
-  grid-column: 1 / -1;
 }
 
 /* ── Custom range slider with filled track ── */
@@ -1355,8 +1226,7 @@ watch(
   opacity: 0.9;
 }
 
-.lp-slider:disabled,
-.lp-color:disabled {
+.lp-slider:disabled {
   cursor: not-allowed;
   opacity: 0.7;
 }
@@ -1421,41 +1291,6 @@ watch(
   background: var(--color-warning);
 }
 
-.lp-color {
-  width: 40px;
-  min-width: 40px;
-  height: 32px;
-  padding: 3px;
-  border: 1px solid var(--color-card-stroke);
-  border-radius: 10px;
-  background: var(--color-neutral-1);
-  cursor: pointer;
-}
-
-.lp-color-field {
-  gap: 8px 12px;
-}
-
-.lp-color-row {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 18px 1fr auto;
-  gap: 10px;
-  align-items: center;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.64);
-  border: 1px solid var(--color-card-stroke);
-}
-
-.lp-color-preview {
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(106, 82, 61, 0.24);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
-}
-
 /* ── Toggle rows ── */
 
 .lp-toggles {
@@ -1474,8 +1309,9 @@ watch(
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
-  border-radius: 14px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 12px;
   border: 1px solid var(--color-card-stroke);
   background: rgba(255, 255, 255, 0.62);
   font-size: var(--text-copy-13);
@@ -1806,20 +1642,6 @@ watch(
   opacity: 0.35;
 }
 
-/* ── AppSelect override inside layout panel ── */
-
-.lp-section :deep(.app-select) {
-  font-size: var(--text-copy-13);
-  border-radius: var(--radius-md);
-  border-color: var(--color-neutral-4);
-  background: var(--color-neutral-1);
-}
-
-.lp-section :deep(.app-select:focus) {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px var(--color-accent-muted);
-}
-
 /* ── Custom scrollbars ── */
 
 .layout-panel::-webkit-scrollbar,
@@ -1874,6 +1696,7 @@ watch(
   .layout-panel,
   .history-panel {
     top: 68px;
+    bottom: 12px;
     left: 12px;
     width: min(336px, calc(100vw - 24px));
   }
@@ -1895,7 +1718,6 @@ watch(
     padding: 16px 18px 18px;
   }
 
-  .lp-overview__stats,
   .lp-toggles--grid {
     grid-template-columns: 1fr;
   }
@@ -1909,10 +1731,7 @@ watch(
   border-color: var(--color-card-stroke);
 }
 
-[data-theme="dark"] .lp-overview,
 [data-theme="dark"] .lp-surface,
-[data-theme="dark"] .lp-stat,
-[data-theme="dark"] .lp-color-row,
 [data-theme="dark"] .lp-toggle {
   background: var(--color-neutral-2);
   border-color: var(--color-card-stroke);

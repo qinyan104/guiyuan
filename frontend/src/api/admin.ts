@@ -1,7 +1,6 @@
 import http from './http'
 import type { ApiResponse } from '../types/api'
 import { getAccessToken } from './tokenStore'
-import { buildAuthHeaders } from './auth'
 
 export interface AdminUser {
   id: number
@@ -38,24 +37,7 @@ export async function adminChangeRole(id: number, role: string): Promise<void> {
 }
 
 export async function adminBackupDatabase(): Promise<void> {
-  const resp = await fetch('/api/admin/backup', {
-    headers: buildAuthHeaders(),
-    credentials: 'include',
-  })
-  if (!resp.ok) {
-    const text = await resp.text()
-    throw new Error(text || '备份失败')
-  }
-  const blob = await resp.blob()
-  const disposition = resp.headers.get('Content-Disposition') || ''
-  const match = disposition.match(/filename="?([^"]+)"?/)
-  const filename = match ? match[1] : 'genealogy_backup.sql'
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  return downloadBackup()
 }
 
 export async function downloadBackup(): Promise<void> {
@@ -63,32 +45,24 @@ export async function downloadBackup(): Promise<void> {
   const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
   const url = `${baseURL}/admin/backup`
 
-  // Create a temporary anchor to trigger file download
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'genealogy_backup.sql'
-  if (token) {
-    // Use fetch to pass auth header, then blob download
-    const resp = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-      credentials: 'include',
-    })
-    if (!resp.ok) {
-      const detail = resp.status === 403 ? '无权限，仅超级管理员可操作' : `下载失败 (${resp.status})`
-      throw new Error(detail)
-    }
-    const blob = await resp.blob()
-    const disposition = resp.headers.get('Content-Disposition') || ''
-    const match = disposition.match(/filename="?(.+?)"?$/)
-    const filename = match ? match[1] : 'genealogy_backup.sql'
-    const blobUrl = URL.createObjectURL(blob)
-    a.href = blobUrl
-    a.download = filename
-    a.click()
-    URL.revokeObjectURL(blobUrl)
-  } else {
-    a.click()
+  const resp = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
+  })
+  if (!resp.ok) {
+    const detail = resp.status === 403 ? '无权限，仅超级管理员可操作' : `下载失败 (${resp.status})`
+    throw new Error(detail)
   }
+  const blob = await resp.blob()
+  const disposition = resp.headers.get('Content-Disposition') || ''
+  const match = disposition.match(/filename="?(.+?)"?$/)
+  const filename = match ? match[1] : 'genealogy_backup.sql'
+  const blobUrl = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = blobUrl
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(blobUrl)
 }
 
 export async function adminRestoreDatabase(file: File): Promise<string> {
