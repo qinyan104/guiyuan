@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 const ADMIN_USER = 'root'
 const ADMIN_PASS = '123456'
-const NEW_NICKNAME = 'E2E 测试昵称'
+const NEW_NAME = 'E2E 测试姓名'
 const NEW_PASSWORD = 'e2e_new_pass_456'
 
 test.describe('Profile / Settings', () => {
@@ -20,48 +20,40 @@ test.describe('Profile / Settings', () => {
   test('should navigate to settings page', async ({ page }) => {
     await page.goto('/dashboard/settings')
 
-    // Should see the settings hero header
-    await expect(page.getByText('偏好设置')).toBeVisible()
-    await expect(page.getByText('管理账户与系统配置')).toBeVisible()
+    await expect(page.getByText('账户设置')).toBeVisible()
+    await expect(page.getByText('账号固定不变；姓名可直接修改。')).toBeVisible()
 
-    // Should see the nickname section
-    await expect(page.getByText('身份标识')).toBeVisible()
+    await expect(page.getByText('个人资料')).toBeVisible()
 
-    // Should see the password section
-    await expect(page.getByText('通行密钥')).toBeVisible()
+    await expect(page.getByText('登录密码')).toBeVisible()
   })
 
-  test('should change nickname and see success message', async ({ page }) => {
+  test('should change profile name and see success message', async ({ page }) => {
     await page.goto('/dashboard/settings')
-    await expect(page.getByText('偏好设置')).toBeVisible()
+    await expect(page.getByText('账户设置')).toBeVisible()
 
-    // Find the nickname card section
-    const nicknameSection = page.locator('.card').filter({ hasText: '身份标识' })
-    await expect(nicknameSection).toBeVisible()
+    const profileSection = page.locator('.settings-card').filter({ hasText: '个人资料' })
+    await expect(profileSection).toBeVisible()
 
-    // Fill in new nickname
-    const nicknameInput = nicknameSection.locator('input[type="text"]')
-    await nicknameInput.fill(NEW_NICKNAME)
+    const nameInput = profileSection.locator('input[type="text"]')
+    const originalName = await nameInput.inputValue()
+    await nameInput.fill(NEW_NAME)
 
-    // Click "保存" button
-    await nicknameSection.locator('button:has-text("保存")').click()
+    await profileSection.locator('button:has-text("保存姓名")').click()
 
-    // Should see success message "已更新"
-    await expect(nicknameSection.locator('.msg.ok')).toBeVisible({ timeout: 5000 })
-    await expect(nicknameSection.locator('.msg.ok')).toContainText('已更新')
+    await expect(profileSection.locator('.msg.ok')).toBeVisible({ timeout: 5000 })
+    await expect(profileSection.locator('.msg.ok')).toContainText('已更新')
 
-    // Cleanup: reset nickname to empty (restore default)
-    await nicknameInput.fill('')
-    await nicknameSection.locator('button:has-text("保存")').click()
-    await expect(nicknameSection.locator('.msg.ok')).toBeVisible({ timeout: 5000 })
+    await nameInput.fill(originalName)
+    await profileSection.locator('button:has-text("保存姓名")').click()
+    await expect(profileSection.locator('.msg.ok')).toBeVisible({ timeout: 5000 })
   })
 
   test('should change password and verify login with new password', async ({ page }) => {
     await page.goto('/dashboard/settings')
-    await expect(page.getByText('偏好设置')).toBeVisible()
+    await expect(page.getByText('账户设置')).toBeVisible()
 
-    // Find the password card section
-    const passwordSection = page.locator('.card').filter({ hasText: '通行密钥' })
+    const passwordSection = page.locator('.settings-card').filter({ hasText: '登录密码' })
     await expect(passwordSection).toBeVisible()
 
     // Fill in password change form
@@ -98,9 +90,9 @@ test.describe('Profile / Settings', () => {
 
     // Reset password back to original
     await page.goto('/dashboard/settings')
-    await expect(page.getByText('偏好设置')).toBeVisible()
+    await expect(page.getByText('账户设置')).toBeVisible()
 
-    const resetPasswordSection = page.locator('.card').filter({ hasText: '通行密钥' })
+    const resetPasswordSection = page.locator('.settings-card').filter({ hasText: '登录密码' })
     await resetPasswordSection.locator('input[placeholder="当前密码"]').fill(NEW_PASSWORD)
     await resetPasswordSection.locator('input[placeholder="新密码"]').fill(ADMIN_PASS)
     await resetPasswordSection.locator('input[placeholder="确认新密码"]').fill(ADMIN_PASS)
@@ -113,9 +105,9 @@ test.describe('Profile / Settings', () => {
 
   test('should show error when password fields do not match', async ({ page }) => {
     await page.goto('/dashboard/settings')
-    await expect(page.getByText('偏好设置')).toBeVisible()
+    await expect(page.getByText('账户设置')).toBeVisible()
 
-    const passwordSection = page.locator('.card').filter({ hasText: '通行密钥' })
+    const passwordSection = page.locator('.settings-card').filter({ hasText: '登录密码' })
 
     // Fill mismatched passwords
     await passwordSection.locator('input[placeholder="当前密码"]').fill(ADMIN_PASS)
