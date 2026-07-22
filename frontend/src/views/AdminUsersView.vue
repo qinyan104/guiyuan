@@ -268,16 +268,6 @@ function formatDate(dateStr: string) {
         </div>
       </transition>
 
-      <!-- Create Form -->
-      <transition name="glass-pop">
-        <AdminUserCreateForm
-          v-if="showCreateForm"
-          :creating="creatingUser"
-          @submit="handleCreate"
-          @cancel="showCreateForm = false"
-        />
-      </transition>
-
       <!-- Data Table -->
       <div v-if="loading" class="loading-state">
         <div class="spinner"></div>
@@ -355,6 +345,19 @@ function formatDate(dateStr: string) {
         <p class="empty-title">{{ searchQuery ? "未找到匹配账号" : "暂无此类账号" }}</p>
         <p class="empty-desc">{{ searchQuery ? "尝试其他关键词" : "该角色下还没有编委账号" }}</p>
       </div>
+
+      <BaseDialog
+        :visible="showCreateForm"
+        title="新增编委账号"
+        max-width="720px"
+        @update:visible="(v: boolean) => { showCreateForm = v }"
+      >
+        <AdminUserCreateForm
+          :creating="creatingUser"
+          @submit="handleCreate"
+          @cancel="showCreateForm = false"
+        />
+      </BaseDialog>
 
       <BaseDialog
         :visible="resetUserId !== null"

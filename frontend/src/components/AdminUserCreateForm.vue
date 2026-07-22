@@ -35,10 +35,7 @@ function handleSubmit() {
 </script>
 
 <template>
-  <div class="bento-card create-form">
-    <div class="form-header">
-      <h3>新增编委账号</h3>
-    </div>
+  <form class="create-form" @submit.prevent="handleSubmit">
     <div class="form-grid">
       <div class="field">
         <label>用户名</label>
@@ -67,34 +64,19 @@ function handleSubmit() {
       </div>
       <div class="actions">
         <button class="btn btn--ghost" type="button" @click="emit('cancel')">取消</button>
-        <button class="btn btn--primary" type="button" :disabled="props.creating" @click="handleSubmit">
+        <button class="btn btn--primary" type="submit" :disabled="props.creating">
           {{ props.creating ? '创建中...' : '确认创建' }}
         </button>
       </div>
     </div>
-  </div>
+  </form>
 </template>
 
 <style scoped>
-.bento-card {
-  background: var(--color-panel-bg);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-whisper);
-  padding: 24px;
-}
-
 .create-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.form-header h3 {
-  margin: 0;
-  font-size: var(--text-title-18);
-  font-family: var(--font-serif);
-  color: var(--color-neutral-9);
 }
 
 .form-grid {
