@@ -37,6 +37,7 @@ const pendingDeletePerson = ref<PersonAccountRow | null>(null)
 const selectedAccountIds = ref<Set<number>>(new Set())
 const showBatchDeleteConfirm = ref(false)
 const batchDeleting = ref(false)
+const showCleanupConfirm = ref(false)
 const cleaningOrphans = ref(false)
 
 const isAllSelected = computed(() =>
@@ -147,6 +148,7 @@ async function handleBatchDelete() {
 }
 
 async function handleCleanupOrphans() {
+  showCleanupConfirm.value = false
   cleaningOrphans.value = true
   try {
     const count = await cleanupOrphanedAccounts(props.pubId)
@@ -192,7 +194,7 @@ function genderLabel(g: string) {
     <div class="admin-accounts-view">
       <PoeticHeader eyebrow="族谱管理" title="族人账号">
         <template #extra>
-          <button class="btn" :disabled="cleaningOrphans || !hasOrphans" @click="handleCleanupOrphans">
+          <button class="btn" :disabled="cleaningOrphans || !hasOrphans" @click="showCleanupConfirm = true">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             {{ cleaningOrphans ? '清理中...' : '清理空悬' }}
           </button>
@@ -298,6 +300,18 @@ function genderLabel(g: string) {
       </div>
 
       <!-- Confirm Toggle Dialog -->
+      <ConfirmDialog
+        :modelValue="showCleanupConfirm"
+        title="确认清理空悬账号"
+        message="将删除无法关联族人记录的异常账号，此操作不可撤销。"
+        confirmLabel="确认清理"
+        cancelLabel="保留"
+        tone="danger"
+        @confirm="handleCleanupOrphans"
+        @cancel="showCleanupConfirm = false"
+        @update:model-value="(v: boolean) => { showCleanupConfirm = v }"
+      />
+
       <ConfirmDialog
         :modelValue="confirmAction !== null"
         :title="confirmAction?.action === 'disable' ? '确认停用账号' : '确认启用账号'"
