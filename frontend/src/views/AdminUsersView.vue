@@ -240,7 +240,7 @@ function formatDate(dateStr: string) {
 
       <!-- Search -->
       <div class="search-bar">
-<input v-model="searchQuery" type="text" class="search-input" placeholder="搜索用户名或昵称..." />
+        <input v-model="searchQuery" type="text" class="search-input" placeholder="搜索用户名或昵称..." />
         <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">&times;</button>
       </div>
 
@@ -750,11 +750,6 @@ function formatDate(dateStr: string) {
   border: 1px solid var(--color-card-stroke);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-whisper);
-}
-
-.search-icon {
-  color: var(--color-neutral-5);
-  flex-shrink: 0;
 }
 
 .search-input {
