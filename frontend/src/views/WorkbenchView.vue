@@ -249,6 +249,7 @@ watch(
       @create-blank="relActions.createBlankDraft"
       @save-file="fileOps.saveDraftFile()"
       @save-file-as="fileOps.saveDraftFile(true)"
+      @download-png="fileOps.downloadPng"
       @download-svg="fileOps.downloadSvg"
       @export-json="fileOps.exportJson"
       @export-share-html="fileOps.exportShareHtml"

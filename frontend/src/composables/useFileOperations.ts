@@ -6,6 +6,7 @@ import {
   createPrintLayoutPages,
   createPrintPageSvg,
   createStandalonePublicationSvg,
+  rasterizeSvgToPngBlob,
   serializeSvg as serializeStandaloneSvg,
 } from '../features/export/publicationExport'
 import { generateShareHtml } from '../features/export/shareHtmlExport'
@@ -154,6 +155,10 @@ export function useFileOperations(deps: FileOperationsDeps) {
 
   function downloadTextFile(fileName: string, content: string, type: string) {
     const blob = new Blob([content], { type })
+    downloadBlobFile(fileName, blob)
+  }
+
+  function downloadBlobFile(fileName: string, blob: Blob) {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -273,6 +278,27 @@ export function useFileOperations(deps: FileOperationsDeps) {
     }
     errorMessage.value = ''
     downloadTextFile(`${sanitizeFileName(publication.title)}.svg`, serialized, 'image/svg+xml;charset=utf-8')
+    statusMessage.value = 'SVG 已下载。'
+  }
+
+  async function downloadPng() {
+    statusMessage.value = '正在导出 PNG...'
+    const svg = await createCurrentStandaloneSvg()
+    if (!svg) {
+      errorMessage.value = '当前画布没有可导出的内容。'
+      statusMessage.value = ''
+      return
+    }
+
+    try {
+      const blob = await rasterizeSvgToPngBlob(svg, layout.value)
+      downloadBlobFile(`${sanitizeFileName(publication.title)}.png`, blob)
+      errorMessage.value = ''
+      statusMessage.value = 'PNG 已下载。'
+    } catch (err) {
+      errorMessage.value = getErrorMessage(err, '导出 PNG 失败。')
+      statusMessage.value = ''
+    }
   }
 
   async function printPublication() {
@@ -413,6 +439,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     openDraftFile,
     saveDraftFile,
     downloadSvg,
+    downloadPng,
     printPublication,
     exportJson,
     exportShareHtml,

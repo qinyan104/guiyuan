@@ -305,6 +305,7 @@ function handleMouseLeave() {
 
       <!-- Continuous Drop Line Behind Name -->
       <line
+        v-if="settings.showPhoto"
         class="person-card__drop-line"
         :x1="card.width / 2"
         y1="0"

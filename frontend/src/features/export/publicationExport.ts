@@ -276,12 +276,21 @@ export interface PrintLayoutPage {
   heightMm: number
 }
 
+export interface RasterExportSize {
+  width: number
+  height: number
+  pixelRatio: number
+}
+
 export interface CreatePrintDocumentOptions {
   title: string
   paper: PublicationPaper
   pages: PrintLayoutPage[]
   pageSvgMarkups: string[]
 }
+
+const DEFAULT_RASTER_PIXEL_RATIO = 2
+const MAX_RASTER_SIDE = 8192
 
 function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
@@ -679,6 +688,62 @@ export function createPrintPageSvg(sourceSvg: SVGSVGElement, page: PrintLayoutPa
 export function serializeSvg(svg: SVGSVGElement, includeXmlHeader = true): string {
   const serialized = new XMLSerializer().serializeToString(svg)
   return includeXmlHeader ? `${XML_HEADER}\n${serialized}\n` : serialized
+}
+
+export function getRasterExportSize(
+  layout: Pick<PublicationLayout, 'width' | 'height'>,
+  pixelRatio = DEFAULT_RASTER_PIXEL_RATIO,
+  maxSide = MAX_RASTER_SIDE,
+): RasterExportSize {
+  const width = Math.max(1, layout.width)
+  const height = Math.max(1, layout.height)
+  const ratio = Math.min(pixelRatio, maxSide / width, maxSide / height)
+  const safeRatio = Math.max(0.1, ratio)
+
+  return {
+    width: Math.max(1, Math.round(width * safeRatio)),
+    height: Math.max(1, Math.round(height * safeRatio)),
+    pixelRatio: safeRatio,
+  }
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error('PNG 导出图片加载失败'))
+    image.src = src
+  })
+}
+
+export async function rasterizeSvgToPngBlob(
+  svg: SVGSVGElement,
+  layout: Pick<PublicationLayout, 'width' | 'height'>,
+): Promise<Blob> {
+  const size = getRasterExportSize(layout)
+  const svgBlob = new Blob([serializeSvg(svg)], { type: 'image/svg+xml;charset=utf-8' })
+  const url = URL.createObjectURL(svgBlob)
+
+  try {
+    const image = await loadImage(url)
+    const canvas = document.createElement('canvas')
+    canvas.width = size.width
+    canvas.height = size.height
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('当前浏览器不支持 PNG 导出')
+
+    ctx.drawImage(image, 0, 0, size.width, size.height)
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error('PNG 导出失败'))
+      }, 'image/png')
+    })
+  } finally {
+    URL.revokeObjectURL(url)
+  }
 }
 
 export function createPrintLayoutPages(layout: PublicationLayout, paper: PublicationPaper): PrintLayoutPage[] {

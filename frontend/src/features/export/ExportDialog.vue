@@ -10,6 +10,12 @@
 
       <div class="tabs">
         <button
+          :class="['tab-btn', { active: activeTab === 'png' }]"
+          @click="activeTab = 'png'"
+        >
+          PNG 图片
+        </button>
+        <button
           :class="['tab-btn', { active: activeTab === 'svg' }]"
           @click="activeTab = 'svg'"
         >
@@ -21,6 +27,15 @@
         >
           分享网页
         </button>
+      </div>
+
+      <div v-if="activeTab === 'png'" class="tab-content">
+        <p class="description">导出为高清 PNG 图片，适合发给族人、插入文档或快速预览。</p>
+        <div class="actions">
+          <button class="btn btn--primary" :disabled="isProcessing" @click="$emit('export-png')">
+            立即下载 PNG
+          </button>
+        </div>
       </div>
 
       <div v-if="activeTab === 'svg'" class="tab-content">
@@ -73,9 +88,9 @@ defineProps<{
   isProcessing?: boolean
 }>()
 
-const emit = defineEmits(['update:modelValue', 'export-svg', 'export-share-html'])
+const emit = defineEmits(['update:modelValue', 'export-png', 'export-svg', 'export-share-html'])
 
-const activeTab = ref<'svg' | 'share'>('svg')
+const activeTab = ref<'png' | 'svg' | 'share'>('png')
 const sharePassword = ref('')
 
 const passwordStrength = computed(() => {

@@ -89,6 +89,7 @@ const emit = defineEmits<{
   (event: 'create-blank'): void
   (event: 'save-file'): void
   (event: 'save-file-as'): void
+  (event: 'download-png'): void
   (event: 'download-svg'): void
   (event: 'print-publication'): void
   (event: 'export-json'): void
@@ -253,6 +254,10 @@ onBeforeUnmount(() => {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
                 下载画布 SVG
               </button>
+              <button class="dropdown-item" type="button" @click="activeMenu = null; emit('download-png')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                下载画布 PNG
+              </button>
               <button class="dropdown-item" type="button" @click="activeMenu = null; emit('export-json')">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 导出 JSON
@@ -307,6 +312,7 @@ onBeforeUnmount(() => {
       <ExportDialog
         v-model="showExportDialog"
         :isProcessing="isExporting"
+        @export-png="emit('download-png'); showExportDialog = false"
         @export-svg="emit('download-svg'); showExportDialog = false"
         @export-share-html="handleExportShareHtml"
       />
