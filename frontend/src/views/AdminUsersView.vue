@@ -12,6 +12,8 @@ import {
 import { getUserErrorMessage } from '../api/http'
 import { isSuperAdmin } from '../api/auth'
 import { useLexiconStore } from '../stores/lexicon'
+import AdminUserCreateForm from '../components/AdminUserCreateForm.vue'
+import AppSelect from '../components/AppSelect.vue'
 import BaseDialog from '../components/BaseDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PoeticHeader from '../components/PoeticHeader.vue'
@@ -27,10 +29,6 @@ const loading = ref(true)
 const activeTab = ref<'all' | 'SUPER_ADMIN' | 'ADMIN' | 'USER'>('all')
 
 const showCreateForm = ref(false)
-const newUsername = ref('')
-const newPassword = ref('')
-const newNickname = ref('')
-const newRole = ref<'ADMIN' | 'USER'>('USER')
 const creatingUser = ref(false)
 
 const resetUserId = ref<number | null>(null)
@@ -41,21 +39,6 @@ const pendingRoleChange = ref<{ userId: number; role: string } | null>(null)
 
 // Search / filter
 const searchQuery = ref('')
-// Role popover state
-const roleMenuUserId = ref<number | null>(null)
-function toggleRoleMenu(userId: number) {
-  roleMenuUserId.value = roleMenuUserId.value === userId ? null : userId
-}
-function closeRoleMenu() {
-  roleMenuUserId.value = null
-}
-
-function onDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement
-  if (!target.closest('.role-switcher')) {
-    closeRoleMenu()
-  }
-}
 
 // 批量选择
 const selectedUserIds = ref<Set<number>>(new Set())
@@ -75,6 +58,18 @@ const roleConfig: Record<string, { label: string }> = {
   SUPER_ADMIN: { label: '主修' },
   ADMIN: { label: '协修' },
   USER: { label: '编委' },
+}
+
+const roleOptions = [
+  { value: 'USER', label: '编委' },
+  { value: 'ADMIN', label: '协修' },
+]
+
+type CreateUserPayload = {
+  username: string
+  password: string
+  nickname?: string
+  role: 'ADMIN' | 'USER'
 }
 
 const tabCounts = computed(() => ({
@@ -111,22 +106,17 @@ async function loadUsers() {
 
 onMounted(() => {
   loadUsers()
-  document.addEventListener('click', onDocumentClick)
 })
 
-async function handleCreate() {
+async function handleCreate(payload: CreateUserPayload) {
   if (creatingUser.value) return
-  if (!newUsername.value.trim() || !newPassword.value.trim()) {
+  if (!payload.username || !payload.password) {
     showToast('请填写用户名和初始密码', 'error')
     return
   }
   creatingUser.value = true
   try {
-    await adminCreateUser(newUsername.value.trim(), newPassword.value.trim(), newNickname.value.trim() || undefined, newRole.value)
-    newUsername.value = ''
-    newPassword.value = ''
-    newNickname.value = ''
-    newRole.value = 'USER'
+    await adminCreateUser(payload.username, payload.password, payload.nickname, payload.role)
     showCreateForm.value = false
     showToast('账号创建成功', 'success')
     await loadUsers()
@@ -280,44 +270,12 @@ function formatDate(dateStr: string) {
 
       <!-- Create Form -->
       <transition name="glass-pop">
-        <div v-if="showCreateForm" class="bento-card create-form">
-          <div class="form-header">
-            <h3>新增编委账号</h3>
-          </div>
-          <div class="form-grid">
-            <div class="field">
-              <label>用户名</label>
-              <input v-model="newUsername" type="text" placeholder="输入登录账号" />
-            </div>
-            <div class="field">
-              <label>初始密码</label>
-              <input v-model="newPassword" type="password" placeholder="设置初始密码" />
-            </div>
-            <div class="field">
-              <label>真实姓名/昵称</label>
-              <input v-model="newNickname" type="text" placeholder="选填" />
-            </div>
-          </div>
-          <div class="form-footer">
-            <div class="role-selector">
-              <span class="label">分配角色：</span>
-              <label class="role-radio" :class="{ 'is-active': newRole === 'USER' }">
-                <input v-model="newRole" type="radio" value="USER" />
-                <span>编委</span>
-              </label>
-              <label class="role-radio admin" :class="{ 'is-active': newRole === 'ADMIN' }">
-                <input v-model="newRole" type="radio" value="ADMIN" />
-                <span>协修</span>
-              </label>
-            </div>
-            <div class="actions">
-              <button class="btn btn--ghost" @click="showCreateForm = false">取消</button>
-              <button class="btn btn--primary" :disabled="creatingUser" @click="handleCreate">
-                {{ creatingUser ? '创建中...' : '确认创建' }}
-              </button>
-            </div>
-          </div>
-        </div>
+        <AdminUserCreateForm
+          v-if="showCreateForm"
+          :creating="creatingUser"
+          @submit="handleCreate"
+          @cancel="showCreateForm = false"
+        />
       </transition>
 
       <!-- Data Table -->
@@ -354,38 +312,15 @@ function formatDate(dateStr: string) {
               </div>
             </div>
             <span class="col-role">
-              <div v-if="canManageRoles && !isProtected(user)" class="role-switcher">
-                <button
-                  class="role-badge role-badge--clickable"
-                  :class="user.role.toLowerCase()"
-                  @click.stop="toggleRoleMenu(user.id)"
-                >
-                  {{ roleConfig[user.role]?.label || user.role }}
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-                <transition name="role-pop">
-                  <div v-if="roleMenuUserId === user.id" class="role-popover">
-                    <button
-                      class="role-option"
-                      :class="{ 'is-current': user.role === 'USER' }"
-                      @click.stop="requestRoleChange(user.id, 'USER'); closeRoleMenu()"
-                    >
-                      <span class="role-option-dot user"></span>
-                      编委
-                      <svg v-if="user.role === 'USER'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    </button>
-                    <button
-                      class="role-option"
-                      :class="{ 'is-current': user.role === 'ADMIN' }"
-                      @click.stop="requestRoleChange(user.id, 'ADMIN'); closeRoleMenu()"
-                    >
-                      <span class="role-option-dot admin"></span>
-                      协修
-                      <svg v-if="user.role === 'ADMIN'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    </button>
-                  </div>
-                </transition>
-              </div>
+              <AppSelect
+                v-if="canManageRoles && !isProtected(user)"
+                :model-value="user.role"
+                :options="roleOptions"
+                variant="inline"
+                class="role-select"
+                :class="user.role.toLowerCase()"
+                @change="(role: string) => { if (role !== user.role) requestRoleChange(user.id, role) }"
+              />
               <span
                 v-else
                 class="role-badge"
@@ -527,97 +462,6 @@ function formatDate(dateStr: string) {
   padding: 24px;
 }
 
-/* ── Create Form ── */
-.create-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.form-header h3 {
-  margin: 0;
-  font-size: var(--text-title-18);
-  font-family: var(--font-serif);
-  color: var(--color-neutral-9);
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field label {
-  font-size: var(--text-label-12);
-  font-weight: 500;
-  color: var(--color-neutral-6);
-}
-
-.field input {
-  padding: 10px 14px;
-  border: 1px solid var(--color-neutral-5);
-  border-radius: var(--radius-md);
-  background: var(--color-neutral-1);
-  font-size: var(--text-copy-14);
-  color: var(--color-neutral-9);
-  outline: none;
-  transition: border-color var(--duration-fast);
-}
-
-.field input:focus {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px var(--color-accent-muted);
-}
-
-.form-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.role-selector {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: var(--text-copy-14);
-  color: var(--color-neutral-8);
-}
-
-.role-selector .label {
-  color: var(--color-neutral-6);
-}
-
-.role-radio {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.role-radio input {
-  width: 14px;
-  height: 14px;
-  margin: 0;
-  accent-color: var(--color-accent);
-}
-
-.role-radio span {
-  line-height: 1;
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-}
-
 /* ── Table ── */
 .table-card {
   padding: 0;
@@ -749,96 +593,32 @@ function formatDate(dateStr: string) {
   color: var(--color-neutral-7);
 }
 
-.role-badge--clickable {
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all 0.15s ease;
-  user-select: none;
-  padding-right: 8px;
+.role-select {
+  min-width: 82px;
 }
 
-.role-badge--clickable:hover {
-  border-color: var(--color-neutral-4);
-  background: var(--color-neutral-2);
-}
-
-.role-badge--clickable:active {
-  transform: scale(0.97);
-}
-
-/* ── Role Switcher ── */
-.role-switcher {
-  position: relative;
-  display: inline-flex;
-}
-
-.role-popover {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: var(--z-popover);
-  min-width: 140px;
-  background: var(--color-panel-bg);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-whisper);
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.role-option {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
+.role-select :deep(.app-select__trigger) {
+  border-color: transparent;
+  border-radius: 999px;
+  padding: 5px 8px 5px 12px;
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-neutral-8);
-  cursor: pointer;
-  transition: background 0.12s ease;
-  text-align: left;
-  width: 100%;
+  letter-spacing: 0.02em;
 }
 
-.role-option:hover {
-  background: var(--color-neutral-2);
+.role-select.admin :deep(.app-select__trigger) {
+  background: rgba(61, 104, 150, 0.08);
+  color: var(--color-info);
 }
 
-.role-option.is-current {
-  color: var(--color-neutral-10);
-  font-weight: 500;
-  background: var(--color-neutral-2);
+.role-select.user :deep(.app-select__trigger) {
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-7);
 }
 
-.role-option svg:last-child {
-  margin-left: auto;
-  color: var(--color-accent);
-}
-
-.role-option-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.role-option-dot.user { background: var(--color-neutral-6); }
-.role-option-dot.admin { background: var(--color-info); }
-
-.role-pop-enter-active,
-.role-pop-leave-active {
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-.role-pop-enter-from,
-.role-pop-leave-to {
-  opacity: 0;
-  transform: translateY(-4px) scale(0.96);
+.role-select :deep(.app-select__trigger:hover),
+.role-select :deep(.app-select__trigger:focus-visible) {
+  border-color: var(--color-neutral-4);
 }
 
 /* ── Columns ── */
@@ -1036,9 +816,6 @@ function formatDate(dateStr: string) {
   }
   .col-id, .check-col { display: none; }
   .col-ops { justify-content: flex-end; }
-  .form-grid { grid-template-columns: 1fr; }
-  .form-footer { flex-direction: column; gap: 14px; align-items: stretch; }
-  .actions { flex-direction: column; }
 }
 </style>
 

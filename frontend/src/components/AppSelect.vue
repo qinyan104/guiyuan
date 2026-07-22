@@ -29,6 +29,7 @@ const emit = defineEmits<{
 const isOpen = ref(false)
 const container = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
+const dropdownRef = ref<HTMLElement | null>(null)
 const highlightIndex = ref(-1)
 const dropdownStyle = ref<Record<string, string>>({})
 
@@ -125,8 +126,7 @@ function handleScroll() {
 watch(highlightIndex, (idx) => {
   if (idx < 0) return
   nextTick(() => {
-    const dropdown = document.getElementById('app-select-dropdown')
-    const opt = dropdown?.querySelectorAll('.app-select__option')[idx] as HTMLElement | undefined
+    const opt = dropdownRef.value?.querySelectorAll('.app-select__option')[idx] as HTMLElement | undefined
     try { opt?.scrollIntoView({ block: 'nearest' }) } catch { /* noop */ }
   })
 })
@@ -176,7 +176,7 @@ onUnmounted(() => {
       <Transition name="app-select-drop">
         <div
           v-if="isOpen"
-          id="app-select-dropdown"
+          ref="dropdownRef"
           class="app-select__dropdown"
           :class="variant"
           :style="dropdownStyle"
