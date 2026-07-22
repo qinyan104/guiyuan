@@ -42,6 +42,7 @@ const searchQuery = ref('')
 
 // 批量选择
 const selectedUserIds = ref<Set<number>>(new Set())
+const showBatchDeleteConfirm = ref(false)
 const batchDeleting = ref(false)
 
 const canManageRoles = computed(() => isSuperAdmin())
@@ -196,6 +197,7 @@ function toggleSelectUser(id: number) {
 async function handleBatchDelete() {
   const ids = [...selectedUserIds.value]
   if (ids.length === 0) return
+  showBatchDeleteConfirm.value = false
   batchDeleting.value = true
   try {
     await adminBatchDeleteUsers(ids)
@@ -260,7 +262,7 @@ function formatDate(dateStr: string) {
       <transition name="glass-pop">
         <div v-if="selectedUserIds.size > 0" class="batch-bar">
           <span class="batch-count">已选 {{ selectedUserIds.size }} 人</span>
-          <button class="btn btn--sm btn--danger" :disabled="batchDeleting" @click="handleBatchDelete">
+          <button class="btn btn--sm btn--danger" :disabled="batchDeleting" @click="showBatchDeleteConfirm = true">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             {{ batchDeleting ? '删除中...' : '批量删除' }}
           </button>
@@ -384,6 +386,18 @@ function formatDate(dateStr: string) {
         @confirm="confirmRoleChange"
         @cancel="cancelRoleChange"
         @update:model-value="(v: boolean) => { if (!v) cancelRoleChange() }"
+      />
+
+      <ConfirmDialog
+        :modelValue="showBatchDeleteConfirm"
+        title="确认批量删除"
+        :message="`将永久移除已选的 ${selectedUserIds.size} 个账号访问权限，该操作不可撤销。`"
+        :confirmLabel="`确认删除 ${selectedUserIds.size} 个账号`"
+        cancelLabel="保留"
+        tone="danger"
+        @confirm="handleBatchDelete"
+        @cancel="showBatchDeleteConfirm = false"
+        @update:model-value="(v: boolean) => { showBatchDeleteConfirm = v }"
       />
 
       <ConfirmDialog
