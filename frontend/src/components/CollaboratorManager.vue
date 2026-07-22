@@ -63,9 +63,9 @@ const resetPersonName = ref('')
 
 let searchAbortController: AbortController | null = null
 
-function copyText(text: string) {
+function copyText(text: string, message = '已复制到剪贴板') {
   navigator.clipboard.writeText(text).then(
-    () => showToast('已复制到剪贴板'),
+    () => showToast(message),
     () => {
       const el = document.createElement('textarea')
       el.value = text
@@ -73,7 +73,7 @@ function copyText(text: string) {
       el.select()
       document.execCommand('copy')
       document.body.removeChild(el)
-      showToast('已复制到剪贴板')
+      showToast(message)
     }
   )
 }
@@ -89,9 +89,12 @@ async function loadAccounts() {
   try {
     accounts.value = await listAccounts(props.publicationId)
     aliveAccounts.value = accounts.value.filter(p => !p.deceased).length
+    const selectableIds = new Set(accounts.value.filter(canSelectAccount).map(p => p.personDbId))
+    selectedAccountIds.value = new Set([...selectedAccountIds.value].filter(id => selectableIds.has(id)))
   } catch (err: unknown) {
     accounts.value = []
     accountsError.value = getUserErrorMessage(err, '加载族人账号失败')
+    showToast(accountsError.value, 'error')
   } finally {
     accountsLoading.value = false
   }
@@ -107,11 +110,14 @@ async function handleDeriveAccounts() {
       const copyAll = derivedResult.value
         .map(a => `${a.personName}: ${a.username} / ${a.password}`)
         .join('\n')
-      copyText(copyAll)
+      copyText(copyAll, `已创建 ${derivedResult.value.length} 个账号，凭证已复制`)
+    } else {
+      showToast('没有需要派生的账号')
     }
     await loadAccounts()
   } catch (err: unknown) {
     accountsError.value = getUserErrorMessage(err, '派生账号失败')
+    showToast(accountsError.value, 'error')
   } finally {
     derivingAccounts.value = false
   }
@@ -134,9 +140,11 @@ function exportDerivedAccounts() {
   link.download = `派生账号-${props.publicationId}.csv`
   link.click()
   URL.revokeObjectURL(url)
+  showToast('已导出账号表')
 }
 
 async function handleToggleAccount(person: PersonAccountRow) {
+  accountsError.value = null
   try {
     if (person.accountStatus === 'active') {
       await disableAccount(props.publicationId, person.personDbId)
@@ -148,17 +156,21 @@ async function handleToggleAccount(person: PersonAccountRow) {
     await loadAccounts()
   } catch (err: unknown) {
     accountsError.value = getUserErrorMessage(err, '操作失败')
+    showToast(accountsError.value, 'error')
   }
 }
 
 async function handleResetPassword(person: PersonAccountRow) {
+  accountsError.value = null
   try {
     const pwd = await resetAccountPassword(props.publicationId, person.personDbId)
     resetPasswordResult.value = pwd
     resetPersonName.value = person.personName
     showResetDialog.value = true
+    showToast('密码已重置，请保存新密码')
   } catch (err: unknown) {
     accountsError.value = getUserErrorMessage(err, '重置失败')
+    showToast(accountsError.value, 'error')
   }
 }
 
@@ -177,24 +189,31 @@ const pendingDeletePerson = ref<PersonAccountRow | null>(null)
 const selectedAccountIds = ref<Set<number>>(new Set())
 const batchDeleting = ref(false)
 
+function canSelectAccount(person: PersonAccountRow) {
+  return !person.deceased && !!person.accountStatus
+}
+
+const selectableAccounts = computed(() => accounts.value.filter(canSelectAccount))
+
 const isAllSelected = computed(() =>
-  accounts.value.length > 0 && selectedAccountIds.value.size === accounts.value.length
+  selectableAccounts.value.length > 0 && selectedAccountIds.value.size === selectableAccounts.value.length
 )
 
 function toggleSelectAll() {
   if (isAllSelected.value) {
     selectedAccountIds.value = new Set()
   } else {
-    selectedAccountIds.value = new Set(accounts.value.map(p => p.personDbId))
+    selectedAccountIds.value = new Set(selectableAccounts.value.map(p => p.personDbId))
   }
 }
 
-function toggleSelectAccount(personDbId: number) {
+function toggleSelectAccount(person: PersonAccountRow) {
+  if (!canSelectAccount(person)) return
   const next = new Set(selectedAccountIds.value)
-  if (next.has(personDbId)) {
-    next.delete(personDbId)
+  if (next.has(person.personDbId)) {
+    next.delete(person.personDbId)
   } else {
-    next.add(personDbId)
+    next.add(person.personDbId)
   }
   selectedAccountIds.value = next
 }
@@ -203,6 +222,7 @@ async function handleBatchDelete() {
   const ids = [...selectedAccountIds.value]
   if (ids.length === 0) return
   batchDeleting.value = true
+  accountsError.value = null
   try {
     const count = await batchDeleteAccounts(props.publicationId, ids)
     showToast(`已批量删除 ${count} 个账号`)
@@ -210,6 +230,7 @@ async function handleBatchDelete() {
     await loadAccounts()
   } catch (err: unknown) {
     accountsError.value = getUserErrorMessage(err, '批量删除失败')
+    showToast(accountsError.value, 'error')
   } finally {
     batchDeleting.value = false
   }
@@ -222,12 +243,14 @@ async function handleDeleteAccount(person: PersonAccountRow) {
 async function confirmDeleteAccount() {
   const person = pendingDeletePerson.value
   if (!person) return
+  accountsError.value = null
   try {
     await deleteAccount(props.publicationId, person.personDbId)
     showToast(`${person.personName} 的账号记录已清除`)
     await loadAccounts()
   } catch (err: unknown) {
     accountsError.value = getUserErrorMessage(err, '删除失败')
+    showToast(accountsError.value, 'error')
   } finally {
     pendingDeletePerson.value = null
   }
@@ -241,6 +264,7 @@ const cleaningOrphans = ref(false)
 
 async function handleCleanupOrphans() {
   cleaningOrphans.value = true
+  accountsError.value = null
   try {
     const count = await cleanupOrphanedAccounts(props.publicationId)
     if (count > 0) {
@@ -251,6 +275,7 @@ async function handleCleanupOrphans() {
     await loadAccounts()
   } catch (err: unknown) {
     accountsError.value = getUserErrorMessage(err, '清理失败')
+    showToast(accountsError.value, 'error')
   } finally {
     cleaningOrphans.value = false
   }
@@ -264,6 +289,7 @@ async function load(silent = false) {
     records.value = await listAccessRecords(props.publicationId)
   } catch (err: unknown) {
     error.value = getUserErrorMessage(err, '加载协作者失败')
+    showToast(error.value, 'error')
   } finally {
     if (!silent) loading.value = false
   }
@@ -342,6 +368,7 @@ async function handleAdd() {
     await load(true)
   } catch (err: unknown) {
     error.value = getUserErrorMessage(err, '添加失败')
+    showToast(error.value, 'error')
   } finally {
     adding.value = false
   }
@@ -366,6 +393,7 @@ async function confirmRoleChange() {
     await load(true)
   } catch (err: unknown) {
     error.value = getUserErrorMessage(err, '权限修改失败')
+    showToast(error.value, 'error')
     await load(true)
   } finally {
     pendingRoleChange.value = null
@@ -386,6 +414,7 @@ async function handleProfileChange(record: AccessRecord, field: string, value: s
     await load(true)
   } catch (err: unknown) {
     error.value = getUserErrorMessage(err, '修改隐私设置失败')
+    showToast(error.value, 'error')
     await load(true)
   }
 }
@@ -404,6 +433,7 @@ async function confirmRemove() {
     await load(true)
   } catch (err: unknown) {
     error.value = getUserErrorMessage(err, '移除失败')
+    showToast(error.value, 'error')
   } finally {
     pendingRemovalUserId.value = null
   }
@@ -639,11 +669,11 @@ onUnmounted(() => {
       </Transition>
 
       <div class="derive-bar">
-        <button class="btn btn--primary btn-derive" :disabled="derivingAccounts" @click="handleDeriveAccounts">
+        <button class="btn btn--primary btn-derive" :disabled="accountsLoading || derivingAccounts" @click="handleDeriveAccounts">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           {{ derivingAccounts ? '派生中...' : '派生账号' }}
         </button>
-        <button class="btn btn--ghost btn-derive" :disabled="cleaningOrphans" @click="handleCleanupOrphans">
+        <button class="btn btn--ghost btn-derive" :disabled="accountsLoading || cleaningOrphans" @click="handleCleanupOrphans">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           {{ cleaningOrphans ? '清理中...' : '清理空悬账号' }}
         </button>
@@ -701,7 +731,7 @@ onUnmounted(() => {
           </Transition>
           <div class="account-table-head">
             <label class="ac-check">
-              <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" />
+              <input type="checkbox" :checked="isAllSelected" :disabled="selectableAccounts.length === 0" @change="toggleSelectAll" />
             </label>
             <span class="ac-name">姓名</span>
             <span class="ac-gender">性别</span>
@@ -710,7 +740,7 @@ onUnmounted(() => {
           </div>
           <div v-for="person in accounts" :key="person.personDbId" class="account-table-row" :class="{ 'is-selected': selectedAccountIds.has(person.personDbId) }">
             <label class="ac-check">
-              <input type="checkbox" :checked="selectedAccountIds.has(person.personDbId)" @change="toggleSelectAccount(person.personDbId)" />
+              <input type="checkbox" :checked="selectedAccountIds.has(person.personDbId)" :disabled="!canSelectAccount(person)" @change="toggleSelectAccount(person)" />
             </label>
             <span class="ac-name">{{ person.personName }}</span>
             <span class="ac-gender" data-label="性别">
@@ -762,7 +792,7 @@ onUnmounted(() => {
         </div>
       </Transition>
 
-      <div v-if="!accountsLoading && accounts.length === 0" class="empty-state-sm">
+      <div v-if="!accountsLoading && !accountsError && accounts.length === 0" class="empty-state-sm">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.25"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span>还没有账号，点击"派生账号"为在世族人创建。</span>
       </div>
@@ -1405,6 +1435,11 @@ onUnmounted(() => {
 .ac-check input[type="checkbox"] {
   accent-color: var(--color-accent);
   cursor: pointer;
+}
+
+.ac-check input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
 }
 
 .ac-name {
