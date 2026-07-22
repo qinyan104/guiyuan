@@ -489,52 +489,6 @@ function genderLabel(g: string) {
 
 .action-btn.confirm:hover { filter: brightness(1.08); }
 
-/* ── 确认弹窗 ── */
-.confirm-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: var(--color-overlay);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.confirm-dialog {
-  width: 100%;
-  max-width: 380px;
-  background: var(--color-panel-bg);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-xl);
-  padding: 28px;
-  box-shadow: var(--shadow-whisper);
-}
-
-.confirm-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-title-20);
-  font-weight: 500;
-  color: var(--color-neutral-10);
-  margin: 0 0 12px;
-  text-align: center;
-}
-
-.confirm-message {
-  font-size: var(--text-copy-14);
-  color: var(--color-neutral-7);
-  text-align: center;
-  line-height: 1.6;
-  margin: 0 0 24px;
-}
-
-.confirm-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.confirm-actions > * { flex: 1; justify-content: center; }
-
 @media (max-width: 960px) {
   .account-table-head { display: none; }
   .account-table-row { grid-template-columns: 1fr; gap: 8px; }
