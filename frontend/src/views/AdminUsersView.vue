@@ -27,6 +27,7 @@ const newUsername = ref('')
 const newPassword = ref('')
 const newNickname = ref('')
 const newRole = ref<'ADMIN' | 'USER'>('USER')
+const creatingUser = ref(false)
 
 const resetUserId = ref<number | null>(null)
 const resetNewPassword = ref('')
@@ -118,7 +119,12 @@ onMounted(() => {
 })
 
 async function handleCreate() {
-  if (!newUsername.value.trim() || !newPassword.value.trim()) return
+  if (creatingUser.value) return
+  if (!newUsername.value.trim() || !newPassword.value.trim()) {
+    showToast('请填写用户名和初始密码', 'error')
+    return
+  }
+  creatingUser.value = true
   try {
     await adminCreateUser(newUsername.value.trim(), newPassword.value.trim(), newNickname.value.trim() || undefined, newRole.value)
     newUsername.value = ''
@@ -130,6 +136,8 @@ async function handleCreate() {
     await loadUsers()
   } catch {
     showToast('创建账号失败', 'error')
+  } finally {
+    creatingUser.value = false
   }
 }
 
@@ -308,7 +316,9 @@ function formatDate(dateStr: string) {
             </div>
             <div class="actions">
               <button class="btn btn--ghost" @click="showCreateForm = false">取消</button>
-              <button class="btn btn--primary" @click="handleCreate">确认创建</button>
+              <button class="btn btn--primary" :disabled="creatingUser" @click="handleCreate">
+                {{ creatingUser ? '创建中...' : '确认创建' }}
+              </button>
             </div>
           </div>
         </div>
@@ -590,6 +600,38 @@ function formatDate(dateStr: string) {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.role-selector {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-8);
+}
+
+.role-selector .label {
+  color: var(--color-neutral-6);
+}
+
+.role-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.role-radio input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.role-radio span {
+  line-height: 1;
 }
 
 .actions {
@@ -1056,7 +1098,7 @@ function formatDate(dateStr: string) {
   top: 24px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--z-toast);
+  z-index: var(--z-toast, 9100);
   display: flex;
   align-items: center;
   gap: 10px;
