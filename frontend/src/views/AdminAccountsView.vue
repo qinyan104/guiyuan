@@ -12,10 +12,13 @@ import {
   type DerivedAccount,
   type PersonAccountRow,
 } from '../api/account'
+import { getUserErrorMessage } from '../api/http'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PoeticHeader from '../components/PoeticHeader.vue'
+import { useToast } from '../composables/useToast'
 
 const props = defineProps<{ pubId: number }>()
+const { showToast } = useToast()
 
 const accounts = ref<PersonAccountRow[]>([])
 const loading = ref(true)
@@ -66,8 +69,9 @@ async function loadAccounts() {
   loading.value = true
   try {
     accounts.value = await listAccounts(props.pubId)
-  } catch {
+  } catch (error) {
     accounts.value = []
+    showToast(getUserErrorMessage(error, '加载族人账号失败'), 'error')
   } finally {
     loading.value = false
   }
@@ -80,9 +84,10 @@ async function handleDerive() {
   try {
     derivedResult.value = await deriveAccounts(props.pubId)
     showDerivedResult.value = true
+    showToast(derivedResult.value.length > 0 ? `已派生 ${derivedResult.value.length} 个账号` : '没有需要派生的账号')
     await loadAccounts()
-  } catch {
-    // error
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '派生账号失败'), 'error')
   } finally {
     deriving.value = false
   }
@@ -96,9 +101,10 @@ async function handleToggle(personDbId: number, action: 'disable' | 'enable') {
       await enableAccount(props.pubId, personDbId)
     }
     confirmAction.value = null
+    showToast(action === 'disable' ? '账号已停用' : '账号已启用')
     await loadAccounts()
-  } catch {
-    // error
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '操作失败'), 'error')
   }
 }
 
@@ -107,8 +113,8 @@ async function handleResetPassword(person: PersonAccountRow) {
     const newPassword = await resetAccountPassword(props.pubId, person.personDbId)
     resetResult.value = newPassword
     showResetResult.value = true
-  } catch {
-    // error
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '重置密码失败'), 'error')
   }
 }
 
@@ -118,11 +124,12 @@ async function handleBatchDelete() {
   showBatchDeleteConfirm.value = false
   batchDeleting.value = true
   try {
-    await batchDeleteAccounts(props.pubId, ids)
+    const count = await batchDeleteAccounts(props.pubId, ids)
     selectedAccountIds.value = new Set()
+    showToast(`已删除 ${count} 个账号`)
     await loadAccounts()
-  } catch {
-    // error
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '批量删除失败'), 'error')
   } finally {
     batchDeleting.value = false
   }
@@ -131,10 +138,11 @@ async function handleBatchDelete() {
 async function handleCleanupOrphans() {
   cleaningOrphans.value = true
   try {
-    await cleanupOrphanedAccounts(props.pubId)
+    const count = await cleanupOrphanedAccounts(props.pubId)
+    showToast(count > 0 ? `已清理 ${count} 个空悬账号` : '没有需要清理的空悬账号')
     await loadAccounts()
-  } catch {
-    // error
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '清理空悬账号失败'), 'error')
   } finally {
     cleaningOrphans.value = false
   }
@@ -154,9 +162,10 @@ async function confirmDelete() {
   try {
     await deleteAccount(props.pubId, person.personDbId)
     pendingDeletePerson.value = null
+    showToast(`${person.personName} 的账号记录已删除`)
     await loadAccounts()
-  } catch {
-    // error
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '删除账号失败'), 'error')
   }
 }
 
