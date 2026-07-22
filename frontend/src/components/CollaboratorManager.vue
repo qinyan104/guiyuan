@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import BaseDialog from './BaseDialog.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { getUserErrorMessage } from '../api/http'
 import {
@@ -55,6 +56,7 @@ const accountsError = ref<string | null>(null)
 const aliveAccounts = ref(0)
 const derivedResult = ref<DerivedAccount[]>([])
 const showDerivedResult = ref(false)
+const pendingResetPerson = ref<PersonAccountRow | null>(null)
 const resetPasswordResult = ref<string | null>(null)
 const showResetDialog = ref(false)
 const resetPersonName = ref('')
@@ -87,8 +89,9 @@ async function loadAccounts() {
   try {
     accounts.value = await listAccounts(props.publicationId)
     aliveAccounts.value = accounts.value.filter(p => !p.deceased).length
-  } catch {
+  } catch (err: unknown) {
     accounts.value = []
+    accountsError.value = getUserErrorMessage(err, '加载族人账号失败')
   } finally {
     accountsLoading.value = false
   }
@@ -112,6 +115,25 @@ async function handleDeriveAccounts() {
   } finally {
     derivingAccounts.value = false
   }
+}
+
+function csvCell(value: string | number) {
+  return `"${String(value).replace(/"/g, '""')}"`
+}
+
+function exportDerivedAccounts() {
+  if (derivedResult.value.length === 0) return
+  const rows = [
+    ['姓名', '用户名', '初始密码'],
+    ...derivedResult.value.map(account => [account.personName, account.username, account.password]),
+  ]
+  const csv = '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n')
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `派生账号-${props.publicationId}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 async function handleToggleAccount(person: PersonAccountRow) {
@@ -138,6 +160,17 @@ async function handleResetPassword(person: PersonAccountRow) {
   } catch (err: unknown) {
     accountsError.value = getUserErrorMessage(err, '重置失败')
   }
+}
+
+function requestResetPassword(person: PersonAccountRow) {
+  pendingResetPerson.value = person
+}
+
+async function confirmResetPassword() {
+  const person = pendingResetPerson.value
+  if (!person) return
+  pendingResetPerson.value = null
+  await handleResetPassword(person)
 }
 
 const pendingDeletePerson = ref<PersonAccountRow | null>(null)
@@ -621,7 +654,10 @@ onUnmounted(() => {
         <div v-if="showDerivedResult && derivedResult.length > 0" class="derive-result">
           <div class="derive-result-header">
             <span class="derive-result-title">已创建 {{ derivedResult.length }} 个账号</span>
-            <button class="derive-dismiss" @click="showDerivedResult = false">&times;</button>
+            <div class="derive-result-actions">
+              <button class="btn btn--text" type="button" @click="exportDerivedAccounts">导出 Excel</button>
+              <button class="derive-dismiss" type="button" @click="showDerivedResult = false">&times;</button>
+            </div>
           </div>
           <div class="derive-result-list">
             <div v-for="acc in derivedResult" :key="acc.personDbId" class="derive-row">
@@ -710,7 +746,7 @@ onUnmounted(() => {
                 <span class="action-na">待派生</span>
               </template>
               <template v-else-if="person.accountStatus === 'active'">
-                <button class="btn btn--text" @click="handleResetPassword(person)">重置密码</button>
+                <button class="btn btn--text" @click="requestResetPassword(person)">重置密码</button>
                 <span class="action-sep"></span>
                 <button class="btn btn--text btn--danger" @click="handleToggleAccount(person)">停用</button>
                 <span class="action-sep"></span>
@@ -757,23 +793,34 @@ onUnmounted(() => {
     />
 
     <!-- Reset password dialog -->
-    <ConfirmDialog
-      :modelValue="showResetDialog"
+    <BaseDialog
+      :visible="showResetDialog"
       :title="`${resetPersonName} 的新密码`"
-      message=""
-      tone="default"
-      @confirm="showResetDialog = false"
-      @cancel="showResetDialog = false"
-      @update:model-value="(v: boolean) => showResetDialog = v"
+      max-width="420px"
+      @update:visible="(v: boolean) => { showResetDialog = v }"
     >
       <div class="reset-pw-body">
         <div class="reset-pw-label">点击密码复制，然后分发给该族人</div>
         <code class="reset-pw-code" @click="copyText(resetPasswordResult ?? '')">{{ resetPasswordResult }}</code>
         <div class="reset-pw-hint">旧密码将立即失效。</div>
       </div>
-    </ConfirmDialog>
+      <template #footer>
+        <button class="btn btn--primary" type="button" @click="showResetDialog = false">我已保存</button>
+      </template>
+    </BaseDialog>
 
     <!-- Delete account confirm -->
+    <ConfirmDialog
+      :modelValue="pendingResetPerson !== null"
+      :title="pendingResetPerson ? `重置 ${pendingResetPerson.personName} 的密码` : '确认重置密码'"
+      message="重置后旧密码将立即失效，请确认已经准备好保存新密码。"
+      confirmLabel="确认重置"
+      tone="warning"
+      @confirm="confirmResetPassword"
+      @cancel="pendingResetPerson = null"
+      @update:model-value="(v: boolean) => { if (!v) pendingResetPerson = null }"
+    />
+
     <ConfirmDialog
       :modelValue="pendingDeletePerson !== null"
       :title="pendingDeletePerson ? `删除 ${pendingDeletePerson.personName} 的账号` : ''"
@@ -1315,13 +1362,13 @@ onUnmounted(() => {
 .account-table {
   border: 1px solid var(--color-card-stroke);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
   background: var(--color-panel-bg);
 }
 
 .account-table-head {
   display: grid;
-  grid-template-columns: 36px minmax(80px, 1.2fr) 56px minmax(90px, 1fr) auto;
+  grid-template-columns: 36px minmax(88px, 1fr) 56px minmax(180px, 1.4fr) minmax(220px, auto);
   gap: 12px;
   padding: 12px 18px;
   background: var(--color-neutral-1);
@@ -1331,16 +1378,18 @@ onUnmounted(() => {
   color: var(--color-neutral-6);
   letter-spacing: 0.03em;
   align-items: center;
+  min-width: 720px;
 }
 
 .account-table-row {
   display: grid;
-  grid-template-columns: 36px minmax(80px, 1.2fr) 56px minmax(90px, 1fr) auto;
+  grid-template-columns: 36px minmax(88px, 1fr) 56px minmax(180px, 1.4fr) minmax(220px, auto);
   gap: 12px;
   padding: 14px 18px;
   align-items: center;
   border-bottom: 1px solid var(--color-neutral-3);
   transition: background 0.15s;
+  min-width: 720px;
 }
 
 .account-table-row:last-child {
@@ -1388,6 +1437,7 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  max-width: 100%;
   font-size: 12px;
   font-weight: 500;
   color: var(--color-neutral-7);
@@ -1412,9 +1462,10 @@ onUnmounted(() => {
 .ac-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 6px;
-  white-space: nowrap;
-  flex-shrink: 0;
+  min-width: 0;
 }
 
 .action-sep {
@@ -1492,7 +1543,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 12px;
+}
+
+.derive-result-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .derive-result-title {

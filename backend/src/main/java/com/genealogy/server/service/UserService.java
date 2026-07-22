@@ -6,6 +6,8 @@ import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.User;
+import com.genealogy.server.repository.PersonAccountRepository;
+import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.util.HashUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,10 +22,17 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final PersonAccountRepository personAccountRepository;
+    private final PublicationAccessRepository publicationAccessRepository;
 
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository,
+                       BCryptPasswordEncoder passwordEncoder,
+                       PersonAccountRepository personAccountRepository,
+                       PublicationAccessRepository publicationAccessRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.personAccountRepository = personAccountRepository;
+        this.publicationAccessRepository = publicationAccessRepository;
     }
 
     @Transactional
@@ -114,12 +123,14 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void deleteUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("用户不存在"));
         if ("SUPER_ADMIN".equals(user.getRole())) {
             throw new ForbiddenException("不能删除超级管理员账号");
         }
+        deleteUserLinks(userId);
         userRepository.deleteById(userId);
     }
 
@@ -131,10 +142,16 @@ public class UserService {
             if (user == null || "SUPER_ADMIN".equals(user.getRole())) {
                 continue;
             }
+            deleteUserLinks(id);
             userRepository.delete(user);
             deleted++;
         }
         return deleted;
+    }
+
+    private void deleteUserLinks(Long userId) {
+        publicationAccessRepository.deleteByUserId(userId);
+        personAccountRepository.deleteByUserId(userId);
     }
 
     public void resetPassword(Long userId, String newPassword) {

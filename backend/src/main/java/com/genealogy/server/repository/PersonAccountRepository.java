@@ -12,6 +12,6 @@ public interface PersonAccountRepository extends JpaRepository<PersonAccount, Lo
     List<PersonAccount> findByPublicationId(Long publicationId);
     Optional<PersonAccount> findByPersonDbId(Long personDbId);
     Optional<PersonAccount> findByUserId(Long userId);
-    boolean existsByPersonDbId(Long personDbId);
+    void deleteByUserId(Long userId);
     void deleteByPersonDbId(Long personDbId);
 }

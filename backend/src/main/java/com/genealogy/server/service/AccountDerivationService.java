@@ -48,7 +48,15 @@ public class AccountDerivationService {
             if (Boolean.TRUE.equals(person.getDeceased())) continue;
             // 双重校验：death 字段有值也视为已故
             if (person.getDeath() != null && !person.getDeath().isBlank()) continue;
-            if (personAccountRepository.existsByPersonDbId(person.getId())) continue;
+
+            Optional<PersonAccount> existingAccount = personAccountRepository.findByPersonDbId(person.getId());
+            if (existingAccount.isPresent()) {
+                PersonAccount existing = existingAccount.get();
+                Long userId = existing.getUserId();
+                if (userId != null && userRepository.findById(userId).isPresent()) continue;
+                if (userId != null) publicationAccessRepository.deleteByUserId(userId);
+                personAccountRepository.deleteByPersonDbId(person.getId());
+            }
 
             String username = generateUsername(person.getName(), publicationId);
             while (userRepository.findByUsername(username).isPresent()) {
@@ -106,7 +114,8 @@ public class AccountDerivationService {
                     .findFirst();
 
             if (account.isPresent()) {
-                Optional<User> user = userRepository.findById(account.get().getUserId());
+                Long userId = account.get().getUserId();
+                Optional<User> user = userId == null ? Optional.empty() : userRepository.findById(userId);
                 if (user.isPresent()) {
                     row.put("accountStatus", account.get().getStatus());
                     row.put("username", user.get().getUsername());
@@ -130,7 +139,7 @@ public class AccountDerivationService {
                 .orElseThrow(() -> new NotFoundException("未找到该人物的账号"));
 
         // 清理派生账号带来的 VIEWER 协作权限记录
-        publicationAccessRepository.deleteByUserId(pa.getUserId());
+        if (pa.getUserId() != null) publicationAccessRepository.deleteByUserId(pa.getUserId());
         personAccountRepository.deleteByPersonDbId(personDbId);
         log.info("Deleted account for person_db_id={} in publication {}", personDbId, publicationId);
     }
@@ -146,8 +155,9 @@ public class AccountDerivationService {
         List<Long> orphanPersonDbIds = new ArrayList<>();
 
         for (PersonAccount pa : allAccounts) {
-            if (!personIds.contains(pa.getPersonDbId()) || userRepository.findById(pa.getUserId()).isEmpty()) {
-                orphanUserIds.add(pa.getUserId());
+            Long userId = pa.getUserId();
+            if (!personIds.contains(pa.getPersonDbId()) || userId == null || userRepository.findById(userId).isEmpty()) {
+                if (userId != null) orphanUserIds.add(userId);
                 orphanPersonDbIds.add(pa.getPersonDbId());
                 count++;
             }
@@ -186,6 +196,9 @@ public class AccountDerivationService {
     public String resetPassword(Long personDbId) {
         PersonAccount pa = personAccountRepository.findByPersonDbId(personDbId)
                 .orElseThrow(() -> new NotFoundException("未找到该人物的账号"));
+        if (pa.getUserId() == null) {
+            throw new NotFoundException("该账号已失效，请重新派生");
+        }
         String newPassword = generateRandomPassword();
         userService.resetPassword(pa.getUserId(), newPassword);
         return newPassword;

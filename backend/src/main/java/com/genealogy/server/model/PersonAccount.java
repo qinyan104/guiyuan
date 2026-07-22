@@ -17,7 +17,7 @@ public class PersonAccount {
     @Column(name = "person_db_id", nullable = false, unique = true)
     private Long personDbId;
 
-    @Column(name = "user_id", nullable = false, unique = true)
+    @Column(name = "user_id", unique = true)
     private Long userId;
 
     @Column(name = "publication_id", nullable = false)
