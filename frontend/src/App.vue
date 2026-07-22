@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { bootstrapAuthSession } from './api/authSession'
 import { getAccessToken } from './api/tokenStore'
 import BaseDialog from './components/BaseDialog.vue'
+import ToastHost from './components/ToastHost.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -42,6 +43,7 @@ onMounted(async () => {
   </div>
 
   <router-view v-else />
+  <ToastHost />
 
   <!-- 并发冲突弹窗 -->
   <BaseDialog :visible="!!conflictMessage" title="数据版本冲突" z-index="var(--z-critical)" @update:visible="conflictMessage = null">

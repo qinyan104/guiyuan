@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   adminListUsers,
   adminCreateUser,
@@ -11,11 +11,14 @@ import {
 } from '../api/admin'
 import { isSuperAdmin } from '../api/auth'
 import { useLexiconStore } from '../stores/lexicon'
+import BaseDialog from '../components/BaseDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PoeticHeader from '../components/PoeticHeader.vue'
 import UserAvatar from '../components/UserAvatar.vue'
+import { useToast } from '../composables/useToast'
 
 const { lexicon } = useLexiconStore()
+const { showToast } = useToast()
 const usersQuote = computed(() => lexicon.users.quote.replace(/\\n/g, '<br/>'))
 const users = ref<AdminUser[]>([])
 const loading = ref(true)
@@ -34,14 +37,6 @@ const resetNewPassword = ref('')
 
 const deleteUserId = ref<number | null>(null)
 const pendingRoleChange = ref<{ userId: number; role: string } | null>(null)
-// Toast notification
-const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null)
-let toastTimer: ReturnType<typeof setTimeout> | null = null
-function showToast(message: string, type: 'success' | 'error' = 'success') {
-  if (toastTimer) clearTimeout(toastTimer)
-  toast.value = { message, type }
-  toastTimer = setTimeout(() => { toast.value = null }, 2800)
-}
 
 // Search / filter
 const searchQuery = ref('')
@@ -425,24 +420,21 @@ function formatDate(dateStr: string) {
         <p class="empty-desc">{{ searchQuery ? "尝试其他关键词" : "该角色下还没有编委账号" }}</p>
       </div>
 
-      <!-- Reset Password Dialog -->
-      <Teleport to="body">
-        <transition name="glass-pop">
-          <div v-if="resetUserId !== null" class="glass-dialog-overlay" role="dialog" aria-modal="true" aria-label="重置密码" @click.self="resetUserId = null" @keydown.escape="resetUserId = null">
-            <div class="glass-dialog">
-              <h2 class="dialog-title">重置密码</h2>
-              <div class="dialog-field">
-                <label>为该编委设置新密码</label>
-                <input v-model="resetNewPassword" type="password" placeholder="输入新密码" @keyup.enter="handleResetPassword" />
-              </div>
-              <div class="dialog-actions">
-                <button class="btn btn--ghost" @click="resetUserId = null">取消</button>
-                <button class="btn btn--primary" @click="handleResetPassword">确认重置</button>
-              </div>
-            </div>
-          </div>
-        </transition>
-      </Teleport>
+      <BaseDialog
+        :visible="resetUserId !== null"
+        title="重置密码"
+        max-width="400px"
+        @update:visible="(v: boolean) => { if (!v) resetUserId = null }"
+      >
+        <div class="dialog-field">
+          <label>为该编委设置新密码</label>
+          <input v-model="resetNewPassword" type="password" placeholder="输入新密码" @keyup.enter="handleResetPassword" />
+        </div>
+        <template #footer>
+          <button class="btn btn--ghost" @click="resetUserId = null">取消</button>
+          <button class="btn btn--primary" @click="handleResetPassword">确认重置</button>
+        </template>
+      </BaseDialog>
 
       <ConfirmDialog
         :modelValue="pendingRoleChange !== null"
@@ -455,33 +447,19 @@ function formatDate(dateStr: string) {
         @update:model-value="(v: boolean) => { if (!v) cancelRoleChange() }"
       />
 
-      <!-- Delete Confirm Dialog -->
-      <Teleport to="body">
-        <transition name="glass-pop">
-          <div v-if="deleteUserId !== null" class="glass-dialog-overlay" role="dialog" aria-modal="true" aria-label="确认删除编委" @click.self="deleteUserId = null" @keydown.escape="deleteUserId = null">
-            <div class="glass-dialog danger-mode">
-              <h2 class="dialog-title">确认删除编委</h2>
-              <p class="dialog-desc">此操作将永久移除该编委的系统访问权限，该操作不可撤销。</p>
-              <div class="dialog-actions">
-                <button class="btn btn--ghost" @click="deleteUserId = null">保留</button>
-                <button class="btn btn--danger" @click="handleDelete(deleteUserId!)">确认删除</button>
-              </div>
-            </div>
-          </div>
-        </transition>
-      </Teleport>
+      <ConfirmDialog
+        :modelValue="deleteUserId !== null"
+        title="确认删除编委"
+        message="此操作将永久移除该编委的系统访问权限，该操作不可撤销。"
+        confirmLabel="确认删除"
+        cancelLabel="保留"
+        tone="danger"
+        @confirm="deleteUserId !== null && handleDelete(deleteUserId)"
+        @cancel="deleteUserId = null"
+        @update:model-value="(v: boolean) => { if (!v) deleteUserId = null }"
+      />
     </div>
   </div>
-  <!-- Toast Notification -->
-      <Teleport to="body">
-        <transition name="toast-fade">
-          <div v-if="toast" class="toast" :class="toast.type">
-            <svg v-if="toast.type === 'success'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-            <span>{{ toast.message }}</span>
-          </div>
-        </transition>
-      </Teleport>
 </template>
 
 <style scoped>
@@ -797,7 +775,7 @@ function formatDate(dateStr: string) {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  z-index: 100;
+  z-index: var(--z-popover);
   min-width: 140px;
   background: var(--color-panel-bg);
   border: 1px solid var(--color-card-stroke);
@@ -906,50 +884,10 @@ function formatDate(dateStr: string) {
   border-color: rgba(196, 58, 49, 0.15);
 }
 
-/* ── 对话框 ── */
-.glass-dialog-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-critical);
-  background: var(--color-overlay);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.glass-dialog {
-  width: 100%;
-  max-width: 400px;
-  background: var(--color-panel-bg);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-xl);
-  padding: 32px;
-  box-shadow: var(--shadow-whisper);
-}
-
-.dialog-title {
-  margin: 0 0 20px;
-  font-family: var(--font-serif);
-  font-size: var(--text-title-20);
-  font-weight: 500;
-  color: var(--color-neutral-10);
-  text-align: center;
-}
-
-.dialog-desc {
-  margin: 0 0 24px;
-  font-size: var(--text-copy-14);
-  color: var(--color-neutral-7);
-  text-align: center;
-  line-height: 1.6;
-}
-
 .dialog-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 28px;
 }
 
 .dialog-field label {
@@ -972,13 +910,6 @@ function formatDate(dateStr: string) {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
-
-.dialog-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.dialog-actions > * { flex: 1; justify-content: center; }
 
 .glass-pop-enter-active,
 .glass-pop-leave-active {
@@ -1090,47 +1021,6 @@ function formatDate(dateStr: string) {
   font-size: var(--text-copy-14);
   color: var(--color-neutral-5);
   margin: 0;
-}
-
-/* ── Toast ── */
-.toast {
-  position: fixed;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: var(--z-toast, 9100);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 24px;
-  border-radius: var(--radius-lg);
-  font-size: var(--text-copy-14);
-  font-weight: 500;
-  box-shadow: var(--shadow-whisper);
-  pointer-events: none;
-}
-
-.toast.success {
-  background: var(--color-success-muted);
-  color: var(--color-success-text, #065f46);
-  border: 1px solid var(--color-success-border, #a7f3d0);
-}
-
-.toast.error {
-  background: var(--color-error-muted);
-  color: var(--color-error-text, #991b1b);
-  border: 1px solid var(--color-error-border, #fecaca);
-}
-
-.toast-fade-enter-active,
-.toast-fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.toast-fade-enter-from,
-.toast-fade-leave-to {
-  opacity: 0;
-  transform: translateX(-50%) translateY(-12px);
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
