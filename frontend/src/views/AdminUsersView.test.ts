@@ -48,7 +48,7 @@ describe('AdminUsersView', () => {
     expect(adminDeleteUser).not.toHaveBeenCalled()
     expect(document.body.textContent).toContain('确认删除编委')
 
-    const confirmButton = document.body.querySelector('.glass-dialog.danger-mode .btn.btn--danger') as HTMLButtonElement
+    const confirmButton = document.body.querySelector('button[data-role="confirm"]') as HTMLButtonElement
     confirmButton.click()
     await flushPromises()
 
@@ -62,14 +62,11 @@ describe('AdminUsersView', () => {
 
     await flushPromises()
 
-    // Click the role badge to open the role-switcher popover
-    const roleBadge = wrapper.find('.role-badge--clickable')
-    expect(roleBadge.exists()).toBe(true)
-    await roleBadge.trigger('click')
+    await wrapper.get('.role-select .app-select__trigger').trigger('click')
     await flushPromises()
 
-    // Click the "协修" (ADMIN) option which triggers requestRoleChange
-    const adminOption = document.body.querySelector('.role-option:last-child') as HTMLElement | null
+    const adminOption = [...document.body.querySelectorAll('.app-select__option')]
+      .find((option) => option.textContent?.trim() === '协修') as HTMLElement | undefined
     expect(adminOption).not.toBeNull()
     adminOption!.click()
     await flushPromises()

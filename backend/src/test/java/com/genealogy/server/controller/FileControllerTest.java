@@ -64,7 +64,7 @@ public class FileControllerTest {
     @Test
     public void testUploadFileInvalidExtension() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "test.txt", "text/plain", "hello".getBytes());
+                "file", "test.txt", "text/plain", new byte[]{1, 2, 3, 4});
 
         mockMvc.perform(multipart("/api/upload").file(file))
                 .andExpect(status().isOk())

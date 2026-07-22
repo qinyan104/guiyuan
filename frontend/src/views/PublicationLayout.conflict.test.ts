@@ -49,12 +49,20 @@ const mockPublicationData: PublicationLoadResult = {
 
 describe('PublicationLayout conflict handling', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.useRealTimers()
+    vi.resetAllMocks()
     localStorage.clear()
     vi.mocked(getPublication).mockResolvedValue(mockPublicationData)
   })
 
+  async function waitForLoadBaseline() {
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(600)
+    await flushPromises()
+  }
+
   it('switches to conflict state and stops autosave retries until reload', async () => {
+    vi.useFakeTimers()
     vi.mocked(updatePublication).mockRejectedValueOnce({
       response: {
         status: 409,
@@ -67,8 +75,7 @@ describe('PublicationLayout conflict handling', () => {
       global: { stubs: { RouterView: true } },
     })
 
-    // Wait for load to complete (the watcher will fire and schedule delayed autosave)
-    await flushPromises()
+    await waitForLoadBaseline()
 
     const publicationContext = (wrapper.vm as any).pub
     publicationContext.publication.title = 'Changed title'
@@ -94,6 +101,8 @@ describe('PublicationLayout conflict handling', () => {
     vi.mocked(updatePublication).mockClear()
     await (wrapper.vm as any).saveToServer().catch(() => {})
     expect(vi.mocked(updatePublication)).not.toHaveBeenCalled()
+
+    vi.useRealTimers()
   })
 
   it('does not schedule another autosave after only the server revision changes', async () => {
@@ -104,7 +113,7 @@ describe('PublicationLayout conflict handling', () => {
       global: { stubs: { RouterView: true } },
     })
 
-    await flushPromises()
+    await waitForLoadBaseline()
 
     const publicationContext = (wrapper.vm as any).pub
     publicationContext.publication.title = 'Changed title'
@@ -140,7 +149,7 @@ describe('PublicationLayout conflict handling', () => {
       global: { stubs: { RouterView: true } },
     })
 
-    await flushPromises()
+    await waitForLoadBaseline()
 
     const publicationContext = (wrapper.vm as any).pub
     publicationContext.publication.title = 'Changed title'

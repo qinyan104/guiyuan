@@ -33,6 +33,7 @@ vi.mock('../composables/useTheme', () => ({
 vi.mock('../api/auth', () => ({
   logout,
   getUsername: () => 'alice',
+  getRole: () => 'ADMIN',
   isAdmin: () => true,
 }))
 

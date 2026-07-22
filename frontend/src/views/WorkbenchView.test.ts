@@ -247,6 +247,7 @@ function createContextStub(
       hoveredPersonId,
       selectedPerson,
       selectedPersonMeta: computed(() => `${person.name} · 未建配偶 · 0 位子女`),
+      getKinshipNote: vi.fn(() => null),
       relationshipToSelected: computed(() =>
         hoveredPersonId.value
           ? { term: '堂弟', description: '父亲的兄弟的儿子，较年轻', generationGap: 0, isElder: false }

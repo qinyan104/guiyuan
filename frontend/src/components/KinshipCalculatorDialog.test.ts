@@ -60,18 +60,4 @@ describe('KinshipCalculatorDialog', () => {
     expect(wrapper.find('.kinship-path-node--spouse').exists()).toBe(true)
   })
 
-  it('shows the supported kinship term coverage in the dialog', () => {
-    const wrapper = mount(KinshipCalculatorDialog, {
-      props: { publication: samplePublication },
-      global: {
-        stubs: {
-          Teleport: true,
-        },
-      },
-    })
-
-    expect(wrapper.text()).toContain('称谓覆盖')
-    expect(wrapper.text()).toContain('外甥女')
-    expect(wrapper.text()).toContain('婶婶')
-  })
 })

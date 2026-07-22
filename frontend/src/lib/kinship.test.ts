@@ -324,15 +324,13 @@ describe('新增称谓：母系直系', () => {
     expect(term?.term).toBe('女婿')
   })
 
-  it('兄弟(未知长幼): br → sis (无出生年)', () => {
-    // br and sis have no birth year, so isOlderSibling returns null
-    // Should now return 兄弟/姐妹 instead of falling through to 堂/表
+  it('兄弟(按家庭子女顺序): br → sis', () => {
     const term = resolveKinshipTerm(matPub, 'br', 'sis')
-    expect(term?.term).toBe('姐妹')
+    expect(term?.term).toBe('妹妹')
   })
 
-  it('兄弟(未知长幼): sis → br (无出生年)', () => {
+  it('兄弟(按家庭子女顺序): sis → br', () => {
     const term = resolveKinshipTerm(matPub, 'sis', 'br')
-    expect(term?.term).toBe('兄弟')
+    expect(term?.term).toBe('哥哥')
   })
 })

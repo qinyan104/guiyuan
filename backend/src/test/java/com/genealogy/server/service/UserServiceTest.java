@@ -6,6 +6,8 @@ import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.User;
+import com.genealogy.server.repository.PersonAccountRepository;
+import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.util.HashUtils;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,8 @@ class UserServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private BCryptPasswordEncoder passwordEncoder;
+    @Mock private PersonAccountRepository personAccountRepository;
+    @Mock private PublicationAccessRepository publicationAccessRepository;
     @InjectMocks private UserService userService;
 
     // ---- Helper ----
