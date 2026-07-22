@@ -138,12 +138,15 @@ public class AccountDerivationService {
     @Transactional
     public int cleanupOrphanedAccounts(Long publicationId) {
         List<PersonAccount> allAccounts = personAccountRepository.findByPublicationId(publicationId);
+        Set<Long> personIds = personRepository.findByPublicationId(publicationId).stream()
+                .map(Person::getId)
+                .collect(Collectors.toSet());
         int count = 0;
         List<Long> orphanUserIds = new ArrayList<>();
         List<Long> orphanPersonDbIds = new ArrayList<>();
 
         for (PersonAccount pa : allAccounts) {
-            if (userRepository.findById(pa.getUserId()).isEmpty()) {
+            if (!personIds.contains(pa.getPersonDbId()) || userRepository.findById(pa.getUserId()).isEmpty()) {
                 orphanUserIds.add(pa.getUserId());
                 orphanPersonDbIds.add(pa.getPersonDbId());
                 count++;

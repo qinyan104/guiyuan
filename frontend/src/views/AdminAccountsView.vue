@@ -13,6 +13,7 @@ import {
   type PersonAccountRow,
 } from '../api/account'
 import { getUserErrorMessage } from '../api/http'
+import BaseDialog from '../components/BaseDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PoeticHeader from '../components/PoeticHeader.vue'
 import { useToast } from '../composables/useToast'
@@ -42,10 +43,6 @@ const cleaningOrphans = ref(false)
 
 const isAllSelected = computed(() =>
   accounts.value.length > 0 && selectedAccountIds.value.size === accounts.value.length
-)
-
-const hasOrphans = computed(() =>
-  accounts.value.some(p => p.accountStatus === 'orphaned')
 )
 
 function toggleSelectAll() {
@@ -107,6 +104,25 @@ async function handleToggle(personDbId: number, action: 'disable' | 'enable') {
   } catch (error) {
     showToast(getUserErrorMessage(error, '操作失败'), 'error')
   }
+}
+
+function csvCell(value: string | number) {
+  return `"${String(value).replace(/"/g, '""')}"`
+}
+
+function exportDerivedAccounts() {
+  if (derivedResult.value.length === 0) return
+  const rows = [
+    ['姓名', '用户名', '初始密码'],
+    ...derivedResult.value.map(account => [account.personName, account.username, account.password]),
+  ]
+  const csv = '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n')
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `派生账号-${props.pubId}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 async function handleResetPassword(person: PersonAccountRow) {
@@ -194,7 +210,7 @@ function genderLabel(g: string) {
     <div class="admin-accounts-view">
       <PoeticHeader eyebrow="族谱管理" title="族人账号">
         <template #extra>
-          <button class="btn" :disabled="cleaningOrphans || !hasOrphans" @click="showCleanupConfirm = true">
+          <button class="btn" :disabled="cleaningOrphans" @click="showCleanupConfirm = true">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             {{ cleaningOrphans ? '清理中...' : '清理空悬' }}
           </button>
@@ -210,7 +226,10 @@ function genderLabel(g: string) {
         <div v-if="showDerivedResult && derivedResult.length > 0" class="bento-card derived-result">
           <div class="form-header">
             <h3>已派生 {{ derivedResult.length }} 个账号</h3>
-            <button class="icon-btn" @click="showDerivedResult = false">关闭</button>
+            <div class="derived-actions">
+              <button class="btn btn--sm" type="button" @click="exportDerivedAccounts">导出 Excel</button>
+              <button class="icon-btn" type="button" @click="showDerivedResult = false">关闭</button>
+            </div>
           </div>
           <p class="hint">请妥善保存以下凭据，密码仅显示一次。管理员可截图/打印后线下分发给族人。</p>
           <div class="credentials-table">
@@ -335,16 +354,21 @@ function genderLabel(g: string) {
         @update:model-value="(v: boolean) => { if (!v) resetTarget = null }"
       />
 
-      <ConfirmDialog
-        :modelValue="showResetResult"
+      <BaseDialog
+        :visible="showResetResult"
         title="密码已重置"
-        :message="`新密码：${resetResult}\n\n请妥善保存，密码仅显示一次。`"
-        confirmLabel="我已保存"
-        tone="default"
-        @confirm="showResetResult = false; resetTarget = null"
-        @cancel="showResetResult = false"
-        @update:model-value="(v: boolean) => { if (!v) { showResetResult = false; resetTarget = null } }"
-      />
+        max-width="420px"
+        @update:visible="(v: boolean) => { if (!v) { showResetResult = false; resetTarget = null } }"
+      >
+        <div class="reset-result">
+          <span class="reset-result__label">新密码</span>
+          <strong class="reset-result__password">{{ resetResult }}</strong>
+          <p>请妥善保存，密码仅显示一次。</p>
+        </div>
+        <template #footer>
+          <button class="btn btn--primary" type="button" @click="showResetResult = false; resetTarget = null">我已保存</button>
+        </template>
+      </BaseDialog>
 
       <!-- Delete Confirm Dialog -->
       <ConfirmDialog
@@ -386,6 +410,216 @@ function genderLabel(g: string) {
   gap: 20px;
 }
 
+.bento-card,
+.accounts-table {
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-whisper);
+}
+
+.derived-result {
+  padding: 24px;
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.form-header h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-title-18);
+  color: var(--color-neutral-9);
+}
+
+.derived-actions,
+.actions-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hint {
+  margin: 12px 0 16px;
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-6);
+}
+
+.credentials-table {
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cred-header,
+.cred-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.2fr;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.cred-header {
+  background: var(--color-neutral-1);
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-6);
+}
+
+.cred-row {
+  border-top: 1px solid var(--color-neutral-3);
+  font-size: var(--text-copy-14);
+}
+
+.accounts-table {
+  overflow-x: auto;
+}
+
+.table-header,
+.table-row {
+  display: grid;
+  grid-template-columns: 40px minmax(96px, 1fr) 64px 80px 96px minmax(130px, 1.2fr) minmax(220px, auto);
+  gap: 12px;
+  align-items: center;
+  min-width: 860px;
+}
+
+.table-header {
+  padding: 14px 20px;
+  background: var(--color-neutral-1);
+  border-bottom: 1px solid var(--color-neutral-4);
+  font-size: var(--text-label-12);
+  font-weight: 500;
+  color: var(--color-neutral-6);
+}
+
+.table-row {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-neutral-3);
+  font-size: var(--text-copy-14);
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-row:hover {
+  background: var(--color-neutral-1);
+}
+
+.table-row.is-selected {
+  background: var(--color-accent-muted);
+}
+
+.table-row.is-deceased {
+  opacity: 0.56;
+}
+
+.check-col input[type="checkbox"] {
+  accent-color: var(--color-accent);
+}
+
+.name {
+  font-weight: 500;
+  color: var(--color-neutral-9);
+}
+
+.mono {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--text-label-12);
+  white-space: nowrap;
+}
+
+.badge.active,
+.badge.alive {
+  background: rgba(60, 125, 91, 0.10);
+  color: var(--color-success);
+}
+
+.badge.disabled,
+.badge.none {
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-7);
+}
+
+.badge.deceased {
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-6);
+}
+
+.badge.orphaned {
+  background: var(--color-warning-muted);
+  color: var(--color-warning);
+}
+
+.muted {
+  color: var(--color-neutral-5);
+}
+
+.icon-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-neutral-6);
+  cursor: pointer;
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+  color: var(--color-neutral-6);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-neutral-3);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.reset-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reset-result__label {
+  font-size: var(--text-label-12);
+  color: var(--color-neutral-6);
+}
+
+.reset-result__password {
+  padding: 12px 14px;
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-1);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: var(--color-neutral-10);
+}
+
+.reset-result p {
+  margin: 0;
+  font-size: var(--text-copy-14);
+  color: var(--color-neutral-6);
+}
+
 /* ── 批量操作 ── */
 .batch-bar {
   display: flex;
@@ -402,5 +636,7 @@ function genderLabel(g: string) {
   font-weight: 500;
   color: var(--color-warning);
 }
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 </style>
