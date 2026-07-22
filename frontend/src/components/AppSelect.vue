@@ -300,6 +300,7 @@ onUnmounted(() => {
 <style>
 /* ---------- dropdown panel (teleported to body) ---------- */
 .app-select__dropdown {
+  /* Keep teleported menus above dialogs and drawers that contain selects. */
   z-index: calc(var(--z-modal, 2000) + 1);
   overflow-y: auto;
   background: var(--bg-panel-strong, #fffcf0);
