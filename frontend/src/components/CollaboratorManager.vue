@@ -713,12 +713,12 @@ onUnmounted(() => {
               <input type="checkbox" :checked="selectedAccountIds.has(person.personDbId)" @change="toggleSelectAccount(person.personDbId)" />
             </label>
             <span class="ac-name">{{ person.personName }}</span>
-            <span class="ac-gender">
+            <span class="ac-gender" data-label="性别">
               <span :class="['gender-badge', person.gender]">
                 {{ person.gender === 'male' ? '男' : person.gender === 'female' ? '女' : '未知' }}
               </span>
             </span>
-            <span class="ac-status">
+            <span class="ac-status" data-label="账号状态">
               <template v-if="person.deceased">
                 <span class="status-pill deceased"><span class="dot"></span>已故</span>
               </template>
@@ -1362,15 +1362,15 @@ onUnmounted(() => {
 .account-table {
   border: 1px solid var(--color-card-stroke);
   border-radius: var(--radius-lg);
-  overflow-x: auto;
+  overflow: hidden;
   background: var(--color-panel-bg);
 }
 
 .account-table-head {
   display: grid;
-  grid-template-columns: 36px minmax(88px, 1fr) 56px minmax(180px, 1.4fr) minmax(220px, auto);
-  gap: 12px;
-  padding: 12px 18px;
+  grid-template-columns: 28px minmax(56px, 0.55fr) 40px minmax(96px, 0.8fr) minmax(190px, 1fr);
+  gap: 8px;
+  padding: 12px 14px;
   background: var(--color-neutral-1);
   border-bottom: 1px solid var(--color-neutral-4);
   font-size: 12px;
@@ -1378,18 +1378,16 @@ onUnmounted(() => {
   color: var(--color-neutral-6);
   letter-spacing: 0.03em;
   align-items: center;
-  min-width: 720px;
 }
 
 .account-table-row {
   display: grid;
-  grid-template-columns: 36px minmax(88px, 1fr) 56px minmax(180px, 1.4fr) minmax(220px, auto);
-  gap: 12px;
-  padding: 14px 18px;
+  grid-template-columns: 28px minmax(56px, 0.55fr) 40px minmax(96px, 0.8fr) minmax(190px, 1fr);
+  gap: 8px;
+  padding: 14px;
   align-items: center;
   border-bottom: 1px solid var(--color-neutral-3);
   transition: background 0.15s;
-  min-width: 720px;
 }
 
 .account-table-row:last-child {
@@ -1410,9 +1408,18 @@ onUnmounted(() => {
 }
 
 .ac-name {
+  min-width: 0;
   font-size: 14px;
   font-weight: 500;
   color: var(--color-neutral-9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ac-gender,
+.ac-status {
+  min-width: 0;
 }
 
 .gender-badge {
@@ -1438,9 +1445,12 @@ onUnmounted(() => {
   align-items: center;
   gap: 5px;
   max-width: 100%;
+  overflow: hidden;
   font-size: 12px;
   font-weight: 500;
   color: var(--color-neutral-7);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-pill .dot {
@@ -1466,6 +1476,11 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 6px;
   min-width: 0;
+}
+
+.ac-actions .btn {
+  padding: 6px 8px;
+  font-size: 12px;
 }
 
 .action-sep {
@@ -1595,10 +1610,13 @@ onUnmounted(() => {
 
 .derive-creds {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .creds-item {
+  max-width: 100%;
   padding: 3px 10px;
   background: var(--color-neutral-2);
   border: 1px solid var(--color-neutral-4);
@@ -1608,6 +1626,7 @@ onUnmounted(() => {
   color: var(--color-neutral-8);
   cursor: pointer;
   transition: all 0.15s;
+  overflow-wrap: anywhere;
 }
 
 .creds-item:hover {
@@ -1623,6 +1642,93 @@ onUnmounted(() => {
   font-size: 11px;
   color: var(--color-neutral-6);
   margin: 10px 0 0;
+}
+
+@media (max-width: 760px) {
+  .account-table {
+    border: none;
+    background: transparent;
+  }
+
+  .account-table-head {
+    display: none;
+  }
+
+  .account-table-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-areas:
+      "check name"
+      "check gender"
+      "check status"
+      "actions actions";
+    gap: 8px 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid var(--color-card-stroke);
+    border-radius: var(--radius-md);
+    background: var(--color-panel-bg);
+  }
+
+  .account-table-row:last-child {
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--color-card-stroke);
+  }
+
+  .ac-check {
+    grid-area: check;
+    align-self: start;
+    padding-top: 2px;
+  }
+
+  .ac-name {
+    grid-area: name;
+  }
+
+  .ac-gender {
+    grid-area: gender;
+  }
+
+  .ac-status {
+    grid-area: status;
+  }
+
+  .ac-gender,
+  .ac-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ac-gender::before,
+  .ac-status::before {
+    content: attr(data-label);
+    width: 56px;
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: var(--color-neutral-5);
+  }
+
+  .ac-actions {
+    grid-area: actions;
+    justify-content: flex-start;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-neutral-3);
+  }
+
+  .action-sep {
+    display: none;
+  }
+
+  .derive-result-header,
+  .derive-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .derive-result-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 /* ── Batch bar ── */
