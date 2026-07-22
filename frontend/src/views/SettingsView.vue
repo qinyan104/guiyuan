@@ -3,6 +3,7 @@ import { useFeedback } from '../composables/useFeedback'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import { ref, computed, onMounted } from 'vue'
 import { getRole, getUsername, isSuperAdmin } from '../api/auth'
+import { getUserErrorMessage } from '../api/http'
 import { changePassword, uploadAvatar, getMyProfile, updateMyProfileName } from '../api/profile'
 import { downloadBackup, adminRestoreDatabase } from '../api/admin'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
@@ -45,7 +46,7 @@ async function handleAvatarUpload(event: Event) {
     avatarTimestamp.value = Date.now()
     feedback.statusMessage.value = '头像已更新'
   }
-  catch (err: any) { feedback.errorMessage.value = '头像上传失败: ' + (err.message || '未知错误') }
+  catch (err: unknown) { feedback.errorMessage.value = getUserErrorMessage(err, '头像上传失败') }
   finally { avatarUploading.value = false; input.value = '' }
 }
 
@@ -69,7 +70,7 @@ async function handleChangeName() {
     originalProfileName.value = nextName
     nameMsg.value = '已更新'
   }
-  catch { nameMsg.value = '提交失败' }
+  catch (err: unknown) { nameMsg.value = getUserErrorMessage(err, '提交失败') }
   finally { nameLoading.value = false }
 }
 
@@ -91,7 +92,7 @@ async function handleChangePassword() {
     await changePassword(oldPassword.value, newPassword.value)
     passwordMsg.value = '已更新'
     oldPassword.value = ''; newPassword.value = ''; confirmPassword.value = ''
-  } catch (err: any) { passwordError.value = err.response?.data?.message || '修改失败' }
+  } catch (err: unknown) { passwordError.value = getUserErrorMessage(err, '修改失败') }
   finally { passwordLoading.value = false }
 }
 
@@ -104,7 +105,7 @@ const showRestoreConfirm = ref(false)
 
 async function handleBackup() {
   backupError.value = ''; backupLoading.value = true
-  try { await downloadBackup() } catch (err: any) { backupError.value = err.message || '备份失败' }
+  try { await downloadBackup() } catch (err: unknown) { backupError.value = getUserErrorMessage(err, '备份失败') }
   finally { backupLoading.value = false }
 }
 
@@ -114,7 +115,7 @@ async function handleRestore() {
   if (!restoreFile.value) return
   restorePending.value = true
   try { const msg = await adminRestoreDatabase(restoreFile.value); feedback.statusMessage.value = msg; window.location.reload() }
-  catch (e: any) { feedback.errorMessage.value = e.message || '数据库还原失败' }
+  catch (e: unknown) { feedback.errorMessage.value = getUserErrorMessage(e, '数据库还原失败') }
   finally { restorePending.value = false }
 }
 </script>

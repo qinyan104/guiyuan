@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import ConfirmDialog from './ConfirmDialog.vue'
+import { getUserErrorMessage } from '../api/http'
 import {
   searchUsers,
   listAccessRecords,
@@ -22,16 +23,17 @@ import {
   type DerivedAccount,
   type PersonAccountRow
 } from '../api/account'
+import { useToast } from '../composables/useToast'
 
 const props = defineProps<{
   publicationId: number
 }>()
 
+const { showToast } = useToast()
+
 const records = ref<AccessRecord[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
-const toast = ref<string | null>(null)
-let toastTimer: ReturnType<typeof setTimeout> | null = null
 
 const searchContainer = ref<HTMLElement | null>(null)
 const searchQuery = ref('')
@@ -58,13 +60,6 @@ const showResetDialog = ref(false)
 const resetPersonName = ref('')
 
 let searchAbortController: AbortController | null = null
-
-// --- Toast ---
-function showToast(msg: string) {
-  toast.value = msg
-  if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { toast.value = null }, 2500)
-}
 
 function copyText(text: string) {
   navigator.clipboard.writeText(text).then(
@@ -113,7 +108,7 @@ async function handleDeriveAccounts() {
     }
     await loadAccounts()
   } catch (err: unknown) {
-    accountsError.value = err instanceof Error ? err.message : '派生账号失败'
+    accountsError.value = getUserErrorMessage(err, '派生账号失败')
   } finally {
     derivingAccounts.value = false
   }
@@ -130,7 +125,7 @@ async function handleToggleAccount(person: PersonAccountRow) {
     }
     await loadAccounts()
   } catch (err: unknown) {
-    accountsError.value = err instanceof Error ? err.message : '操作失败'
+    accountsError.value = getUserErrorMessage(err, '操作失败')
   }
 }
 
@@ -141,7 +136,7 @@ async function handleResetPassword(person: PersonAccountRow) {
     resetPersonName.value = person.personName
     showResetDialog.value = true
   } catch (err: unknown) {
-    accountsError.value = err instanceof Error ? err.message : '重置失败'
+    accountsError.value = getUserErrorMessage(err, '重置失败')
   }
 }
 
@@ -181,7 +176,7 @@ async function handleBatchDelete() {
     selectedAccountIds.value = new Set()
     await loadAccounts()
   } catch (err: unknown) {
-    accountsError.value = err instanceof Error ? err.message : '批量删除失败'
+    accountsError.value = getUserErrorMessage(err, '批量删除失败')
   } finally {
     batchDeleting.value = false
   }
@@ -199,7 +194,7 @@ async function confirmDeleteAccount() {
     showToast(`${person.personName} 的账号记录已清除`)
     await loadAccounts()
   } catch (err: unknown) {
-    accountsError.value = err instanceof Error ? err.message : '删除失败'
+    accountsError.value = getUserErrorMessage(err, '删除失败')
   } finally {
     pendingDeletePerson.value = null
   }
@@ -222,7 +217,7 @@ async function handleCleanupOrphans() {
     }
     await loadAccounts()
   } catch (err: unknown) {
-    accountsError.value = err instanceof Error ? err.message : '清理失败'
+    accountsError.value = getUserErrorMessage(err, '清理失败')
   } finally {
     cleaningOrphans.value = false
   }
@@ -234,8 +229,8 @@ async function load(silent = false) {
   error.value = null
   try {
     records.value = await listAccessRecords(props.publicationId)
-  } catch (err: any) {
-    error.value = err.message || '加载协作者失败'
+  } catch (err: unknown) {
+    error.value = getUserErrorMessage(err, '加载协作者失败')
   } finally {
     if (!silent) loading.value = false
   }
@@ -312,8 +307,8 @@ async function handleAdd() {
     showToast(`已添加 ${selectedUser.value.nickname} 为${newRole.value === 'EDITOR' ? '编辑者' : '浏览者'}`)
     clearSelectedUser()
     await load(true)
-  } catch (err: any) {
-    error.value = err.message || '添加失败'
+  } catch (err: unknown) {
+    error.value = getUserErrorMessage(err, '添加失败')
   } finally {
     adding.value = false
   }
@@ -336,8 +331,8 @@ async function confirmRoleChange() {
     await updateAccessRole(props.publicationId, pending.userId, pending.role, profile)
     showToast(`已调整 ${pending.name} 的权限`)
     await load(true)
-  } catch (err: any) {
-    error.value = err.message || '权限修改失败'
+  } catch (err: unknown) {
+    error.value = getUserErrorMessage(err, '权限修改失败')
     await load(true)
   } finally {
     pendingRoleChange.value = null
@@ -356,8 +351,8 @@ async function handleProfileChange(record: AccessRecord, field: string, value: s
     await updateAccessRole(props.publicationId, record.userId, record.role, JSON.stringify(profile))
     showToast('隐私脱敏设置已更新')
     await load(true)
-  } catch (err: any) {
-    error.value = err.message || '修改隐私设置失败'
+  } catch (err: unknown) {
+    error.value = getUserErrorMessage(err, '修改隐私设置失败')
     await load(true)
   }
 }
@@ -374,8 +369,8 @@ async function confirmRemove() {
     await removeAccessRecord(props.publicationId, pending.userId)
     showToast(`已移除 ${pending.name}`)
     await load(true)
-  } catch (err: any) {
-    error.value = err.message || '移除失败'
+  } catch (err: unknown) {
+    error.value = getUserErrorMessage(err, '移除失败')
   } finally {
     pendingRemovalUserId.value = null
   }
@@ -395,19 +390,11 @@ onUnmounted(() => {
   window.removeEventListener('click', handleClickOutside)
   if (searchTimeout) clearTimeout(searchTimeout)
   if (searchAbortController) searchAbortController.abort()
-  if (toastTimer) clearTimeout(toastTimer)
 })
 </script>
 
 <template>
   <div class="collab-manager">
-    <!-- Toast -->
-    <Teleport to="body">
-      <Transition name="toast">
-        <div v-if="toast" class="toast-bar">{{ toast }}</div>
-      </Transition>
-    </Teleport>
-
     <!-- Error strip -->
     <Transition name="slide">
       <div v-if="error" class="error-strip">
@@ -806,31 +793,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 24px;
-}
-
-/* ── Toast ── */
-.toast-bar {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9999;
-  background: #2b2016;
-  color: #f5ede3;
-  padding: 10px 24px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
-  box-shadow: var(--shadow-whisper);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.toast-enter-active { animation: toastIn 0.25s ease; }
-.toast-leave-active { animation: toastIn 0.2s ease reverse; }
-@keyframes toastIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* ── Transitions ── */

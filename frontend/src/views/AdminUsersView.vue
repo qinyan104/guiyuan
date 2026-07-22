@@ -9,6 +9,7 @@ import {
   adminBatchDeleteUsers,
   type AdminUser,
 } from '../api/admin'
+import { getUserErrorMessage } from '../api/http'
 import { isSuperAdmin } from '../api/auth'
 import { useLexiconStore } from '../stores/lexicon'
 import BaseDialog from '../components/BaseDialog.vue'
@@ -129,8 +130,8 @@ async function handleCreate() {
     showCreateForm.value = false
     showToast('账号创建成功', 'success')
     await loadUsers()
-  } catch {
-    showToast('创建账号失败', 'error')
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '创建账号失败'), 'error')
   } finally {
     creatingUser.value = false
   }
@@ -142,8 +143,8 @@ async function handleDelete(id: number) {
     deleteUserId.value = null
     showToast('账号已删除', 'success')
     await loadUsers()
-  } catch {
-    showToast('删除失败', 'error')
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '删除失败'), 'error')
   }
 }
 
@@ -154,8 +155,8 @@ async function handleResetPassword() {
     resetUserId.value = null
     resetNewPassword.value = ''
     showToast('密码已重置', 'success')
-  } catch {
-    showToast('重置密码失败', 'error')
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '重置密码失败'), 'error')
   }
 }
 
@@ -179,8 +180,8 @@ async function handleRoleChange(userId: number, newRoleVal: string) {
     await adminChangeRole(userId, newRoleVal)
     await loadUsers()
     showToast('角色已更新', 'success')
-  } catch {
-    showToast('角色修改失败', 'error')
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '角色修改失败'), 'error')
   }
 }
 
@@ -211,8 +212,8 @@ async function handleBatchDelete() {
     selectedUserIds.value = new Set()
     await loadUsers()
     showToast('批量删除完成', 'success')
-  } catch {
-    showToast('批量删除失败', 'error')
+  } catch (error) {
+    showToast(getUserErrorMessage(error, '批量删除失败'), 'error')
   } finally {
     batchDeleting.value = false
   }
