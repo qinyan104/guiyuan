@@ -600,7 +600,6 @@ function formatDate(dateStr: string) {
 /* ── Table ── */
 .table-card {
   padding: 0;
-  overflow: hidden;
   background: var(--color-panel-bg);
   border: 1px solid var(--color-card-stroke);
   border-radius: var(--radius-xl);
