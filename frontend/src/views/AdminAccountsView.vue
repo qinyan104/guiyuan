@@ -118,6 +118,17 @@ async function handleResetPassword(person: PersonAccountRow) {
   }
 }
 
+function requestResetPassword(person: PersonAccountRow) {
+  resetTarget.value = person
+}
+
+async function confirmResetPassword() {
+  const person = resetTarget.value
+  if (!person) return
+  resetTarget.value = null
+  await handleResetPassword(person)
+}
+
 async function handleBatchDelete() {
   const ids = [...selectedAccountIds.value]
   if (ids.length === 0) return
@@ -268,7 +279,7 @@ function genderLabel(g: string) {
           <span class="actions-cell">
             <template v-if="!row.deceased && row.accountStatus === 'active'">
               <button class="btn btn--sm btn--warning" @click="requestToggle(row, 'disable')">停用</button>
-              <button class="btn btn--sm" @click="handleResetPassword(row)">重置密码</button>
+              <button class="btn btn--sm" @click="requestResetPassword(row)">重置密码</button>
               <button class="btn btn--sm btn--danger" @click="requestDelete(row)">删除</button>
             </template>
             <template v-else-if="!row.deceased && row.accountStatus === 'disabled'">
@@ -299,6 +310,17 @@ function genderLabel(g: string) {
       />
 
       <!-- Reset Password Result Dialog -->
+      <ConfirmDialog
+        :modelValue="resetTarget !== null"
+        :title="resetTarget ? `重置 ${resetTarget.personName} 的密码` : '确认重置密码'"
+        message="重置后旧密码将立即失效，请确认已经准备好保存新密码。"
+        confirmLabel="确认重置"
+        tone="warning"
+        @confirm="confirmResetPassword"
+        @cancel="resetTarget = null"
+        @update:model-value="(v: boolean) => { if (!v) resetTarget = null }"
+      />
+
       <ConfirmDialog
         :modelValue="showResetResult"
         title="密码已重置"
