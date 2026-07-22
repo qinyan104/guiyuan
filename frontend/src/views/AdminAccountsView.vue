@@ -32,6 +32,7 @@ const pendingDeletePerson = ref<PersonAccountRow | null>(null)
 
 // Selection
 const selectedAccountIds = ref<Set<number>>(new Set())
+const showBatchDeleteConfirm = ref(false)
 const batchDeleting = ref(false)
 const cleaningOrphans = ref(false)
 
@@ -114,6 +115,7 @@ async function handleResetPassword(person: PersonAccountRow) {
 async function handleBatchDelete() {
   const ids = [...selectedAccountIds.value]
   if (ids.length === 0) return
+  showBatchDeleteConfirm.value = false
   batchDeleting.value = true
   try {
     await batchDeleteAccounts(props.pubId, ids)
@@ -213,7 +215,7 @@ function genderLabel(g: string) {
         <transition name="glass-pop">
           <div v-if="selectedAccountIds.size > 0" class="batch-bar">
             <span class="batch-count">已选 {{ selectedAccountIds.size }} 项</span>
-            <button class="btn btn--sm btn--danger" :disabled="batchDeleting" @click="handleBatchDelete">
+            <button class="btn btn--sm btn--danger" :disabled="batchDeleting" @click="showBatchDeleteConfirm = true">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               删除所选
             </button>
@@ -300,6 +302,18 @@ function genderLabel(g: string) {
       />
 
       <!-- Delete Confirm Dialog -->
+      <ConfirmDialog
+        :modelValue="showBatchDeleteConfirm"
+        title="确认批量删除账号"
+        :message="`确定删除已选的 ${selectedAccountIds.size} 个账号记录？关联的登录账号和协作权限将一并清除，此操作不可撤销。`"
+        :confirmLabel="`确认删除 ${selectedAccountIds.size} 个账号`"
+        cancelLabel="保留"
+        tone="danger"
+        @confirm="handleBatchDelete"
+        @cancel="showBatchDeleteConfirm = false"
+        @update:model-value="(v: boolean) => { showBatchDeleteConfirm = v }"
+      />
+
       <ConfirmDialog
         :modelValue="pendingDeletePerson !== null"
         :title="pendingDeletePerson ? `删除 ${pendingDeletePerson.personName} 的账号` : ''"
