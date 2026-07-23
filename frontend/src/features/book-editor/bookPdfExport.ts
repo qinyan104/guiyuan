@@ -82,10 +82,11 @@ export async function exportBookPdf(doc: BookDocument, pages: BookPageLayout[]) 
     ctx.strokeStyle = "#000"
     ctx.lineWidth = 2
     ctx.strokeRect(44, 44, BOOK_PAGE.width - 88, BOOK_PAGE.height - 88)
-    ctx.strokeStyle = "#000"
-    ctx.lineWidth = 1
-    const innerInset = margin - 38
-    ctx.strokeRect(innerInset, innerInset, BOOK_PAGE.width - innerInset * 2, BOOK_PAGE.height - innerInset * 2)
+    if (isClassic) {
+      ctx.lineWidth = 1
+      const innerInset = margin - 38
+      ctx.strokeRect(innerInset, innerInset, BOOK_PAGE.width - innerInset * 2, BOOK_PAGE.height - innerInset * 2)
+    }
     if (!pageLayout.blocks.some((item) => item.block.type === "cover")) {
       drawColumnRules(ctx, margin, lineHeight, columnsPerPage(doc.layout), charsPerColumn(doc.layout))
     }

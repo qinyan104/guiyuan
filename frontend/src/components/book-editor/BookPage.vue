@@ -183,6 +183,13 @@ function toHan(value: number): string {
   border-color: #000;
 }
 
+.book-page.tpl-plain::before,
+.book-page.tpl-plain::after,
+.book-page.tpl-white::before,
+.book-page.tpl-white::after {
+  display: none;
+}
+
 .cover {
   min-height: 860px;
   display: flex;
