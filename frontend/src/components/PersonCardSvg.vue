@@ -369,39 +369,30 @@ function handleMouseLeave() {
         }"
       >{{ kinshipNote }}</text>
 
-      <!-- Lineage Badge (Compact Vertical Tag at Top Right) -->
-      <g v-if="settings.showLineage && lineageBadge">
-        <rect
-          :x="card.width / 2 + 16 * settings.fontScale"
-          :y="12 * settings.fontScale"
-          :width="14 * settings.fontScale"
-          :height="lineageBadge.length * 12 * settings.fontScale + 8"
-          fill="var(--bg-panel, #ffffff)"
-          stroke="var(--line-soft, #cccccc)"
-          stroke-width="0.8"
-          rx="2"
-        />
-        <text
+      <!-- Lineage Note (Compact — top right) -->
+      <text
+        v-if="settings.showLineage && lineageBadge"
+        class="person-card__lineage--compact"
+        :x="card.width / 2 + 23 * settings.fontScale"
+        :y="22 * settings.fontScale"
+        text-anchor="middle"
+        :style="{
+          fontSize: `${10 * settings.fontScale}px`,
+          fontWeight: 500,
+          fontFamily: 'var(--font-serif)',
+          fill: 'var(--card-name-fill, #1D1D1F)',
+          opacity: 0.58
+        }"
+      >
+        <tspan
+          v-for="(char, index) in lineageBadge.split('')"
+          :key="index"
           :x="card.width / 2 + 23 * settings.fontScale"
-          :y="22 * settings.fontScale"
-          text-anchor="middle"
-          :style="{
-            fontSize: `${10 * settings.fontScale}px`,
-            fontWeight: 500,
-            fontFamily: 'var(--font-serif)',
-            fill: 'var(--text-soft, #86868b)'
-          }"
+          :dy="index === 0 ? 0 : 12 * settings.fontScale"
         >
-          <tspan
-            v-for="(char, index) in lineageBadge.split('')"
-            :key="index"
-            :x="card.width / 2 + 23 * settings.fontScale"
-            :dy="index === 0 ? 0 : 12 * settings.fontScale"
-          >
-            {{ char }}
-          </tspan>
-        </text>
-      </g>
+          {{ char }}
+        </tspan>
+      </text>
 
       <!-- Imperial/Heir Indicator (Compact Vertical Tag at Top Left) -->
       <g v-if="imperialBadge">
