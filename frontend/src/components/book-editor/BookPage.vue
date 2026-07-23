@@ -29,11 +29,22 @@ const pageStyle = computed(() => ({
 }))
 
 function personStyle(text: string) {
-  const columns = Math.min(textColumnCount(text, props.layout), columnsPerPage(props.layout))
+  const columns = Math.min(textColumnCount(text, props.layout) + 1, columnsPerPage(props.layout))
   return {
     width: `${columns * columnGap(props.layout) * pageScale}px`,
     maxWidth: "var(--grid-width)",
   }
+}
+
+function editableText(element: HTMLElement) {
+  return (element.textContent ?? "").replace(/\r\n?/g, "\n")
+}
+
+function resizeEditable(event: Event) {
+  const element = event.currentTarget as HTMLElement
+  const block = element.parentElement
+  if (!block) return
+  Object.assign(block.style, personStyle(editableText(element)))
 }
 
 function startEdit(blockIndex: number) {
@@ -42,13 +53,27 @@ function startEdit(blockIndex: number) {
 }
 
 function commit(blockIndex: number, event: Event) {
-  const text = (event.currentTarget as HTMLElement).innerText.trim()
-  if (text) emit("updatePerson", blockIndex, text)
+  const text = editableText(event.currentTarget as HTMLElement)
+  if (text.trim()) emit("updatePerson", blockIndex, text)
   editingIndex.value = null
 }
 
 function blurEditable(event: Event) {
   ;(event.currentTarget as HTMLElement).blur()
+}
+
+function insertColumnBreak(event: Event) {
+  const selection = window.getSelection()
+  if (!selection?.rangeCount) return
+  selection.deleteFromDocument()
+  const range = selection.getRangeAt(0)
+  const breakNode = document.createTextNode("\n")
+  range.insertNode(breakNode)
+  range.setStartAfter(breakNode)
+  range.collapse(true)
+  selection.removeAllRanges()
+  selection.addRange(range)
+  resizeEditable(event)
 }
 
 const pageNumberText = computed(() => toHan(props.page?.pageNumber ?? 1))
@@ -88,8 +113,10 @@ function toHan(value: number): string {
               contenteditable="true"
               spellcheck="false"
               @focus="startEdit(item.blockIndex)"
+              @input="resizeEditable"
               @blur="commit(item.blockIndex, $event)"
               @keydown.ctrl.enter.prevent="blurEditable"
+              @keydown.enter.exact.prevent="insertColumnBreak"
             >{{ item.block.text }}</p>
           </div>
         </template>
@@ -159,8 +186,8 @@ function toHan(value: number): string {
   outline: 1px solid #000;
   background-image: repeating-linear-gradient(
     to left,
-    #000 0,
-    #000 1px,
+    rgba(0, 0, 0, 0.34) 0,
+    rgba(0, 0, 0, 0.34) 1px,
     transparent 1px,
     transparent var(--column-gap)
   );
@@ -228,7 +255,7 @@ function toHan(value: number): string {
 }
 
 .person-block {
-  margin: 0 0 0 var(--column-gap);
+  margin: 0;
   padding: 0;
   border-radius: 4px;
   cursor: text;
@@ -240,6 +267,7 @@ function toHan(value: number): string {
 
 .person-text {
   margin: 0;
+  width: 100%;
   height: var(--grid-height);
   outline: none;
   line-height: var(--column-gap);

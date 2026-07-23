@@ -8,7 +8,7 @@ function blockColumns(block: BookBlock, doc: BookDocument): number {
     case "generationHeading":
       return headingColumnCount()
     case "person":
-      return textColumnCount(block.text, doc.layout)
+      return textColumnCount(block.text, doc.layout) + 1
     case "pageBreak":
       return 0
   }

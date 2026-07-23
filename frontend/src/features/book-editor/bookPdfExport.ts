@@ -33,9 +33,10 @@ function drawColumnRules(ctx: CanvasRenderingContext2D, margin: number, gap: num
   const left = BOOK_PAGE.width - margin - gridWidth
 
   ctx.save()
-  ctx.strokeStyle = "#000"
   ctx.lineWidth = 1
+  ctx.strokeStyle = "#000"
   ctx.strokeRect(left, margin, gridWidth, gridHeight)
+  ctx.strokeStyle = "rgba(0,0,0,0.34)"
   for (let x = BOOK_PAGE.width - margin - gap; x > left; x -= gap) {
     ctx.beginPath()
     ctx.moveTo(x, margin)
