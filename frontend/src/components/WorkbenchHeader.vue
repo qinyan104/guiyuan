@@ -126,7 +126,7 @@ function handleImportClick() {
 
 function openPublishingStudio() {
   closeTransientUi()
-  router.push(`/publishing/publication/${context?.serverPublicationId?.value ?? ''}`)
+  router.push(`/book-editor/publication/${context?.serverPublicationId?.value ?? ''}`)
 }
 
 function openExportDialog() {

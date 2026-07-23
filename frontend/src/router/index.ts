@@ -123,6 +123,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/book-editor/publication/:publicationId',
+    name: 'book-editor-publication',
+    component: () => import('../views/BookEditorView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/publishing/publication/:publicationId',
     name: 'publishing-publication',
     component: () => import('../views/PublishingDashboard.vue'),
