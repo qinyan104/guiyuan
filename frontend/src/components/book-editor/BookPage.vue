@@ -152,8 +152,10 @@ function toHan(value: number): string {
   overflow: auto;
   display: flex;
   justify-content: center;
-  padding: 28px;
-  background: #e7e0d4;
+  padding: 36px 44px;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(255, 253, 250, 0.9), transparent 34%),
+    linear-gradient(180deg, #eee7da, #e4dacb);
 }
 
 .book-page {
@@ -166,7 +168,10 @@ function toHan(value: number): string {
     linear-gradient(90deg, rgba(122, 90, 56, 0.035), transparent 18%, transparent 82%, rgba(122, 90, 56, 0.035)),
     #f8f0df;
   border: 1px solid #000;
-  box-shadow: 0 18px 42px rgba(34, 27, 18, 0.16);
+  box-shadow:
+    0 26px 60px rgba(46, 37, 26, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.72),
+    0 2px 0 rgba(255, 255, 255, 0.68) inset;
   line-height: 1.9;
   overflow: hidden;
 }
@@ -274,6 +279,7 @@ function toHan(value: number): string {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   overflow: hidden;
+  caret-color: var(--color-accent);
 }
 
 footer {

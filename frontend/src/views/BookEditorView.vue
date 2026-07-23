@@ -157,10 +157,11 @@ async function exportPdf() {
 
 <style scoped>
 .book-editor {
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--color-neutral-2);
+  background: #eee7da;
+  color: var(--color-neutral-9);
 }
 
 .workbench {
@@ -168,6 +169,8 @@ async function exportPdf() {
   flex: 1;
   display: grid;
   grid-template-columns: 136px minmax(0, 1fr);
+  position: relative;
+  overflow: hidden;
 }
 
 .state,
@@ -177,33 +180,58 @@ async function exportPdf() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 16px;
+  padding: 32px;
   color: var(--color-neutral-7);
+}
+
+.state {
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .start h1 {
   margin: 0;
-  color: var(--color-neutral-9);
-  font-size: 28px;
-  font-weight: 500;
+  color: var(--color-neutral-10);
+  font-family: var(--font-serif);
+  font-size: clamp(30px, 4vw, 48px);
+  font-weight: 800;
+  letter-spacing: 0;
+  text-wrap: balance;
 }
 
 .start p {
   max-width: 520px;
   margin: 0;
   text-align: center;
-  line-height: 1.8;
+  line-height: 1.9;
+  color: var(--color-neutral-7);
 }
 
 .start button {
-  margin-top: 8px;
-  height: 38px;
-  padding: 0 18px;
+  margin-top: 10px;
+  height: 42px;
+  padding: 0 20px;
   border: 0;
   border-radius: 7px;
   background: var(--color-accent);
   color: #fff;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 12px 26px rgba(198, 60, 46, 0.22);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.start button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(198, 60, 46, 0.28);
+}
+
+.start button:active { transform: translateY(0); }
+
+.start button:focus-visible {
+  outline: 3px solid var(--color-accent-muted);
+  outline-offset: 3px;
 }
 
 .error { color: var(--color-accent); }
@@ -212,12 +240,14 @@ async function exportPdf() {
   position: fixed;
   right: 18px;
   bottom: 18px;
-  padding: 10px 14px;
-  border: 1px solid var(--color-card-stroke);
-  border-radius: 8px;
-  background: var(--color-neutral-1);
+  padding: 11px 14px;
+  border: 1px solid rgba(28, 24, 20, 0.08);
+  border-radius: 6px;
+  background: #fffdfa;
   color: var(--color-neutral-8);
-  box-shadow: var(--shadow-whisper);
+  box-shadow: 0 14px 34px rgba(46, 37, 26, 0.14);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .toast.danger {

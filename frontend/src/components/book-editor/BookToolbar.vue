@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from "../AppSelect.vue"
 import type { BookLayout } from "../../types/bookDocument"
 
 const props = defineProps<{
@@ -22,20 +23,40 @@ function update<K extends keyof BookLayout>(layout: BookLayout, key: K, value: B
   emit("updateLayout", { ...layout, [key]: value })
 }
 
-function updateTemplate(event: Event) {
-  update(props.layout, "templateId", (event.target as HTMLSelectElement).value)
+const templateOptions = [
+  { value: "classic", label: "宣纸古籍" },
+  { value: "plain", label: "素纸竖排" },
+  { value: "white", label: "白底栏格" },
+]
+
+const fontOptions = [
+  { value: "qiji-combo", label: "奇迹手写" },
+  { value: "WenYue-GuTiFangSong", label: "文悦古体仿宋" },
+  { value: "XiaolaiMonoSC", label: "小赖手写" },
+  { value: "KaiTi", label: "楷体" },
+  { value: "SimSun", label: "宋体" },
+]
+
+const marginOptions = [
+  { value: "compact", label: "窄" },
+  { value: "standard", label: "标准" },
+  { value: "loose", label: "宽" },
+]
+
+function updateTemplate(value: string) {
+  update(props.layout, "templateId", value)
 }
 
-function updateFont(event: Event) {
-  update(props.layout, "fontFamily", (event.target as HTMLSelectElement).value)
+function updateFont(value: string) {
+  update(props.layout, "fontFamily", value)
 }
 
 function updateFontSize(event: Event) {
   update(props.layout, "fontSize", Number((event.target as HTMLInputElement).value))
 }
 
-function updateMargin(event: Event) {
-  update(props.layout, "marginPreset", (event.target as HTMLSelectElement).value as BookLayout["marginPreset"])
+function updateMargin(value: string) {
+  update(props.layout, "marginPreset", value as BookLayout["marginPreset"])
 }
 </script>
 
@@ -46,28 +67,30 @@ function updateMargin(event: Event) {
       <div class="title">{{ title || "古籍族谱" }}</div>
     </div>
     <div class="spacer" />
-    <div class="toolbar-group">
-      <button class="tool-btn" type="button" @click="emit('generate')">{{ hasDocument ? "重新生成" : "生成书稿" }}</button>
+    <div class="toolbar-group toolbar-actions">
+      <button class="tool-btn tool-btn--quiet" type="button" @click="emit('generate')">{{ hasDocument ? "重新生成" : "生成书稿" }}</button>
     </div>
     <template v-if="hasDocument">
       <div class="toolbar-group">
         <label>
           <span>模板</span>
-          <select :value="layout.templateId" @change="updateTemplate">
-            <option value="classic">宣纸古籍</option>
-            <option value="plain">素纸竖排</option>
-            <option value="white">白底栏格</option>
-          </select>
+          <AppSelect
+            class="toolbar-select"
+            variant="compact"
+            :modelValue="layout.templateId"
+            :options="templateOptions"
+            @update:modelValue="updateTemplate"
+          />
         </label>
         <label>
           <span>字体</span>
-          <select :value="layout.fontFamily" @change="updateFont">
-            <option value="qiji-combo">奇迹手写</option>
-            <option value="WenYue-GuTiFangSong">文悦古体仿宋</option>
-            <option value="XiaolaiMonoSC">小赖手写</option>
-            <option value="KaiTi">楷体</option>
-            <option value="SimSun">宋体</option>
-          </select>
+          <AppSelect
+            class="toolbar-select toolbar-select--font"
+            variant="compact"
+            :modelValue="layout.fontFamily"
+            :options="fontOptions"
+            @update:modelValue="updateFont"
+          />
         </label>
         <label class="number-field">
           <span>字号</span>
@@ -81,16 +104,18 @@ function updateMargin(event: Event) {
         </label>
         <label>
           <span>边距</span>
-          <select :value="layout.marginPreset" @change="updateMargin">
-            <option value="compact">窄</option>
-            <option value="standard">标准</option>
-            <option value="loose">宽</option>
-          </select>
+          <AppSelect
+            class="toolbar-select toolbar-select--margin"
+            variant="compact"
+            :modelValue="layout.marginPreset"
+            :options="marginOptions"
+            @update:modelValue="updateMargin"
+          />
         </label>
       </div>
-      <div class="toolbar-group">
-        <button class="tool-btn" type="button" @click="emit('insertPageBreak')">分页</button>
-        <button class="tool-btn" type="button" :disabled="saving" @click="emit('save')">{{ saving ? "保存中" : "保存" }}</button>
+      <div class="toolbar-group toolbar-actions">
+        <button class="tool-btn tool-btn--quiet" type="button" @click="emit('insertPageBreak')">插入分页</button>
+        <button class="tool-btn" type="button" :disabled="saving" @click="emit('save')">{{ saving ? "保存中" : "保存书稿" }}</button>
         <button class="tool-btn primary" type="button" :disabled="exporting" @click="emit('exportPdf')">{{ exporting ? "导出中" : "导出 PDF" }}</button>
       </div>
     </template>
@@ -99,24 +124,27 @@ function updateMargin(event: Event) {
 
 <style scoped>
 .book-toolbar {
-  height: 52px;
+  min-height: 60px;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--color-card-stroke);
-  background: var(--color-neutral-1);
+  padding: 10px 18px;
+  overflow-x: auto;
+  border-bottom: 1px solid rgba(28, 24, 20, 0.08);
+  background: #fbf8f1;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
 }
 
 .toolbar-group {
-  height: 36px;
+  min-height: 38px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 8px;
-  border: 1px solid var(--color-card-stroke);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.42);
+  flex: 0 0 auto;
+  gap: 7px;
+  padding: 4px 7px;
+  border: 1px solid rgba(28, 24, 20, 0.08);
+  border-radius: 6px;
+  background: #fffdfa;
 }
 
 .toolbar-group--title {
@@ -125,11 +153,21 @@ function updateMargin(event: Event) {
   padding-left: 0;
 }
 
+.toolbar-actions {
+  align-items: stretch;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #f7f2e9;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
 .title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-neutral-9);
-  max-width: 260px;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: #1c1814;
+  max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -138,45 +176,103 @@ function updateMargin(event: Event) {
 .spacer { flex: 1; }
 
 button,
-select,
 input {
-  height: 26px;
-  border: 0;
-  border-radius: 5px;
+  height: 28px;
+  border: 1px solid rgba(28, 24, 20, 0.1);
+  border-radius: 4px;
   background: transparent;
-  color: var(--color-neutral-8);
+  color: #2d261f;
   font-size: 12px;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
 button {
-  padding: 0 9px;
+  padding: 0 10px;
   cursor: pointer;
+  font-weight: 600;
 }
 
 label {
   display: flex;
   align-items: center;
-  gap: 4px;
-  color: var(--color-neutral-5);
+  gap: 5px;
+  color: #6b6252;
   font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-select {
-  max-width: 92px;
-  background: var(--color-neutral-2);
+input {
+  width: 48px;
   padding: 0 6px;
+  background: #f4efe6;
+  font-variant-numeric: tabular-nums;
+}
+.number-field { gap: 3px; }
+button:hover:not(:disabled),
+input:hover {
+  background: #eee6da;
+  border-color: rgba(28, 24, 20, 0.18);
 }
 
-input { width: 44px; padding: 0 4px; background: var(--color-neutral-2); }
-.number-field { gap: 3px; }
-button:hover:not(:disabled) { background: var(--color-neutral-2); }
-button:disabled { opacity: 0.5; cursor: default; }
-.icon-btn {
-  width: 28px;
-  padding: 0;
-  border-radius: 999px;
-  color: var(--color-neutral-6);
+button:active:not(:disabled) { transform: translateY(1px); }
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid rgba(198, 60, 46, 0.18);
+  border-color: var(--color-accent);
 }
-.tool-btn { color: var(--color-neutral-7); }
-.primary { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+
+button:disabled { opacity: 0.5; cursor: default; }
+.toolbar-select {
+  width: 112px;
+  --control-radius: 4px;
+  --line-soft: rgba(28, 24, 20, 0.1);
+  --bg-paper: #f4efe6;
+  --text-main: #2d261f;
+  --text-soft: #6b6252;
+  --accent-signal: var(--color-accent);
+  --shadow-ring: 0 0 0 2px rgba(198, 60, 46, 0.18);
+}
+
+.toolbar-select--font { width: 132px; }
+.toolbar-select--margin { width: 78px; }
+
+.icon-btn {
+  width: 30px;
+  padding: 0;
+  color: #463e32;
+  background: #f0e9dd;
+}
+.tool-btn {
+  min-width: auto;
+  min-height: 30px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 999px;
+  color: #6b6252;
+  background: transparent;
+}
+
+.tool-btn--quiet {
+  color: #6b6252;
+}
+
+.tool-btn:hover:not(:disabled),
+.tool-btn--quiet:hover:not(:disabled) {
+  color: #2d261f;
+  background: #fffdfa;
+}
+
+.primary {
+  min-width: 90px;
+  background: var(--color-accent);
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(198, 60, 46, 0.16);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--color-accent-deep);
+  border-color: var(--color-accent-deep);
+}
 </style>
