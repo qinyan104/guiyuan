@@ -1,4 +1,5 @@
 import type { FamilyUnit, Person, PublicationData } from "../../types/family"
+import { findFamilyEntryPersonId } from "../../lib/familyBranchMode"
 import {
   DEFAULT_BOOK_LAYOUT,
   type BookBlock,
@@ -42,18 +43,37 @@ function findRoots(people: Record<string, Person>, families: Record<string, Fami
   for (const family of Object.values(families)) {
     for (const child of family.children) children.add(child)
   }
+  const total = Object.keys(people).length
   const ids = Object.keys(people)
-  return ids.filter((id) => !children.has(id))
+  return ids.filter((id) => {
+    const hasConnection = Object.values(families).some((family) => family.adults.includes(id) || family.children.includes(id))
+    if (!hasConnection && total > 1) return false
+    if (children.has(id)) return false
+    if (Object.values(families).some((family) => family.adults[0] === id)) return true
+    return !Object.values(families).some((family) => family.adults.includes(id))
+  })
 }
 
 function childIdsFor(pid: string, families: Record<string, FamilyUnit>): string[] {
   const ids: string[] = []
   for (const family of Object.values(families)) {
-    if (!family.adults.includes(pid)) continue
-    if (family.branchMode === "married-out") continue
-    ids.push(...family.children)
+    if (family.adults[0] === pid) {
+      if (family.branchMode !== "married-out") ids.push(...family.children)
+    } else if (family.adults[1] === pid && family.branchMode !== "uxorilocal") {
+      ids.push(...family.children)
+    }
   }
   return [...new Set(ids)]
+}
+
+function rootIdsFor(data: PublicationData): string[] {
+  const focusFamily = data.families[data.focusFamilyId]
+  const focusEntryId = findFamilyEntryPersonId(data, data.focusFamilyId)
+  if (focusEntryId && data.people[focusEntryId]) return [focusEntryId]
+  const focusRootId = focusFamily?.adults.find((id) => data.people[id])
+  if (focusRootId) return [focusRootId]
+  const roots = findRoots(data.people, data.families)
+  return roots.length > 0 ? roots : Object.keys(data.people)
 }
 
 function buildNode(
@@ -151,8 +171,7 @@ function cnGen(generation: number): string {
 }
 
 export function generateBookDocument(publicationId: number, data: PublicationData): BookDocument {
-  const roots = findRoots(data.people, data.families)
-  const rootIds = roots.length > 0 ? roots : Object.keys(data.people)
+  const rootIds = rootIdsFor(data)
   const rootNodes = rootIds.map((pid) => buildNode(pid, 0, data.people, data.families, new Set()))
   const nodes = collectByGeneration(rootNodes)
   const blocks: BookBlock[] = [
