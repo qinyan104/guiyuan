@@ -56,6 +56,7 @@ function updateMargin(event: Event) {
           <select :value="layout.templateId" @change="updateTemplate">
             <option value="classic">宣纸古籍</option>
             <option value="plain">素纸竖排</option>
+            <option value="white">白底栏格</option>
           </select>
         </label>
         <label>

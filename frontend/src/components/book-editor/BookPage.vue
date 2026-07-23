@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
-import { BOOK_PAGE, bodyFontPx, columnGap, columnsPerPage, pageMargin, textColumnCount } from "../../features/book-editor/bookPageMetrics"
+import { BOOK_PAGE, bodyFontPx, charsPerColumn, columnGap, columnsPerPage, pageMargin, textColumnCount } from "../../features/book-editor/bookPageMetrics"
 import type { BookLayout, BookPageLayout } from "../../types/bookDocument"
 
 const props = defineProps<{
@@ -23,8 +23,8 @@ const pageStyle = computed(() => ({
   fontSize: `${bodyFontPx(props.layout) * pageScale}px`,
   "--page-margin": `${pageMargin(props.layout) * pageScale}px`,
   "--column-gap": `${columnGap(props.layout) * pageScale}px`,
-  "--body-height": `${(BOOK_PAGE.height - pageMargin(props.layout) * 2) * pageScale}px`,
-  "--body-width": `${(BOOK_PAGE.width - pageMargin(props.layout) * 2) * pageScale}px`,
+  "--grid-width": `${columnsPerPage(props.layout) * columnGap(props.layout) * pageScale}px`,
+  "--grid-height": `${charsPerColumn(props.layout) * columnGap(props.layout) * pageScale}px`,
   "--inner-frame-inset": `${(pageMargin(props.layout) - 38) * pageScale}px`,
 }))
 
@@ -32,7 +32,7 @@ function personStyle(text: string) {
   const columns = Math.min(textColumnCount(text, props.layout), columnsPerPage(props.layout))
   return {
     width: `${columns * columnGap(props.layout) * pageScale}px`,
-    maxWidth: "var(--body-width)",
+    maxWidth: "var(--grid-width)",
   }
 }
 
@@ -49,6 +49,17 @@ function commit(blockIndex: number, event: Event) {
 
 function blurEditable(event: Event) {
   ;(event.currentTarget as HTMLElement).blur()
+}
+
+const pageNumberText = computed(() => toHan(props.page?.pageNumber ?? 1))
+
+function toHan(value: number): string {
+  const nums = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+  if (value <= 10) return nums[value]
+  if (value < 20) return `十${nums[value - 10]}`
+  const tens = Math.floor(value / 10)
+  const ones = value % 10
+  return `${nums[tens]}十${ones ? nums[ones] : ""}`
 }
 </script>
 
@@ -83,12 +94,7 @@ function blurEditable(event: Event) {
           </div>
         </template>
       </div>
-      <div class="book-spine" aria-hidden="true">
-        <span class="fish-tail">◆</span>
-        <span>归源</span>
-        <span class="fish-tail">◆</span>
-      </div>
-      <footer>{{ page.pageNumber }}</footer>
+      <footer>第 {{ pageNumberText }} 页</footer>
     </section>
     <section v-else class="empty-page">暂无书页</section>
   </main>
@@ -127,8 +133,12 @@ function blurEditable(event: Event) {
   position: relative;
   box-sizing: border-box;
   color: #21170f;
-  background: #f8f0df;
-  border: 1px solid rgba(122, 90, 56, 0.55);
+  background:
+    radial-gradient(circle at 18% 22%, rgba(120, 82, 42, 0.055), transparent 26%),
+    radial-gradient(circle at 76% 68%, rgba(110, 74, 38, 0.045), transparent 30%),
+    linear-gradient(90deg, rgba(122, 90, 56, 0.035), transparent 18%, transparent 82%, rgba(122, 90, 56, 0.035)),
+    #f8f0df;
+  border: 1px solid #000;
   box-shadow: 0 18px 42px rgba(34, 27, 18, 0.16);
   line-height: 1.9;
   overflow: hidden;
@@ -136,15 +146,28 @@ function blurEditable(event: Event) {
 
 .page-content {
   position: absolute;
-  inset: var(--page-margin);
+  top: var(--page-margin);
+  right: var(--page-margin);
+  width: var(--grid-width);
+  height: var(--grid-height);
   writing-mode: vertical-rl;
   text-orientation: upright;
   overflow: hidden;
-  max-width: var(--body-width);
-  max-height: var(--body-height);
+}
+
+.book-page:not(.is-cover-page) .page-content {
+  outline: 1px solid #000;
+  background-image: repeating-linear-gradient(
+    to left,
+    #000 0,
+    #000 1px,
+    transparent 1px,
+    transparent var(--column-gap)
+  );
 }
 
 .book-page.tpl-plain { background: #fffaf0; }
+.book-page.tpl-white { background: #fff; }
 
 .book-page::before,
 .book-page::after {
@@ -152,12 +175,12 @@ function blurEditable(event: Event) {
   position: absolute;
   inset: 28px;
   pointer-events: none;
-  border: 1px solid rgba(122, 90, 56, 0.5);
+  border: 1.5px solid #000;
 }
 
 .book-page::after {
   inset: var(--inner-frame-inset);
-  border-color: rgba(122, 90, 56, 0.25);
+  border-color: #000;
 }
 
 .cover {
@@ -176,6 +199,9 @@ function blurEditable(event: Event) {
   font-size: 48px;
   font-weight: 500;
   letter-spacing: 0;
+  padding: 28px 16px;
+  border: 1px solid rgba(138, 31, 22, 0.38);
+  background: rgba(255, 252, 246, 0.42);
 }
 
 .cover p {
@@ -184,54 +210,35 @@ function blurEditable(event: Event) {
 }
 
 .generation {
-  margin: 0 0 0 24px;
-  height: var(--body-height);
+  margin: 0 0 0 var(--column-gap);
+  height: var(--grid-height);
   max-width: var(--column-gap);
   overflow: hidden;
   color: #8a1f16;
   font-size: 1.25em;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: var(--column-gap);
 }
 
 .person-block {
-  margin: 0 0 0 calc(var(--column-gap) * 0.55);
+  margin: 0 0 0 var(--column-gap);
   padding: 0;
   border-radius: 4px;
   cursor: text;
-  height: var(--body-height);
-  max-width: var(--body-width);
+  height: var(--grid-height);
+  max-width: var(--grid-width);
   overflow: hidden;
   contain: layout paint;
 }
 
 .person-text {
   margin: 0;
-  height: var(--body-height);
+  height: var(--grid-height);
   outline: none;
+  line-height: var(--column-gap);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   overflow: hidden;
-}
-
-.book-spine {
-  position: absolute;
-  top: 96px;
-  bottom: 96px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  writing-mode: vertical-rl;
-  color: rgba(122, 90, 56, 0.45);
-  font-size: 12px;
-  pointer-events: none;
-}
-
-.fish-tail {
-  color: rgba(138, 31, 22, 0.65);
-  font-size: 10px;
 }
 
 footer {
