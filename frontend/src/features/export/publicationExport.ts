@@ -86,7 +86,7 @@ const EXPORT_SVG_STYLE = `
   }
 
   .person-card__header {
-    fill: var(--card-header-fill, rgba(119, 90, 56, 0.08));
+    fill: none;
   }
 
   .person-card__divider {
@@ -111,7 +111,7 @@ const EXPORT_SVG_STYLE = `
     font-family: 'Manrope', sans-serif;
     font-weight: 700;
     letter-spacing: 0.16em;
-    fill: var(--card-status-fill, #6b5338);
+    fill: #2f241a;
   }
 
   .person-card__name {
@@ -122,13 +122,7 @@ const EXPORT_SVG_STYLE = `
   }
 
   .person-card__note-pill {
-    fill: var(--card-header-fill);
-  }
-
-  .person-card__lineage-pill {
-    fill: var(--card-header-fill);
-    stroke: var(--card-inner-stroke);
-    stroke-width: 0.8;
+    fill: none;
   }
 
   .person-card__imperial-ribbon {
@@ -155,34 +149,38 @@ const EXPORT_SVG_STYLE = `
   .person-card__detail,
   .person-card__lineage-text {
     font-family: 'Noto Serif SC', 'Songti SC', serif;
-    fill: var(--card-detail-fill, #463425);
+  }
+
+  .person-card__detail {
+    fill: #33271d;
   }
 
   .person-card__note {
+    fill: #4a3a2b;
     letter-spacing: 0.1em;
   }
 
   .person-card__lineage-text {
+    fill: #4a3a2b;
     font-weight: 600;
     letter-spacing: 0.08em;
   }
 
   .person-card__detail-band {
-    fill: var(--card-header-fill);
-    stroke: var(--card-inner-stroke);
-    stroke-width: 0.8;
+    fill: none;
+    stroke: none;
   }
 
   .person-card--male .person-card__header,
   .person-card--male .person-card__note-pill,
   .person-card--male .person-card__detail-band {
-    fill: var(--card-male-header);
+    fill: none;
   }
 
   .person-card--female .person-card__header,
   .person-card--female .person-card__note-pill,
   .person-card--female .person-card__detail-band {
-    fill: var(--card-female-header);
+    fill: none;
   }
 
   .person-card--emperor .person-card__accent-frame--emperor {
@@ -197,10 +195,9 @@ const EXPORT_SVG_STYLE = `
 
   .person-card--emperor .person-card__header,
   .person-card--emperor .person-card__note-pill,
-  .person-card--emperor .person-card__detail-band,
-  .person-card--emperor .person-card__lineage-pill {
-    fill: rgba(198, 147, 47, 0.18);
-    stroke: rgba(198, 147, 47, 0.26);
+  .person-card--emperor .person-card__detail-band {
+    fill: none;
+    stroke: none;
   }
 
   .person-card--heir .person-card__accent-frame--heir {
@@ -216,10 +213,9 @@ const EXPORT_SVG_STYLE = `
 
   .person-card--heir .person-card__header,
   .person-card--heir .person-card__note-pill,
-  .person-card--heir .person-card__detail-band,
-  .person-card--heir .person-card__lineage-pill {
-    fill: rgba(154, 77, 54, 0.15);
-    stroke: rgba(154, 77, 54, 0.22);
+  .person-card--heir .person-card__detail-band {
+    fill: none;
+    stroke: none;
   }
 
   .person-card--consort .person-card__panel {
@@ -229,10 +225,9 @@ const EXPORT_SVG_STYLE = `
 
   .person-card--consort .person-card__header,
   .person-card--consort .person-card__note-pill,
-  .person-card--consort .person-card__detail-band,
-  .person-card--consort .person-card__lineage-pill {
-    fill: rgba(180, 110, 140, 0.12);
-    stroke: rgba(180, 110, 140, 0.18);
+  .person-card--consort .person-card__detail-band {
+    fill: none;
+    stroke: none;
   }
 
   .person-card--selected .person-card__panel {

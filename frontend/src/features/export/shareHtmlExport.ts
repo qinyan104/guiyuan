@@ -188,11 +188,11 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     if (person.avatarUrl && person.avatarUrl.startsWith('data:')) {
       html += '<img class="detail-photo" src="' + escapeAttr(person.avatarUrl) + '" alt="' + escapeAttr(person.name) + '">';
     }
-    html += '<h3>' + escapeHtml(person.name) + '</h3>';
+    html += '<div class="detail-title"><h3>' + escapeHtml(person.name) + '</h3><div class="detail-tags">';
     html += '<span class="detail-gender">' + (person.gender === 'male' ? '男' : person.gender === 'female' ? '女' : '未知') + '</span>';
     if (person.deceased) html += '<span class="detail-status deceased">已故</span>';
     else html += '<span class="detail-status alive">在世</span>';
-    html += '</div>';
+    html += '</div></div></div>';
 
     var details = [];
     if (person.birth) details.push({ label: '出生', value: person.birth });
@@ -237,6 +237,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
       relHtml += '</div>';
     }
     if (relHtml) {
+      html += '<h4 class="detail-section-title">亲属关系</h4>';
       html += '<div class="detail-relations">' + relHtml + '</div>';
     }
 
@@ -650,11 +651,11 @@ body {
   right: 0;
   top: 0;
   height: 100%;
-  width: 340px;
+  width: 360px;
   max-width: 90vw;
-  background: var(--bg-shell, #f9f8f5);
-  border-left: 1px solid rgba(0,0,0,0.06);
-  box-shadow: -4px 0 32px rgba(0,0,0,0.08);
+  background: #fffdf8;
+  border-left: 1px solid rgba(92, 70, 44, 0.12);
+  box-shadow: -16px 0 48px rgba(56, 42, 26, 0.14);
   transform: translateX(100%);
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 1000;
@@ -667,14 +668,14 @@ body {
 }
 #detail-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(0,0,0,0.03);
-  color: #888;
-  font-size: 16px;
+  top: 18px;
+  right: 18px;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(92, 70, 44, 0.12);
+  background: rgba(255,255,255,0.72);
+  color: #7c7063;
+  font-size: 18px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -683,101 +684,121 @@ body {
   transition: all 0.15s;
 }
 #detail-close:hover {
-  background: #333;
-  color: #fff;
-  border-color: #333;
+  background: #3b2f23;
+  color: #fffdf8;
+  border-color: #3b2f23;
 }
 
 #detail-content {
-  padding: 28px 24px;
+  padding: 30px 28px;
 }
 .detail-header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(92, 70, 44, 0.12);
 }
 .detail-photo {
-  max-width: 80px;
-  max-height: 100px;
-  border-radius: 4px;
-  object-fit: contain;
+  width: 72px;
+  height: 92px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid rgba(92, 70, 44, 0.14);
+  background: #f8f2e8;
+}
+.detail-title {
+  min-width: 0;
+  flex: 1;
 }
 .detail-header h3 {
   font-family: 'Noto Serif SC', serif;
-  font-size: 1.3rem;
-  font-weight: 500;
-  color: #24231f;
-  margin: 0;
-  flex: 1;
+  font-size: 1.45rem;
+  line-height: 1.25;
+  font-weight: 600;
+  color: #2b2117;
+  margin: 0 42px 10px 0;
 }
-.detail-gender {
-  font-size: 11px;
-  padding: 2px 8px;
-  background: rgba(0,0,0,0.04);
-  border-radius: 4px;
-  color: #787670;
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
+.detail-gender,
 .detail-status {
   font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 500;
+  line-height: 1;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  border: 1px solid rgba(92, 70, 44, 0.12);
+  background: #faf5ec;
+  color: #756552;
 }
-.detail-status.deceased { color: #787670; background: rgba(120,118,112,0.08); }
-.detail-status.alive { color: #5e9f7e; background: rgba(94,159,126,0.08); }
+.detail-status.deceased { color: #746b61; background: #f4efe7; }
+.detail-status.alive { color: #4d8066; background: #eef7f1; border-color: rgba(77,128,102,0.18); }
 
 .detail-fields {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  border-top: 1px solid rgba(92, 70, 44, 0.08);
 }
 .detail-field {
-  display: flex;
-  gap: 12px;
-  padding: 6px 0;
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 14px;
+  padding: 10px 0;
   font-size: 13px;
+  border-bottom: 1px solid rgba(92, 70, 44, 0.08);
 }
 .detail-label {
-  color: #a8a69f;
-  min-width: 40px;
-  flex-shrink: 0;
+  color: #9a8c7a;
+  font-weight: 600;
 }
 .detail-value {
-  color: #403f3a;
+  color: #3e3023;
+  line-height: 1.7;
+  word-break: break-word;
 }
 
+.detail-section-title {
+  margin: 20px 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #9a4d36;
+}
 .detail-relations {
-  margin-top: 8px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(0,0,0,0.06);
+  display: grid;
+  gap: 12px;
 }
 .rel-group {
-  margin-bottom: 10px;
+  margin: 0;
 }
 .rel-label {
   font-size: 10px;
-  font-weight: 600;
-  color: #a8a69f;
+  font-weight: 700;
+  color: #9a8c7a;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 .rel-item {
   display: inline-block;
   font-size: 13px;
-  padding: 4px 12px;
-  margin: 2px 4px 2px 0;
-  background: rgba(0,0,0,0.03);
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 6px;
+  padding: 6px 11px;
+  margin: 2px 5px 3px 0;
+  background: #fffaf1;
+  border: 1px solid rgba(92, 70, 44, 0.14);
+  border-radius: 999px;
   cursor: pointer;
-  color: #403f3a;
+  color: #3e3023;
   transition: all 0.15s;
 }
 .rel-item:hover {
-  background: rgba(0,0,0,0.08);
-  border-color: rgba(0,0,0,0.12);
+  background: #9a4d36;
+  border-color: #9a4d36;
+  color: #fffdf8;
 }
 
 /* Footer */
@@ -798,9 +819,11 @@ body {
   #detail-panel {
     top: auto; bottom: 0; left: 0; right: 0;
     width: 100vw; max-width: 100vw;
-    height: 45vh;
-    border-radius: 16px 16px 0 0;
+    height: 55vh;
+    border-radius: 18px 18px 0 0;
     padding-top: 24px;
+    border-left: 0;
+    border-top: 1px solid rgba(92, 70, 44, 0.12);
   }
   #detail-panel::before {
     content: '';
@@ -814,7 +837,9 @@ body {
     background: #ccc;
   }
   #tree-viewport { font-size: 16px; }
-  .detail-close { width: 44px; height: 44px; font-size: 18px; }
+  #detail-close { width: 40px; height: 40px; font-size: 20px; }
+  #detail-content { padding: 22px 18px 28px; }
+  .detail-field { grid-template-columns: 48px 1fr; }
   #pub-footer { padding: 8px 12px; flex-direction: column; gap: 4px; font-size: 0.78rem; }
   #password-gate input {
     font-size: 16px;

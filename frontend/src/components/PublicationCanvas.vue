@@ -508,7 +508,7 @@ function resetView() {
               :settings="settings"
               :selected="card.personId === selectedPersonId"
               :hovered="card.personId === hoveredPersonId"
-              :subdued="Boolean((selectedPersonId || hoveredPersonId) && card.personId !== selectedPersonId && card.personId !== hoveredPersonId)"
+              :subdued="Boolean(hoveredPersonId && card.personId !== selectedPersonId && card.personId !== hoveredPersonId)"
               :kinshipNote="card.personId === hoveredPersonId && relationshipToSelected ? relationshipToSelected.term + (relationshipToSelected.description ? ' · ' + relationshipToSelected.description : '') : kinshipNotes?.[card.personId] ?? null"
               @select="handleSelect"
               @hover="handleHoverPerson"

@@ -1,6 +1,6 @@
 import { nextTick, ref, shallowRef, type Ref } from 'vue'
 
-import type { DraftPackage, Person } from '../types/family'
+import type { DraftPackage, Person, PublicationLayout } from '../types/family'
 import {
   createPrintDocument,
   createPrintLayoutPages,
@@ -25,6 +25,7 @@ import {
 } from '../features/persistence/draftFileAccess'
 import { formatValidationIssues } from '../features/validation/draftSchema'
 import { uploadPhoto, getPhotoUrl } from '../api/photo'
+import { layoutPublication } from '../lib/layout'
 
 import type { PublicationStateReturn } from './usePublicationState'
 interface FileOperationsDeps {
@@ -128,18 +129,22 @@ export function useFileOperations(deps: FileOperationsDeps) {
     return raw.replace(/[\\/:*?"<>|]/g, '-').trim() || 'Guiyuan-archive-preview'
   }
 
-  async function createCurrentStandaloneSvg(): Promise<SVGSVGElement | null> {
+  function getPngExportLayout(): PublicationLayout {
+    return layoutPublication(publication, { ...settings, zoom: 1 })
+  }
+
+  async function createCurrentStandaloneSvg(exportLayout: PublicationLayout = layout.value): Promise<SVGSVGElement | null> {
     // 方案一安全锁：导出前强制渲染全部节点，防止视口裁剪导致导出残缺
     await canvasRef.value?.prepareForExport?.()
     const svgElement = canvasRef.value?.getSvgElement?.()
-    if (!svgElement || layout.value.cards.length === 0 || layout.value.width <= 0 || layout.value.height <= 0) {
+    if (!svgElement || exportLayout.cards.length === 0 || exportLayout.width <= 0 || exportLayout.height <= 0) {
       canvasRef.value?.releaseExportLock?.()
       return null
     }
     try {
       return await createStandalonePublicationSvg({
         svgElement,
-        layout: layout.value,
+        layout: exportLayout,
         title: publication.title.trim() || '归元档案预览',
       })
     } finally {
@@ -283,7 +288,8 @@ export function useFileOperations(deps: FileOperationsDeps) {
 
   async function downloadPng() {
     statusMessage.value = '正在导出 PNG...'
-    const svg = await createCurrentStandaloneSvg()
+    const exportLayout = getPngExportLayout()
+    const svg = await createCurrentStandaloneSvg(exportLayout)
     if (!svg) {
       errorMessage.value = '当前画布没有可导出的内容。'
       statusMessage.value = ''
@@ -291,7 +297,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     }
 
     try {
-      const blob = await rasterizeSvgToPngBlob(svg, layout.value)
+      const blob = await rasterizeSvgToPngBlob(svg, exportLayout)
       downloadBlobFile(`${sanitizeFileName(publication.title)}.png`, blob)
       errorMessage.value = ''
       statusMessage.value = 'PNG 已下载。'

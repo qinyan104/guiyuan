@@ -77,14 +77,6 @@ const lineageBadge = computed(() => {
   return ''
 })
 
-const lineageBadgeLines = computed(() => {
-  if (!lineageBadge.value) {
-    return []
-  }
-
-  return lineageBadge.value.length > 1 ? lineageBadge.value.split('') : [lineageBadge.value]
-})
-
 const detailRows = computed(() => {
   const rows: Array<{ label: string; value: string }> = []
 
@@ -127,6 +119,7 @@ const nameFontSize = computed(() => {
 })
 
 const DEFAULT_COMPACT_NAME_COLOR = '#1D1D1F'
+const DEFAULT_COMPACT_LINE_COLOR = '#B5A99A'
 const compactNameFontSize = computed(() => props.settings.compactNameSize)
 const compactNameColor = computed(() => {
   const configuredColor = props.settings.compactNameColor?.trim()
@@ -137,7 +130,12 @@ const compactNameColor = computed(() => {
 
   return configuredColor
 })
-const compactLineColor = computed(() => props.settings.compactLineColor || '#B5A99A')
+const compactLineColor = computed(() => {
+  const configuredColor = props.settings.compactLineColor?.trim()
+  return configuredColor && configuredColor.toLowerCase() !== '#c43a31'
+    ? configuredColor
+    : DEFAULT_COMPACT_LINE_COLOR
+})
 const compactNameStartY = computed(() => compactNameFontSize.value + 10)
 const compactNameStep = computed(() => {
   const size = compactNameFontSize.value
@@ -305,7 +303,6 @@ function handleMouseLeave() {
 
       <!-- Continuous Drop Line Behind Name -->
       <line
-        v-if="settings.showPhoto"
         class="person-card__drop-line"
         :x1="card.width / 2"
         y1="0"
@@ -462,26 +459,15 @@ function handleMouseLeave() {
       </text>
     </g>
 
-    <g v-if="settings.showCard && settings.showLineage && lineageBadgeLines.length">
-      <rect
-        class="person-card__lineage-pill"
-        x="16"
-        y="20"
-        width="26"
-        :height="lineageBadgeLines.length > 1 ? 32 : 20"
-        rx="10"
-        ry="10"
-      />
+    <g v-if="settings.showCard && settings.showLineage && lineageBadge">
       <text
         class="person-card__lineage-text"
-        x="29"
-        :y="lineageBadgeLines.length > 1 ? 33 : 36"
-        text-anchor="middle"
-        :style="{ fontSize: `${noteFontSize}px` }"
+        x="24"
+        y="36"
+        text-anchor="start"
+        :style="{ fontSize: `${11 * settings.fontScale}px` }"
       >
-        <tspan v-for="(line, index) in lineageBadgeLines" :key="`${lineageBadge}-${index}`" x="31" :dy="index === 0 ? 0 : 14">
-          {{ line }}
-        </tspan>
+        {{ lineageBadge }}
       </text>
     </g>
 
@@ -611,7 +597,7 @@ function handleMouseLeave() {
 }
 
 .person-card__header {
-  fill: var(--card-header-fill);
+  fill: none;
 }
 
 .person-card__divider {
@@ -637,7 +623,8 @@ function handleMouseLeave() {
   font-family: 'Manrope', sans-serif;
   font-weight: 700;
   letter-spacing: 0.16em;
-  fill: var(--card-status-fill);
+  fill: var(--card-name-fill);
+  opacity: 0.9;
 }
 
 .person-card__name {
@@ -648,13 +635,7 @@ function handleMouseLeave() {
 }
 
 .person-card__note-pill {
-  fill: var(--card-header-fill);
-}
-
-.person-card__lineage-pill {
   fill: none;
-  stroke: var(--card-inner-stroke);
-  stroke-width: 0.8;
 }
 
 .person-card__imperial-ribbon {
@@ -681,16 +662,24 @@ function handleMouseLeave() {
 .person-card__detail,
 .person-card__lineage-text {
   font-family: var(--font-serif);
-  fill: var(--card-detail-fill);
+}
+
+.person-card__detail {
+  fill: var(--card-name-fill);
+  opacity: 0.88;
 }
 
 .person-card__note {
+  fill: var(--card-name-fill);
+  opacity: 0.74;
   letter-spacing: 0.1em;
 }
 
 .person-card__lineage-text {
+  fill: var(--card-name-fill);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
+  opacity: 0.64;
 }
 
 .person-card__detail-band {
@@ -725,11 +714,6 @@ function handleMouseLeave() {
   fill: none;
 }
 
-.person-card--emperor .person-card__lineage-pill {
-  fill: none;
-  stroke: color-mix(in srgb, var(--color-warning) 26%, transparent);
-}
-
 .person-card--heir .person-card__accent-frame--heir {
   stroke: color-mix(in srgb, var(--color-accent-deep) 82%, transparent);
   stroke-width: 2.2;
@@ -747,11 +731,6 @@ function handleMouseLeave() {
   fill: none;
 }
 
-.person-card--heir .person-card__lineage-pill {
-  fill: none;
-  stroke: color-mix(in srgb, var(--color-accent-deep) 22%, transparent);
-}
-
 .person-card--consort .person-card__panel {
   stroke: rgba(180, 110, 140, 0.48);
   stroke-width: 2;
@@ -759,10 +738,8 @@ function handleMouseLeave() {
 
 .person-card--consort .person-card__header,
 .person-card--consort .person-card__note-pill,
-.person-card--consort .person-card__detail-band,
-.person-card--consort .person-card__lineage-pill {
-  fill: rgba(180, 110, 140, 0.12);
-  stroke: rgba(180, 110, 140, 0.18);
+.person-card--consort .person-card__detail-band {
+  fill: none;
 }
 
 .person-card:hover .person-card__panel {
@@ -786,7 +763,15 @@ function handleMouseLeave() {
 }
 
 .person-card:hover .person-card__drop-line {
-  stroke: var(--color-neutral-6);
+  stroke: #8A7460;
+}
+
+.person-card:hover .person-card__knot-ring {
+  stroke: #8A7460;
+}
+
+.person-card:hover .person-card__knot-core {
+  fill: #8A7460;
 }
 
 .person-card--selected .person-card__panel {
@@ -795,15 +780,17 @@ function handleMouseLeave() {
 }
 
 .person-card--selected .person-card__drop-line {
-  stroke: var(--color-accent);
-  stroke-opacity: 0.4;
+  stroke: var(--color-accent, #c43a31);
+  stroke-opacity: 0.65;
 }
 
 .person-card--selected .person-card__knot-ring {
+  stroke: var(--color-accent, #c43a31);
   filter: drop-shadow(0 0 6px var(--color-accent, #c43a31));
 }
 
 .person-card--selected .person-card__knot-core {
+  fill: var(--color-accent, #c43a31);
   filter: drop-shadow(0 0 3px var(--color-accent, #c43a31));
 }
 
@@ -818,7 +805,6 @@ function handleMouseLeave() {
 .person-card--subdued .person-card__seal-mark,
 .person-card--subdued .person-card__note-pill,
 .person-card--subdued .person-card__detail-band,
-.person-card--subdued .person-card__lineage-pill,
 .person-card--subdued .person-card__drop-line,
 .person-card--subdued .person-card__knot-ring,
 .person-card--subdued .person-card__knot-core {
