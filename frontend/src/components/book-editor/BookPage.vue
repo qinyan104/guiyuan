@@ -95,6 +95,24 @@ function blurEditable(event: Event) {
 </template>
 
 <style scoped>
+@font-face {
+  font-family: "qiji-combo";
+  src: url("/vrain/fonts/qiji-combo.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "WenYue-GuTiFangSong";
+  src: url("/vrain/fonts/WenYue-GuTiFangSong-JRFC-2.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "XiaolaiMonoSC";
+  src: url("/vrain/fonts/XiaolaiMonoSC-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
 .page-wrap {
   min-width: 0;
   height: 100%;

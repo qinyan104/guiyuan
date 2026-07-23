@@ -2,6 +2,12 @@ import { PDFDocument } from "pdf-lib"
 import type { BookDocument, BookPageLayout } from "../../types/bookDocument"
 import { BOOK_PAGE, bodyFontPx, columnGap, pageMargin, textColumns } from "./bookPageMetrics"
 
+const FONT_URLS: Record<string, string> = {
+  "qiji-combo": "/vrain/fonts/qiji-combo.ttf",
+  "WenYue-GuTiFangSong": "/vrain/fonts/WenYue-GuTiFangSong-JRFC-2.otf",
+  "XiaolaiMonoSC": "/vrain/fonts/XiaolaiMonoSC-Regular.ttf",
+}
+
 function sanitizeFileName(raw: string): string {
   return raw.replace(/[\\/:*?"<>|]/g, "-").trim() || "族谱"
 }
@@ -13,6 +19,12 @@ function drawVerticalColumn(ctx: CanvasRenderingContext2D, text: string, x: numb
 }
 
 export async function exportBookPdf(doc: BookDocument, pages: BookPageLayout[]) {
+  if (FONT_URLS[doc.layout.fontFamily]) {
+    const font = new FontFace(doc.layout.fontFamily, `url(${FONT_URLS[doc.layout.fontFamily]})`)
+    await font.load()
+    document.fonts.add(font)
+  }
+
   const pdf = await PDFDocument.create()
   const size = bodyFontPx(doc.layout)
   const margin = pageMargin(doc.layout)

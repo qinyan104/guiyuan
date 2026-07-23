@@ -61,9 +61,11 @@ function updateMargin(event: Event) {
         <label>
           <span>字体</span>
           <select :value="layout.fontFamily" @change="updateFont">
-            <option value="SimSun">宋体</option>
-            <option value="STSong">华文宋体</option>
+            <option value="qiji-combo">奇迹手写</option>
+            <option value="WenYue-GuTiFangSong">文悦古体仿宋</option>
+            <option value="XiaolaiMonoSC">小赖手写</option>
             <option value="KaiTi">楷体</option>
+            <option value="SimSun">宋体</option>
           </select>
         </label>
         <label class="number-field">
