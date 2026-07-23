@@ -184,62 +184,79 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     var content = document.getElementById('detail-content');
     var html = '';
 
-    html += '<div class="detail-header">';
-    if (person.avatarUrl && person.avatarUrl.startsWith('data:')) {
-      html += '<img class="detail-photo" src="' + escapeAttr(person.avatarUrl) + '" alt="' + escapeAttr(person.name) + '">';
+    function personChip(p, id) {
+      var cls = p.gender === 'male' ? 'gm' : p.gender === 'female' ? 'gf' : '';
+      return '<button class="rel-item ' + cls + '" data-pid="' + escapeAttr(id) + '"><span class="rel-avatar">' + escapeHtml(p.name ? p.name.charAt(0) : '?') + '</span><span class="rel-name">' + escapeHtml(p.name) + '</span></button>';
     }
-    html += '<div class="detail-title"><h3>' + escapeHtml(person.name) + '</h3><div class="detail-tags">';
-    html += '<span class="detail-gender">' + (person.gender === 'male' ? '男' : person.gender === 'female' ? '女' : '未知') + '</span>';
-    if (person.deceased) html += '<span class="detail-status deceased">已故</span>';
-    else html += '<span class="detail-status alive">在世</span>';
-    html += '</div></div></div>';
 
-    var details = [];
-    if (person.birth) details.push({ label: '出生', value: person.birth });
-    if (person.death) details.push({ label: '逝世', value: person.death });
-    if (person.age) details.push({ label: '享年', value: person.age });
-    if (person.clan) details.push({ label: '世系', value: person.clan });
-    if (person.titleName) details.push({ label: '称号', value: person.titleName });
-    if (person.note) details.push({ label: '备注', value: person.note });
+    html += '<div class="detail-body"><div class="detail-left">';
+    html += '<div class="detail-profile">';
+    if (person.avatarUrl && person.avatarUrl.startsWith('data:')) {
+      html += '<img class="detail-avatar" src="' + escapeAttr(person.avatarUrl) + '" alt="' + escapeAttr(person.name) + '">';
+    } else {
+      html += '<div class="detail-avatar detail-avatar--empty">' + escapeHtml(person.name ? person.name.charAt(0) : '?') + '</div>';
+    }
+    html += '<div class="detail-name">' + escapeHtml(person.name) + '</div><div class="detail-tags">';
+    html += '<span>' + (person.gender === 'male' ? '男' : person.gender === 'female' ? '女' : '未知') + '</span>';
+    html += '<span class="' + (person.deceased ? 'deceased' : 'alive') + '">' + (person.deceased ? '已故' : '在世') + '</span>';
+    html += '</div></div>';
+    html += '</div><div class="detail-right">';
 
-    if (details.length > 0) {
+    var lifeDetails = [];
+    if (person.birth) lifeDetails.push({ label: '生年', value: person.birth });
+    if (person.death) lifeDetails.push({ label: '卒年', value: person.death });
+    if (person.age) lifeDetails.push({ label: person.death ? '享年' : '年龄', value: person.age });
+
+    var extraDetails = [];
+    if (person.clan) extraDetails.push({ label: '世系', value: person.clan });
+    if (person.titleName) extraDetails.push({ label: '称号', value: person.titleName });
+    if (person.note) extraDetails.push({ label: '注记', value: person.note });
+
+    function appendDetailGroup(title, details) {
+      if (!details.length) return;
+      html += '<div class="detail-group"><div class="detail-group-title">' + title + '</div>';
       html += '<div class="detail-fields">';
       for (var i = 0; i < details.length; i++) {
         html += '<div class="detail-field"><span class="detail-label">' + escapeHtml(details[i].label) + '</span><span class="detail-value">' + escapeHtml(details[i].value) + '</span></div>';
       }
       html += '</div>';
+      html += '</div>';
     }
+
+    appendDetailGroup('生卒信息', lifeDetails);
+    appendDetailGroup('补充信息', extraDetails);
 
     // Relationships
     var relHtml = '';
     if (rels.parents.length > 0) {
-      relHtml += '<div class="rel-group"><span class="rel-label">父母</span>';
+      relHtml += '<div class="rel-group"><span class="rel-label">父母</span><div class="rel-body">';
       for (var j = 0; j < rels.parents.length; j++) {
         var pp = data.publication.people[rels.parents[j]];
-        if (pp) relHtml += '<span class="rel-item" data-pid="' + rels.parents[j] + '">' + escapeHtml(pp.name) + '</span>';
+        if (pp) relHtml += personChip(pp, rels.parents[j]);
       }
-      relHtml += '</div>';
+      relHtml += '</div></div>';
     }
     if (rels.spouses.length > 0) {
-      relHtml += '<div class="rel-group"><span class="rel-label">配偶</span>';
+      relHtml += '<div class="rel-group"><span class="rel-label">配偶</span><div class="rel-body">';
       for (var k = 0; k < rels.spouses.length; k++) {
         var sp = data.publication.people[rels.spouses[k]];
-        if (sp) relHtml += '<span class="rel-item" data-pid="' + rels.spouses[k] + '">' + escapeHtml(sp.name) + '</span>';
+        if (sp) relHtml += personChip(sp, rels.spouses[k]);
       }
-      relHtml += '</div>';
+      relHtml += '</div></div>';
     }
     if (rels.children.length > 0) {
-      relHtml += '<div class="rel-group"><span class="rel-label">子女</span>';
+      relHtml += '<div class="rel-group"><span class="rel-label">子女</span><div class="rel-body">';
       for (var m = 0; m < rels.children.length; m++) {
         var cp = data.publication.people[rels.children[m]];
-        if (cp) relHtml += '<span class="rel-item" data-pid="' + rels.children[m] + '">' + escapeHtml(cp.name) + '</span>';
+        if (cp) relHtml += personChip(cp, rels.children[m]);
       }
-      relHtml += '</div>';
+      relHtml += '</div></div>';
     }
     if (relHtml) {
-      html += '<h4 class="detail-section-title">亲属关系</h4>';
-      html += '<div class="detail-relations">' + relHtml + '</div>';
+      html += '<div class="detail-group"><div class="detail-group-title">亲属关系</div><div class="detail-relations">' + relHtml + '</div></div>';
     }
+
+    html += '</div></div>';
 
     content.innerHTML = html;
     panel.classList.add('visible');
@@ -388,7 +405,11 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
 
   // --- Close panel ---
   function setupClosePanel() {
+    var panel = document.getElementById('detail-panel');
     document.getElementById('detail-close').addEventListener('click', hideDetail);
+    panel.addEventListener('click', function(e) {
+      if (e.target === panel) hideDetail();
+    });
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') hideDetail();
     });
@@ -648,157 +669,277 @@ body {
 /* Detail panel */
 #detail-panel {
   position: fixed;
-  right: 0;
-  top: 0;
-  height: 100%;
-  width: 360px;
-  max-width: 90vw;
-  background: #fffdf8;
-  border-left: 1px solid rgba(92, 70, 44, 0.12);
-  box-shadow: -16px 0 48px rgba(56, 42, 26, 0.14);
-  transform: translateX(100%);
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  inset: 0;
+  background: rgba(20,19,18,0.22);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
   z-index: 1000;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-#detail-panel.visible {
-  transform: translateX(0);
-}
-#detail-close {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  border: 1px solid rgba(92, 70, 44, 0.12);
-  background: rgba(255,255,255,0.72);
-  color: #7c7063;
-  font-size: 18px;
-  cursor: pointer;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
-  transition: all 0.15s;
+}
+#detail-panel.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.detail-card {
+  width: 860px;
+  max-width: calc(100vw - 20px);
+  max-height: 88vh;
+  background: rgba(249,248,245,0.95);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border-radius: var(--radius-xl, 24px);
+  border: 1px solid rgba(255,255,255,0.45);
+  box-shadow: 0 24px 64px rgba(20,19,18,0.12), inset 0 1px 0 rgba(255,255,255,0.66);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(18px) scale(0.98);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#detail-panel.visible .detail-card {
+  transform: translateY(0) scale(1);
+}
+.detail-bar {
+  display: flex;
+  align-items: center;
+  padding: 16px 22px 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-card-stroke, rgba(120,118,112,0.16));
+  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0));
+}
+.detail-bar > span:first-child,
+#detail-close {
+  min-width: 44px;
+}
+.detail-bar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-neutral-10, #241a10);
+}
+#detail-close {
+  border: 0;
+  background: none;
+  color: var(--color-accent, var(--accent-signal, #9a4d36));
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-align: right;
 }
 #detail-close:hover {
-  background: #3b2f23;
-  color: #fffdf8;
-  border-color: #3b2f23;
+  opacity: 0.72;
 }
 
 #detail-content {
-  padding: 30px 28px;
-}
-.detail-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding-bottom: 18px;
-  margin-bottom: 18px;
-  border-bottom: 1px solid rgba(92, 70, 44, 0.12);
-}
-.detail-photo {
-  width: 72px;
-  height: 92px;
-  border-radius: 6px;
-  object-fit: cover;
-  border: 1px solid rgba(92, 70, 44, 0.14);
-  background: #f8f2e8;
-}
-.detail-title {
-  min-width: 0;
+  padding: 0;
+  overflow: hidden;
   flex: 1;
+  min-height: 0;
+  display: flex;
 }
-.detail-header h3 {
+.detail-body {
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+.detail-left,
+.detail-right {
+  overflow-y: auto;
+}
+.detail-left::-webkit-scrollbar,
+.detail-right::-webkit-scrollbar { width: 3px; }
+.detail-left::-webkit-scrollbar-thumb,
+.detail-right::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--color-neutral-7, #8a8078) 18%, transparent); border-radius: 3px; }
+.detail-left {
+  width: 220px;
+  flex-shrink: 0;
+  padding: 24px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  border-right: 1px solid var(--color-card-stroke, rgba(120,118,112,0.16));
+  background: linear-gradient(180deg, rgba(255,255,255,0.3), rgba(255,255,255,0));
+}
+.detail-right {
+  flex: 1;
+  padding: 24px 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.detail-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.detail-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-lg, 14px);
+  object-fit: contain;
+  border: 1px solid var(--color-card-stroke, rgba(120,118,112,0.16));
+  background: var(--color-neutral-2, #f1eee7);
+}
+.detail-avatar--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-neutral-7, #8a8078);
+  font-size: 32px;
+  font-weight: 700;
+}
+.detail-name {
   font-family: 'Noto Serif SC', serif;
-  font-size: 1.45rem;
-  line-height: 1.25;
-  font-weight: 600;
-  color: #2b2117;
-  margin: 0 42px 10px 0;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--color-neutral-9, #241a10);
+  padding: 4px 0;
+  text-align: center;
 }
 .detail-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  justify-content: center;
 }
-.detail-gender,
-.detail-status {
+.detail-tags span {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-full, 999px);
+  background: rgba(255,255,255,0.86);
+  border: 1px solid var(--color-card-stroke, rgba(120,118,112,0.16));
+  color: var(--color-neutral-8, #6f6254);
   font-size: 11px;
-  line-height: 1;
-  padding: 5px 8px;
-  border-radius: 999px;
   font-weight: 600;
-  border: 1px solid rgba(92, 70, 44, 0.12);
-  background: #faf5ec;
-  color: #756552;
 }
-.detail-status.deceased { color: #746b61; background: #f4efe7; }
-.detail-status.alive { color: #4d8066; background: #eef7f1; border-color: rgba(77,128,102,0.18); }
+.detail-tags .alive { color: #416f57; }
+.detail-tags .deceased { color: var(--color-neutral-7, #746b61); }
 
+.detail-group {
+  background: var(--color-neutral-1, rgba(255,255,255,0.72));
+  border: 1px solid var(--color-card-stroke, rgba(120,118,112,0.16));
+  border-radius: var(--radius-lg, 14px);
+  padding: 16px;
+}
+.detail-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-neutral-9, #241a10);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-card-stroke, rgba(120,118,112,0.14));
+}
 .detail-fields {
-  margin-bottom: 18px;
-  border-top: 1px solid rgba(92, 70, 44, 0.08);
+  display: grid;
+  gap: 1px;
 }
 .detail-field {
   display: grid;
-  grid-template-columns: 54px 1fr;
-  gap: 14px;
-  padding: 10px 0;
-  font-size: 13px;
-  border-bottom: 1px solid rgba(92, 70, 44, 0.08);
+  grid-template-columns: 56px 1fr;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 14px;
+}
+.detail-field + .detail-field {
+  border-top: 1px solid var(--color-card-stroke, rgba(120,118,112,0.12));
 }
 .detail-label {
-  color: #9a8c7a;
-  font-weight: 600;
+  color: var(--color-neutral-7, #8a8078);
+  font-size: 12px;
+  font-weight: 500;
 }
 .detail-value {
-  color: #3e3023;
-  line-height: 1.7;
+  color: var(--color-neutral-9, #241a10);
+  line-height: 1.6;
   word-break: break-word;
+  font-weight: 500;
 }
 
-.detail-section-title {
-  margin: 20px 0 10px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: #9a4d36;
-}
 .detail-relations {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 .rel-group {
   margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+}
+.rel-group + .rel-group {
+  border-top: 1px solid var(--color-card-stroke, rgba(120,118,112,0.16));
 }
 .rel-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: #9a8c7a;
-  letter-spacing: 0.12em;
-  display: block;
-  margin-bottom: 7px;
+  width: 36px;
+  flex-shrink: 0;
+  padding-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-neutral-9, #241a10);
+}
+.rel-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 .rel-item {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
-  padding: 6px 11px;
-  margin: 2px 5px 3px 0;
-  background: #fffaf1;
-  border: 1px solid rgba(92, 70, 44, 0.14);
-  border-radius: 999px;
+  padding: 6px 12px 6px 6px;
+  background: var(--color-neutral-1, rgba(255,255,255,0.86));
+  border: 1px solid var(--color-card-stroke, rgba(120,118,112,0.16));
+  border-radius: var(--radius-md, 10px);
   cursor: pointer;
-  color: #3e3023;
+  color: var(--color-neutral-9, #241a10);
+  font-weight: 500;
   transition: all 0.15s;
 }
+.rel-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-neutral-7, #8a8078) 10%, transparent);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-neutral-7, #8a8078);
+  flex-shrink: 0;
+}
+.rel-name {
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rel-item.gm { background: color-mix(in srgb, var(--color-accent, #9a4d36) 6%, transparent); }
+.rel-item.gf { background: color-mix(in srgb, var(--color-error, #c43a31) 6%, transparent); }
 .rel-item:hover {
-  background: #9a4d36;
-  border-color: #9a4d36;
-  color: #fffdf8;
+  border-color: var(--color-accent, var(--accent-signal, #9a4d36));
+  background: color-mix(in srgb, var(--color-accent, #9a4d36) 4%, transparent);
+  color: var(--color-accent, var(--accent-signal, #9a4d36));
 }
 
 /* Footer */
@@ -813,32 +954,25 @@ body {
   flex-shrink: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   #pub-header { padding: 10px 14px; }
   #pub-header h1 { font-size: 1.1rem; }
   #detail-panel {
-    top: auto; bottom: 0; left: 0; right: 0;
-    width: 100vw; max-width: 100vw;
-    height: 55vh;
-    border-radius: 18px 18px 0 0;
-    padding-top: 24px;
-    border-left: 0;
-    border-top: 1px solid rgba(92, 70, 44, 0.12);
+    padding: 12px;
   }
-  #detail-panel::before {
-    content: '';
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 36px;
-    height: 4px;
-    border-radius: 2px;
-    background: #ccc;
+  .detail-card {
+    max-height: 88vh;
+    border-radius: 18px;
   }
+  .detail-body { flex-direction: column; }
+  .detail-left {
+    width: auto;
+    border-right: none;
+    border-bottom: 1px solid rgba(120,118,112,0.16);
+  }
+  .detail-right { padding: 18px 16px 20px; }
   #tree-viewport { font-size: 16px; }
-  #detail-close { width: 40px; height: 40px; font-size: 20px; }
-  #detail-content { padding: 22px 18px 28px; }
+  #detail-close { width: auto; height: auto; font-size: 15px; }
   .detail-field { grid-template-columns: 48px 1fr; }
   #pub-footer { padding: 8px 12px; flex-direction: column; gap: 4px; font-size: 0.78rem; }
   #password-gate input {
@@ -875,8 +1009,14 @@ body {
   </main>
 
   <aside id="detail-panel">
-    <button id="detail-close">&times;</button>
-    <div id="detail-content"></div>
+    <div class="detail-card">
+      <div class="detail-bar">
+        <span></span>
+        <span class="detail-bar-title">人物信息</span>
+        <button id="detail-close">关闭</button>
+      </div>
+      <div id="detail-content"></div>
+    </div>
   </aside>
 
   <footer id="pub-footer">
