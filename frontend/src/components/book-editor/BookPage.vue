@@ -54,7 +54,7 @@ function startEdit(blockIndex: number) {
 
 function commit(blockIndex: number, event: Event) {
   const text = editableText(event.currentTarget as HTMLElement)
-  if (text.trim()) emit("updatePerson", blockIndex, text)
+  emit("updatePerson", blockIndex, text)
   editingIndex.value = null
 }
 

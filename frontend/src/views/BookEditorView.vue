@@ -84,7 +84,7 @@ function updateLayout(next: BookLayout) {
 }
 
 function updatePerson(blockIndex: number, text: string) {
-  if (!document.value || !text) return
+  if (!document.value) return
   const blocks = [...document.value.blocks]
   const block = blocks[blockIndex]
   if (block?.type !== "person") return
