@@ -36,9 +36,10 @@
 
 ### 出版工作室
 
-- 世系录排版：将族谱人物资料转换为传统谱书条目。
-- 仿古书版预览：支持版框、版心、中缝、鱼尾和竖排阅读方向。
-- 客户端排版引擎：使用 Canvas 2D 和 pdf-lib 生成书页与 PDF。
+- 古籍书稿编辑器：从当前族谱自动生成可编辑、可保存的谱书文档。
+- 世系录排版：按当前宗支入口分析世代，将人物资料转换为传统谱书条目。
+- 仿古书版预览：支持版框、竖排文字、栏线和古籍风格模板。
+- 客户端 PDF 导出：使用 pdf-lib 与嵌入中文字体生成矢量文字和线条。
 - 传记编辑：为人物条目维护更完整的生平内容。
 - 内置字体与纹理：提供多款中文字体和古籍风格背景资源。
 
@@ -54,7 +55,7 @@
 
 | 模块 | 技术 |
 | --- | --- |
-| 前端 | Vue 3, Vite 6, TypeScript, Pinia, Vue Router, Canvas 2D, pdf-lib |
+| 前端 | Vue 3, Vite 6, TypeScript, Pinia, Vue Router, Canvas 2D, pdf-lib, @pdf-lib/fontkit |
 | 后端 | Java 17, Spring Boot 3.3, Spring Security, Spring Data JPA, Flyway |
 | 数据库 | MySQL 8, H2 测试数据库 |
 | 小程序 | uni-app, Vue 3, Pinia, Vite |
@@ -237,7 +238,7 @@ cd backend && ./mvnw test
 │   ├── src/api/                # API 客户端
 │   ├── src/components/         # 通用组件与工作台组件
 │   ├── src/composables/        # 状态与交互逻辑
-│   ├── src/features/           # 导入导出、历史、冲突、校验、管理等功能模块
+│   ├── src/features/           # 导入导出、古籍书稿、历史、冲突、校验、管理等功能模块
 │   ├── src/lib/                # 族谱布局、亲属关系、出版排版引擎
 │   ├── src/router/             # 路由与鉴权守卫
 │   ├── src/views/              # 页面视图

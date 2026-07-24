@@ -182,7 +182,6 @@ export async function exportBookPdf(doc: BookDocument, pages: BookPageLayout[]) 
           drawVerticalColumn(page, font, column, x, y, lineHeight, size, COLORS.ink)
           x -= lineHeight
         }
-        x -= lineHeight
       }
     }
 

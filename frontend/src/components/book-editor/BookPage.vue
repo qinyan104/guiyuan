@@ -29,7 +29,7 @@ const pageStyle = computed(() => ({
 }))
 
 function personStyle(text: string) {
-  const columns = Math.min(textColumnCount(text, props.layout) + 1, columnsPerPage(props.layout))
+  const columns = Math.min(textColumnCount(text, props.layout), columnsPerPage(props.layout))
   return {
     width: `${columns * columnGap(props.layout) * pageScale}px`,
     maxWidth: "var(--grid-width)",
