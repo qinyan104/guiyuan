@@ -31,6 +31,13 @@ const pages = computed(() => document.value ? paginateBook(document.value) : [])
 const currentPage = computed(() => pages.value[currentPageIndex.value] ?? pages.value[0] ?? null)
 
 watch(pages, (next) => {
+  if (selectedBlockIndex.value !== null) {
+    const nextIndex = next.findIndex((page) => page.blocks.some((item) => item.blockIndex === selectedBlockIndex.value))
+    if (nextIndex >= 0) {
+      currentPageIndex.value = nextIndex
+      return
+    }
+  }
   if (currentPageIndex.value >= next.length) currentPageIndex.value = Math.max(0, next.length - 1)
 })
 
@@ -85,6 +92,7 @@ function updateLayout(next: BookLayout) {
 
 function updatePerson(blockIndex: number, text: string) {
   if (!document.value) return
+  selectedBlockIndex.value = blockIndex
   const blocks = [...document.value.blocks]
   const block = blocks[blockIndex]
   if (block?.type !== "person") return

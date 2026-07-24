@@ -32,6 +32,7 @@ export function columnsPerPage(layout: BookLayout): number {
 export function textColumns(text: string, layout: BookLayout): string[] {
   const perColumn = charsPerColumn(layout)
   const columns: string[] = []
+  if (!text) return [""]
   text.split("\n").forEach((part, index, parts) => {
     for (let i = 0; i < part.length; i += perColumn) columns.push(part.slice(i, i + perColumn))
     if (index < parts.length - 1) columns.push("")
