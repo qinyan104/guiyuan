@@ -7,6 +7,8 @@ const FONT_URLS: Record<string, string> = {
   "qiji-combo": "/vrain/fonts/qiji-combo.ttf",
   "WenYue-GuTiFangSong": "/vrain/fonts/WenYue-GuTiFangSong-JRFC-2.otf",
   XiaolaiMonoSC: "/vrain/fonts/XiaolaiMonoSC-Regular.ttf",
+  PingXianZhenSong: "/vrain/fonts/PingXianZhenSong.ttf",
+  HanaMinA: "/vrain/fonts/HanaMinA.ttf",
 }
 
 const COLORS = {

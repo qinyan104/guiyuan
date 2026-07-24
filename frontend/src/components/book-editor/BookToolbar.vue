@@ -24,17 +24,17 @@ function update<K extends keyof BookLayout>(layout: BookLayout, key: K, value: B
 }
 
 const templateOptions = [
-  { value: "classic", label: "宣纸古籍" },
-  { value: "plain", label: "素纸竖排" },
-  { value: "white", label: "白底栏格" },
+  { value: "classic", label: "宣纸古籍 · 双框版心" },
+  { value: "plain", label: "素纸竖排 · 干净纸面" },
+  { value: "white", label: "白底栏格 · 校对底稿" },
 ]
 
 const fontOptions = [
-  { value: "qiji-combo", label: "奇迹手写" },
-  { value: "WenYue-GuTiFangSong", label: "文悦古体仿宋" },
-  { value: "XiaolaiMonoSC", label: "小赖手写" },
-  { value: "KaiTi", label: "楷体" },
-  { value: "SimSun", label: "宋体" },
+  { value: "qiji-combo", label: "奇迹手写 · 慎终追远" },
+  { value: "WenYue-GuTiFangSong", label: "文悦仿宋 · 世系昭穆" },
+  { value: "XiaolaiMonoSC", label: "小赖手写 · 家乘流芳" },
+  { value: "PingXianZhenSong", label: "屏显真宋 · 谱牒修明" },
+  { value: "HanaMinA", label: "花园明朝 · 宗支有序" },
 ]
 
 const marginOptions = [
@@ -49,6 +49,11 @@ function updateTemplate(value: string) {
 
 function updateFont(value: string) {
   update(props.layout, "fontFamily", value)
+}
+
+function updateCustomFont(event: Event) {
+  const value = (event.target as HTMLInputElement).value.trim()
+  if (value) updateFont(value)
 }
 
 function updateFontSize(event: Event) {
@@ -73,9 +78,9 @@ function updateMargin(value: string) {
     <template v-if="hasDocument">
       <div class="toolbar-group">
         <label>
-          <span>模板</span>
+          <span>纸张</span>
           <AppSelect
-            class="toolbar-select"
+            class="toolbar-select toolbar-select--paper"
             variant="compact"
             :modelValue="layout.templateId"
             :options="templateOptions"
@@ -90,6 +95,13 @@ function updateMargin(value: string) {
             :modelValue="layout.fontFamily"
             :options="fontOptions"
             @update:modelValue="updateFont"
+          />
+          <input
+            class="custom-font-input"
+            type="text"
+            placeholder="自定义字体名"
+            :value="fontOptions.some((option) => option.value === layout.fontFamily) ? '' : layout.fontFamily"
+            @change="updateCustomFont"
           />
         </label>
         <label class="number-field">
@@ -123,6 +135,36 @@ function updateMargin(value: string) {
 </template>
 
 <style scoped>
+@font-face {
+  font-family: "qiji-combo";
+  src: url("/vrain/fonts/qiji-combo.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "WenYue-GuTiFangSong";
+  src: url("/vrain/fonts/WenYue-GuTiFangSong-JRFC-2.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "XiaolaiMonoSC";
+  src: url("/vrain/fonts/XiaolaiMonoSC-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "PingXianZhenSong";
+  src: url("/vrain/fonts/PingXianZhenSong.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HanaMinA";
+  src: url("/vrain/fonts/HanaMinA.ttf") format("truetype");
+  font-display: swap;
+}
+
 .book-toolbar {
   min-height: 60px;
   display: flex;
@@ -145,6 +187,10 @@ function updateMargin(value: string) {
   border: 1px solid rgba(28, 24, 20, 0.08);
   border-radius: 6px;
   background: #fffdfa;
+}
+
+.custom-font-input {
+  width: 104px;
 }
 
 .toolbar-group--title {
@@ -235,7 +281,8 @@ button:disabled { opacity: 0.5; cursor: default; }
   --shadow-ring: 0 0 0 2px rgba(198, 60, 46, 0.18);
 }
 
-.toolbar-select--font { width: 132px; }
+.toolbar-select--paper { width: 154px; }
+.toolbar-select--font { width: 166px; }
 .toolbar-select--margin { width: 78px; }
 
 .icon-btn {

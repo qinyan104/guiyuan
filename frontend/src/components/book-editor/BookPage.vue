@@ -146,6 +146,18 @@ function toHan(value: number): string {
   font-display: swap;
 }
 
+@font-face {
+  font-family: "PingXianZhenSong";
+  src: url("/vrain/fonts/PingXianZhenSong.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HanaMinA";
+  src: url("/vrain/fonts/HanaMinA.ttf") format("truetype");
+  font-display: swap;
+}
+
 .page-wrap {
   min-width: 0;
   height: 100%;
