@@ -8,7 +8,8 @@ import { isAdmin, isSuperAdmin } from '../api/auth'
 import PoeticHeader from '../components/PoeticHeader.vue'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import { useFeedback } from '../composables/useFeedback'
-import { adminListUsers, adminBackupDatabase } from '../api/admin'
+import UserAvatar from '../components/UserAvatar.vue'
+import { adminListUsers, adminBackupDatabase, type AdminUser } from '../api/admin'
 
 const router = useRouter()
 const { lexicon } = useLexiconStore()
@@ -16,6 +17,7 @@ const feedback = useFeedback()
 
 const pubCount = ref(0)
 const userCount = ref(0)
+const users = ref<AdminUser[]>([])
 const recentPubs = ref<PublicationSummary[]>([])
 const loading = ref(true)
 const pageError = ref<string | null>(null)
@@ -30,10 +32,12 @@ async function loadDashboard() {
 
     if (isAdmin()) {
       try {
-        const users = await adminListUsers()
-        userCount.value = users.length
+        const adminUsers = await adminListUsers()
+        userCount.value = adminUsers.length
+        users.value = adminUsers
       } catch {
         userCount.value = 0
+        users.value = []
       }
     }
   } catch (e: any) {
@@ -69,6 +73,8 @@ function formatDate(dateStr: string) {
 
 const latestPub = computed(() => recentPubs.value.length > 0 ? recentPubs.value[0] : null)
 const otherRecentPubs = computed(() => recentPubs.value.slice(1))
+const visibleUsers = computed(() => users.value.slice(0, 3))
+const hasMoreUsers = computed(() => users.value.length > visibleUsers.value.length)
 
 const showCreateDialog = ref(false)
 const newTitle = ref('')
@@ -191,10 +197,16 @@ async function handleCreateFromDashboard() {
             <span class="stat-label">编委人数</span>
           </div>
           <div class="users-avatars">
-            <div class="avatar-circle"></div>
-            <div class="avatar-circle"></div>
-            <div class="avatar-circle"></div>
-            <div class="avatar-circle more">+</div>
+            <UserAvatar
+              v-for="user in visibleUsers"
+              :key="user.id"
+              class="avatar-circle"
+              :src="user.avatarUrl"
+              :name="user.nickname || user.username"
+              :tone="user.role.toLowerCase()"
+              size="sm"
+            />
+            <div v-if="hasMoreUsers" class="avatar-circle more">+</div>
           </div>
         </div>
 
@@ -636,10 +648,10 @@ async function handleCreateFromDashboard() {
   margin-left: 8px;
 }
 .avatar-circle {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  border: 2px solid var(--color-card-fill);
+  border: none;
   background: linear-gradient(135deg, var(--color-neutral-4), var(--color-card-stroke));
   margin-left: -8px;
 }

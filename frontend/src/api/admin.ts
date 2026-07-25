@@ -8,6 +8,7 @@ export interface AdminUser {
   nickname: string
   role: string
   createdAt: string
+  avatarUrl?: string
 }
 
 export async function adminListUsers(): Promise<AdminUser[]> {

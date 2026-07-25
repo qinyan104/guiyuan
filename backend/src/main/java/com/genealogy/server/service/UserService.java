@@ -5,8 +5,10 @@ import com.genealogy.server.dto.RegisterRequest;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
+import com.genealogy.server.model.Person;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.PersonAccountRepository;
+import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.util.HashUtils;
@@ -23,15 +25,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final PersonAccountRepository personAccountRepository;
+    private final PersonRepository personRepository;
     private final PublicationAccessRepository publicationAccessRepository;
 
     public UserService(UserRepository userRepository,
                        BCryptPasswordEncoder passwordEncoder,
                        PersonAccountRepository personAccountRepository,
+                       PersonRepository personRepository,
                        PublicationAccessRepository publicationAccessRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.personAccountRepository = personAccountRepository;
+        this.personRepository = personRepository;
         this.publicationAccessRepository = publicationAccessRepository;
     }
 
@@ -181,6 +186,14 @@ public class UserService {
 
     public List<User> listAllUsers() {
         return userRepository.findAll();
+    }
+
+    public String getAvatarUrl(Long userId) {
+        return personAccountRepository.findByUserId(userId)
+                .flatMap(account -> personRepository.findById(account.getPersonDbId()))
+                .map(Person::getPhotoId)
+                .map(photoId -> "/api/photos/" + photoId)
+                .orElse(null);
     }
 
     public void migrateExistingUsers() {

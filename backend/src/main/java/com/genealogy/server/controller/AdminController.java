@@ -59,6 +59,7 @@ public class AdminController {
                     m.put("nickname", u.getNickname());
                     m.put("role", u.getRole());
                     m.put("createdAt", u.getCreatedAt());
+                    m.put("avatarUrl", userService.getAvatarUrl(u.getId()));
                     return m;
                 })
                 .toList();

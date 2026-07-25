@@ -294,7 +294,7 @@ function formatDate(dateStr: string) {
             </label>
             <span class="col-id">{{ String(user.id).padStart(4, '0') }}</span>
             <div class="col-user">
-              <UserAvatar :name="user.nickname || user.username" :tone="user.role.toLowerCase()" size="md" />
+              <UserAvatar :src="user.avatarUrl" :name="user.nickname || user.username" :tone="user.role.toLowerCase()" size="md" />
               <div class="user-info">
                 <span class="uname">
                   {{ user.username }}
