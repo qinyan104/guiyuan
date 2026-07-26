@@ -126,6 +126,7 @@ function toHan(value: number): string {
           </div>
         </template>
       </div>
+      <footer v-if="!isCoverPage">第 {{ pageNumberText }} 页</footer>
     </section>
     <section v-else class="empty-page">暂无书页</section>
   </main>
@@ -346,6 +347,16 @@ function toHan(value: number): string {
   overflow: hidden;
   caret-color: var(--color-accent);
   color: rgba(33, 23, 15, 0.9);
+}
+
+footer {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(78, 51, 29, 0.48);
+  font-size: 12px;
+  writing-mode: horizontal-tb;
 }
 
 .empty-page {

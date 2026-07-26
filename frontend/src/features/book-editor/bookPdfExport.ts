@@ -197,6 +197,15 @@ export async function exportBookPdf(doc: BookDocument, pages: BookPageLayout[]) 
       }
     }
 
+    const pageNumber = `第 ${toHan(pageLayout.pageNumber)} 页`
+    page.drawText(pageNumber, {
+      x: BOOK_PAGE.width / 2 - font.widthOfTextAtSize(pageNumber, 20) / 2,
+      y: 54,
+      size: 20,
+      font,
+      color: COLORS.muted,
+      opacity: 0.62,
+    })
   }
 
   downloadPdf(await pdf.save(), doc.title)
