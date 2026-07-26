@@ -9,6 +9,7 @@ const props = defineProps<{
   currentPageIndex: number
   layout: BookLayout
   viewMode: "single" | "spread"
+  zoom: number
 }>()
 
 const emit = defineEmits<{
@@ -32,8 +33,8 @@ const spreadPages = computed(() => {
     left: props.pages[rightIndex + 1] ?? null,
   }
 })
-const singleScale = computed(() => fitScale(1, 0.56))
-const spreadScale = computed(() => fitScale(2, 0.48))
+const singleScale = computed(() => fitScale(1, 0.56) * props.zoom)
+const spreadScale = computed(() => fitScale(2, 0.48) * props.zoom)
 const blankLeafStyle = computed(() => ({
   width: `${BOOK_PAGE.width * spreadScale.value}px`,
   height: `${BOOK_PAGE.height * spreadScale.value}px`,
@@ -116,11 +117,16 @@ onBeforeUnmount(() => {
   height: 100%;
   overflow: auto;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: flex-start;
   padding: 36px 44px;
   background:
     radial-gradient(circle at 50% 12%, rgba(255, 253, 250, 0.75), transparent 34%),
     linear-gradient(180deg, #eee7da, #e0d5c3);
+}
+
+.book-stage > * {
+  margin: auto;
 }
 
 .book-stage--single {
@@ -128,7 +134,6 @@ onBeforeUnmount(() => {
 }
 
 .book-spread {
-  align-self: center;
   display: grid;
   grid-template-columns: minmax(0, auto) 18px minmax(0, auto);
   align-items: stretch;

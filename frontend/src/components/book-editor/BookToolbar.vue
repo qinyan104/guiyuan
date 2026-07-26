@@ -9,6 +9,7 @@ const props = defineProps<{
   exporting: boolean
   hasDocument: boolean
   viewMode: "single" | "spread"
+  zoom: number
 }>()
 
 const emit = defineEmits<{
@@ -19,6 +20,9 @@ const emit = defineEmits<{
   insertPageBreak: []
   updateLayout: [layout: BookLayout]
   updateViewMode: [viewMode: "single" | "spread"]
+  zoomIn: []
+  zoomOut: []
+  resetZoom: []
 }>()
 
 function update<K extends keyof BookLayout>(layout: BookLayout, key: K, value: BookLayout[K]) {
@@ -91,6 +95,13 @@ function updateMargin(value: string) {
             :class="{ active: viewMode === 'single' }"
             @click="emit('updateViewMode', 'single')"
           >单页</button>
+        </label>
+        <label class="zoom-control">
+          <span>缩放</span>
+          <button type="button" title="缩小" @click="emit('zoomOut')">−</button>
+          <strong>{{ Math.round(zoom * 100) }}%</strong>
+          <button type="button" title="放大" @click="emit('zoomIn')">＋</button>
+          <button type="button" title="重置缩放" @click="emit('resetZoom')">重置</button>
         </label>
         <label>
           <span>纸张</span>
@@ -281,6 +292,23 @@ input {
   background: #2d261f;
   border-color: #2d261f;
   color: #fff;
+}
+.zoom-control {
+  gap: 3px;
+}
+.zoom-control button {
+  width: 32px;
+  padding: 0;
+}
+.zoom-control button:last-child {
+  width: 44px;
+}
+.zoom-control strong {
+  min-width: 40px;
+  text-align: center;
+  color: #2d261f;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 button:hover:not(:disabled),
 input:hover {

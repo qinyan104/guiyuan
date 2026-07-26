@@ -26,6 +26,7 @@ const document = ref<BookDocument | null>(null)
 const currentPageIndex = ref(0)
 const selectedBlockIndex = ref<number | null>(null)
 const viewMode = ref<"single" | "spread">("spread")
+const zoom = ref(1)
 
 const layout = computed(() => document.value?.layout ?? DEFAULT_BOOK_LAYOUT)
 const pages = computed(() => document.value ? paginateBook(document.value) : [])
@@ -104,6 +105,10 @@ function updateViewMode(next: "single" | "spread") {
   viewMode.value = next
 }
 
+function updateZoom(delta: number) {
+  zoom.value = Math.max(0.6, Math.min(1.8, Number((zoom.value + delta).toFixed(2))))
+}
+
 function insertPageBreak() {
   if (!document.value) return
   const blocks = [...document.value.blocks]
@@ -137,6 +142,7 @@ async function exportPdf() {
       :exporting="exporting"
       :hasDocument="Boolean(document)"
       :viewMode="viewMode"
+      :zoom="zoom"
       @back="back"
       @generate="generate"
       @save="save"
@@ -144,6 +150,9 @@ async function exportPdf() {
       @insertPageBreak="insertPageBreak"
       @updateLayout="updateLayout"
       @updateViewMode="updateViewMode"
+      @zoomIn="updateZoom(0.1)"
+      @zoomOut="updateZoom(-0.1)"
+      @resetZoom="zoom = 1"
     />
 
     <div v-if="loading" class="state">正在加载书稿...</div>
@@ -160,6 +169,7 @@ async function exportPdf() {
         :currentPageIndex="currentPageIndex"
         :layout="document.layout"
         :viewMode="viewMode"
+        :zoom="zoom"
         @updatePerson="updatePerson"
         @selectBlock="selectedBlockIndex = $event"
       />
