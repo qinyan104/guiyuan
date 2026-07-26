@@ -15,8 +15,10 @@ const COLORS = {
   ink: rgb(0.13, 0.09, 0.06),
   muted: rgb(0.43, 0.32, 0.21),
   red: rgb(0.54, 0.12, 0.09),
-  black: rgb(0, 0, 0),
-  grid: rgb(0, 0, 0),
+  black: rgb(0.2, 0.15, 0.1),
+  grid: rgb(0.24, 0.18, 0.12),
+  cover: rgb(0.15, 0.25, 0.28),
+  coverLabel: rgb(0.94, 0.86, 0.72),
   classicPaper: rgb(0.97, 0.94, 0.87),
   plainPaper: rgb(1, 0.98, 0.94),
   whitePaper: rgb(1, 1, 1),
@@ -100,6 +102,27 @@ function drawColumnRules(page: PDFPage, margin: number, gap: number, columnCount
   })
 }
 
+function drawBookMouth(page: PDFPage, font: PDFFont, pageNumber: number) {
+  const isRightPage = pageNumber % 2 === 0
+  const x = isRightPage ? 42 : BOOK_PAGE.width - 42
+  const centerTop = BOOK_PAGE.height / 2 - 72
+  drawVerticalColumn(page, font, "◆族谱◆", x, centerTop, 30, 18, COLORS.muted)
+}
+
+function drawCover(page: PDFPage, font: PDFFont, title: string, subtitle?: string) {
+  page.drawRectangle({ x: 0, y: 0, width: BOOK_PAGE.width, height: BOOK_PAGE.height, color: COLORS.cover })
+  drawTopRect(page, BOOK_PAGE.width / 2 + 2, 330, 108, 920, {
+    color: COLORS.coverLabel,
+    borderColor: COLORS.red,
+    borderWidth: 1,
+    borderOpacity: 0.48,
+  })
+  drawVerticalColumn(page, font, title, BOOK_PAGE.width / 2 + 40, 412, 78, 66, COLORS.ink)
+  if (subtitle) {
+    drawVerticalColumn(page, font, subtitle, BOOK_PAGE.width / 2 - 42, 520, 40, 32, COLORS.coverLabel)
+  }
+}
+
 function pageBackground(templateId: string): Color {
   if (templateId === "white") return COLORS.whitePaper
   if (templateId === "plain") return COLORS.plainPaper
@@ -128,6 +151,7 @@ function downloadPdf(bytes: Uint8Array, fileName: string) {
 export async function exportBookPdf(doc: BookDocument, pages: BookPageLayout[]) {
   const pdf = await PDFDocument.create()
   const font = await embedBookFont(pdf, doc.layout.fontFamily)
+  const coverFont = doc.layout.fontFamily === "qiji-combo" ? font : await embedBookFont(pdf, "qiji-combo")
   const size = bodyFontPx(doc.layout)
   const margin = pageMargin(doc.layout)
   const lineHeight = columnGap(doc.layout)
@@ -135,47 +159,34 @@ export async function exportBookPdf(doc: BookDocument, pages: BookPageLayout[]) 
   for (const pageLayout of pages) {
     const page = pdf.addPage([BOOK_PAGE.width, BOOK_PAGE.height])
     const isClassic = doc.layout.templateId === "classic"
+    const coverBlock = pageLayout.blocks.find((item) => item.block.type === "cover")?.block
 
-    page.drawRectangle({
-      x: 0,
-      y: 0,
-      width: BOOK_PAGE.width,
-      height: BOOK_PAGE.height,
-      color: pageBackground(doc.layout.templateId),
-    })
+    if (coverBlock?.type === "cover") {
+      drawCover(page, coverFont, coverBlock.title, coverBlock.subtitle)
+      continue
+    }
+
+    page.drawRectangle({ x: 0, y: 0, width: BOOK_PAGE.width, height: BOOK_PAGE.height, color: pageBackground(doc.layout.templateId) })
     drawTopRect(page, 44, 44, BOOK_PAGE.width - 88, BOOK_PAGE.height - 88, {
       borderColor: COLORS.black,
-      borderWidth: 2,
+      borderWidth: 1,
+      borderOpacity: 0.5,
     })
     if (isClassic) {
       const innerInset = margin - 38
       drawTopRect(page, innerInset, innerInset, BOOK_PAGE.width - innerInset * 2, BOOK_PAGE.height - innerInset * 2, {
         borderColor: COLORS.black,
         borderWidth: 1,
+        borderOpacity: 0.45,
       })
     }
-    if (!pageLayout.blocks.some((item) => item.block.type === "cover")) {
-      drawColumnRules(page, margin, lineHeight, columnsPerPage(doc.layout), charsPerColumn(doc.layout))
-    }
+    drawColumnRules(page, margin, lineHeight, columnsPerPage(doc.layout), charsPerColumn(doc.layout))
+    drawBookMouth(page, font, pageLayout.pageNumber)
 
     let x = BOOK_PAGE.width - margin - lineHeight / 2
     const y = margin
     for (const item of pageLayout.blocks) {
       const block = item.block
-      if (block.type === "cover") {
-        const titleSize = 64
-        const titleTop = BOOK_PAGE.height / 2 - block.title.length * 36
-        drawTopRect(page, BOOK_PAGE.width / 2 + 6, titleTop - 30, 84, block.title.length * 72 + 60, {
-          borderColor: COLORS.red,
-          borderWidth: 1,
-          borderOpacity: 0.38,
-        })
-        drawVerticalColumn(page, font, block.title, BOOK_PAGE.width / 2 + 36, titleTop, 72, titleSize, COLORS.ink)
-        if (block.subtitle) {
-          drawVerticalColumn(page, font, block.subtitle, BOOK_PAGE.width / 2 - 28, BOOK_PAGE.height / 2 - block.subtitle.length * 18, 38, 32, COLORS.muted)
-        }
-        continue
-      }
       if (block.type === "generationHeading") {
         drawVerticalColumn(page, font, block.text, x, y, lineHeight, size + 8, COLORS.red)
         x -= lineHeight * 2

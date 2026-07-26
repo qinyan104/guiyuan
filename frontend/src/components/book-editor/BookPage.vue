@@ -111,6 +111,7 @@ function toHan(value: number): string {
             v-else-if="item.block.type === 'person'"
             :class="['person-block', { editing: editingIndex === item.blockIndex }]"
             :data-book-block-index="item.blockIndex"
+            :data-person-name="item.block.personName"
             :style="personStyle(item.block.text)"
           >
             <p
@@ -302,20 +303,43 @@ function toHan(value: number): string {
   max-width: var(--column-gap);
   overflow: hidden;
   color: #8a1f16;
-  font-size: 1.25em;
+  background: rgba(138, 31, 22, 0.055);
+  border-left: 1px solid rgba(138, 31, 22, 0.32);
+  font-size: 1.18em;
   font-weight: 600;
   line-height: var(--column-gap);
+  text-align: center;
 }
 
 .person-block {
+  position: relative;
   margin: 0;
-  padding: 0;
+  padding-left: 0.18em;
+  border-left: 1px dotted rgba(78, 51, 29, 0.18);
   border-radius: 4px;
   cursor: text;
   height: var(--grid-height);
   max-width: var(--grid-width);
   overflow: hidden;
   contain: layout paint;
+}
+
+.person-block::before {
+  content: attr(data-person-name);
+  position: absolute;
+  top: 0;
+  left: 0.1em;
+  max-height: calc(var(--column-gap) * 3);
+  overflow: hidden;
+  color: rgba(138, 31, 22, 0.72);
+  font-size: 0.72em;
+  line-height: 1;
+  pointer-events: none;
+  writing-mode: vertical-rl;
+}
+
+.person-block.editing {
+  background: rgba(255, 252, 246, 0.52);
 }
 
 .person-text {

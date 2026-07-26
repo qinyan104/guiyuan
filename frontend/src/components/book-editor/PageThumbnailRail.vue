@@ -9,6 +9,15 @@ defineProps<{
 const emit = defineEmits<{
   select: [pageIndex: number]
 }>()
+
+function isCover(page: BookPageLayout) {
+  return page.blocks.some((item) => item.block.type === "cover")
+}
+
+function sideLabel(index: number) {
+  if (index === 0) return "封面"
+  return (index - 1) % 2 === 0 ? "右页" : "左页"
+}
 </script>
 
 <template>
@@ -20,14 +29,14 @@ const emit = defineEmits<{
     <button
       v-for="(page, index) in pages"
       :key="page.pageNumber"
-      :class="['thumb', { active: index === currentPage }]"
+      :class="['thumb', { active: index === currentPage, cover: isCover(page), left: sideLabel(index) === '左页', right: sideLabel(index) === '右页' }]"
       type="button"
       @click="emit('select', index)"
     >
       <div class="paper">
         <span>{{ page.pageNumber }}</span>
       </div>
-      <small>第 {{ page.pageNumber }} 页</small>
+      <small>{{ sideLabel(index) }} · 第 {{ page.pageNumber }} 页</small>
     </button>
   </aside>
 </template>
@@ -100,6 +109,32 @@ const emit = defineEmits<{
     repeating-linear-gradient(to left, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 8px),
     #fffaf0;
   box-shadow: 0 8px 18px rgba(46, 37, 26, 0.1);
+}
+
+.thumb.cover .paper {
+  background:
+    linear-gradient(90deg, rgba(9, 34, 45, 0.18), transparent 16%, transparent 84%, rgba(9, 34, 45, 0.12)),
+    #263f48;
+}
+
+.thumb.cover .paper::before {
+  content: "";
+  width: 18px;
+  height: 58px;
+  border: 1px solid rgba(138, 31, 22, 0.42);
+  background: #ead9b8;
+}
+
+.thumb.cover .paper span {
+  display: none;
+}
+
+.thumb.left .paper {
+  box-shadow: inset -7px 0 12px rgba(76, 51, 28, 0.1), 0 8px 18px rgba(46, 37, 26, 0.1);
+}
+
+.thumb.right .paper {
+  box-shadow: inset 7px 0 12px rgba(76, 51, 28, 0.1), 0 8px 18px rgba(46, 37, 26, 0.1);
 }
 
 .paper::after {
