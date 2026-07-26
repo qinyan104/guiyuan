@@ -206,6 +206,10 @@ function goBackToList() {
   router.push({ name: 'publications' })
 }
 
+function goPublicationRoute(name: 'publication-stats' | 'publication-timeline') {
+  router.push({ name, params: { id: props.publicationId } })
+}
+
 // ─── GEDCOM Export ─────────────────────────────────────────────
 function handleExportGedcom() {
   const pubId = context.serverPublicationId.value
@@ -256,8 +260,8 @@ watch(
       @export-gedcom="handleExportGedcom"
       @logout="goBackToList"
       @go-back="goBackToList"
-      @view-stats="router.push({ name: 'publication-stats' })"
-      @view-timeline="router.push({ name: 'publication-timeline' })"
+      @view-stats="goPublicationRoute('publication-stats')"
+      @view-timeline="goPublicationRoute('publication-timeline')"
     />
 
     <FeedbackStrip

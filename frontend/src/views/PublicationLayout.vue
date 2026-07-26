@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getPublication, updatePublication } from '../api/publication'
 import { listAccounts } from '../api/account'
 import { getUsername } from '../api/tokenStore'
@@ -13,9 +13,11 @@ import type { EditorSnapshot } from '../features/history/historyCore'
 import { PUBLICATION_CONTEXT_KEY, type PublicationContext, type PublicationData, type PublicationSettings } from '../types/family'
 
 const route = useRoute()
+const router = useRouter()
 const publicationId = computed(() => Number(route.params.id))
 
 const loading = ref(true)
+const loadError = ref('')
 const serverPublicationId = ref<number | null>(null)
 const syncStatus = ref<'saved' | 'pending' | 'syncing' | 'error' | 'conflict'>('saved')
 const conflictMessage = ref('')
@@ -264,6 +266,7 @@ async function load() {
     serverRevision.value = result.revision
     pub.publication.revision = result.revision
     conflictMessage.value = ''
+    loadError.value = ''
     conflictDraftSaved.value = false
     conflictDraft.value = getConflictDraft(result.id)
     syncStatus.value = 'saved'
@@ -274,10 +277,11 @@ async function load() {
     // Don't show error for stale requests
     if (myGeneration !== loadGeneration) return
     if (err?.response?.status === 403) {
-      feedback.setError('你无权访问此家谱，请联系管理员将你添加为协作者')
+      loadError.value = '你无权访问此家谱，请联系管理员将你添加为协作者'
     } else {
-      feedback.setError('加载族谱失败')
+      loadError.value = err?.response?.data?.message || err?.message || '加载族谱失败'
     }
+    feedback.setError(loadError.value)
   } finally {
     if (myGeneration === loadGeneration) {
       loading.value = false
@@ -360,6 +364,11 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
     <div class="loading-spinner"></div>
     <span>正在加载族谱数据...</span>
   </div>
+  <div v-else-if="loadError" class="loading-overlay loading-overlay--error">
+    <strong>加载族谱失败</strong>
+    <span>{{ loadError }}</span>
+    <button class="btn btn--primary" type="button" @click="router.push({ name: 'publications' })">返回族谱列表</button>
+  </div>
   <router-view v-else />
   <div v-if="conflictDraft && syncStatus !== 'conflict'" class="conflict-draft-notice" data-testid="conflict-draft-notice">
     <div class="conflict-draft-notice__text">
@@ -402,6 +411,18 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   border-top-color: var(--accent-signal, #a96e35);
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+.loading-overlay--error {
+  background: var(--color-neutral-1, #f5f0e8);
+  text-align: center;
+}
+
+.loading-overlay--error strong {
+  color: var(--color-neutral-10, #1f1d1a);
+  font-family: var(--font-serif, serif);
+  font-size: var(--text-title-24, 24px);
+  font-weight: 500;
 }
 
 @keyframes spin {
