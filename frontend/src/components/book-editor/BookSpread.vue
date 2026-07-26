@@ -124,7 +124,7 @@ onBeforeUnmount(() => {
   padding: 36px 44px;
   background:
     radial-gradient(circle at 50% 12%, rgba(255, 253, 250, 0.75), transparent 34%),
-    linear-gradient(180deg, #eee7da, #ded2c0);
+    linear-gradient(180deg, #eee7da, #e0d5c3);
 }
 
 .book-stage--single {
@@ -136,12 +136,11 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: minmax(0, auto) 18px minmax(0, auto);
   align-items: stretch;
-  padding: 22px 28px;
-  border-radius: 10px;
-  background: #cabba4;
+  padding: 18px 24px;
+  background: #cdbfa9;
   box-shadow:
-    0 30px 70px rgba(45, 34, 22, 0.24),
-    inset 0 0 0 1px rgba(255, 246, 226, 0.32);
+    0 30px 70px rgba(45, 34, 22, 0.2),
+    inset 0 0 0 1px rgba(255, 246, 226, 0.24);
 }
 
 .spread-side {
@@ -164,7 +163,7 @@ onBeforeUnmount(() => {
 
 .book-spine {
   background:
-    linear-gradient(90deg, rgba(70, 47, 26, 0.18), rgba(255, 248, 236, 0.2), rgba(70, 47, 26, 0.2)),
-    #b9a78d;
+    linear-gradient(90deg, rgba(70, 47, 26, 0.16), rgba(255, 248, 236, 0.16), rgba(70, 47, 26, 0.18)),
+    #bca98e;
 }
 </style>

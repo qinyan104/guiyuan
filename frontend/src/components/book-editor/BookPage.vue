@@ -111,7 +111,6 @@ function toHan(value: number): string {
             v-else-if="item.block.type === 'person'"
             :class="['person-block', { editing: editingIndex === item.blockIndex }]"
             :data-book-block-index="item.blockIndex"
-            :data-person-name="item.block.personName"
             :style="personStyle(item.block.text)"
           >
             <p
@@ -128,11 +127,10 @@ function toHan(value: number): string {
         </template>
       </div>
       <div v-if="!isCoverPage" class="book-mouth" aria-hidden="true">
-        <span class="fish-tail">◆</span>
-        <span>族谱</span>
-        <span class="fish-tail">◆</span>
+        <span class="fish-tail fish-tail--top"></span>
+        <span class="book-mouth__page">{{ pageNumberText }}</span>
+        <span class="fish-tail fish-tail--bottom"></span>
       </div>
-      <footer>第 {{ pageNumberText }} 页</footer>
     </section>
     <section v-else class="empty-page">暂无书页</section>
   </main>
@@ -193,11 +191,9 @@ function toHan(value: number): string {
   box-sizing: border-box;
   color: #21170f;
   background:
-    radial-gradient(circle at 18% 22%, rgba(120, 82, 42, 0.055), transparent 26%),
-    radial-gradient(circle at 76% 68%, rgba(110, 74, 38, 0.045), transparent 30%),
-    linear-gradient(90deg, rgba(122, 90, 56, 0.035), transparent 18%, transparent 82%, rgba(122, 90, 56, 0.035)),
-    #f8f0df;
-  border: 1px solid rgba(32, 24, 16, 0.45);
+    linear-gradient(90deg, rgba(122, 90, 56, 0.035), transparent 16%, transparent 84%, rgba(122, 90, 56, 0.035)),
+    linear-gradient(180deg, #fbf4e6, #f6ecd9);
+  border: 1px solid rgba(32, 24, 16, 0.28);
   box-shadow:
     0 26px 60px rgba(46, 37, 26, 0.18),
     0 0 0 1px rgba(255, 255, 255, 0.72),
@@ -218,11 +214,11 @@ function toHan(value: number): string {
 }
 
 .book-page:not(.is-cover-page) .page-content {
-  outline: 1px solid rgba(32, 24, 16, 0.45);
+  outline: 1px solid rgba(32, 24, 16, 0.34);
   background-image: repeating-linear-gradient(
     to left,
-    rgba(38, 28, 18, 0.24) 0,
-    rgba(38, 28, 18, 0.24) 1px,
+    rgba(38, 28, 18, 0.18) 0,
+    rgba(38, 28, 18, 0.18) 1px,
     transparent 1px,
     transparent var(--column-gap)
   );
@@ -243,12 +239,17 @@ function toHan(value: number): string {
   position: absolute;
   inset: 28px;
   pointer-events: none;
-  border: 1px solid rgba(32, 24, 16, 0.5);
+  border: 1px solid rgba(32, 24, 16, 0.36);
 }
 
 .book-page::after {
   inset: var(--inner-frame-inset);
-  border-color: #000;
+  border-color: rgba(32, 24, 16, 0.3);
+}
+
+.book-page.is-cover-page::before,
+.book-page.is-cover-page::after {
+  display: none;
 }
 
 .book-page.tpl-plain::before,
@@ -270,10 +271,23 @@ function toHan(value: number): string {
   writing-mode: vertical-rl;
   margin: 0;
   background:
-    linear-gradient(90deg, rgba(9, 34, 45, 0.16), transparent 10%, transparent 90%, rgba(9, 34, 45, 0.12)),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 5px),
-    #263f48;
+    radial-gradient(circle at 48px 22%, rgba(4, 14, 20, 0.3) 0 5px, transparent 6px),
+    radial-gradient(circle at 48px 42%, rgba(4, 14, 20, 0.3) 0 5px, transparent 6px),
+    radial-gradient(circle at 48px 62%, rgba(4, 14, 20, 0.3) 0 5px, transparent 6px),
+    linear-gradient(90deg, rgba(7, 24, 32, 0.42), transparent 14%, transparent 88%, rgba(7, 24, 32, 0.18)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 6px),
+    #213943;
   color: #1e1710;
+}
+
+.cover::before {
+  content: "";
+  position: absolute;
+  left: 42px;
+  top: 132px;
+  bottom: 132px;
+  border-left: 2px solid rgba(232, 214, 178, 0.38);
+  pointer-events: none;
 }
 
 .cover h1 {
@@ -282,13 +296,12 @@ function toHan(value: number): string {
   font-size: 54px;
   font-weight: 500;
   letter-spacing: 0;
-  padding: 54px 22px;
-  border: 1px solid rgba(118, 42, 31, 0.48);
+  min-height: 720px;
+  padding: 56px 24px;
+  border: 1px solid rgba(118, 42, 31, 0.36);
   background:
-    linear-gradient(180deg, rgba(255, 252, 242, 0.98), rgba(236, 220, 187, 0.96));
-  box-shadow:
-    0 0 0 9px rgba(237, 221, 186, 0.18),
-    0 18px 34px rgba(10, 21, 24, 0.22);
+    linear-gradient(180deg, rgba(255, 252, 242, 0.98), rgba(239, 226, 196, 0.98));
+  box-shadow: 0 0 0 8px rgba(237, 221, 186, 0.1);
 }
 
 .cover p {
@@ -315,27 +328,12 @@ function toHan(value: number): string {
   position: relative;
   margin: 0;
   padding-left: 0.18em;
-  border-left: 1px dotted rgba(78, 51, 29, 0.18);
-  border-radius: 4px;
+  border-left: 1px dotted rgba(78, 51, 29, 0.12);
   cursor: text;
   height: var(--grid-height);
   max-width: var(--grid-width);
   overflow: hidden;
   contain: layout paint;
-}
-
-.person-block::before {
-  content: attr(data-person-name);
-  position: absolute;
-  top: 0;
-  left: 0.1em;
-  max-height: calc(var(--column-gap) * 3);
-  overflow: hidden;
-  color: rgba(138, 31, 22, 0.72);
-  font-size: 0.72em;
-  line-height: 1;
-  pointer-events: none;
-  writing-mode: vertical-rl;
 }
 
 .person-block.editing {
@@ -355,26 +353,16 @@ function toHan(value: number): string {
   color: rgba(33, 23, 15, 0.9);
 }
 
-footer {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #7a5a38;
-  font-size: 12px;
-  writing-mode: horizontal-tb;
-}
-
 .book-mouth {
   position: absolute;
   top: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   transform: translateY(-50%);
-  color: rgba(78, 51, 29, 0.58);
-  font-size: 12px;
+  color: rgba(78, 51, 29, 0.46);
+  font-size: 11px;
   line-height: 1;
   writing-mode: vertical-rl;
 }
@@ -392,8 +380,22 @@ footer {
 }
 
 .fish-tail {
-  color: rgba(138, 31, 22, 0.52);
-  font-size: 10px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+}
+
+.fish-tail--top {
+  border-bottom: 8px solid rgba(138, 31, 22, 0.42);
+}
+
+.fish-tail--bottom {
+  border-top: 8px solid rgba(138, 31, 22, 0.42);
+}
+
+.book-mouth__page {
+  font-family: "WenYue-GuTiFangSong", SimSun, serif;
 }
 
 .empty-page {

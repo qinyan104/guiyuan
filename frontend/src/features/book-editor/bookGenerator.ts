@@ -132,8 +132,8 @@ function childrenText(pid: string, people: Record<string, Person>, families: Rec
   const sons = children.filter((id) => people[id]?.gender === "male")
   const daughters = children.filter((id) => people[id]?.gender === "female")
   const parts: string[] = []
-  if (sons.length) parts.push(`子${sons.length}：${sons.map((id, i) => `${ordinal(i)}${people[id].name}`).join("、")}`)
-  if (daughters.length) parts.push(`女${daughters.length}：${daughters.map((id, i) => `${ordinal(i)}${people[id].name}`).join("、")}`)
+  if (sons.length) parts.push(`子${sons.length}，${sons.map((id, i) => `${ordinal(i)}${people[id].name}`).join("、")}`)
+  if (daughters.length) parts.push(`女${daughters.length}，${daughters.map((id, i) => `${ordinal(i)}${people[id].name}`).join("、")}`)
   return parts.join("，")
 }
 
@@ -152,7 +152,7 @@ function personText(pid: string, generation: number, people: Record<string, Pers
   if (p.note) parts.push(p.note)
   const text = parts
     .filter(Boolean)
-    .map((part, index) => (index === 0 ? part : part.replace(/[。]+$/g, "")))
+    .map((part) => part.replace(/[。]+$/g, ""))
     .join("。")
     .replace(/。。+/g, "。")
 

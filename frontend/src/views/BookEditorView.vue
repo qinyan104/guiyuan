@@ -127,7 +127,7 @@ function updateViewMode(next: "single" | "spread") {
 
 onBeforeUnmount(() => {
   if (returnToSpreadTimer) clearTimeout(returnToSpreadTimer)
-}
+})
 
 function insertPageBreak() {
   if (!document.value) return

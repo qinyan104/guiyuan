@@ -106,15 +106,15 @@ function sideLabel(index: number) {
   place-items: center;
   border: 1px solid rgba(28, 24, 20, 0.22);
   background:
-    repeating-linear-gradient(to left, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(to left, rgba(38, 28, 18, 0.13) 0 1px, transparent 1px 8px),
     #fffaf0;
-  box-shadow: 0 8px 18px rgba(46, 37, 26, 0.1);
+  box-shadow: 0 8px 18px rgba(46, 37, 26, 0.08);
 }
 
 .thumb.cover .paper {
   background:
     linear-gradient(90deg, rgba(9, 34, 45, 0.18), transparent 16%, transparent 84%, rgba(9, 34, 45, 0.12)),
-    #263f48;
+    #213943;
 }
 
 .thumb.cover .paper::before {
@@ -123,6 +123,16 @@ function sideLabel(index: number) {
   height: 58px;
   border: 1px solid rgba(138, 31, 22, 0.42);
   background: #ead9b8;
+}
+
+.thumb.cover .paper::after {
+  inset: auto;
+  left: 9px;
+  top: 18px;
+  bottom: 18px;
+  width: 1px;
+  border: 0;
+  background: rgba(232, 214, 178, 0.36);
 }
 
 .thumb.cover .paper span {

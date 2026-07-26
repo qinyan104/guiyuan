@@ -15,9 +15,9 @@ const COLORS = {
   ink: rgb(0.13, 0.09, 0.06),
   muted: rgb(0.43, 0.32, 0.21),
   red: rgb(0.54, 0.12, 0.09),
-  black: rgb(0.2, 0.15, 0.1),
+  frame: rgb(0.2, 0.15, 0.1),
   grid: rgb(0.24, 0.18, 0.12),
-  cover: rgb(0.15, 0.25, 0.28),
+  cover: rgb(0.13, 0.22, 0.26),
   coverLabel: rgb(0.94, 0.86, 0.72),
   classicPaper: rgb(0.97, 0.94, 0.87),
   plainPaper: rgb(1, 0.98, 0.94),
@@ -80,8 +80,9 @@ function drawColumnRules(page: PDFPage, margin: number, gap: number, columnCount
   const right = left + gridWidth
 
   drawTopRect(page, left, top, gridWidth, gridHeight, {
-    borderColor: COLORS.black,
+    borderColor: COLORS.frame,
     borderWidth: 1,
+    borderOpacity: 0.34,
   })
 
   for (let x = BOOK_PAGE.width - margin - gap; x > left; x -= gap) {
@@ -90,7 +91,7 @@ function drawColumnRules(page: PDFPage, margin: number, gap: number, columnCount
       end: { x, y: BOOK_PAGE.height - top },
       thickness: 0.7,
       color: COLORS.grid,
-      opacity: 0.34,
+      opacity: 0.22,
     })
   }
 
@@ -98,24 +99,38 @@ function drawColumnRules(page: PDFPage, margin: number, gap: number, columnCount
     start: { x: right, y: bottom },
     end: { x: right, y: BOOK_PAGE.height - top },
     thickness: 1,
-    color: COLORS.black,
+    color: COLORS.frame,
+    opacity: 0.32,
   })
+}
+
+function drawFishTail(page: PDFPage, x: number, centerY: number) {
+  page.drawLine({ start: { x: x - 8, y: centerY + 18 }, end: { x, y: centerY + 30 }, thickness: 1, color: COLORS.red, opacity: 0.42 })
+  page.drawLine({ start: { x: x + 8, y: centerY + 18 }, end: { x, y: centerY + 30 }, thickness: 1, color: COLORS.red, opacity: 0.42 })
+  page.drawLine({ start: { x: x - 8, y: centerY - 18 }, end: { x, y: centerY - 30 }, thickness: 1, color: COLORS.red, opacity: 0.42 })
+  page.drawLine({ start: { x: x + 8, y: centerY - 18 }, end: { x, y: centerY - 30 }, thickness: 1, color: COLORS.red, opacity: 0.42 })
 }
 
 function drawBookMouth(page: PDFPage, font: PDFFont, pageNumber: number) {
   const isRightPage = pageNumber % 2 === 0
   const x = isRightPage ? 42 : BOOK_PAGE.width - 42
-  const centerTop = BOOK_PAGE.height / 2 - 72
-  drawVerticalColumn(page, font, "◆族谱◆", x, centerTop, 30, 18, COLORS.muted)
+  const centerY = BOOK_PAGE.height / 2
+  drawFishTail(page, x, centerY)
+  drawVerticalColumn(page, font, toHan(pageNumber), x, BOOK_PAGE.height / 2 - 18, 24, 18, COLORS.muted)
 }
 
 function drawCover(page: PDFPage, font: PDFFont, title: string, subtitle?: string) {
   page.drawRectangle({ x: 0, y: 0, width: BOOK_PAGE.width, height: BOOK_PAGE.height, color: COLORS.cover })
+  page.drawLine({ start: { x: 54, y: 150 }, end: { x: 54, y: BOOK_PAGE.height - 150 }, thickness: 2, color: COLORS.coverLabel, opacity: 0.36 })
+  for (const y of [BOOK_PAGE.height * 0.78, BOOK_PAGE.height * 0.58, BOOK_PAGE.height * 0.38]) {
+    page.drawCircle({ x: 54, y, size: 11, color: rgb(0.04, 0.1, 0.12), opacity: 0.52 })
+    page.drawCircle({ x: 54, y, size: 5, color: COLORS.coverLabel, opacity: 0.18 })
+  }
   drawTopRect(page, BOOK_PAGE.width / 2 + 2, 330, 108, 920, {
     color: COLORS.coverLabel,
     borderColor: COLORS.red,
-    borderWidth: 1,
-    borderOpacity: 0.48,
+    borderWidth: 0.8,
+    borderOpacity: 0.36,
   })
   drawVerticalColumn(page, font, title, BOOK_PAGE.width / 2 + 40, 412, 78, 66, COLORS.ink)
   if (subtitle) {
@@ -168,16 +183,16 @@ export async function exportBookPdf(doc: BookDocument, pages: BookPageLayout[]) 
 
     page.drawRectangle({ x: 0, y: 0, width: BOOK_PAGE.width, height: BOOK_PAGE.height, color: pageBackground(doc.layout.templateId) })
     drawTopRect(page, 44, 44, BOOK_PAGE.width - 88, BOOK_PAGE.height - 88, {
-      borderColor: COLORS.black,
+      borderColor: COLORS.frame,
       borderWidth: 1,
-      borderOpacity: 0.5,
+      borderOpacity: 0.34,
     })
     if (isClassic) {
       const innerInset = margin - 38
       drawTopRect(page, innerInset, innerInset, BOOK_PAGE.width - innerInset * 2, BOOK_PAGE.height - innerInset * 2, {
-        borderColor: COLORS.black,
+        borderColor: COLORS.frame,
         borderWidth: 1,
-        borderOpacity: 0.45,
+        borderOpacity: 0.3,
       })
     }
     drawColumnRules(page, margin, lineHeight, columnsPerPage(doc.layout), charsPerColumn(doc.layout))
@@ -198,14 +213,6 @@ export async function exportBookPdf(doc: BookDocument, pages: BookPageLayout[]) 
       }
     }
 
-    const pageNumber = `第 ${toHan(pageLayout.pageNumber)} 页`
-    page.drawText(pageNumber, {
-      x: BOOK_PAGE.width / 2 - font.widthOfTextAtSize(pageNumber, 20) / 2,
-      y: 54,
-      size: 20,
-      font,
-      color: COLORS.muted,
-    })
   }
 
   downloadPdf(await pdf.save(), doc.title)
