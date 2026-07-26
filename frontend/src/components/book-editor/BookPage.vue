@@ -6,6 +6,9 @@ import type { BookLayout, BookPageLayout } from "../../types/bookDocument"
 const props = defineProps<{
   page: BookPageLayout | null
   layout: BookLayout
+  scale?: number
+  framed?: boolean
+  side?: "left" | "right" | "single"
 }>()
 
 const emit = defineEmits<{
@@ -14,24 +17,26 @@ const emit = defineEmits<{
 }>()
 
 const editingIndex = ref<number | null>(null)
-const pageScale = 0.56
+const pageScale = computed(() => props.scale ?? 0.56)
+const isCoverPage = computed(() => props.page?.blocks.some((item) => item.block.type === "cover") ?? false)
+const pageSide = computed(() => props.side ?? "single")
 
 const pageStyle = computed(() => ({
-  width: `${BOOK_PAGE.width * pageScale}px`,
-  height: `${BOOK_PAGE.height * pageScale}px`,
-  fontFamily: `${props.layout.fontFamily}, SimSun, serif`,
-  fontSize: `${bodyFontPx(props.layout) * pageScale}px`,
-  "--page-margin": `${pageMargin(props.layout) * pageScale}px`,
-  "--column-gap": `${columnGap(props.layout) * pageScale}px`,
-  "--grid-width": `${columnsPerPage(props.layout) * columnGap(props.layout) * pageScale}px`,
-  "--grid-height": `${charsPerColumn(props.layout) * columnGap(props.layout) * pageScale}px`,
-  "--inner-frame-inset": `${(pageMargin(props.layout) - 38) * pageScale}px`,
+  width: `${BOOK_PAGE.width * pageScale.value}px`,
+  height: `${BOOK_PAGE.height * pageScale.value}px`,
+  fontFamily: `${props.layout.fontFamily}, WenYue-GuTiFangSong, SimSun, serif`,
+  fontSize: `${bodyFontPx(props.layout) * pageScale.value}px`,
+  "--page-margin": `${pageMargin(props.layout) * pageScale.value}px`,
+  "--column-gap": `${columnGap(props.layout) * pageScale.value}px`,
+  "--grid-width": `${columnsPerPage(props.layout) * columnGap(props.layout) * pageScale.value}px`,
+  "--grid-height": `${charsPerColumn(props.layout) * columnGap(props.layout) * pageScale.value}px`,
+  "--inner-frame-inset": `${(pageMargin(props.layout) - 38) * pageScale.value}px`,
 }))
 
 function personStyle(text: string) {
   const columns = Math.min(textColumnCount(text, props.layout), columnsPerPage(props.layout))
   return {
-    width: `${columns * columnGap(props.layout) * pageScale}px`,
+    width: `${columns * columnGap(props.layout) * pageScale.value}px`,
     maxWidth: "var(--grid-width)",
   }
 }
@@ -89,11 +94,10 @@ function toHan(value: number): string {
 </script>
 
 <template>
-  <main class="page-wrap">
+  <main :class="['page-wrap', { 'page-wrap--framed': framed }]">
     <section
       v-if="page"
-      class="book-page"
-      :class="[`tpl-${layout.templateId}`, { 'is-cover-page': page.blocks.some((item) => item.block.type === 'cover') }]"
+      :class="['book-page', `book-page--${pageSide}`, { 'book-page--framed': framed }, `tpl-${layout.templateId}`, { 'is-cover-page': isCoverPage }]"
       :style="pageStyle"
     >
       <div class="page-content">
@@ -106,6 +110,7 @@ function toHan(value: number): string {
           <div
             v-else-if="item.block.type === 'person'"
             :class="['person-block', { editing: editingIndex === item.blockIndex }]"
+            :data-book-block-index="item.blockIndex"
             :style="personStyle(item.block.text)"
           >
             <p
@@ -120,6 +125,11 @@ function toHan(value: number): string {
             >{{ item.block.text }}</p>
           </div>
         </template>
+      </div>
+      <div v-if="!isCoverPage" class="book-mouth" aria-hidden="true">
+        <span class="fish-tail">◆</span>
+        <span>族谱</span>
+        <span class="fish-tail">◆</span>
       </div>
       <footer>第 {{ pageNumberText }} 页</footer>
     </section>
@@ -170,6 +180,13 @@ function toHan(value: number): string {
     linear-gradient(180deg, #eee7da, #e4dacb);
 }
 
+.page-wrap--framed {
+  height: auto;
+  overflow: visible;
+  padding: 0;
+  background: transparent;
+}
+
 .book-page {
   position: relative;
   box-sizing: border-box;
@@ -179,7 +196,7 @@ function toHan(value: number): string {
     radial-gradient(circle at 76% 68%, rgba(110, 74, 38, 0.045), transparent 30%),
     linear-gradient(90deg, rgba(122, 90, 56, 0.035), transparent 18%, transparent 82%, rgba(122, 90, 56, 0.035)),
     #f8f0df;
-  border: 1px solid #000;
+  border: 1px solid rgba(32, 24, 16, 0.45);
   box-shadow:
     0 26px 60px rgba(46, 37, 26, 0.18),
     0 0 0 1px rgba(255, 255, 255, 0.72),
@@ -200,14 +217,20 @@ function toHan(value: number): string {
 }
 
 .book-page:not(.is-cover-page) .page-content {
-  outline: 1px solid #000;
+  outline: 1px solid rgba(32, 24, 16, 0.45);
   background-image: repeating-linear-gradient(
     to left,
-    rgba(0, 0, 0, 0.34) 0,
-    rgba(0, 0, 0, 0.34) 1px,
+    rgba(38, 28, 18, 0.24) 0,
+    rgba(38, 28, 18, 0.24) 1px,
     transparent 1px,
     transparent var(--column-gap)
   );
+}
+
+.is-cover-page .page-content {
+  inset: 0;
+  width: auto;
+  height: auto;
 }
 
 .book-page.tpl-plain { background: #fffaf0; }
@@ -219,7 +242,7 @@ function toHan(value: number): string {
   position: absolute;
   inset: 28px;
   pointer-events: none;
-  border: 1.5px solid #000;
+  border: 1px solid rgba(32, 24, 16, 0.5);
 }
 
 .book-page::after {
@@ -235,29 +258,42 @@ function toHan(value: number): string {
 }
 
 .cover {
-  min-height: 860px;
+  position: absolute;
+  inset: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   writing-mode: vertical-rl;
-  margin: auto;
+  margin: 0;
+  background:
+    linear-gradient(90deg, rgba(9, 34, 45, 0.16), transparent 10%, transparent 90%, rgba(9, 34, 45, 0.12)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 5px),
+    #263f48;
+  color: #1e1710;
 }
 
 .cover h1 {
   margin: 0;
-  font-size: 48px;
+  font-family: "qiji-combo", "XiaolaiMonoSC", serif;
+  font-size: 54px;
   font-weight: 500;
   letter-spacing: 0;
-  padding: 28px 16px;
-  border: 1px solid rgba(138, 31, 22, 0.38);
-  background: rgba(255, 252, 246, 0.42);
+  padding: 54px 22px;
+  border: 1px solid rgba(118, 42, 31, 0.48);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 242, 0.98), rgba(236, 220, 187, 0.96));
+  box-shadow:
+    0 0 0 9px rgba(237, 221, 186, 0.18),
+    0 18px 34px rgba(10, 21, 24, 0.22);
 }
 
 .cover p {
-  margin: 24px 0 0;
-  color: #6e5136;
+  margin: 28px 0 0;
+  color: rgba(246, 231, 194, 0.82);
+  font-family: "WenYue-GuTiFangSong", SimSun, serif;
 }
 
 .generation {
@@ -292,17 +328,48 @@ function toHan(value: number): string {
   overflow-wrap: anywhere;
   overflow: hidden;
   caret-color: var(--color-accent);
+  color: rgba(33, 23, 15, 0.9);
 }
 
 footer {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 28px;
-  text-align: center;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
   color: #7a5a38;
   font-size: 12px;
   writing-mode: horizontal-tb;
+}
+
+.book-mouth {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(-50%);
+  color: rgba(78, 51, 29, 0.58);
+  font-size: 12px;
+  line-height: 1;
+  writing-mode: vertical-rl;
+}
+
+.book-page--right .book-mouth {
+  left: 38px;
+}
+
+.book-page--left .book-mouth {
+  right: 38px;
+}
+
+.book-page--single .book-mouth {
+  left: 38px;
+}
+
+.fish-tail {
+  color: rgba(138, 31, 22, 0.52);
+  font-size: 10px;
 }
 
 .empty-page {

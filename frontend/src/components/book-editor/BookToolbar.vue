@@ -8,6 +8,7 @@ const props = defineProps<{
   saving: boolean
   exporting: boolean
   hasDocument: boolean
+  viewMode: "single" | "spread"
 }>()
 
 const emit = defineEmits<{
@@ -17,6 +18,7 @@ const emit = defineEmits<{
   exportPdf: []
   insertPageBreak: []
   updateLayout: [layout: BookLayout]
+  updateViewMode: [viewMode: "single" | "spread"]
 }>()
 
 function update<K extends keyof BookLayout>(layout: BookLayout, key: K, value: BookLayout[K]) {
@@ -30,11 +32,11 @@ const templateOptions = [
 ]
 
 const fontOptions = [
-  { value: "qiji-combo", label: "奇迹手写 · 慎终追远" },
   { value: "WenYue-GuTiFangSong", label: "文悦仿宋 · 世系昭穆" },
-  { value: "XiaolaiMonoSC", label: "小赖手写 · 家乘流芳" },
   { value: "PingXianZhenSong", label: "屏显真宋 · 谱牒修明" },
   { value: "HanaMinA", label: "花园明朝 · 宗支有序" },
+  { value: "qiji-combo", label: "奇迹手写 · 慎终追远" },
+  { value: "XiaolaiMonoSC", label: "小赖手写 · 家乘流芳" },
 ]
 
 const marginOptions = [
@@ -77,6 +79,19 @@ function updateMargin(value: string) {
     </div>
     <template v-if="hasDocument">
       <div class="toolbar-group">
+        <label class="view-switch">
+          <span>视图</span>
+          <button
+            type="button"
+            :class="{ active: viewMode === 'spread' }"
+            @click="emit('updateViewMode', 'spread')"
+          >双页</button>
+          <button
+            type="button"
+            :class="{ active: viewMode === 'single' }"
+            @click="emit('updateViewMode', 'single')"
+          >单页</button>
+        </label>
         <label>
           <span>纸张</span>
           <AppSelect
@@ -255,6 +270,18 @@ input {
   font-variant-numeric: tabular-nums;
 }
 .number-field { gap: 3px; }
+.view-switch {
+  gap: 3px;
+}
+.view-switch button {
+  width: 42px;
+  padding: 0;
+}
+.view-switch button.active {
+  background: #2d261f;
+  border-color: #2d261f;
+  color: #fff;
+}
 button:hover:not(:disabled),
 input:hover {
   background: #eee6da;

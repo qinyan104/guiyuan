@@ -56,7 +56,7 @@ export interface BookPageLayout {
 
 export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   templateId: "classic",
-  fontFamily: "qiji-combo",
+  fontFamily: "WenYue-GuTiFangSong",
   fontSize: 18,
   marginPreset: "standard",
 }

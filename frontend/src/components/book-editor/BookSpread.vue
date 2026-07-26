@@ -1,0 +1,170 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from "vue"
+import BookPage from "./BookPage.vue"
+import { BOOK_PAGE } from "../../features/book-editor/bookPageMetrics"
+import type { BookLayout, BookPageLayout } from "../../types/bookDocument"
+
+const props = defineProps<{
+  pages: BookPageLayout[]
+  currentPageIndex: number
+  layout: BookLayout
+  viewMode: "single" | "spread"
+}>()
+
+const emit = defineEmits<{
+  updatePerson: [blockIndex: number, text: string]
+  selectBlock: [blockIndex: number]
+  editFocus: [pageIndex: number, blockIndex: number]
+}>()
+
+const stageRef = ref<HTMLElement | null>(null)
+const stageWidth = ref(0)
+const stageHeight = ref(0)
+const currentPage = computed(() => props.pages[props.currentPageIndex] ?? props.pages[0] ?? null)
+const isCover = computed(() => currentPage.value?.blocks.some((item) => item.block.type === "cover") ?? false)
+const spreadPages = computed(() => {
+  if (props.viewMode === "single" || isCover.value) {
+    return { right: currentPage.value, left: null }
+  }
+  const bodyIndex = Math.max(0, props.currentPageIndex - 1)
+  const rightIndex = 1 + Math.floor(bodyIndex / 2) * 2
+  return {
+    right: props.pages[rightIndex] ?? null,
+    left: props.pages[rightIndex + 1] ?? null,
+  }
+})
+const currentBodyIndex = computed(() => Math.max(0, props.currentPageIndex - 1))
+const rightPageIndex = computed(() => 1 + Math.floor(currentBodyIndex.value / 2) * 2)
+const leftPageIndex = computed(() => rightPageIndex.value + 1)
+const singleScale = computed(() => fitScale(1, 0.56))
+const spreadScale = computed(() => fitScale(2, 0.48))
+const blankLeafStyle = computed(() => ({
+  width: `${BOOK_PAGE.width * spreadScale.value}px`,
+  height: `${BOOK_PAGE.height * spreadScale.value}px`,
+}))
+
+let resizeObserver: ResizeObserver | null = null
+
+function fitScale(pageCount: 1 | 2, max: number) {
+  if (!stageWidth.value || !stageHeight.value) return pageCount === 1 ? 0.56 : 0.46
+  const chromeWidth = pageCount === 1 ? 88 : 160
+  const chromeHeight = pageCount === 1 ? 72 : 96
+  const spine = pageCount === 2 ? 18 : 0
+  const byWidth = (stageWidth.value - chromeWidth - spine) / (BOOK_PAGE.width * pageCount)
+  const byHeight = (stageHeight.value - chromeHeight) / BOOK_PAGE.height
+  return Math.max(0.3, Math.min(max, byWidth, byHeight))
+}
+
+function watchSize() {
+  if (!stageRef.value) return
+  const rect = stageRef.value.getBoundingClientRect()
+  stageWidth.value = rect.width
+  stageHeight.value = rect.height
+}
+
+onMounted(() => {
+  watchSize()
+  resizeObserver = new ResizeObserver(watchSize)
+  if (stageRef.value) resizeObserver.observe(stageRef.value)
+})
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+})
+</script>
+
+<template>
+  <main ref="stageRef" :class="['book-stage', { 'book-stage--single': viewMode === 'single' || isCover }]">
+    <BookPage
+      v-if="viewMode === 'single' || isCover"
+      :page="currentPage"
+      :layout="layout"
+      :scale="singleScale"
+      side="single"
+      @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
+      @selectBlock="emit('selectBlock', $event)"
+    />
+    <div v-else class="book-spread">
+      <div class="spread-side spread-side--left">
+        <BookPage
+          v-if="spreadPages.left"
+          :page="spreadPages.left"
+          :layout="layout"
+          :scale="spreadScale"
+          side="left"
+          framed
+          @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
+          @selectBlock="(blockIndex) => { emit('selectBlock', blockIndex); emit('editFocus', leftPageIndex, blockIndex) }"
+        />
+        <div v-else class="blank-leaf" :style="blankLeafStyle" aria-hidden="true"></div>
+      </div>
+      <div class="book-spine" aria-hidden="true"></div>
+      <div class="spread-side spread-side--right">
+        <BookPage
+          :page="spreadPages.right"
+          :layout="layout"
+          :scale="spreadScale"
+          side="right"
+          framed
+          @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
+          @selectBlock="(blockIndex) => { emit('selectBlock', blockIndex); emit('editFocus', rightPageIndex, blockIndex) }"
+        />
+      </div>
+    </div>
+  </main>
+</template>
+
+<style scoped>
+.book-stage {
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  padding: 36px 44px;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(255, 253, 250, 0.75), transparent 34%),
+    linear-gradient(180deg, #eee7da, #ded2c0);
+}
+
+.book-stage--single {
+  align-items: flex-start;
+}
+
+.book-spread {
+  align-self: center;
+  display: grid;
+  grid-template-columns: minmax(0, auto) 18px minmax(0, auto);
+  align-items: stretch;
+  padding: 22px 28px;
+  border-radius: 10px;
+  background: #cabba4;
+  box-shadow:
+    0 30px 70px rgba(45, 34, 22, 0.24),
+    inset 0 0 0 1px rgba(255, 246, 226, 0.32);
+}
+
+.spread-side {
+  background: #f4ead8;
+}
+
+.blank-leaf {
+  background:
+    linear-gradient(90deg, rgba(122, 90, 56, 0.035), transparent 20%),
+    #f8f0df;
+}
+
+.spread-side--left {
+  box-shadow: inset -18px 0 28px rgba(76, 51, 28, 0.1);
+}
+
+.spread-side--right {
+  box-shadow: inset 18px 0 28px rgba(76, 51, 28, 0.1);
+}
+
+.book-spine {
+  background:
+    linear-gradient(90deg, rgba(70, 47, 26, 0.18), rgba(255, 248, 236, 0.2), rgba(70, 47, 26, 0.2)),
+    #b9a78d;
+}
+</style>
