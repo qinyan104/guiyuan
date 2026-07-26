@@ -14,7 +14,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   updatePerson: [blockIndex: number, text: string]
   selectBlock: [blockIndex: number]
-  editFocus: [pageIndex: number, blockIndex: number]
 }>()
 
 const stageRef = ref<HTMLElement | null>(null)
@@ -33,9 +32,6 @@ const spreadPages = computed(() => {
     left: props.pages[rightIndex + 1] ?? null,
   }
 })
-const currentBodyIndex = computed(() => Math.max(0, props.currentPageIndex - 1))
-const rightPageIndex = computed(() => 1 + Math.floor(currentBodyIndex.value / 2) * 2)
-const leftPageIndex = computed(() => rightPageIndex.value + 1)
 const singleScale = computed(() => fitScale(1, 0.56))
 const spreadScale = computed(() => fitScale(2, 0.48))
 const blankLeafStyle = computed(() => ({
@@ -94,7 +90,7 @@ onBeforeUnmount(() => {
           side="left"
           framed
           @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
-          @selectBlock="(blockIndex) => { emit('selectBlock', blockIndex); emit('editFocus', leftPageIndex, blockIndex) }"
+          @selectBlock="emit('selectBlock', $event)"
         />
         <div v-else class="blank-leaf" :style="blankLeafStyle" aria-hidden="true"></div>
       </div>
@@ -107,7 +103,7 @@ onBeforeUnmount(() => {
           side="right"
           framed
           @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
-          @selectBlock="(blockIndex) => { emit('selectBlock', blockIndex); emit('editFocus', rightPageIndex, blockIndex) }"
+          @selectBlock="emit('selectBlock', $event)"
         />
       </div>
     </div>

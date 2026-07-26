@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import BookSpread from "../components/book-editor/BookSpread.vue"
 import BookToolbar from "../components/book-editor/BookToolbar.vue"
@@ -26,8 +26,6 @@ const document = ref<BookDocument | null>(null)
 const currentPageIndex = ref(0)
 const selectedBlockIndex = ref<number | null>(null)
 const viewMode = ref<"single" | "spread">("spread")
-const autoSingleEdit = ref(false)
-let returnToSpreadTimer: ReturnType<typeof setTimeout> | null = null
 
 const layout = computed(() => document.value?.layout ?? DEFAULT_BOOK_LAYOUT)
 const pages = computed(() => document.value ? paginateBook(document.value) : [])
@@ -100,34 +98,11 @@ function updatePerson(blockIndex: number, text: string) {
   if (block?.type !== "person") return
   blocks[blockIndex] = { ...block, text }
   document.value = { ...document.value, blocks }
-  if (!autoSingleEdit.value) return
-  if (returnToSpreadTimer) clearTimeout(returnToSpreadTimer)
-  returnToSpreadTimer = setTimeout(() => {
-    viewMode.value = "spread"
-    autoSingleEdit.value = false
-    returnToSpreadTimer = null
-  }, 400)
-}
-
-async function focusEditPage(pageIndex: number, blockIndex: number) {
-  currentPageIndex.value = pageIndex
-  viewMode.value = "single"
-  autoSingleEdit.value = true
-  await nextTick()
-  const editable = globalThis.document.querySelector<HTMLElement>(
-    `[data-book-block-index="${blockIndex}"] .person-text`,
-  )
-  editable?.focus()
 }
 
 function updateViewMode(next: "single" | "spread") {
   viewMode.value = next
-  autoSingleEdit.value = false
 }
-
-onBeforeUnmount(() => {
-  if (returnToSpreadTimer) clearTimeout(returnToSpreadTimer)
-})
 
 function insertPageBreak() {
   if (!document.value) return
@@ -187,7 +162,6 @@ async function exportPdf() {
         :viewMode="viewMode"
         @updatePerson="updatePerson"
         @selectBlock="selectedBlockIndex = $event"
-        @editFocus="focusEditPage"
       />
     </div>
 
