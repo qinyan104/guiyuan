@@ -126,11 +126,6 @@ function toHan(value: number): string {
           </div>
         </template>
       </div>
-      <div v-if="!isCoverPage" class="book-mouth" aria-hidden="true">
-        <span class="fish-tail fish-tail--top"></span>
-        <span class="book-mouth__page">{{ pageNumberText }}</span>
-        <span class="fish-tail fish-tail--bottom"></span>
-      </div>
     </section>
     <section v-else class="empty-page">暂无书页</section>
   </main>
@@ -351,51 +346,6 @@ function toHan(value: number): string {
   overflow: hidden;
   caret-color: var(--color-accent);
   color: rgba(33, 23, 15, 0.9);
-}
-
-.book-mouth {
-  position: absolute;
-  top: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  transform: translateY(-50%);
-  color: rgba(78, 51, 29, 0.46);
-  font-size: 11px;
-  line-height: 1;
-  writing-mode: vertical-rl;
-}
-
-.book-page--right .book-mouth {
-  left: 38px;
-}
-
-.book-page--left .book-mouth {
-  right: 38px;
-}
-
-.book-page--single .book-mouth {
-  left: 38px;
-}
-
-.fish-tail {
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-}
-
-.fish-tail--top {
-  border-bottom: 8px solid rgba(138, 31, 22, 0.42);
-}
-
-.fish-tail--bottom {
-  border-top: 8px solid rgba(138, 31, 22, 0.42);
-}
-
-.book-mouth__page {
-  font-family: "WenYue-GuTiFangSong", SimSun, serif;
 }
 
 .empty-page {

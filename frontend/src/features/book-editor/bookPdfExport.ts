@@ -104,21 +104,6 @@ function drawColumnRules(page: PDFPage, margin: number, gap: number, columnCount
   })
 }
 
-function drawFishTail(page: PDFPage, x: number, centerY: number) {
-  page.drawLine({ start: { x: x - 8, y: centerY + 18 }, end: { x, y: centerY + 30 }, thickness: 1, color: COLORS.red, opacity: 0.42 })
-  page.drawLine({ start: { x: x + 8, y: centerY + 18 }, end: { x, y: centerY + 30 }, thickness: 1, color: COLORS.red, opacity: 0.42 })
-  page.drawLine({ start: { x: x - 8, y: centerY - 18 }, end: { x, y: centerY - 30 }, thickness: 1, color: COLORS.red, opacity: 0.42 })
-  page.drawLine({ start: { x: x + 8, y: centerY - 18 }, end: { x, y: centerY - 30 }, thickness: 1, color: COLORS.red, opacity: 0.42 })
-}
-
-function drawBookMouth(page: PDFPage, font: PDFFont, pageNumber: number) {
-  const isRightPage = pageNumber % 2 === 0
-  const x = isRightPage ? 42 : BOOK_PAGE.width - 42
-  const centerY = BOOK_PAGE.height / 2
-  drawFishTail(page, x, centerY)
-  drawVerticalColumn(page, font, toHan(pageNumber), x, BOOK_PAGE.height / 2 - 18, 24, 18, COLORS.muted)
-}
-
 function drawCover(page: PDFPage, font: PDFFont, title: string, subtitle?: string) {
   page.drawRectangle({ x: 0, y: 0, width: BOOK_PAGE.width, height: BOOK_PAGE.height, color: COLORS.cover })
   page.drawLine({ start: { x: 54, y: 150 }, end: { x: 54, y: BOOK_PAGE.height - 150 }, thickness: 2, color: COLORS.coverLabel, opacity: 0.36 })
@@ -196,7 +181,6 @@ export async function exportBookPdf(doc: BookDocument, pages: BookPageLayout[]) 
       })
     }
     drawColumnRules(page, margin, lineHeight, columnsPerPage(doc.layout), charsPerColumn(doc.layout))
-    drawBookMouth(page, font, pageLayout.pageNumber)
 
     let x = BOOK_PAGE.width - margin - lineHeight / 2
     const y = margin
