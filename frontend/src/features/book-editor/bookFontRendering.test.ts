@@ -1,5 +1,5 @@
 import { mount } from "@vue/test-utils"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import BookPage from "../../components/book-editor/BookPage.vue"
 import type { BookDocument } from "../../types/bookDocument"
 import { BOOK_FONT_URLS, resolveBookFontFamily } from "./bookFonts"
@@ -36,6 +36,8 @@ afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
+
+beforeEach(() => vi.clearAllMocks())
 
 describe("古籍字体渲染", () => {
   it("预览与 PDF 使用分页结果中的同一组逐字字体", async () => {
@@ -96,5 +98,33 @@ describe("古籍字体渲染", () => {
         fontUrl: (options as { font: { family: string } }).font.family,
       }))
     expect(pdfGlyphs).toEqual(expectedGlyphs)
+  })
+
+  it("PDF 不绘制编辑器的手动分页标记", async () => {
+    const book: BookDocument = {
+      publicationId: 7,
+      title: "分页测试",
+      layout: { templateId: "classic", fontFamily: "XiaolaiMonoSC", fontSize: 18, marginPreset: "standard" },
+      blocks: [
+        { type: "person", personId: "before", personName: "前文", generation: 1, text: "甲" },
+        { type: "pageBreak", id: "manual-break-not-for-print" },
+        { type: "person", personId: "after", personName: "后文", generation: 1, text: "乙" },
+      ],
+    }
+    const pagination = paginateBook(book)
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => ({
+      ok: true,
+      arrayBuffer: async () => new TextEncoder().encode(String(input)).buffer,
+    } as Response)))
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: vi.fn(() => "blob:test") })
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() })
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined)
+
+    expect(pagination.pages.flatMap((page) => page.blocks).some((item) => item.block.type === "pageBreak")).toBe(true)
+    await exportBookPdf(book, pagination)
+
+    const drawnText = pdfMock.drawText.mock.calls.map(([text]) => text)
+    expect(drawnText).not.toContain("手动分页")
+    expect(drawnText).not.toContain("manual-break-not-for-print")
   })
 })

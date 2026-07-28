@@ -272,4 +272,27 @@ describe("paginateBook", () => {
     person.text = "乙".repeat(29 * 20)
     expect(paginateBook(book).pages.flatMap((page) => page.blocks).filter(({ blockIndex }) => blockIndex === 1).map(({ columnSpan }) => columnSpan)).toEqual([19, 1])
   })
+
+  it("手动分页符保持块间锚点，删除后恢复自动流动", () => {
+    const book = simpleBook()
+    book.blocks = [
+      { type: "person", personId: "before", personName: "前文", generation: 1, text: "甲" },
+      { type: "pageBreak", id: "manual-break" },
+      { type: "person", personId: "after", personName: "后文", generation: 1, text: "乙" },
+    ]
+
+    expect(pageLabels(paginateBook(book))).toEqual([
+      ["前文"],
+      ["pageBreak", "后文"],
+    ])
+
+    const before = book.blocks[0]
+    if (before.type !== "person") throw new Error("测试书稿缺少分页符前文")
+    before.text = "甲".repeat(29 * 20)
+    expect(pageLabels(paginateBook(book)).at(-1)).toEqual(["pageBreak", "后文"])
+
+    before.text = "甲"
+    book.blocks.splice(1, 1)
+    expect(pageLabels(paginateBook(book))).toEqual([["前文", "后文"]])
+  })
 })
