@@ -29,7 +29,8 @@ const viewMode = ref<"single" | "spread">("spread")
 const zoom = ref(1)
 
 const layout = computed(() => document.value?.layout ?? DEFAULT_BOOK_LAYOUT)
-const pages = computed(() => document.value ? paginateBook(document.value) : [])
+const pagination = computed(() => document.value ? paginateBook(document.value) : null)
+const pages = computed(() => pagination.value?.pages ?? [])
 
 watch(pages, (next) => {
   if (selectedBlockIndex.value !== null) {
@@ -119,11 +120,11 @@ function insertPageBreak() {
 }
 
 async function exportPdf() {
-  if (!document.value) return
+  if (!document.value || !pagination.value) return
   exporting.value = true
   error.value = ""
   try {
-    await exportBookPdf(document.value, pages.value)
+    await exportBookPdf(document.value, pagination.value)
     message.value = "PDF 已导出"
   } catch (e) {
     error.value = e instanceof Error ? e.message : "导出失败"
@@ -165,7 +166,8 @@ async function exportPdf() {
     <div v-else class="workbench">
       <PageThumbnailRail :pages="pages" :currentPage="currentPageIndex" @select="currentPageIndex = $event" />
       <BookSpread
-        :pages="pages"
+        v-if="pagination"
+        :pagination="pagination"
         :currentPageIndex="currentPageIndex"
         :layout="document.layout"
         :viewMode="viewMode"

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
-import { BOOK_PAGE, bodyFontPx, charsPerColumn, columnGap, columnsPerPage, pageMargin, textColumnCount } from "../../features/book-editor/bookPageMetrics"
-import type { BookLayout, BookPageLayout } from "../../types/bookDocument"
+import { computed, nextTick, ref } from "vue"
+import { textColumnCount } from "../../features/book-editor/bookPageMetrics"
+import type { BookLayout, BookPageLayout, BookPageMetrics } from "../../types/bookDocument"
 
 const props = defineProps<{
   page: BookPageLayout | null
   layout: BookLayout
+  metrics: BookPageMetrics
   scale?: number
   framed?: boolean
   side?: "left" | "right" | "single"
@@ -21,22 +22,26 @@ const pageScale = computed(() => props.scale ?? 0.56)
 const isCoverPage = computed(() => props.page?.blocks.some((item) => item.block.type === "cover") ?? false)
 const pageSide = computed(() => props.side ?? "single")
 
+function fontStack(fontFamily: string) {
+  return `${fontFamily}, WenYue-GuTiFangSong, SimSun, serif`
+}
+
 const pageStyle = computed(() => ({
-  width: `${BOOK_PAGE.width * pageScale.value}px`,
-  height: `${BOOK_PAGE.height * pageScale.value}px`,
-  fontFamily: `${props.layout.fontFamily}, WenYue-GuTiFangSong, SimSun, serif`,
-  fontSize: `${bodyFontPx(props.layout) * pageScale.value}px`,
-  "--page-margin": `${pageMargin(props.layout) * pageScale.value}px`,
-  "--column-gap": `${columnGap(props.layout) * pageScale.value}px`,
-  "--grid-width": `${columnsPerPage(props.layout) * columnGap(props.layout) * pageScale.value}px`,
-  "--grid-height": `${charsPerColumn(props.layout) * columnGap(props.layout) * pageScale.value}px`,
-  "--inner-frame-inset": `${(pageMargin(props.layout) - 38) * pageScale.value}px`,
+  width: `${props.metrics.pageWidth * pageScale.value}px`,
+  height: `${props.metrics.pageHeight * pageScale.value}px`,
+  fontFamily: fontStack(props.layout.fontFamily),
+  fontSize: `${props.metrics.bodyFontSize * pageScale.value}px`,
+  "--page-margin": `${props.metrics.pageMargin * pageScale.value}px`,
+  "--column-gap": `${props.metrics.columnGap * pageScale.value}px`,
+  "--grid-width": `${props.metrics.columnsPerPage * props.metrics.columnGap * pageScale.value}px`,
+  "--grid-height": `${props.metrics.charsPerColumn * props.metrics.columnGap * pageScale.value}px`,
+  "--inner-frame-inset": `${(props.metrics.pageMargin - 38) * pageScale.value}px`,
 }))
 
-function personStyle(text: string) {
-  const columns = Math.min(textColumnCount(text, props.layout), columnsPerPage(props.layout))
+function personStyle(columnCount: number) {
+  const columns = Math.min(columnCount, props.metrics.columnsPerPage)
   return {
-    width: `${columns * columnGap(props.layout) * pageScale.value}px`,
+    width: `${columns * props.metrics.columnGap * pageScale.value}px`,
     maxWidth: "var(--grid-width)",
   }
 }
@@ -49,12 +54,16 @@ function resizeEditable(event: Event) {
   const element = event.currentTarget as HTMLElement
   const block = element.parentElement
   if (!block) return
-  Object.assign(block.style, personStyle(editableText(element)))
+  Object.assign(block.style, personStyle(textColumnCount(editableText(element), props.layout)))
 }
 
-function startEdit(blockIndex: number) {
+async function startEdit(blockIndex: number, event: MouseEvent) {
+  if (editingIndex.value === blockIndex) return
+  const block = event.currentTarget as HTMLElement
   editingIndex.value = blockIndex
   emit("selectBlock", blockIndex)
+  await nextTick()
+  block.querySelector<HTMLElement>(".person-text")?.focus()
 }
 
 function commit(blockIndex: number, event: Event) {
@@ -102,27 +111,37 @@ function toHan(value: number): string {
     >
       <div class="page-content">
         <template v-for="item in page.blocks" :key="item.blockIndex">
-          <div v-if="item.block.type === 'cover'" class="cover">
+          <div v-if="item.block.type === 'cover'" class="cover" :style="{ fontFamily: fontStack(item.fontFamily) }">
             <h1>{{ item.block.title }}</h1>
             <p v-if="item.block.subtitle">{{ item.block.subtitle }}</p>
           </div>
-          <h2 v-else-if="item.block.type === 'generationHeading'" class="generation">{{ item.block.text }}</h2>
+          <h2 v-else-if="item.block.type === 'generationHeading'" class="generation" :style="{ fontFamily: fontStack(item.fontFamily) }">
+            <template v-for="(column, columnIndex) in item.columns" :key="columnIndex">
+              <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+            </template>
+          </h2>
           <div
             v-else-if="item.block.type === 'person'"
             :class="['person-block', { editing: editingIndex === item.blockIndex }]"
             :data-book-block-index="item.blockIndex"
-            :style="personStyle(item.block.text)"
+            :style="[personStyle(item.columnSpan), { fontFamily: fontStack(item.fontFamily) }]"
+            @click="startEdit(item.blockIndex, $event)"
           >
             <p
+              v-if="editingIndex === item.blockIndex"
               class="person-text"
               contenteditable="true"
               spellcheck="false"
-              @focus="startEdit(item.blockIndex)"
               @input="resizeEditable"
               @blur="commit(item.blockIndex, $event)"
               @keydown.ctrl.enter.prevent="blurEditable"
               @keydown.enter.exact.prevent="insertColumnBreak"
             >{{ item.block.text }}</p>
+            <div v-else class="person-columns">
+              <span v-for="(column, columnIndex) in item.columns" :key="columnIndex" class="person-column">
+                <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+              </span>
+            </div>
           </div>
         </template>
       </div>
@@ -334,6 +353,24 @@ function toHan(value: number): string {
 
 .person-block.editing {
   background: rgba(255, 252, 246, 0.52);
+}
+
+.person-columns {
+  width: 100%;
+  height: var(--grid-height);
+  display: flex;
+  flex-direction: row-reverse;
+  writing-mode: horizontal-tb;
+}
+
+.person-column {
+  box-sizing: border-box;
+  flex: 0 0 var(--column-gap);
+  height: var(--grid-height);
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  line-height: var(--column-gap);
+  white-space: pre;
 }
 
 .person-text {

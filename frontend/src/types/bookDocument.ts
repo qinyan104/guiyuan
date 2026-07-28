@@ -47,11 +47,39 @@ export interface BookDocument {
 export interface BookPageBlock {
   block: BookBlock
   blockIndex: number
+  columnSpan: number
+  fontFamily: string
+  columns: BookPageColumn[]
+}
+
+export interface BookTextRun {
+  text: string
+  fontFamily: string
+}
+
+export interface BookPageColumn {
+  text: string
+  runs: BookTextRun[]
 }
 
 export interface BookPageLayout {
   pageNumber: number
   blocks: BookPageBlock[]
+}
+
+export interface BookPageMetrics {
+  pageWidth: number
+  pageHeight: number
+  pageMargin: number
+  bodyFontSize: number
+  columnGap: number
+  charsPerColumn: number
+  columnsPerPage: number
+}
+
+export interface BookPaginationResult {
+  pages: BookPageLayout[]
+  metrics: BookPageMetrics
 }
 
 export const DEFAULT_BOOK_LAYOUT: BookLayout = {

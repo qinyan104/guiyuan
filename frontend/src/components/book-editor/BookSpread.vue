@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import BookPage from "./BookPage.vue"
-import { BOOK_PAGE } from "../../features/book-editor/bookPageMetrics"
-import type { BookLayout, BookPageLayout } from "../../types/bookDocument"
+import type { BookLayout, BookPaginationResult } from "../../types/bookDocument"
 
 const props = defineProps<{
-  pages: BookPageLayout[]
+  pagination: BookPaginationResult
   currentPageIndex: number
   layout: BookLayout
   viewMode: "single" | "spread"
@@ -20,7 +19,8 @@ const emit = defineEmits<{
 const stageRef = ref<HTMLElement | null>(null)
 const stageWidth = ref(0)
 const stageHeight = ref(0)
-const currentPage = computed(() => props.pages[props.currentPageIndex] ?? props.pages[0] ?? null)
+const pages = computed(() => props.pagination.pages)
+const currentPage = computed(() => pages.value[props.currentPageIndex] ?? pages.value[0] ?? null)
 const isCover = computed(() => currentPage.value?.blocks.some((item) => item.block.type === "cover") ?? false)
 const spreadPages = computed(() => {
   if (props.viewMode === "single" || isCover.value) {
@@ -29,15 +29,15 @@ const spreadPages = computed(() => {
   const bodyIndex = Math.max(0, props.currentPageIndex - 1)
   const rightIndex = 1 + Math.floor(bodyIndex / 2) * 2
   return {
-    right: props.pages[rightIndex] ?? null,
-    left: props.pages[rightIndex + 1] ?? null,
+    right: pages.value[rightIndex] ?? null,
+    left: pages.value[rightIndex + 1] ?? null,
   }
 })
 const singleScale = computed(() => fitScale(1, 0.56) * props.zoom)
 const spreadScale = computed(() => fitScale(2, 0.48) * props.zoom)
 const blankLeafStyle = computed(() => ({
-  width: `${BOOK_PAGE.width * spreadScale.value}px`,
-  height: `${BOOK_PAGE.height * spreadScale.value}px`,
+  width: `${props.pagination.metrics.pageWidth * spreadScale.value}px`,
+  height: `${props.pagination.metrics.pageHeight * spreadScale.value}px`,
 }))
 
 let resizeObserver: ResizeObserver | null = null
@@ -47,8 +47,8 @@ function fitScale(pageCount: 1 | 2, max: number) {
   const chromeWidth = pageCount === 1 ? 88 : 160
   const chromeHeight = pageCount === 1 ? 72 : 96
   const spine = pageCount === 2 ? 18 : 0
-  const byWidth = (stageWidth.value - chromeWidth - spine) / (BOOK_PAGE.width * pageCount)
-  const byHeight = (stageHeight.value - chromeHeight) / BOOK_PAGE.height
+  const byWidth = (stageWidth.value - chromeWidth - spine) / (props.pagination.metrics.pageWidth * pageCount)
+  const byHeight = (stageHeight.value - chromeHeight) / props.pagination.metrics.pageHeight
   return Math.max(0.3, Math.min(max, byWidth, byHeight))
 }
 
@@ -76,6 +76,7 @@ onBeforeUnmount(() => {
       v-if="viewMode === 'single' || isCover"
       :page="currentPage"
       :layout="layout"
+      :metrics="pagination.metrics"
       :scale="singleScale"
       side="single"
       @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
@@ -87,6 +88,7 @@ onBeforeUnmount(() => {
           v-if="spreadPages.left"
           :page="spreadPages.left"
           :layout="layout"
+          :metrics="pagination.metrics"
           :scale="spreadScale"
           side="left"
           framed
@@ -100,6 +102,7 @@ onBeforeUnmount(() => {
         <BookPage
           :page="spreadPages.right"
           :layout="layout"
+          :metrics="pagination.metrics"
           :scale="spreadScale"
           side="right"
           framed
