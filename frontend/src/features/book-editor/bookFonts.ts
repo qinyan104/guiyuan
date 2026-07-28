@@ -7,10 +7,13 @@ export const BOOK_FONT_URLS = {
   PingXianZhenSong: "/vrain/fonts/PingXianZhenSong.ttf",
   HanaMinA: "/vrain/fonts/HanaMinA.ttf",
   HanaMinB: "/vrain/fonts/HanaMinB.ttf",
+  Jigmo: "/vrain/fonts/Jigmo.ttf",
+  Jigmo2: "/vrain/fonts/Jigmo2.ttf",
+  Jigmo3: "/vrain/fonts/Jigmo3.ttf",
 } as const
 
 export const CJK_FALLBACK_FONT = "HanaMinA"
-export const CJK_FALLBACK_FONTS = [CJK_FALLBACK_FONT, "HanaMinB"] as const
+export const CJK_FALLBACK_FONTS = [CJK_FALLBACK_FONT, "Jigmo", "Jigmo2", "Jigmo3"] as const
 
 export type BookFontSupport = (fontFamily: string, char: string) => boolean
 

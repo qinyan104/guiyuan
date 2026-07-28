@@ -183,8 +183,20 @@ function toHan(value: number): string {
 }
 
 @font-face {
-  font-family: "HanaMinB";
-  src: url("/vrain/fonts/HanaMinB.ttf") format("truetype");
+  font-family: "Jigmo";
+  src: url("/vrain/fonts/Jigmo.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Jigmo2";
+  src: url("/vrain/fonts/Jigmo2.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Jigmo3";
+  src: url("/vrain/fonts/Jigmo3.ttf") format("truetype");
   font-display: swap;
 }
 

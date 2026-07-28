@@ -24,8 +24,8 @@ describe("loadBookFontSupport", () => {
     await expect(loadBookFontSupport(CJK_FALLBACK_FONT)).rejects.toThrow("temporary font failure")
     const supportsGlyph = await loadBookFontSupport(CJK_FALLBACK_FONT)
 
-    expect(CJK_FALLBACK_FONTS).toEqual(["Jigmo", "Jigmo2", "Jigmo3"])
-    expect(requests).toBe(5)
+    expect(CJK_FALLBACK_FONTS).toEqual(["HanaMinA", "Jigmo", "Jigmo2", "Jigmo3"])
+    expect(requests).toBe(6)
     expect(supportsGlyph(CJK_FALLBACK_FONT, "龘")).toBe(true)
     expect(supportsGlyph(CJK_FALLBACK_FONT, "，")).toBe(true)
     expect(supportsGlyph("Jigmo2", EXTENSION_C_CHARACTER)).toBe(true)
