@@ -13,6 +13,7 @@ const props = defineProps<{
   zoom: number
   canInsertPageBreak: boolean
   canDeletePageBreak: boolean
+  hasUnsavedChanges: boolean
 }>()
 
 const emit = defineEmits<{
@@ -75,6 +76,12 @@ function updateMargin(value: string) {
     <div class="toolbar-group toolbar-group--title">
       <button class="icon-btn" type="button" title="返回画布" @click="emit('back')">←</button>
       <div class="title">{{ title || "古籍族谱" }}</div>
+      <span
+        v-if="hasDocument"
+        role="status"
+        aria-live="polite"
+        :class="['save-state', { dirty: hasUnsavedChanges }]"
+      >{{ hasUnsavedChanges ? "未保存" : "已保存" }}</span>
     </div>
     <div class="spacer" />
     <div class="toolbar-group toolbar-actions">
@@ -232,6 +239,21 @@ function updateMargin(value: string) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.save-state {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #e8efe5;
+  color: #496044;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.save-state.dirty {
+  background: #f7e5df;
+  color: #8a2b20;
 }
 
 .spacer { flex: 1; }

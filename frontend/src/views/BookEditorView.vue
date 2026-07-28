@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue"
-import { useRoute, useRouter } from "vue-router"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router"
 import BookSpread from "../components/book-editor/BookSpread.vue"
 import BookToolbar from "../components/book-editor/BookToolbar.vue"
 import PageThumbnailRail from "../components/book-editor/PageThumbnailRail.vue"
@@ -30,9 +30,16 @@ const selectedBlockIndex = ref<number | null>(null)
 const viewMode = ref<"single" | "spread">("spread")
 const zoom = ref(1)
 const fontSupport = ref<BookFontSupport | null>(null)
+const savedSnapshot = ref<string | null>(null)
 let fontRequest = 0
 
+function draftSnapshot(value: BookDocument | null): string | null {
+  return value ? JSON.stringify({ title: value.title, layout: value.layout, blocks: value.blocks }) : null
+}
+
 const layout = computed(() => document.value?.layout ?? DEFAULT_BOOK_LAYOUT)
+const currentSnapshot = computed(() => draftSnapshot(document.value))
+const hasUnsavedChanges = computed(() => currentSnapshot.value !== null && currentSnapshot.value !== savedSnapshot.value)
 const paginationState = computed(() => {
   if (!document.value || !fontSupport.value) return { pagination: null, error: "" }
   try {
@@ -77,6 +84,7 @@ watch(pages, (next) => {
 })
 
 onMounted(async () => {
+  window.addEventListener("beforeunload", protectBrowserLeave)
   loading.value = true
   error.value = ""
   try {
@@ -86,12 +94,22 @@ onMounted(async () => {
     ])
     publication.value = pubResult.publication
     document.value = saved
+    savedSnapshot.value = draftSnapshot(saved)
   } catch (e) {
     error.value = e instanceof Error ? e.message : "加载书稿失败"
   } finally {
     loading.value = false
   }
 })
+
+onBeforeUnmount(() => window.removeEventListener("beforeunload", protectBrowserLeave))
+onBeforeRouteLeave(() => !hasUnsavedChanges.value || confirm("书稿有未保存修改，确定离开吗？"))
+
+function protectBrowserLeave(event: BeforeUnloadEvent) {
+  if (!hasUnsavedChanges.value) return
+  event.preventDefault()
+  event.returnValue = ""
+}
 
 function back() {
   router.push(`/publication/${publicationId.value}`)
@@ -100,7 +118,9 @@ function back() {
 function generate() {
   if (!publication.value) return
   if (document.value && !confirm("重新生成会覆盖当前书稿，确定继续吗？")) return
-  document.value = generateBookDocument(publicationId.value, publication.value)
+  const generated = generateBookDocument(publicationId.value, publication.value)
+  document.value = generated
+  savedSnapshot.value = draftSnapshot(generated)
   currentPageIndex.value = 0
   selectedBlockIndex.value = null
   message.value = "已生成书稿"
@@ -108,11 +128,15 @@ function generate() {
 
 async function save() {
   if (!document.value) return
+  const savingDocument = document.value
+  const savingSnapshot = draftSnapshot(savingDocument)
   saving.value = true
   error.value = ""
   try {
-    document.value = await saveBookDocument(document.value)
-    message.value = "书稿已保存"
+    const saved = await saveBookDocument(savingDocument)
+    savedSnapshot.value = draftSnapshot(saved)
+    if (currentSnapshot.value === savingSnapshot) document.value = saved
+    message.value = hasUnsavedChanges.value ? "已保存较早版本，当前仍有未保存修改" : "书稿已保存"
   } catch (e) {
     error.value = e instanceof Error ? e.message : "保存失败"
   } finally {
@@ -190,6 +214,7 @@ async function exportPdf() {
       :zoom="zoom"
       :canInsertPageBreak="canInsertPageBreak"
       :canDeletePageBreak="canDeletePageBreak"
+      :hasUnsavedChanges="hasUnsavedChanges"
       @back="back"
       @generate="generate"
       @save="save"

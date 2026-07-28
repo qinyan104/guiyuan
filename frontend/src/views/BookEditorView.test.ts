@@ -1,4 +1,4 @@
-import { flushPromises, shallowMount } from "@vue/test-utils"
+import { enableAutoUnmount, flushPromises, shallowMount } from "@vue/test-utils"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import BookSpread from "../components/book-editor/BookSpread.vue"
 import BookToolbar from "../components/book-editor/BookToolbar.vue"
@@ -32,6 +32,8 @@ vi.mock("../features/book-editor/bookPdfExport", () => ({ exportBookPdf: vi.fn()
 vi.mock("../features/book-editor/bookGenerator", () => ({ generateBookDocument: mocks.generateBookDocument }))
 
 import BookEditorView from "./BookEditorView.vue"
+
+enableAutoUnmount(afterEach)
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -67,9 +69,13 @@ async function mountLoadedBook() {
 }
 
 function firstPersonText(spread: ReturnType<typeof shallowMount>): string | undefined {
-  return spread.props("pagination").pages
+  const pagination = (spread.props() as {
+    pagination: { pages: Array<{ blocks: Array<{ block: BookDocument["blocks"][number] }> }> }
+  }).pagination
+  const item = pagination.pages
     .flatMap((page: { blocks: Array<{ block: BookDocument["blocks"][number] }> }) => page.blocks)
-    .find((item: { block: BookDocument["blocks"][number] }) => item.block.type === "person")?.block.text
+    .find((candidate: { block: BookDocument["blocks"][number] }) => candidate.block.type === "person")
+  return item?.block.type === "person" ? item.block.text : undefined
 }
 
 describe("BookEditorView", () => {
