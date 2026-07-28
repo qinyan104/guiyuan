@@ -175,8 +175,14 @@ describe("BookEditorView", () => {
     expect(toolbar.props("hasUnsavedChanges")).toBe(false)
   })
 
-  it("保存失败保留编辑内容和未保存状态", async () => {
+  it("保存失败保留编辑内容和未保存状态且不残留成功提示", async () => {
     const { wrapper, toolbar, spread } = await mountLoadedBook()
+    spread.vm.$emit("updatePerson", 0, "已成功保存的正文")
+    await wrapper.vm.$nextTick()
+    toolbar.vm.$emit("save")
+    await flushPromises()
+    expect(wrapper.get(".toast").text()).toContain("书稿已保存")
+
     mocks.saveBookDocument.mockRejectedValue(new Error("保存服务不可用"))
     spread.vm.$emit("updatePerson", 0, "不能丢失的正文")
     await wrapper.vm.$nextTick()
@@ -187,6 +193,11 @@ describe("BookEditorView", () => {
     expect(toolbar.props("hasUnsavedChanges")).toBe(true)
     expect(firstPersonText(spread)).toBe("不能丢失的正文")
     expect(wrapper.get(".toast.danger").text()).toContain("保存服务不可用")
+
+    mocks.saveBookDocument.mockReturnValue(new Promise(() => {}))
+    toolbar.vm.$emit("save")
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find(".toast").exists()).toBe(false)
   })
 
   it("保存期间的新编辑不会被较早的保存响应覆盖", async () => {
