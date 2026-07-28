@@ -33,4 +33,20 @@ describe("loadBookFontSupport", () => {
     expect(supportsGlyph("Jigmo3", EXTENSION_H_CHARACTER)).toBe(true)
     expect(supportsGlyph("Jigmo3", EXTENSION_J_CHARACTER)).toBe(true)
   })
+
+  it("未使用的后备字体加载失败时仍可进入编辑器", async () => {
+    vi.resetModules()
+    vi.stubGlobal("fetch", vi.fn(async (input: string) => {
+      const fileName = input.split("/").at(-1)
+      if (fileName === "Jigmo3.ttf") throw new Error("temporary optional font failure")
+      const bytes = await readFile(resolve(`public/vrain/fonts/${fileName}`))
+      return { ok: true, arrayBuffer: async () => Uint8Array.from(bytes).buffer } as Response
+    }))
+    const { loadBookFontSupport: loadSupport } = await import("./bookFonts")
+
+    const supportsGlyph = await loadSupport("XiaolaiMonoSC")
+
+    expect(supportsGlyph("XiaolaiMonoSC", "甲")).toBe(true)
+    expect(supportsGlyph("Jigmo3", EXTENSION_J_CHARACTER)).toBe(false)
+  })
 })

@@ -5,6 +5,7 @@ import { paginateBook } from "./bookPaginator"
 
 const EXTENSION_C_CHARACTER = String.fromCodePoint(0x2a700)
 const EXTENSION_G_CHARACTER = String.fromCodePoint(0x30000)
+const EXTENSION_J_CHARACTER = String.fromCodePoint(0x323b0)
 
 function simpleBook(): BookDocument {
   return {
@@ -64,6 +65,11 @@ describe("paginateBook", () => {
       { text: EXTENSION_G_CHARACTER, fontFamily: "Jigmo3" },
       { text: "乙", fontFamily: "XiaolaiMonoSC" },
     ]],
+    ["Unicode 17 扩展 J 汉字缺失", `甲${EXTENSION_J_CHARACTER}乙`, [
+      { text: "甲", fontFamily: "XiaolaiMonoSC" },
+      { text: EXTENSION_J_CHARACTER, fontFamily: "Jigmo3" },
+      { text: "乙", fontFamily: "XiaolaiMonoSC" },
+    ]],
   ])("按字符记录%s", (_label, text, expectedRuns) => {
     const book = simpleBook()
     book.layout.fontFamily = "XiaolaiMonoSC"
@@ -75,7 +81,7 @@ describe("paginateBook", () => {
       text,
     }]
 
-    const result = paginateBook(book, (fontFamily, char) => CJK_FALLBACK_FONTS.some((fallback) => fallback === fontFamily && (char !== EXTENSION_C_CHARACTER || fallback === "Jigmo2") && (char !== EXTENSION_G_CHARACTER || fallback === "Jigmo3")) || char !== "龘" && char !== "，" && char !== EXTENSION_C_CHARACTER && char !== EXTENSION_G_CHARACTER)
+    const result = paginateBook(book, (fontFamily, char) => CJK_FALLBACK_FONTS.some((fallback) => fallback === fontFamily && (char !== EXTENSION_C_CHARACTER || fallback === "Jigmo2") && (char !== EXTENSION_G_CHARACTER && char !== EXTENSION_J_CHARACTER || fallback === "Jigmo3")) || char !== "龘" && char !== "，" && char !== EXTENSION_C_CHARACTER && char !== EXTENSION_G_CHARACTER && char !== EXTENSION_J_CHARACTER)
 
     expect(result.pages[0].blocks[0].columns[0]).toEqual({ text, runs: expectedRuns })
   })
