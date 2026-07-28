@@ -74,6 +74,27 @@ describe("paginateBook", () => {
     expect(result.pages[0].blocks[0].columns[0]).toEqual({ text, runs: expectedRuns })
   })
 
+  it("扩展区汉字位于栏尾时保持完整码点", () => {
+    const book = simpleBook()
+    const text = `${"甲".repeat(28)}${EXTENSION_C_CHARACTER}乙`
+    book.layout.fontFamily = "XiaolaiMonoSC"
+    book.blocks = [{
+      type: "person",
+      personId: "p-extension",
+      personName: "扩展字测试",
+      generation: 1,
+      text,
+    }]
+
+    const result = paginateBook(book, (fontFamily, char) => char !== EXTENSION_C_CHARACTER || fontFamily === "HanaMinB")
+
+    expect(result.pages[0].blocks[0].columns.map((column) => column.text)).toEqual([
+      `${"甲".repeat(28)}${EXTENSION_C_CHARACTER}`,
+      "乙",
+    ])
+    expect(result.pages[0].blocks[0].columns[0].runs.at(-1)).toEqual({ text: EXTENSION_C_CHARACTER, fontFamily: "HanaMinB" })
+  })
+
   it("为简单书稿产出可供预览和 PDF 共用的规范化排版结果", () => {
     const book = simpleBook()
     const result = paginateBook(book)
