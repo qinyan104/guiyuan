@@ -34,26 +34,26 @@ function pageLabels(result: ReturnType<typeof paginateBook>) {
 describe("paginateBook", () => {
   it.each([
     ["首选字体完全支持", "甲乙", [
-      { text: "甲乙", fontFamily: "Preferred" },
+      { text: "甲乙", fontFamily: "XiaolaiMonoSC" },
     ]],
     ["单个汉字缺失", "甲龘乙", [
-      { text: "甲", fontFamily: "Preferred" },
+      { text: "甲", fontFamily: "XiaolaiMonoSC" },
       { text: "龘", fontFamily: CJK_FALLBACK_FONT },
-      { text: "乙", fontFamily: "Preferred" },
+      { text: "乙", fontFamily: "XiaolaiMonoSC" },
     ]],
     ["中文标点缺失", "甲，乙", [
-      { text: "甲", fontFamily: "Preferred" },
+      { text: "甲", fontFamily: "XiaolaiMonoSC" },
       { text: "，", fontFamily: CJK_FALLBACK_FONT },
-      { text: "乙", fontFamily: "Preferred" },
+      { text: "乙", fontFamily: "XiaolaiMonoSC" },
     ]],
     ["连续混合字体片段", "甲乙龘，丙丁", [
-      { text: "甲乙", fontFamily: "Preferred" },
+      { text: "甲乙", fontFamily: "XiaolaiMonoSC" },
       { text: "龘，", fontFamily: CJK_FALLBACK_FONT },
-      { text: "丙丁", fontFamily: "Preferred" },
+      { text: "丙丁", fontFamily: "XiaolaiMonoSC" },
     ]],
   ])("按字符记录%s", (_label, text, expectedRuns) => {
     const book = simpleBook()
-    book.layout.fontFamily = "Preferred"
+    book.layout.fontFamily = "XiaolaiMonoSC"
     book.blocks = [{
       type: "person",
       personId: "p-font",

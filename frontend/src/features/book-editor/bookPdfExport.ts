@@ -1,14 +1,7 @@
 import fontkit from "@pdf-lib/fontkit"
 import { PDFDocument, rgb, type Color, type PDFFont, type PDFPage } from "pdf-lib"
 import type { BookDocument, BookPageMetrics, BookPaginationResult, BookTextRun } from "../../types/bookDocument"
-
-const FONT_URLS: Record<string, string> = {
-  "qiji-combo": "/vrain/fonts/qiji-combo.ttf",
-  "WenYue-GuTiFangSong": "/vrain/fonts/WenYue-GuTiFangSong-JRFC-2.otf",
-  XiaolaiMonoSC: "/vrain/fonts/XiaolaiMonoSC-Regular.ttf",
-  PingXianZhenSong: "/vrain/fonts/PingXianZhenSong.ttf",
-  HanaMinA: "/vrain/fonts/HanaMinA.ttf",
-}
+import { BOOK_FONT_URLS, resolveBookFontFamily } from "./bookFonts"
 
 const COLORS = {
   ink: rgb(0.13, 0.09, 0.06),
@@ -154,7 +147,7 @@ function pageBackground(templateId: string): Color {
 
 async function embedBookFont(pdf: PDFDocument, fontFamily: string): Promise<PDFFont> {
   pdf.registerFontkit(fontkit)
-  const response = await fetch(FONT_URLS[fontFamily] ?? FONT_URLS["qiji-combo"])
+  const response = await fetch(BOOK_FONT_URLS[resolveBookFontFamily(fontFamily)])
   if (!response.ok) throw new Error("无法加载 PDF 字体")
   return pdf.embedFont(await response.arrayBuffer(), { subset: true })
 }
@@ -173,14 +166,15 @@ function downloadPdf(bytes: Uint8Array, fileName: string) {
 
 export async function exportBookPdf(doc: BookDocument, pagination: BookPaginationResult) {
   const pdf = await PDFDocument.create()
-  const fontFamilies = new Set([doc.layout.fontFamily])
+  const bodyFontFamily = resolveBookFontFamily(doc.layout.fontFamily)
+  const fontFamilies = new Set<string>([bodyFontFamily])
   pagination.pages.forEach((page) => page.blocks.forEach((item) => {
     fontFamilies.add(item.fontFamily)
     item.columns.forEach((column) => column.runs.forEach((run) => fontFamilies.add(run.fontFamily)))
   }))
   const fonts = new Map<string, PDFFont>()
   for (const fontFamily of fontFamilies) fonts.set(fontFamily, await embedBookFont(pdf, fontFamily))
-  const bodyFont = fonts.get(doc.layout.fontFamily)!
+  const bodyFont = fonts.get(bodyFontFamily)!
   const metrics = pagination.metrics
   const size = metrics.bodyFontSize
   const margin = metrics.pageMargin

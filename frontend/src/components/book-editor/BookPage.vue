@@ -23,7 +23,7 @@ const isCoverPage = computed(() => props.page?.blocks.some((item) => item.block.
 const pageSide = computed(() => props.side ?? "single")
 
 function fontStack(fontFamily: string) {
-  return `${fontFamily}, WenYue-GuTiFangSong, SimSun, serif`
+  return `"${fontFamily}"`
 }
 
 const pageStyle = computed(() => ({

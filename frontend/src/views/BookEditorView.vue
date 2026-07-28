@@ -7,6 +7,7 @@ import PageThumbnailRail from "../components/book-editor/PageThumbnailRail.vue"
 import { getPublication } from "../api/publication"
 import { generateBookDocument } from "../features/book-editor/bookGenerator"
 import { getBookDocument, saveBookDocument } from "../features/book-editor/bookDocumentApi"
+import { loadBookFontSupport, type BookFontSupport } from "../features/book-editor/bookFonts"
 import { paginateBook } from "../features/book-editor/bookPaginator"
 import { exportBookPdf } from "../features/book-editor/bookPdfExport"
 import { DEFAULT_BOOK_LAYOUT, type BookDocument, type BookLayout } from "../types/bookDocument"
@@ -27,10 +28,24 @@ const currentPageIndex = ref(0)
 const selectedBlockIndex = ref<number | null>(null)
 const viewMode = ref<"single" | "spread">("spread")
 const zoom = ref(1)
+const fontSupport = ref<BookFontSupport | null>(null)
+let fontRequest = 0
 
 const layout = computed(() => document.value?.layout ?? DEFAULT_BOOK_LAYOUT)
-const pagination = computed(() => document.value ? paginateBook(document.value) : null)
+const pagination = computed(() => document.value && fontSupport.value ? paginateBook(document.value, fontSupport.value) : null)
 const pages = computed(() => pagination.value?.pages ?? [])
+
+watch(() => document.value?.layout.fontFamily, async (fontFamily) => {
+  const request = ++fontRequest
+  fontSupport.value = null
+  if (!fontFamily) return
+  try {
+    const support = await loadBookFontSupport(fontFamily)
+    if (request === fontRequest) fontSupport.value = support
+  } catch (e) {
+    if (request === fontRequest) error.value = e instanceof Error ? e.message : "加载排版字体失败"
+  }
+})
 
 watch(pages, (next) => {
   if (selectedBlockIndex.value !== null) {
@@ -163,10 +178,10 @@ async function exportPdf() {
       <p>从当前族谱自动生成封面和世系录，之后可在书页中直接编辑人物条目。</p>
       <button type="button" @click="generate">生成古籍族谱</button>
     </div>
+    <div v-else-if="!pagination" class="state" :class="{ error: error }">{{ error || "正在加载排版字体..." }}</div>
     <div v-else class="workbench">
       <PageThumbnailRail :pages="pages" :currentPage="currentPageIndex" @select="currentPageIndex = $event" />
       <BookSpread
-        v-if="pagination"
         :pagination="pagination"
         :currentPageIndex="currentPageIndex"
         :layout="document.layout"
