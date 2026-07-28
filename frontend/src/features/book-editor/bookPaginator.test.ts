@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest"
 import type { BookDocument } from "../../types/bookDocument"
-import { CJK_FALLBACK_FONT } from "./bookFonts"
+import { CJK_FALLBACK_FONT, CJK_FALLBACK_FONTS } from "./bookFonts"
 import { paginateBook } from "./bookPaginator"
+
+const EXTENSION_C_CHARACTER = String.fromCodePoint(0x2a700)
 
 function simpleBook(): BookDocument {
   return {
@@ -51,6 +53,11 @@ describe("paginateBook", () => {
       { text: "龘，", fontFamily: CJK_FALLBACK_FONT },
       { text: "丙丁", fontFamily: "XiaolaiMonoSC" },
     ]],
+    ["扩展区汉字缺失", `甲${EXTENSION_C_CHARACTER}乙`, [
+      { text: "甲", fontFamily: "XiaolaiMonoSC" },
+      { text: EXTENSION_C_CHARACTER, fontFamily: "HanaMinB" },
+      { text: "乙", fontFamily: "XiaolaiMonoSC" },
+    ]],
   ])("按字符记录%s", (_label, text, expectedRuns) => {
     const book = simpleBook()
     book.layout.fontFamily = "XiaolaiMonoSC"
@@ -62,7 +69,7 @@ describe("paginateBook", () => {
       text,
     }]
 
-    const result = paginateBook(book, (fontFamily, char) => fontFamily === CJK_FALLBACK_FONT || char !== "龘" && char !== "，")
+    const result = paginateBook(book, (fontFamily, char) => CJK_FALLBACK_FONTS.some((fallback) => fallback === fontFamily) || char !== "龘" && char !== "，" && char !== EXTENSION_C_CHARACTER)
 
     expect(result.pages[0].blocks[0].columns[0]).toEqual({ text, runs: expectedRuns })
   })
@@ -90,7 +97,10 @@ describe("paginateBook", () => {
       blockIndex: 0,
       columnSpan: 0,
       fontFamily: "qiji-combo",
-      columns: [],
+      columns: [
+        { text: "张氏族谱", runs: [{ text: "张氏族谱", fontFamily: "qiji-combo" }] },
+        { text: "归源堂", runs: [{ text: "归源堂", fontFamily: "qiji-combo" }] },
+      ],
     })
     expect(result.pages[1].blocks[1]).toMatchObject({
       blockIndex: 2,
