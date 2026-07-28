@@ -26,6 +26,10 @@ function simpleBook(): BookDocument {
   }
 }
 
+function pageLabels(result: ReturnType<typeof paginateBook>) {
+  return result.pages.map((page) => page.blocks.map(({ block }) => block.type === "person" ? block.personName : block.type))
+}
+
 describe("paginateBook", () => {
   it("为简单书稿产出可供预览和 PDF 共用的规范化排版结果", () => {
     const book = simpleBook()
@@ -67,5 +71,126 @@ describe("paginateBook", () => {
         },
       ],
     })
+  })
+
+  it("当前页容不下世代标题和首条人物正文时将两者一起换页", () => {
+    const book = simpleBook()
+    book.blocks = [
+      book.blocks[0],
+      {
+        type: "person",
+        personId: "preface",
+        personName: "前文",
+        generation: 0,
+        text: "甲".repeat(29 * 17),
+      },
+      { type: "generationHeading", generation: 1, text: "第一世" },
+      {
+        type: "person",
+        personId: "p-1",
+        personName: "张一",
+        generation: 1,
+        text: "乙",
+      },
+    ]
+
+    const result = paginateBook(book)
+
+    expect(pageLabels(result)).toEqual([
+      ["cover"],
+      ["前文"],
+      ["generationHeading", "张一"],
+    ])
+
+    const preface = book.blocks[1]
+    if (preface.type !== "person") throw new Error("测试书稿缺少前文人物条目")
+    preface.text = "甲".repeat(29 * 16)
+    expect(pageLabels(paginateBook(book))).toEqual([
+      ["cover"],
+      ["前文", "generationHeading", "张一"],
+    ])
+
+    const firstPerson = book.blocks[3]
+    if (firstPerson.type !== "person") throw new Error("测试书稿缺少首条人物条目")
+    firstPerson.text = "乙".repeat(29 * 2)
+    expect(pageLabels(paginateBook(book))).toEqual([
+      ["cover"],
+      ["前文"],
+      ["generationHeading", "张一"],
+    ])
+
+    firstPerson.text = "乙".repeat(29 * 18)
+    const continued = paginateBook(book)
+    expect(pageLabels(continued)).toEqual([
+      ["cover"],
+      ["前文", "generationHeading", "张一"],
+      ["张一"],
+    ])
+    expect(continued.pages.flatMap((page) => page.blocks).filter(({ blockIndex }) => blockIndex === 3).map(({ columnSpan }) => columnSpan)).toEqual([1, 17])
+  })
+
+  it("人物条目放不下当前页时保持完整并移到下一页", () => {
+    const book = simpleBook()
+    book.blocks = [
+      book.blocks[0],
+      {
+        type: "person",
+        personId: "p-1",
+        personName: "张一",
+        generation: 1,
+        text: "甲".repeat(29 * 18),
+      },
+      {
+        type: "person",
+        personId: "p-2",
+        personName: "张二",
+        generation: 1,
+        text: "乙".repeat(29),
+      },
+      {
+        type: "person",
+        personId: "p-3",
+        personName: "张三",
+        generation: 1,
+        text: "丙".repeat(29 * 2),
+      },
+    ]
+
+    const result = paginateBook(book)
+
+    expect(pageLabels(result)).toEqual([
+      ["cover"],
+      ["张一", "张二"],
+      ["张三"],
+    ])
+    expect(result.pages[2].blocks[0].columns.map((column) => column.text).join("")).toBe("丙".repeat(29 * 2))
+  })
+
+  it("超长人物条目按栏跨多页续排并保持单一条目身份", () => {
+    const book = simpleBook()
+    const text = "甲".repeat(29 * 40)
+    book.blocks = [
+      book.blocks[0],
+      {
+        type: "person",
+        personId: "p-long",
+        personName: "张长传",
+        generation: 1,
+        text,
+      },
+    ]
+
+    const result = paginateBook(book)
+    const fragments = result.pages.flatMap((page) => page.blocks).filter(({ blockIndex }) => blockIndex === 1)
+
+    expect(fragments.map(({ columnSpan }) => columnSpan)).toEqual([19, 19, 2])
+    expect(fragments.flatMap(({ columns }) => columns).map((column) => column.text).join("")).toBe(text)
+    expect(fragments.every(({ block, blockIndex, fontFamily }) => block === book.blocks[1] && blockIndex === 1 && fontFamily === "qiji-combo")).toBe(true)
+    expect(book.blocks).toHaveLength(2)
+
+    const person = book.blocks[1]
+    if (person.type !== "person") throw new Error("测试书稿缺少超长人物条目")
+    person.text = "乙".repeat(29 * 20)
+    expect(paginateBook(book).pages.flatMap((page) => page.blocks).filter(({ blockIndex }) => blockIndex === 1).map(({ columnSpan }) => columnSpan)).toEqual([19, 1])
   })
 })
