@@ -9,6 +9,7 @@ const props = defineProps<{
   layout: BookLayout
   viewMode: "single" | "spread"
   zoom: number
+  selectedBlockIndex?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -79,6 +80,7 @@ onBeforeUnmount(() => {
       :metrics="pagination.metrics"
       :scale="singleScale"
       side="single"
+      :selectedBlockIndex="selectedBlockIndex"
       @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
       @selectBlock="emit('selectBlock', $event)"
     />
@@ -92,6 +94,7 @@ onBeforeUnmount(() => {
           :scale="spreadScale"
           side="left"
           framed
+          :selectedBlockIndex="selectedBlockIndex"
           @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
           @selectBlock="emit('selectBlock', $event)"
         />
@@ -106,6 +109,7 @@ onBeforeUnmount(() => {
           :scale="spreadScale"
           side="right"
           framed
+          :selectedBlockIndex="selectedBlockIndex"
           @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
           @selectBlock="emit('selectBlock', $event)"
         />

@@ -103,6 +103,10 @@ function makePage(pages: BookPageLayout[]): BookPageLayout {
   return page
 }
 
+function hasPrintableBlock(page: BookPageLayout): boolean {
+  return page.blocks.some((item) => item.block.type !== "pageBreak")
+}
+
 function withColumns(item: BookPageBlock, columns: BookPageBlock["columns"]): BookPageBlock {
   return { ...item, columnSpan: columns.length, columns }
 }
@@ -116,7 +120,7 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
   doc.blocks.forEach((block, blockIndex) => {
     const item = layoutBlock(block, blockIndex, doc, supportsGlyph)
     if (block.type === "cover") {
-      if (page.blocks.length > 0) page = makePage(pages)
+      if (hasPrintableBlock(page)) page = makePage(pages)
       page.blocks.push(item)
       page = makePage(pages)
       used = 0
@@ -124,10 +128,11 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
     }
 
     if (block.type === "pageBreak") {
-      if (page.blocks.length > 0) {
+      if (hasPrintableBlock(page)) {
         page = makePage(pages)
         used = 0
       }
+      page.blocks.push(item)
       return
     }
 
@@ -138,7 +143,7 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
       const availableAfterHeading = metrics.columnsPerPage - item.columnSpan
       reservedNextColumns = nextItem.columnSpan <= availableAfterHeading ? nextItem.columnSpan : 1
     }
-    if (block.type !== "person" && page.blocks.length > 0 && used + item.columnSpan + reservedNextColumns > metrics.columnsPerPage) {
+    if (block.type !== "person" && hasPrintableBlock(page) && used + item.columnSpan + reservedNextColumns > metrics.columnsPerPage) {
       page = makePage(pages)
       used = 0
     }
@@ -158,7 +163,7 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
         return
       }
 
-      if (page.blocks.length > 0 && !followsHeading) {
+      if (hasPrintableBlock(page) && !followsHeading) {
         page = makePage(pages)
         used = 0
       }
@@ -181,7 +186,7 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
   })
 
   return {
-    pages: pages.filter((page) => page.blocks.length > 0),
+    pages: pages.filter(hasPrintableBlock),
     metrics,
   }
 }

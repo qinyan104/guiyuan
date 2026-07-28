@@ -44,6 +44,13 @@ const paginationState = computed(() => {
 const pagination = computed(() => paginationState.value.pagination)
 const layoutError = computed(() => paginationState.value.error)
 const pages = computed(() => pagination.value?.pages ?? [])
+const selectedBlock = computed(() => selectedBlockIndex.value === null ? null : document.value?.blocks[selectedBlockIndex.value] ?? null)
+const canInsertPageBreak = computed(() => {
+  const blocks = document.value?.blocks
+  const index = selectedBlockIndex.value
+  return Boolean(blocks && index !== null && selectedBlock.value?.type !== "pageBreak" && index < blocks.length - 1 && blocks[index + 1]?.type !== "pageBreak")
+})
+const canDeletePageBreak = computed(() => selectedBlock.value?.type === "pageBreak")
 
 watch(() => document.value?.layout.fontFamily, async (fontFamily) => {
   const request = ++fontRequest
@@ -137,12 +144,23 @@ function updateZoom(delta: number) {
 }
 
 function insertPageBreak() {
-  if (!document.value) return
+  if (!document.value || !canInsertPageBreak.value || selectedBlockIndex.value === null) return
   const blocks = [...document.value.blocks]
-  const index = selectedBlockIndex.value ?? blocks.length - 1
+  const index = selectedBlockIndex.value
   blocks.splice(index + 1, 0, { type: "pageBreak", id: `break-${Date.now()}` })
   document.value = { ...document.value, blocks }
+  selectedBlockIndex.value = index + 1
   message.value = "已插入分页"
+}
+
+function deletePageBreak() {
+  if (!document.value || !canDeletePageBreak.value || selectedBlockIndex.value === null) return
+  const blocks = [...document.value.blocks]
+  const index = selectedBlockIndex.value
+  blocks.splice(index, 1)
+  document.value = { ...document.value, blocks }
+  selectedBlockIndex.value = Math.max(0, index - 1)
+  message.value = "已删除分页"
 }
 
 async function exportPdf() {
@@ -170,11 +188,14 @@ async function exportPdf() {
       :hasDocument="Boolean(document)"
       :viewMode="viewMode"
       :zoom="zoom"
+      :canInsertPageBreak="canInsertPageBreak"
+      :canDeletePageBreak="canDeletePageBreak"
       @back="back"
       @generate="generate"
       @save="save"
       @exportPdf="exportPdf"
       @insertPageBreak="insertPageBreak"
+      @deletePageBreak="deletePageBreak"
       @updateLayout="updateLayout"
       @updateViewMode="updateViewMode"
       @zoomIn="updateZoom(0.1)"
@@ -198,6 +219,7 @@ async function exportPdf() {
         :layout="document.layout"
         :viewMode="viewMode"
         :zoom="zoom"
+        :selectedBlockIndex="selectedBlockIndex"
         @updatePerson="updatePerson"
         @selectBlock="selectedBlockIndex = $event"
       />

@@ -11,6 +11,8 @@ const props = defineProps<{
   hasDocument: boolean
   viewMode: "single" | "spread"
   zoom: number
+  canInsertPageBreak: boolean
+  canDeletePageBreak: boolean
 }>()
 
 const emit = defineEmits<{
@@ -19,6 +21,7 @@ const emit = defineEmits<{
   save: []
   exportPdf: []
   insertPageBreak: []
+  deletePageBreak: []
   updateLayout: [layout: BookLayout]
   updateViewMode: [viewMode: "single" | "spread"]
   zoomIn: []
@@ -141,7 +144,8 @@ function updateMargin(value: string) {
         </label>
       </div>
       <div class="toolbar-group toolbar-actions">
-        <button class="tool-btn tool-btn--quiet" type="button" @click="emit('insertPageBreak')">插入分页</button>
+        <button class="tool-btn tool-btn--quiet" type="button" :disabled="!canInsertPageBreak" @click="emit('insertPageBreak')">插入分页</button>
+        <button class="tool-btn tool-btn--quiet" type="button" :disabled="!canDeletePageBreak" @click="emit('deletePageBreak')">删除分页</button>
         <button class="tool-btn" type="button" :disabled="saving" @click="emit('save')">{{ saving ? "保存中" : "保存书稿" }}</button>
         <button class="tool-btn primary" type="button" :disabled="exporting" @click="emit('exportPdf')">{{ exporting ? "导出中" : "导出 PDF" }}</button>
       </div>
