@@ -19,7 +19,20 @@ import {
 } from "./bookPageMetrics"
 import { CJK_FALLBACK_FONTS, resolveBookFontFamily, type BookFontSupport } from "./bookFonts"
 
-const CJK_FALLBACK_CHARACTER = /[\p{Unified_Ideograph}\u3000-\u303f\ufe10-\ufe1f\ufe30-\ufe4f\uff01-\uff60\uffe0-\uffe6]/u
+function isCjkFallbackCharacter(char: string): boolean {
+  const point = char.codePointAt(0) ?? -1
+  return point >= 0x3000 && point <= 0x303f
+    || point >= 0x3400 && point <= 0x4dbf
+    || point >= 0x4e00 && point <= 0x9fff
+    || point >= 0xf900 && point <= 0xfaff
+    || point >= 0xfe10 && point <= 0xfe1f
+    || point >= 0xfe30 && point <= 0xfe4f
+    || point >= 0xff01 && point <= 0xff60
+    || point >= 0xffe0 && point <= 0xffe6
+    || point >= 0x20000 && point <= 0x2ee5f
+    || point >= 0x2f800 && point <= 0x2fa1f
+    || point >= 0x30000 && point <= 0x3347f
+}
 
 function blockColumnSpan(block: BookBlock, columns: string[]): number {
   switch (block.type) {
@@ -45,7 +58,7 @@ function textRuns(text: string, fontFamily: string, supportsGlyph: BookFontSuppo
   const runs: BookTextRun[] = []
   Array.from(text).forEach((char) => {
     let actualFont = fontFamily
-    if (CJK_FALLBACK_CHARACTER.test(char) && !supportsGlyph(fontFamily, char)) {
+    if (isCjkFallbackCharacter(char) && !supportsGlyph(fontFamily, char)) {
       const fallbackFont = CJK_FALLBACK_FONTS.find((family) => supportsGlyph(family, char))
       if (!fallbackFont) throw new Error(`后备字体缺少字形：${char}`)
       actualFont = fallbackFont

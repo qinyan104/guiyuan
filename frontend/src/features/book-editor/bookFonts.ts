@@ -44,8 +44,12 @@ async function loadFontCoverage(fontFamily: keyof typeof BOOK_FONT_URLS): Promis
 
 export async function loadBookFontSupport(fontFamily: string): Promise<BookFontSupport> {
   const preferredFont = resolveBookFontFamily(fontFamily)
-  const fontFamilies = new Set<keyof typeof BOOK_FONT_URLS>([preferredFont, "qiji-combo", ...CJK_FALLBACK_FONTS])
-  const coverage = new Map(await Promise.all(Array.from(fontFamilies, async (family) => [family, await loadFontCoverage(family)] as const)))
+  const requiredFonts = new Set<keyof typeof BOOK_FONT_URLS>([preferredFont, "qiji-combo"])
+  const optionalFonts = CJK_FALLBACK_FONTS.filter((family) => !requiredFonts.has(family))
+  const coverage = new Map(await Promise.all([
+    ...Array.from(requiredFonts, async (family) => [family, await loadFontCoverage(family)] as const),
+    ...optionalFonts.map(async (family) => [family, await loadFontCoverage(family).catch(() => new Set<number>())] as const),
+  ]))
 
   return (family, char) => {
     const actualFamily = resolveBookFontFamily(family)

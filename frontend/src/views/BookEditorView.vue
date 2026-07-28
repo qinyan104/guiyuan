@@ -33,7 +33,16 @@ const fontSupport = ref<BookFontSupport | null>(null)
 let fontRequest = 0
 
 const layout = computed(() => document.value?.layout ?? DEFAULT_BOOK_LAYOUT)
-const pagination = computed(() => document.value && fontSupport.value ? paginateBook(document.value, fontSupport.value) : null)
+const paginationState = computed(() => {
+  if (!document.value || !fontSupport.value) return { pagination: null, error: "" }
+  try {
+    return { pagination: paginateBook(document.value, fontSupport.value), error: "" }
+  } catch (e) {
+    return { pagination: null, error: e instanceof Error ? e.message : "排版失败" }
+  }
+})
+const pagination = computed(() => paginationState.value.pagination)
+const layoutError = computed(() => paginationState.value.error)
 const pages = computed(() => pagination.value?.pages ?? [])
 
 watch(() => document.value?.layout.fontFamily, async (fontFamily) => {
@@ -180,7 +189,7 @@ async function exportPdf() {
       <p>从当前族谱自动生成封面和世系录，之后可在书页中直接编辑人物条目。</p>
       <button type="button" @click="generate">生成古籍族谱</button>
     </div>
-    <div v-else-if="!pagination" class="state" :class="{ error: fontError }">{{ fontError || "正在加载排版字体..." }}</div>
+    <div v-else-if="!pagination" class="state" :class="{ error: fontError || layoutError }">{{ fontError || layoutError || "正在加载排版字体..." }}</div>
     <div v-else class="workbench">
       <PageThumbnailRail :pages="pages" :currentPage="currentPageIndex" @select="currentPageIndex = $event" />
       <BookSpread
@@ -194,8 +203,8 @@ async function exportPdf() {
       />
     </div>
 
-    <div v-if="message || error || fontError" class="toast" :class="{ danger: error || fontError }">
-      {{ error || fontError || message }}
+    <div v-if="message || error || fontError || layoutError" class="toast" :class="{ danger: error || fontError || layoutError }">
+      {{ error || fontError || layoutError || message }}
     </div>
   </div>
 </template>
