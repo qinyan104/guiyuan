@@ -1,9 +1,12 @@
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { CJK_FALLBACK_FONT, loadBookFontSupport } from "./bookFonts"
+import { CJK_FALLBACK_FONT, CJK_FALLBACK_FONTS, loadBookFontSupport } from "./bookFonts"
 
 const EXTENSION_C_CHARACTER = String.fromCodePoint(0x2a700)
+const EXTENSION_G_CHARACTER = String.fromCodePoint(0x30000)
+const EXTENSION_H_CHARACTER = String.fromCodePoint(0x31350)
+const EXTENSION_J_CHARACTER = String.fromCodePoint(0x323b0)
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -21,9 +24,13 @@ describe("loadBookFontSupport", () => {
     await expect(loadBookFontSupport(CJK_FALLBACK_FONT)).rejects.toThrow("temporary font failure")
     const supportsGlyph = await loadBookFontSupport(CJK_FALLBACK_FONT)
 
-    expect(requests).toBe(4)
+    expect(CJK_FALLBACK_FONTS).toEqual(["Jigmo", "Jigmo2", "Jigmo3"])
+    expect(requests).toBe(5)
     expect(supportsGlyph(CJK_FALLBACK_FONT, "龘")).toBe(true)
     expect(supportsGlyph(CJK_FALLBACK_FONT, "，")).toBe(true)
-    expect(supportsGlyph("HanaMinB", EXTENSION_C_CHARACTER)).toBe(true)
+    expect(supportsGlyph("Jigmo2", EXTENSION_C_CHARACTER)).toBe(true)
+    expect(supportsGlyph("Jigmo3", EXTENSION_G_CHARACTER)).toBe(true)
+    expect(supportsGlyph("Jigmo3", EXTENSION_H_CHARACTER)).toBe(true)
+    expect(supportsGlyph("Jigmo3", EXTENSION_J_CHARACTER)).toBe(true)
   })
 })

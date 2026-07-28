@@ -4,6 +4,7 @@ import { CJK_FALLBACK_FONT, CJK_FALLBACK_FONTS } from "./bookFonts"
 import { paginateBook } from "./bookPaginator"
 
 const EXTENSION_C_CHARACTER = String.fromCodePoint(0x2a700)
+const EXTENSION_G_CHARACTER = String.fromCodePoint(0x30000)
 
 function simpleBook(): BookDocument {
   return {
@@ -55,7 +56,12 @@ describe("paginateBook", () => {
     ]],
     ["扩展区汉字缺失", `甲${EXTENSION_C_CHARACTER}乙`, [
       { text: "甲", fontFamily: "XiaolaiMonoSC" },
-      { text: EXTENSION_C_CHARACTER, fontFamily: "HanaMinB" },
+      { text: EXTENSION_C_CHARACTER, fontFamily: "Jigmo2" },
+      { text: "乙", fontFamily: "XiaolaiMonoSC" },
+    ]],
+    ["第三平面汉字缺失", `甲${EXTENSION_G_CHARACTER}乙`, [
+      { text: "甲", fontFamily: "XiaolaiMonoSC" },
+      { text: EXTENSION_G_CHARACTER, fontFamily: "Jigmo3" },
       { text: "乙", fontFamily: "XiaolaiMonoSC" },
     ]],
   ])("按字符记录%s", (_label, text, expectedRuns) => {
@@ -69,7 +75,7 @@ describe("paginateBook", () => {
       text,
     }]
 
-    const result = paginateBook(book, (fontFamily, char) => CJK_FALLBACK_FONTS.some((fallback) => fallback === fontFamily && (char !== EXTENSION_C_CHARACTER || fallback === "HanaMinB")) || char !== "龘" && char !== "，" && char !== EXTENSION_C_CHARACTER)
+    const result = paginateBook(book, (fontFamily, char) => CJK_FALLBACK_FONTS.some((fallback) => fallback === fontFamily && (char !== EXTENSION_C_CHARACTER || fallback === "Jigmo2") && (char !== EXTENSION_G_CHARACTER || fallback === "Jigmo3")) || char !== "龘" && char !== "，" && char !== EXTENSION_C_CHARACTER && char !== EXTENSION_G_CHARACTER)
 
     expect(result.pages[0].blocks[0].columns[0]).toEqual({ text, runs: expectedRuns })
   })
@@ -86,13 +92,13 @@ describe("paginateBook", () => {
       text,
     }]
 
-    const result = paginateBook(book, (fontFamily, char) => char !== EXTENSION_C_CHARACTER || fontFamily === "HanaMinB")
+    const result = paginateBook(book, (fontFamily, char) => char !== EXTENSION_C_CHARACTER || fontFamily === "Jigmo2")
 
     expect(result.pages[0].blocks[0].columns.map((column) => column.text)).toEqual([
       `${"甲".repeat(28)}${EXTENSION_C_CHARACTER}`,
       "乙",
     ])
-    expect(result.pages[0].blocks[0].columns[0].runs.at(-1)).toEqual({ text: EXTENSION_C_CHARACTER, fontFamily: "HanaMinB" })
+    expect(result.pages[0].blocks[0].columns[0].runs.at(-1)).toEqual({ text: EXTENSION_C_CHARACTER, fontFamily: "Jigmo2" })
   })
 
   it("为简单书稿产出可供预览和 PDF 共用的规范化排版结果", () => {
