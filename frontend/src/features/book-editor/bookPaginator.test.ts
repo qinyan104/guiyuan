@@ -295,4 +295,16 @@ describe("paginateBook", () => {
     book.blocks.splice(1, 1)
     expect(pageLabels(paginateBook(book))).toEqual([["前文", "后文"]])
   })
+
+  it("保留旧书稿中位于文末或唯一的分页符供编辑", () => {
+    const book = simpleBook()
+    book.blocks = [
+      { type: "person", personId: "before", personName: "前文", generation: 1, text: "甲" },
+      { type: "pageBreak", id: "trailing-break" },
+    ]
+    expect(pageLabels(paginateBook(book))).toEqual([["前文", "pageBreak"]])
+
+    book.blocks = [{ type: "pageBreak", id: "only-break" }]
+    expect(pageLabels(paginateBook(book))).toEqual([["pageBreak"]])
+  })
 })

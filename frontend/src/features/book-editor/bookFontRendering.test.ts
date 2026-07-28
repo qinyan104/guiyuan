@@ -127,4 +127,25 @@ describe("古籍字体渲染", () => {
     expect(drawnText).not.toContain("手动分页")
     expect(drawnText).not.toContain("manual-break-not-for-print")
   })
+
+  it("仅含历史分页标记的书稿不导出空白 PDF 页", async () => {
+    const book: BookDocument = {
+      publicationId: 7,
+      title: "空分页测试",
+      layout: { templateId: "classic", fontFamily: "XiaolaiMonoSC", fontSize: 18, marginPreset: "standard" },
+      blocks: [{ type: "pageBreak", id: "only-break" }],
+    }
+    const pagination = paginateBook(book)
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => ({
+      ok: true,
+      arrayBuffer: async () => new TextEncoder().encode(String(input)).buffer,
+    } as Response)))
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: vi.fn(() => "blob:test") })
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() })
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined)
+
+    expect(pagination.pages[0].blocks[0].block.type).toBe("pageBreak")
+    await exportBookPdf(book, pagination)
+    expect(pdfMock.document.addPage).not.toHaveBeenCalled()
+  })
 })
