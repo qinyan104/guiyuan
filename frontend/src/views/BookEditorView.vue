@@ -131,6 +131,7 @@ async function save() {
   const savingDocument = document.value
   const savingSnapshot = draftSnapshot(savingDocument)
   saving.value = true
+  message.value = ""
   error.value = ""
   try {
     const saved = await saveBookDocument(savingDocument)
