@@ -23,10 +23,15 @@ export function resolveBookFontFamily(fontFamily: string): keyof typeof BOOK_FON
 async function loadFontCoverage(fontFamily: keyof typeof BOOK_FONT_URLS): Promise<ReadonlySet<number>> {
   let loading = coverageCache.get(fontFamily)
   if (!loading) {
-    loading = fetch(BOOK_FONT_URLS[fontFamily]).then(async (response) => {
-      if (!response.ok) throw new Error("无法加载排版字体")
-      return new Set(fontkit.create(new Uint8Array(await response.arrayBuffer())).characterSet)
-    })
+    loading = fetch(BOOK_FONT_URLS[fontFamily])
+      .then(async (response) => {
+        if (!response.ok) throw new Error("无法加载排版字体")
+        return new Set(fontkit.create(new Uint8Array(await response.arrayBuffer())).characterSet)
+      })
+      .catch((error) => {
+        coverageCache.delete(fontFamily)
+        throw error
+      })
     coverageCache.set(fontFamily, loading)
   }
   return loading

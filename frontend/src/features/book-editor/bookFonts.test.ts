@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises"
+import { resolve } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { CJK_FALLBACK_FONT, loadBookFontSupport } from "./bookFonts"
 
@@ -10,7 +11,7 @@ describe("loadBookFontSupport", () => {
     vi.stubGlobal("fetch", vi.fn(async () => {
       requests += 1
       if (requests === 1) throw new Error("temporary font failure")
-      const bytes = await readFile(new URL("../../../public/vrain/fonts/HanaMinA.ttf", import.meta.url))
+      const bytes = await readFile(resolve("public/vrain/fonts/HanaMinA.ttf"))
       return { ok: true, arrayBuffer: async () => Uint8Array.from(bytes).buffer } as Response
     }))
 
