@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { BookDocument } from "../../types/bookDocument"
+import { CJK_FALLBACK_FONT } from "./bookFonts"
 import { paginateBook } from "./bookPaginator"
 
 function simpleBook(): BookDocument {
@@ -31,6 +32,41 @@ function pageLabels(result: ReturnType<typeof paginateBook>) {
 }
 
 describe("paginateBook", () => {
+  it.each([
+    ["首选字体完全支持", "甲乙", [
+      { text: "甲乙", fontFamily: "Preferred" },
+    ]],
+    ["单个汉字缺失", "甲龘乙", [
+      { text: "甲", fontFamily: "Preferred" },
+      { text: "龘", fontFamily: CJK_FALLBACK_FONT },
+      { text: "乙", fontFamily: "Preferred" },
+    ]],
+    ["中文标点缺失", "甲，乙", [
+      { text: "甲", fontFamily: "Preferred" },
+      { text: "，", fontFamily: CJK_FALLBACK_FONT },
+      { text: "乙", fontFamily: "Preferred" },
+    ]],
+    ["连续混合字体片段", "甲乙龘，丙丁", [
+      { text: "甲乙", fontFamily: "Preferred" },
+      { text: "龘，", fontFamily: CJK_FALLBACK_FONT },
+      { text: "丙丁", fontFamily: "Preferred" },
+    ]],
+  ])("按字符记录%s", (_label, text, expectedRuns) => {
+    const book = simpleBook()
+    book.layout.fontFamily = "Preferred"
+    book.blocks = [{
+      type: "person",
+      personId: "p-font",
+      personName: "字体测试",
+      generation: 1,
+      text,
+    }]
+
+    const result = paginateBook(book, (fontFamily, char) => fontFamily === CJK_FALLBACK_FONT || char !== "龘" && char !== "，")
+
+    expect(result.pages[0].blocks[0].columns[0]).toEqual({ text, runs: expectedRuns })
+  })
+
   it("为简单书稿产出可供预览和 PDF 共用的规范化排版结果", () => {
     const book = simpleBook()
     const result = paginateBook(book)
