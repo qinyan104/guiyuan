@@ -180,6 +180,7 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
   const lineHeight = metrics.columnGap
 
   for (const pageLayout of pagination.pages) {
+    if (pageLayout.blocks.every((item) => item.block.type === "pageBreak")) continue
     const page = pdf.addPage([metrics.pageWidth, metrics.pageHeight])
     const isClassic = doc.layout.templateId === "classic"
     const coverItem = pageLayout.blocks.find((item) => item.block.type === "cover")

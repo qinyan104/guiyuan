@@ -106,13 +106,15 @@ function toHan(value: number): string {
 
 <template>
   <main :class="['page-wrap', { 'page-wrap--framed': framed }]">
-    <button
-      v-for="item in pageBreaks"
-      :key="item.blockIndex"
-      type="button"
-      :class="['page-break-marker', { selected: selectedBlockIndex === item.blockIndex }]"
-      @click="emit('selectBlock', item.blockIndex)"
-    >手动分页 · 点击选择</button>
+    <div v-if="pageBreaks.length" class="page-break-markers">
+      <button
+        v-for="item in pageBreaks"
+        :key="item.blockIndex"
+        type="button"
+        :class="['page-break-marker', { selected: selectedBlockIndex === item.blockIndex }]"
+        @click="emit('selectBlock', item.blockIndex)"
+      >手动分页 · 点击选择</button>
+    </div>
     <section
       v-if="page"
       :class="['book-page', `book-page--${pageSide}`, { 'book-page--framed': framed }, `tpl-${layout.templateId}`, { 'is-cover-page': isCoverPage }]"
@@ -120,11 +122,29 @@ function toHan(value: number): string {
     >
       <div class="page-content">
         <template v-for="item in page.blocks" :key="item.blockIndex">
-          <div v-if="item.block.type === 'cover'" class="cover" :style="{ fontFamily: fontStack(item.fontFamily) }" @click="emit('selectBlock', item.blockIndex)">
+          <div
+            v-if="item.block.type === 'cover'"
+            class="cover"
+            role="button"
+            tabindex="0"
+            :style="{ fontFamily: fontStack(item.fontFamily) }"
+            @click="emit('selectBlock', item.blockIndex)"
+            @keydown.enter.prevent="emit('selectBlock', item.blockIndex)"
+            @keydown.space.prevent="emit('selectBlock', item.blockIndex)"
+          >
             <h1><span v-for="(run, runIndex) in item.columns[0]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></h1>
             <p v-if="item.block.subtitle"><span v-for="(run, runIndex) in item.columns[1]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></p>
           </div>
-          <h2 v-else-if="item.block.type === 'generationHeading'" class="generation" :style="{ fontFamily: fontStack(item.fontFamily) }" @click="emit('selectBlock', item.blockIndex)">
+          <h2
+            v-else-if="item.block.type === 'generationHeading'"
+            class="generation"
+            role="button"
+            tabindex="0"
+            :style="{ fontFamily: fontStack(item.fontFamily) }"
+            @click="emit('selectBlock', item.blockIndex)"
+            @keydown.enter.prevent="emit('selectBlock', item.blockIndex)"
+            @keydown.space.prevent="emit('selectBlock', item.blockIndex)"
+          >
             <template v-for="(column, columnIndex) in item.columns" :key="columnIndex">
               <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
             </template>
@@ -222,12 +242,19 @@ function toHan(value: number): string {
     linear-gradient(180deg, #eee7da, #e4dacb);
 }
 
-.page-break-marker {
+.page-break-markers {
   position: absolute;
   z-index: 3;
   top: 8px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.page-break-marker {
   min-height: 26px;
   padding: 0 12px;
   border: 1px dashed rgba(138, 31, 22, 0.52);
@@ -246,7 +273,7 @@ function toHan(value: number): string {
   color: #fff;
 }
 
-.page-wrap--framed .page-break-marker { top: -14px; }
+.page-wrap--framed .page-break-markers { top: -14px; }
 
 .page-break-marker:focus-visible {
   outline: 3px solid rgba(198, 60, 46, 0.2);

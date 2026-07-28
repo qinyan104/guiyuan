@@ -185,8 +185,16 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
     used += item.columnSpan
   })
 
+  const visiblePages = pages.filter(hasPrintableBlock)
+  const orphanedPageBreaks = pages.flatMap((page) => hasPrintableBlock(page) ? [] : page.blocks)
+  if (orphanedPageBreaks.length > 0) {
+    const lastPage = visiblePages.at(-1)
+    if (lastPage) lastPage.blocks.push(...orphanedPageBreaks)
+    else visiblePages.push({ pageNumber: 1, blocks: orphanedPageBreaks })
+  }
+
   return {
-    pages: pages.filter(hasPrintableBlock),
+    pages: visiblePages,
     metrics,
   }
 }
