@@ -34,7 +34,8 @@ export function textColumns(text: string, layout: BookLayout): string[] {
   const columns: string[] = []
   if (!text) return [""]
   text.split("\n").forEach((part, index, parts) => {
-    for (let i = 0; i < part.length; i += perColumn) columns.push(part.slice(i, i + perColumn))
+    const characters = Array.from(part)
+    for (let i = 0; i < characters.length; i += perColumn) columns.push(characters.slice(i, i + perColumn).join(""))
     if (index < parts.length - 1) columns.push("")
   })
   return columns
