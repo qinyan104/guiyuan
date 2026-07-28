@@ -21,7 +21,7 @@ describe("loadBookFontSupport", () => {
     await expect(loadBookFontSupport(CJK_FALLBACK_FONT)).rejects.toThrow("temporary font failure")
     const supportsGlyph = await loadBookFontSupport(CJK_FALLBACK_FONT)
 
-    expect(requests).toBe(3)
+    expect(requests).toBe(4)
     expect(supportsGlyph(CJK_FALLBACK_FONT, "龘")).toBe(true)
     expect(supportsGlyph(CJK_FALLBACK_FONT, "，")).toBe(true)
     expect(supportsGlyph("HanaMinB", EXTENSION_C_CHARACTER)).toBe(true)

@@ -17,7 +17,7 @@ import {
   pageMargin,
   textColumns,
 } from "./bookPageMetrics"
-import { CJK_FALLBACK_FONT, resolveBookFontFamily, type BookFontSupport } from "./bookFonts"
+import { CJK_FALLBACK_FONTS, resolveBookFontFamily, type BookFontSupport } from "./bookFonts"
 
 const CJK_FALLBACK_CHARACTER = /[\p{Unified_Ideograph}\u3000-\u303f\ufe10-\ufe1f\ufe30-\ufe4f\uff01-\uff60\uffe0-\uffe6]/u
 
@@ -35,6 +35,7 @@ function blockColumnSpan(block: BookBlock, columns: string[]): number {
 }
 
 function blockTextColumns(block: BookBlock, doc: BookDocument): string[] {
+  if (block.type === "cover") return [block.title, block.subtitle ?? ""]
   if (block.type === "generationHeading") return [block.text]
   if (block.type === "person") return textColumns(block.text, doc.layout)
   return []
@@ -45,8 +46,9 @@ function textRuns(text: string, fontFamily: string, supportsGlyph: BookFontSuppo
   Array.from(text).forEach((char) => {
     let actualFont = fontFamily
     if (CJK_FALLBACK_CHARACTER.test(char) && !supportsGlyph(fontFamily, char)) {
-      if (!supportsGlyph(CJK_FALLBACK_FONT, char)) throw new Error(`后备字体缺少字形：${char}`)
-      actualFont = CJK_FALLBACK_FONT
+      const fallbackFont = CJK_FALLBACK_FONTS.find((family) => supportsGlyph(family, char))
+      if (!fallbackFont) throw new Error(`后备字体缺少字形：${char}`)
+      actualFont = fallbackFont
     }
     const previous = runs.at(-1)
     if (previous?.fontFamily === actualFont) previous.text += char

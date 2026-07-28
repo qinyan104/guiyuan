@@ -112,8 +112,8 @@ function toHan(value: number): string {
       <div class="page-content">
         <template v-for="item in page.blocks" :key="item.blockIndex">
           <div v-if="item.block.type === 'cover'" class="cover" :style="{ fontFamily: fontStack(item.fontFamily) }">
-            <h1>{{ item.block.title }}</h1>
-            <p v-if="item.block.subtitle">{{ item.block.subtitle }}</p>
+            <h1><span v-for="(run, runIndex) in item.columns[0]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></h1>
+            <p v-if="item.block.subtitle"><span v-for="(run, runIndex) in item.columns[1]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></p>
           </div>
           <h2 v-else-if="item.block.type === 'generationHeading'" class="generation" :style="{ fontFamily: fontStack(item.fontFamily) }">
             <template v-for="(column, columnIndex) in item.columns" :key="columnIndex">
@@ -179,6 +179,12 @@ function toHan(value: number): string {
 @font-face {
   font-family: "HanaMinA";
   src: url("/vrain/fonts/HanaMinA.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HanaMinB";
+  src: url("/vrain/fonts/HanaMinB.ttf") format("truetype");
   font-display: swap;
 }
 

@@ -6,9 +6,11 @@ export const BOOK_FONT_URLS = {
   XiaolaiMonoSC: "/vrain/fonts/XiaolaiMonoSC-Regular.ttf",
   PingXianZhenSong: "/vrain/fonts/PingXianZhenSong.ttf",
   HanaMinA: "/vrain/fonts/HanaMinA.ttf",
+  HanaMinB: "/vrain/fonts/HanaMinB.ttf",
 } as const
 
 export const CJK_FALLBACK_FONT = "HanaMinA"
+export const CJK_FALLBACK_FONTS = [CJK_FALLBACK_FONT, "HanaMinB"] as const
 
 export type BookFontSupport = (fontFamily: string, char: string) => boolean
 
@@ -39,14 +41,11 @@ async function loadFontCoverage(fontFamily: keyof typeof BOOK_FONT_URLS): Promis
 
 export async function loadBookFontSupport(fontFamily: string): Promise<BookFontSupport> {
   const preferredFont = resolveBookFontFamily(fontFamily)
-  const [preferredCoverage, fallbackCoverage] = await Promise.all([
-    loadFontCoverage(preferredFont),
-    loadFontCoverage(CJK_FALLBACK_FONT),
-  ])
+  const fontFamilies = new Set<keyof typeof BOOK_FONT_URLS>([preferredFont, "qiji-combo", ...CJK_FALLBACK_FONTS])
+  const coverage = new Map(await Promise.all(Array.from(fontFamilies, async (family) => [family, await loadFontCoverage(family)] as const)))
 
   return (family, char) => {
     const actualFamily = resolveBookFontFamily(family)
-    const coverage = actualFamily === preferredFont ? preferredCoverage : actualFamily === CJK_FALLBACK_FONT ? fallbackCoverage : undefined
-    return coverage?.has(char.codePointAt(0) ?? -1) ?? false
+    return coverage.get(actualFamily)?.has(char.codePointAt(0) ?? -1) ?? false
   }
 }

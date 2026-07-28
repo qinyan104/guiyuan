@@ -69,7 +69,7 @@ describe("paginateBook", () => {
       text,
     }]
 
-    const result = paginateBook(book, (fontFamily, char) => CJK_FALLBACK_FONTS.some((fallback) => fallback === fontFamily) || char !== "龘" && char !== "，" && char !== EXTENSION_C_CHARACTER)
+    const result = paginateBook(book, (fontFamily, char) => CJK_FALLBACK_FONTS.some((fallback) => fallback === fontFamily && (char !== EXTENSION_C_CHARACTER || fallback === "HanaMinB")) || char !== "龘" && char !== "，" && char !== EXTENSION_C_CHARACTER)
 
     expect(result.pages[0].blocks[0].columns[0]).toEqual({ text, runs: expectedRuns })
   })

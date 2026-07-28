@@ -117,9 +117,8 @@ function drawCover(
   page: PDFPage,
   metrics: BookPageMetrics,
   fonts: ReadonlyMap<string, PDFFont>,
-  fontFamily: string,
-  title: string,
-  subtitle?: string,
+  titleRuns: BookTextRun[],
+  subtitleRuns: BookTextRun[],
 ) {
   page.drawRectangle({ x: 0, y: 0, width: metrics.pageWidth, height: metrics.pageHeight, color: COLORS.cover })
   page.drawLine({ start: { x: 54, y: 150 }, end: { x: 54, y: metrics.pageHeight - 150 }, thickness: 2, color: COLORS.coverLabel, opacity: 0.36 })
@@ -133,9 +132,9 @@ function drawCover(
     borderWidth: 0.8,
     borderOpacity: 0.36,
   })
-  drawVerticalColumn(page, metrics, fonts, [{ text: title, fontFamily }], metrics.pageWidth / 2 + 40, 412, 78, 66, COLORS.ink)
-  if (subtitle) {
-    drawVerticalColumn(page, metrics, fonts, [{ text: subtitle, fontFamily }], metrics.pageWidth / 2 - 42, 520, 40, 32, COLORS.coverLabel)
+  drawVerticalColumn(page, metrics, fonts, titleRuns, metrics.pageWidth / 2 + 40, 412, 78, 66, COLORS.ink)
+  if (subtitleRuns.length > 0) {
+    drawVerticalColumn(page, metrics, fonts, subtitleRuns, metrics.pageWidth / 2 - 42, 520, 40, 32, COLORS.coverLabel)
   }
 }
 
@@ -186,7 +185,7 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
     const coverItem = pageLayout.blocks.find((item) => item.block.type === "cover")
 
     if (coverItem?.block.type === "cover") {
-      drawCover(page, metrics, fonts, coverItem.fontFamily, coverItem.block.title, coverItem.block.subtitle)
+      drawCover(page, metrics, fonts, coverItem.columns[0]?.runs ?? [], coverItem.columns[1]?.runs ?? [])
       continue
     }
 

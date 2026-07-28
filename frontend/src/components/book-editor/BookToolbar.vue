@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppSelect from "../AppSelect.vue"
+import { resolveBookFontFamily } from "../../features/book-editor/bookFonts"
 import type { BookLayout } from "../../types/bookDocument"
 
 const props = defineProps<{
@@ -55,11 +56,6 @@ function updateTemplate(value: string) {
 
 function updateFont(value: string) {
   update(props.layout, "fontFamily", value)
-}
-
-function updateCustomFont(event: Event) {
-  const value = (event.target as HTMLInputElement).value.trim()
-  if (value) updateFont(value)
 }
 
 function updateFontSize(event: Event) {
@@ -118,16 +114,9 @@ function updateMargin(value: string) {
           <AppSelect
             class="toolbar-select toolbar-select--font"
             variant="compact"
-            :modelValue="layout.fontFamily"
+            :modelValue="resolveBookFontFamily(layout.fontFamily)"
             :options="fontOptions"
             @update:modelValue="updateFont"
-          />
-          <input
-            class="custom-font-input"
-            type="text"
-            placeholder="自定义字体名"
-            :value="fontOptions.some((option) => option.value === layout.fontFamily) ? '' : layout.fontFamily"
-            @change="updateCustomFont"
           />
         </label>
         <label class="number-field">
@@ -213,10 +202,6 @@ function updateMargin(value: string) {
   border: 1px solid rgba(28, 24, 20, 0.08);
   border-radius: 6px;
   background: #fffdfa;
-}
-
-.custom-font-input {
-  width: 104px;
 }
 
 .toolbar-group--title {
