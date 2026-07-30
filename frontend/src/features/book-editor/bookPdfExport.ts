@@ -68,13 +68,15 @@ function drawVerticalColumn(
     const font = fonts.get(run.fontFamily)
     if (!font) throw new Error("无法加载 PDF 字体")
     Array.from(run.text).forEach((char) => {
-      const charWidth = font.widthOfTextAtSize(char, size)
+      const runSize = run.variant === "name" ? size * 1.18 : run.variant === "metadata" ? size * 0.92 : size
+      const runColor = run.variant === "name" ? COLORS.vermilion : run.variant === "metadata" ? COLORS.muted : color
+      const charWidth = font.widthOfTextAtSize(char, runSize)
       page.drawText(char, {
         x: x - charWidth / 2,
-        y: topY(metrics, y + index * step, size),
-        size,
+        y: topY(metrics, y + index * step, runSize),
+        size: runSize,
         font,
-        color,
+        color: runColor,
       })
       index += 1
     })

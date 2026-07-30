@@ -59,18 +59,29 @@ function blockTextColumns(block: BookBlock, doc: BookDocument): string[] {
   return []
 }
 
-function textRuns(text: string, fontFamily: string, supportsGlyph: BookFontSupport): BookTextRun[] {
+function textRuns(
+  text: string,
+  fontFamily: string,
+  supportsGlyph: BookFontSupport,
+  format?: { sourceStart: number; nameStart: number; nameEnd: number; metadataStart: number },
+): BookTextRun[] {
   const runs: BookTextRun[] = []
+  let offset = 0
   Array.from(text).forEach((char) => {
-    let actualFont = fontFamily
-    if (isCjkFallbackCharacter(char) && !supportsGlyph(fontFamily, char)) {
+    const sourceOffset = (format?.sourceStart ?? 0) + offset
+    const variant = format && sourceOffset >= format.nameStart && sourceOffset < format.nameEnd
+      ? "name"
+      : format && sourceOffset >= format.metadataStart ? "metadata" : undefined
+    let actualFont = variant === "name" ? BOOK_CALLIGRAPHY_FONT : fontFamily
+    if (isCjkFallbackCharacter(char) && !supportsGlyph(actualFont, char)) {
       const fallbackFont = CJK_FALLBACK_FONTS.find((family) => supportsGlyph(family, char))
       if (!fallbackFont) throw new Error(`后备字体缺少字形：${char}`)
       actualFont = fallbackFont
     }
     const previous = runs.at(-1)
-    if (previous?.fontFamily === actualFont) previous.text += char
-    else runs.push({ text: char, fontFamily: actualFont })
+    if (previous?.fontFamily === actualFont && previous.variant === variant) previous.text += char
+    else runs.push({ text: char, fontFamily: actualFont, variant })
+    offset += char.length
   })
   return runs
 }
@@ -81,9 +92,29 @@ function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, su
   const fontFamily = block.type === "cover" || block.type === "generationHeading"
     ? BOOK_CALLIGRAPHY_FONT
     : resolveBookFontFamily(doc.layout.fontFamily)
+  const firstSentenceEnd = block.type === "person" ? block.text.indexOf("。") : -1
+  const nameMarkerStart = block.type === "person" ? block.text.indexOf(`公諱${block.personName}`) : -1
+  let nameStart = block.type === "person"
+    ? (nameMarkerStart >= 0 ? nameMarkerStart + 2 : block.text.indexOf(block.personName))
+    : -1
+  let nameEnd = nameStart + (block.type === "person" ? block.personName.length : 0)
+  if (block.type === "person" && nameStart < 0) {
+    nameStart = 0
+    nameEnd = firstSentenceEnd >= 0 ? firstSentenceEnd : block.text.length
+  }
   const columns: BookPageColumn[] = columnTexts.map((text, index) => ({
     text,
-    runs: textRuns(text, block.type === "preface" && index === 0 ? BOOK_CALLIGRAPHY_FONT : fontFamily, supportsGlyph),
+    runs: textRuns(
+      text,
+      block.type === "preface" && index === 0 ? BOOK_CALLIGRAPHY_FONT : fontFamily,
+      supportsGlyph,
+      block.type === "person" ? {
+        sourceStart: sourceColumns?.[index]?.start ?? 0,
+        nameStart,
+        nameEnd,
+        metadataStart: firstSentenceEnd >= 0 ? firstSentenceEnd + 1 : block.text.length,
+      } : undefined,
+    ),
     variant: block.type === "preface" ? (index === 0 ? "prefaceTitle" : index === 1 ? "prefaceSpacer" : undefined) : undefined,
     sourceStart: sourceColumns?.[index]?.start,
     sourceEnd: sourceColumns?.[index]?.end,

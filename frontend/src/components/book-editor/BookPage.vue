@@ -177,7 +177,12 @@ function toHan(value: number): string {
                   @keydown.ctrl.enter.prevent="blurEditable"
                   @keydown.enter.exact.prevent="insertColumnBreak"
                 >
-                  <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+                  <span
+                    v-for="(run, runIndex) in column.runs"
+                    :key="runIndex"
+                    :class="run.variant ? `person-run--${run.variant}` : undefined"
+                    :style="{ fontFamily: run.fontFamily }"
+                  >{{ run.text }}</span>
                 </span>
               </template>
             </div>
@@ -531,7 +536,7 @@ function toHan(value: number): string {
 }
 
 .tpl-classic .person-block {
-  border-left-color: transparent;
+  border-left-color: rgba(190, 53, 34, 0.22);
 }
 
 .person-columns {
@@ -561,6 +566,17 @@ function toHan(value: number): string {
   color: rgba(138, 31, 22, 0.78);
   font-size: 0.62em;
   cursor: default;
+}
+
+.person-run--name {
+  color: #a3291c;
+  font-size: 1.18em;
+  font-weight: 500;
+}
+
+.person-run--metadata {
+  color: rgba(65, 43, 26, 0.72);
+  font-size: 0.92em;
 }
 
 .person-annotation-line {

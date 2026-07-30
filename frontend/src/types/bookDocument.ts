@@ -62,6 +62,7 @@ export interface BookPageBlock {
 export interface BookTextRun {
   text: string
   fontFamily: string
+  variant?: "name" | "metadata"
 }
 
 export interface BookPageColumn {
