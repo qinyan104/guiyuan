@@ -165,7 +165,7 @@ function updateViewMode(next: "single" | "spread") {
 }
 
 function updateZoom(delta: number) {
-  zoom.value = Math.max(0.6, Math.min(1.8, Number((zoom.value + delta).toFixed(2))))
+  zoom.value = Math.max(0.6, Math.min(1.8, Number((zoom.value + delta).toFixed(3))))
 }
 
 function insertPageBreak() {
@@ -248,6 +248,7 @@ async function exportPdf() {
         :selectedBlockIndex="selectedBlockIndex"
         @updatePerson="updatePerson"
         @selectBlock="selectedBlockIndex = $event"
+        @zoom="updateZoom"
       />
     </div>
 

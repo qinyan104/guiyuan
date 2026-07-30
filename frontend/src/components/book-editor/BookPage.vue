@@ -32,6 +32,9 @@ const pageStyle = computed(() => ({
   fontFamily: fontStack(props.layout.fontFamily),
   fontSize: `${props.metrics.bodyFontSize * pageScale.value}px`,
   "--page-margin": `${props.metrics.pageMargin * pageScale.value}px`,
+  "--page-scale": pageScale.value,
+  "--page-width": `${props.metrics.pageWidth}px`,
+  "--page-height": `${props.metrics.pageHeight}px`,
   "--column-gap": `${props.metrics.columnGap * pageScale.value}px`,
   "--grid-width": `${props.metrics.columnsPerPage * props.metrics.columnGap * pageScale.value}px`,
   "--grid-height": `${props.metrics.charsPerColumn * props.metrics.columnGap * pageScale.value}px`,
@@ -114,8 +117,10 @@ function toHan(value: number): string {
             @keydown.enter.prevent="emit('selectBlock', item.blockIndex)"
             @keydown.space.prevent="emit('selectBlock', item.blockIndex)"
           >
-            <h1><span v-for="(run, runIndex) in item.columns[0]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></h1>
-            <p v-if="item.block.subtitle"><span v-for="(run, runIndex) in item.columns[1]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></p>
+            <div class="cover-surface">
+              <h1><span v-for="(run, runIndex) in item.columns[0]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></h1>
+              <p v-if="item.block.subtitle"><span v-for="(run, runIndex) in item.columns[1]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></p>
+            </div>
           </div>
           <h2
             v-else-if="item.block.type === 'generationHeading'"
@@ -215,21 +220,20 @@ function toHan(value: number): string {
 
 .page-wrap {
   position: relative;
+  width: max-content;
   min-width: 0;
-  height: 100%;
-  overflow: auto;
+  height: auto;
+  overflow: visible;
   display: flex;
   justify-content: center;
-  padding: 36px 44px;
-  background:
-    radial-gradient(circle at 50% 12%, rgba(255, 253, 250, 0.9), transparent 34%),
-    linear-gradient(180deg, #eee7da, #e4dacb);
+  padding: 0;
+  background: transparent;
 }
 
 .page-break-markers {
   position: absolute;
   z-index: 3;
-  top: 8px;
+  top: -14px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -257,18 +261,9 @@ function toHan(value: number): string {
   color: #fff;
 }
 
-.page-wrap--framed .page-break-markers { top: -14px; }
-
 .page-break-marker:focus-visible {
   outline: 3px solid rgba(198, 60, 46, 0.2);
   outline-offset: 2px;
-}
-
-.page-wrap--framed {
-  height: auto;
-  overflow: visible;
-  padding: 0;
-  background: transparent;
 }
 
 .book-page {
@@ -347,6 +342,17 @@ function toHan(value: number): string {
 .cover {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+}
+
+.cover-surface {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--page-width);
+  height: var(--page-height);
+  transform: scale(var(--page-scale));
+  transform-origin: top right;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -365,7 +371,7 @@ function toHan(value: number): string {
   color: #1e1710;
 }
 
-.cover::before {
+.cover-surface::before {
   content: "";
   position: absolute;
   left: 42px;
