@@ -11,10 +11,13 @@ const COLORS = {
   frame: rgb(0.2, 0.15, 0.1),
   grid: rgb(0.24, 0.18, 0.12),
   cover: rgb(0.13, 0.22, 0.26),
+  plainCover: rgb(0.68, 0.54, 0.36),
   coverLabel: rgb(0.94, 0.86, 0.72),
   classicPaper: rgb(0.96, 0.89, 0.72),
-  plainPaper: rgb(1, 0.98, 0.94),
+  plainPaper: rgb(0.98, 0.96, 0.91),
   whitePaper: rgb(1, 1, 1),
+  whiteInk: rgb(0.13, 0.15, 0.18),
+  whiteMuted: rgb(0.39, 0.42, 0.46),
 }
 
 function sanitizeFileName(raw: string): string {
@@ -62,6 +65,8 @@ function drawVerticalColumn(
   step: number,
   size: number,
   color: Color,
+  accentColor = COLORS.vermilion,
+  secondaryColor = COLORS.muted,
 ) {
   let index = 0
   runs.forEach((run) => {
@@ -70,7 +75,7 @@ function drawVerticalColumn(
     Array.from(run.text).forEach((char) => {
       const isPunctuation = run.variant === "punctuation" || run.variant === "sentenceEnd"
       const runSize = isPunctuation ? size * 0.52 : run.variant === "name" ? size * 1.18 : run.variant === "metadata" ? size * 0.92 : size
-      const runColor = run.variant === "sentenceEnd" ? COLORS.vermilion : run.variant === "punctuation" ? COLORS.ink : run.variant === "name" ? COLORS.vermilion : run.variant === "metadata" ? COLORS.muted : color
+      const runColor = run.variant === "sentenceEnd" ? accentColor : run.variant === "punctuation" ? COLORS.ink : run.variant === "name" ? accentColor : run.variant === "metadata" ? secondaryColor : color
       const charWidth = font.widthOfTextAtSize(char, runSize)
       page.drawText(char, {
         x: x + (isPunctuation ? step * 0.26 : 0) - charWidth / 2,
@@ -158,22 +163,31 @@ function drawCover(
   fonts: ReadonlyMap<string, PDFFont>,
   titleRuns: BookTextRun[],
   subtitleRuns: BookTextRun[],
+  templateId: string,
 ) {
-  page.drawRectangle({ x: 0, y: 0, width: metrics.pageWidth, height: metrics.pageHeight, color: COLORS.cover })
-  page.drawLine({ start: { x: 54, y: 150 }, end: { x: 54, y: metrics.pageHeight - 150 }, thickness: 2, color: COLORS.coverLabel, opacity: 0.36 })
-  for (const y of [metrics.pageHeight * 0.78, metrics.pageHeight * 0.58, metrics.pageHeight * 0.38]) {
-    page.drawCircle({ x: 54, y, size: 11, color: rgb(0.04, 0.1, 0.12), opacity: 0.52 })
-    page.drawCircle({ x: 54, y, size: 5, color: COLORS.coverLabel, opacity: 0.18 })
+  const isPlain = templateId === "plain"
+  const isWhite = templateId === "white"
+  const surface = isWhite ? COLORS.whitePaper : isPlain ? COLORS.plainCover : COLORS.cover
+  const label = isWhite ? COLORS.whitePaper : COLORS.coverLabel
+  const binding = isWhite ? COLORS.whiteMuted : isPlain ? COLORS.frame : COLORS.coverLabel
+  const circle = isPlain ? COLORS.frame : rgb(0.04, 0.1, 0.12)
+  const border = isWhite ? COLORS.whiteMuted : isPlain ? COLORS.frame : COLORS.red
+  const subtitle = isWhite ? COLORS.whiteMuted : isPlain ? COLORS.ink : COLORS.coverLabel
+  page.drawRectangle({ x: 0, y: 0, width: metrics.pageWidth, height: metrics.pageHeight, color: surface })
+  page.drawLine({ start: { x: 54, y: 150 }, end: { x: 54, y: metrics.pageHeight - 150 }, thickness: 2, color: binding, opacity: isWhite ? 0.28 : 0.36 })
+  if (!isWhite) for (const y of [metrics.pageHeight * 0.78, metrics.pageHeight * 0.58, metrics.pageHeight * 0.38]) {
+    page.drawCircle({ x: 54, y, size: 11, color: circle, opacity: isPlain ? 0.34 : 0.52 })
+    page.drawCircle({ x: 54, y, size: 5, color: label, opacity: isPlain ? 0.3 : 0.18 })
   }
   drawTopRect(page, metrics, metrics.pageWidth / 2 + 2, 330, 108, 920, {
-    color: COLORS.coverLabel,
-    borderColor: COLORS.red,
+    color: label,
+    borderColor: border,
     borderWidth: 0.8,
     borderOpacity: 0.36,
   })
   drawVerticalColumn(page, metrics, fonts, titleRuns, metrics.pageWidth / 2 + 40, 412, 78, 66, COLORS.ink)
   if (subtitleRuns.length > 0) {
-    drawVerticalColumn(page, metrics, fonts, subtitleRuns, metrics.pageWidth / 2 - 42, 520, 40, 32, COLORS.coverLabel)
+    drawVerticalColumn(page, metrics, fonts, subtitleRuns, metrics.pageWidth / 2 - 42, 520, 40, 32, subtitle)
   }
 }
 
@@ -222,20 +236,22 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
     if (pageLayout.blocks.every((item) => item.block.type === "pageBreak")) continue
     const page = pdf.addPage([metrics.pageWidth, metrics.pageHeight])
     const isClassic = doc.layout.templateId === "classic"
+    const isPlain = doc.layout.templateId === "plain"
     const coverItem = pageLayout.blocks.find((item) => item.block.type === "cover")
 
     if (coverItem?.block.type === "cover") {
-      drawCover(page, metrics, fonts, coverItem.columns[0]?.runs ?? [], coverItem.columns[1]?.runs ?? [])
+      drawCover(page, metrics, fonts, coverItem.columns[0]?.runs ?? [], coverItem.columns[1]?.runs ?? [], doc.layout.templateId)
       continue
     }
 
     page.drawRectangle({ x: 0, y: 0, width: metrics.pageWidth, height: metrics.pageHeight, color: pageBackground(doc.layout.templateId) })
-    const ruleColor = isClassic ? COLORS.vermilion : COLORS.frame
-    drawTopRect(page, metrics, 44, 44, metrics.pageWidth - 88, metrics.pageHeight - 88, {
-      borderColor: ruleColor,
-      borderWidth: isClassic ? 2 : 1,
-      borderOpacity: isClassic ? 0.9 : 0.34,
-    })
+    if (isClassic || isPlain) {
+      drawTopRect(page, metrics, 44, 44, metrics.pageWidth - 88, metrics.pageHeight - 88, {
+        borderColor: isClassic ? COLORS.vermilion : COLORS.frame,
+        borderWidth: isClassic ? 2 : 1,
+        borderOpacity: isClassic ? 0.9 : 0.42,
+      })
+    }
     if (isClassic) {
       const innerInset = margin - 38
       drawTopRect(page, metrics, innerInset, innerInset, metrics.pageWidth - innerInset * 2, metrics.pageHeight - innerInset * 2, {
@@ -244,8 +260,12 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
         borderOpacity: 0.72,
       })
     }
-    drawColumnRules(page, metrics, isClassic ? COLORS.vermilion : COLORS.grid, isClassic ? 0.58 : 0.22)
+    if (isClassic || isPlain) drawColumnRules(page, metrics, isClassic ? COLORS.vermilion : COLORS.grid, isClassic ? 0.58 : 0.12)
     if (isClassic) drawBookCenter(page, metrics, fonts, doc.title, pageLayout.sectionTitle || "正文", pageLayout.pageNumber)
+
+    const headingColor = isClassic ? COLORS.vermilion : isPlain ? COLORS.frame : COLORS.whiteInk
+    const nameColor = isClassic ? COLORS.vermilion : isPlain ? COLORS.frame : COLORS.whiteInk
+    const secondaryColor = isClassic || isPlain ? COLORS.muted : COLORS.whiteMuted
 
     let x = metrics.pageWidth - margin - lineHeight / 2
     const y = margin
@@ -255,13 +275,13 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
         for (const column of item.columns) {
           if (column.variant !== "prefaceSpacer") {
             const isTitle = column.variant === "prefaceTitle"
-            drawVerticalColumn(page, metrics, fonts, column.runs, x, y, isTitle ? lineHeight * 1.3 : lineHeight, isTitle ? size + 12 : size, isTitle ? COLORS.vermilion : COLORS.ink)
+            drawVerticalColumn(page, metrics, fonts, column.runs, x, y, isTitle ? lineHeight * 1.3 : lineHeight, isTitle ? size + 12 : size, isTitle ? headingColor : COLORS.ink, nameColor, secondaryColor)
           }
           x -= lineHeight
         }
       } else if (block.type === "generationHeading") {
         for (const column of item.columns) {
-          drawVerticalColumn(page, metrics, fonts, column.runs, x, y, lineHeight, size + 8, COLORS.red)
+          drawVerticalColumn(page, metrics, fonts, column.runs, x, y, lineHeight, size + 8, headingColor)
           x -= lineHeight
         }
         x -= lineHeight * Math.max(0, item.columnSpan - item.columns.length)
@@ -271,10 +291,10 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
             const lines = column.subcolumns ?? []
             lines.forEach((line, index) => {
               const offset = lines.length > 1 ? lineHeight * 0.22 - index * lineHeight * 0.44 : 0
-              drawVerticalColumn(page, metrics, fonts, line.runs, x + offset, y, lineHeight, size * 0.62, COLORS.red)
+              drawVerticalColumn(page, metrics, fonts, line.runs, x + offset, y, lineHeight, size * 0.62, headingColor, nameColor, secondaryColor)
             })
           } else {
-            drawVerticalColumn(page, metrics, fonts, column.runs, x, y, lineHeight, size, COLORS.ink)
+            drawVerticalColumn(page, metrics, fonts, column.runs, x, y, lineHeight, size, COLORS.ink, nameColor, secondaryColor)
           }
           x -= lineHeight
         }
@@ -288,7 +308,7 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
         y: 54,
         size: 20,
         font: bodyFont,
-        color: COLORS.muted,
+        color: isPlain ? COLORS.muted : COLORS.whiteMuted,
         opacity: 0.62,
       })
     }

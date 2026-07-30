@@ -6,9 +6,10 @@ export const BOOK_PAGE = {
 }
 
 export function pageMargin(layout: BookLayout): number {
-  if (layout.marginPreset === "compact") return 138
-  if (layout.marginPreset === "loose") return 210
-  return 168
+  const base = layout.marginPreset === "compact" ? 138 : layout.marginPreset === "loose" ? 210 : 168
+  if (layout.templateId === "white") return base + 32
+  if (layout.templateId === "plain") return base + 18
+  return base
 }
 
 export function bodyFontPx(layout: BookLayout): number {

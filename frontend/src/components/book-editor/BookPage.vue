@@ -408,8 +408,37 @@ function toHan(value: number): string {
   height: auto;
 }
 
-.book-page.tpl-plain { background: #fffaf0; }
-.book-page.tpl-white { background: #fff; }
+.book-page.tpl-plain {
+  color: rgba(43, 35, 27, 0.9);
+  background:
+    radial-gradient(circle at 24% 18%, rgba(104, 80, 48, 0.04) 0 1px, transparent 1.6px),
+    repeating-linear-gradient(7deg, rgba(96, 73, 42, 0.012) 0 1px, transparent 1px 8px),
+    #faf4e7;
+  border-color: rgba(66, 51, 35, 0.34);
+}
+
+.book-page.tpl-white {
+  color: #20242a;
+  background: #fff;
+  border-color: #d8dadd;
+  box-shadow: 0 18px 46px rgba(32, 38, 45, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.9);
+}
+
+.book-page.tpl-plain:not(.is-cover-page) .page-content {
+  outline-color: rgba(55, 43, 31, 0.28);
+  background-image: repeating-linear-gradient(
+    to left,
+    rgba(55, 43, 31, 0.12) 0,
+    rgba(55, 43, 31, 0.12) 1px,
+    transparent 1px,
+    transparent var(--column-gap)
+  );
+}
+
+.book-page.tpl-white:not(.is-cover-page) .page-content {
+  outline: none;
+  background-image: none;
+}
 
 .book-page::before,
 .book-page::after {
@@ -439,11 +468,14 @@ function toHan(value: number): string {
   display: none;
 }
 
-.book-page.tpl-plain::before,
 .book-page.tpl-plain::after,
 .book-page.tpl-white::before,
 .book-page.tpl-white::after {
   display: none;
+}
+
+.book-page.tpl-plain::before {
+  border-color: rgba(55, 43, 31, 0.42);
 }
 
 .cover {
@@ -508,6 +540,45 @@ function toHan(value: number): string {
   font-family: "WenYue-GuTiFangSong", SimSun, serif;
 }
 
+.tpl-plain .cover-surface {
+  color: #2c241b;
+  background:
+    radial-gradient(circle at 48px 22%, rgba(49, 36, 23, 0.28) 0 5px, transparent 6px),
+    radial-gradient(circle at 48px 42%, rgba(49, 36, 23, 0.28) 0 5px, transparent 6px),
+    radial-gradient(circle at 48px 62%, rgba(49, 36, 23, 0.28) 0 5px, transparent 6px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 7px),
+    linear-gradient(90deg, rgba(67, 49, 31, 0.18), transparent 18%, transparent 84%, rgba(67, 49, 31, 0.12)),
+    #ad8a5d;
+}
+
+.tpl-plain .cover h1 {
+  border-color: rgba(57, 42, 28, 0.42);
+  background: linear-gradient(180deg, #fbf3df, #ead9b6);
+}
+
+.tpl-plain .cover p {
+  color: rgba(43, 32, 22, 0.76);
+}
+
+.tpl-white .cover-surface {
+  color: #1e2329;
+  background: linear-gradient(90deg, #eef0f2, #fff 18%, #fff 82%, #eef0f2);
+}
+
+.tpl-white .cover-surface::before {
+  border-color: rgba(38, 45, 53, 0.22);
+}
+
+.tpl-white .cover h1 {
+  border-color: #c9cdd2;
+  background: #fff;
+  box-shadow: 0 0 0 8px rgba(31, 39, 48, 0.025);
+}
+
+.tpl-white .cover p {
+  color: #68717b;
+}
+
 .generation {
   margin: 0 0 0 var(--column-gap);
   height: var(--grid-height);
@@ -520,6 +591,19 @@ function toHan(value: number): string {
   font-weight: 600;
   line-height: var(--column-gap);
   text-align: center;
+}
+
+.tpl-plain .generation {
+  color: #4b3a29;
+  background: rgba(67, 49, 31, 0.055);
+  border-color: rgba(67, 49, 31, 0.28);
+}
+
+.tpl-white .generation {
+  color: #2b3138;
+  background: #f3f4f5;
+  border-color: #d9dce0;
+  font-size: 1.16em;
 }
 
 .preface-block {
@@ -550,6 +634,9 @@ function toHan(value: number): string {
   text-align: center;
 }
 
+.tpl-plain .preface-column--prefaceTitle { color: #4b3a29; }
+.tpl-white .preface-column--prefaceTitle { color: #2b3138; }
+
 .preface-column--prefaceSpacer {
   opacity: 0;
 }
@@ -576,6 +663,8 @@ function toHan(value: number): string {
 .tpl-classic .person-block {
   border-left-color: rgba(190, 53, 34, 0.22);
 }
+
+.tpl-white .person-block { border-left-color: #e1e3e6; }
 
 .person-columns {
   width: 100%;
@@ -612,10 +701,18 @@ function toHan(value: number): string {
   font-weight: 500;
 }
 
+.tpl-plain .person-run--name { color: #3f3022; }
+.tpl-white .person-run--name { color: #1f252b; font-size: 1.12em; }
+
 .person-run--metadata {
   color: rgba(65, 43, 26, 0.72);
   font-size: 0.92em;
 }
+
+.tpl-white .person-run--metadata { color: #626a73; }
+
+.tpl-plain .person-column--annotation { color: rgba(75, 58, 41, 0.72); }
+.tpl-white .person-column--annotation { color: #68717b; }
 
 .tpl-classic .person-run--punctuation,
 .tpl-classic .person-run--sentenceEnd {

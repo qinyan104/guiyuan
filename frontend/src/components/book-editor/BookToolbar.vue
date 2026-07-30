@@ -35,9 +35,9 @@ function update<K extends keyof BookLayout>(layout: BookLayout, key: K, value: B
 }
 
 const templateOptions = [
-  { value: "classic", label: "宣纸古籍 · 双框版心" },
-  { value: "plain", label: "素纸竖排 · 干净纸面" },
-  { value: "white", label: "白底栏格 · 校对底稿" },
+  { value: "classic", label: "朱丝古籍 · 鱼尾版心" },
+  { value: "plain", label: "素雅宣纸 · 墨栏留白" },
+  { value: "white", label: "白底清稿 · 无栏校样" },
 ]
 
 const fontOptions = [
