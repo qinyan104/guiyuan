@@ -175,6 +175,36 @@ function withColumns(item: BookPageBlock, columns: BookPageBlock["columns"]): Bo
   return { ...item, columnSpan: columns.length, columns }
 }
 
+function fragmentColumnCount(columns: BookPageBlock["columns"], capacity: number): number {
+  let count = Math.min(capacity, columns.length)
+  const remainder = columns.length - count
+  if (remainder > 0 && remainder < 3 && count > 3) count -= 3 - remainder
+  if (remainder > 0 && columns.slice(count).every((column) => column.variant === "annotation")) {
+    const lastBodyColumn = columns.slice(0, count).findLastIndex((column) => column.variant !== "annotation")
+    // ponytail: notes longer than a page may still continue alone; add note-only page rules if real data needs them.
+    if (lastBodyColumn >= 2) count = lastBodyColumn
+  }
+  return Math.max(1, count)
+}
+
+function balanceLastPage(pages: BookPageLayout[], columnsPerPage: number) {
+  const lastPage = pages.at(-1)
+  const previousPage = pages.at(-2)
+  if (!lastPage || !previousPage || lastPage.blocks.some((item) => item.block.type === "pageBreak")) return
+  const lastUsed = lastPage.blocks.reduce((sum, item) => sum + item.columnSpan, 0)
+  if (lastUsed === 0 || lastUsed >= 3) return
+  let moveFrom = previousPage.blocks.length - 1
+  if (previousPage.blocks[moveFrom]?.block.type !== "person") return
+  if (previousPage.blocks[moveFrom]?.blockIndex === lastPage.blocks.find((item) => item.block.type !== "pageBreak")?.blockIndex) return
+  if (previousPage.blocks[moveFrom - 1]?.block.type === "generationHeading") moveFrom -= 1
+  const staying = previousPage.blocks.slice(0, moveFrom)
+  const moving = previousPage.blocks.slice(moveFrom)
+  const movingColumns = moving.reduce((sum, item) => sum + item.columnSpan, 0)
+  if (!staying.some((item) => item.block.type !== "pageBreak") || lastUsed + movingColumns > columnsPerPage) return
+  previousPage.blocks = staying
+  lastPage.blocks = [...moving, ...lastPage.blocks]
+}
+
 export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport = () => true): BookPaginationResult {
   const pages: BookPageLayout[] = []
   let page = makePage(pages)
@@ -219,7 +249,7 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
     if (block.type === "generationHeading" && nextBlock?.type === "person") {
       const nextItem = layoutBlock(nextBlock, blockIndex + 1, doc, supportsGlyph)
       const availableAfterHeading = metrics.columnsPerPage - item.columnSpan
-      reservedNextColumns = nextItem.columnSpan <= availableAfterHeading ? nextItem.columnSpan : 1
+      reservedNextColumns = nextItem.columnSpan <= availableAfterHeading ? nextItem.columnSpan : Math.min(2, nextItem.columnSpan)
     }
     if (block.type !== "person" && hasPrintableBlock(page) && used + item.columnSpan + reservedNextColumns > metrics.columnsPerPage) {
       page = makePage(pages)
@@ -247,7 +277,8 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
       }
       let remainingColumns = item.columns
       while (remainingColumns.length > 0) {
-        const fragmentColumns = remainingColumns.slice(0, metrics.columnsPerPage - used)
+        const fragmentCount = fragmentColumnCount(remainingColumns, metrics.columnsPerPage - used)
+        const fragmentColumns = remainingColumns.slice(0, fragmentCount)
         page.blocks.push(withColumns(item, fragmentColumns))
         used += fragmentColumns.length
         remainingColumns = remainingColumns.slice(fragmentColumns.length)
@@ -264,6 +295,7 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
   })
 
   const visiblePages = pages.filter(hasPrintableBlock)
+  balanceLastPage(visiblePages, metrics.columnsPerPage)
   let sectionTitle: string | undefined
   visiblePages.forEach((visiblePage) => {
     const section = visiblePage.blocks.find((item) => item.block.type === "preface" || item.block.type === "generationHeading")?.block
