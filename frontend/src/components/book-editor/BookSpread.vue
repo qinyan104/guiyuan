@@ -13,6 +13,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  updatePerson: [blockIndex: number, text: string]
   selectBlock: [blockIndex: number]
 }>()
 
@@ -80,6 +81,7 @@ onBeforeUnmount(() => {
       :scale="singleScale"
       side="single"
       :selectedBlockIndex="selectedBlockIndex"
+      @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
       @selectBlock="emit('selectBlock', $event)"
     />
     <div v-else class="book-spread">
@@ -93,6 +95,7 @@ onBeforeUnmount(() => {
           side="left"
           framed
           :selectedBlockIndex="selectedBlockIndex"
+          @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
           @selectBlock="emit('selectBlock', $event)"
         />
         <div v-else class="blank-leaf" :style="blankLeafStyle" aria-hidden="true"></div>
@@ -107,6 +110,7 @@ onBeforeUnmount(() => {
           side="right"
           framed
           :selectedBlockIndex="selectedBlockIndex"
+          @updatePerson="(blockIndex, text) => emit('updatePerson', blockIndex, text)"
           @selectBlock="emit('selectBlock', $event)"
         />
       </div>

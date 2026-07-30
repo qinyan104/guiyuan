@@ -13,6 +13,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  updatePerson: [blockIndex: number, text: string]
   selectBlock: [blockIndex: number]
 }>()
 
@@ -43,6 +44,34 @@ function personStyle(columnCount: number) {
     width: `${columns * props.metrics.columnGap * pageScale.value}px`,
     maxWidth: "var(--grid-width)",
   }
+}
+
+function editableText(element: HTMLElement) {
+  return (element.textContent ?? "").replace(/\r\n?/g, "\n")
+}
+
+function commitColumn(blockIndex: number, sourceStart: number | undefined, sourceEnd: number | undefined, columnText: string, original: string, event: Event) {
+  if (sourceStart === undefined || sourceEnd === undefined) return
+  const nextColumnText = editableText(event.currentTarget as HTMLElement)
+  if (nextColumnText === columnText) return
+  emit("updatePerson", blockIndex, `${original.slice(0, sourceStart)}${nextColumnText}${original.slice(sourceEnd)}`)
+}
+
+function blurEditable(event: Event) {
+  ;(event.currentTarget as HTMLElement).blur()
+}
+
+function insertColumnBreak(event: Event) {
+  const selection = window.getSelection()
+  if (!selection?.rangeCount) return
+  selection.deleteFromDocument()
+  const range = selection.getRangeAt(0)
+  const breakNode = document.createTextNode("\n")
+  range.insertNode(breakNode)
+  range.setStartAfter(breakNode)
+  range.collapse(true)
+  selection.removeAllRanges()
+  selection.addRange(range)
 }
 
 const pageNumberText = computed(() => toHan(props.page?.pageNumber ?? 1))
@@ -107,14 +136,22 @@ function toHan(value: number): string {
             class="person-block"
             :data-book-block-index="item.blockIndex"
             :style="[personStyle(item.columnSpan), { fontFamily: fontStack(item.fontFamily) }]"
-            role="button"
-            tabindex="0"
             @click="emit('selectBlock', item.blockIndex)"
-            @keydown.enter.prevent="emit('selectBlock', item.blockIndex)"
-            @keydown.space.prevent="emit('selectBlock', item.blockIndex)"
           >
             <div class="person-columns">
-              <span v-for="(column, columnIndex) in item.columns" :key="columnIndex" class="person-column">
+              <span
+                v-for="(column, columnIndex) in item.columns"
+                :key="columnIndex"
+                class="person-column"
+                contenteditable="plaintext-only"
+                role="textbox"
+                aria-multiline="true"
+                spellcheck="false"
+                @focus="emit('selectBlock', item.blockIndex)"
+                @blur="commitColumn(item.blockIndex, column.sourceStart, column.sourceEnd, column.text, item.block.text, $event)"
+                @keydown.ctrl.enter.prevent="blurEditable"
+                @keydown.enter.exact.prevent="insertColumnBreak"
+              >
                 <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
               </span>
             </div>
@@ -377,7 +414,7 @@ function toHan(value: number): string {
   margin: 0;
   padding-left: 0.18em;
   border-left: 1px dotted rgba(78, 51, 29, 0.12);
-  cursor: pointer;
+  cursor: text;
   height: var(--grid-height);
   max-width: var(--grid-width);
   overflow: hidden;
@@ -400,6 +437,8 @@ function toHan(value: number): string {
   text-orientation: upright;
   line-height: var(--column-gap);
   white-space: pre;
+  outline: none;
+  caret-color: var(--color-accent);
 }
 
 footer {

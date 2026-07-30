@@ -15,6 +15,7 @@ import {
   columnsPerPage,
   headingColumnCount,
   pageMargin,
+  textColumnSlices,
   textColumns,
 } from "./bookPageMetrics"
 import { CJK_FALLBACK_FONTS, resolveBookFontFamily, type BookFontSupport } from "./bookFonts"
@@ -71,16 +72,19 @@ function textRuns(text: string, fontFamily: string, supportsGlyph: BookFontSuppo
 }
 
 function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, supportsGlyph: BookFontSupport): BookPageBlock {
-  const columns = blockTextColumns(block, doc)
+  const sourceColumns = block.type === "person" ? textColumnSlices(block.text, doc.layout) : null
+  const columns = sourceColumns?.map((column) => column.text) ?? blockTextColumns(block, doc)
   const fontFamily = block.type === "cover" ? "qiji-combo" : resolveBookFontFamily(doc.layout.fontFamily)
   return {
     block,
     blockIndex,
     columnSpan: blockColumnSpan(block, columns),
     fontFamily,
-    columns: columns.map((text) => ({
+    columns: columns.map((text, index) => ({
       text,
       runs: textRuns(text, fontFamily, supportsGlyph),
+      sourceStart: sourceColumns?.[index]?.start,
+      sourceEnd: sourceColumns?.[index]?.end,
     })),
   }
 }

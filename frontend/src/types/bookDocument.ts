@@ -60,6 +60,8 @@ export interface BookTextRun {
 export interface BookPageColumn {
   text: string
   runs: BookTextRun[]
+  sourceStart?: number
+  sourceEnd?: number
 }
 
 export interface BookPageLayout {

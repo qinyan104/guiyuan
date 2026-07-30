@@ -150,6 +150,16 @@ function updateLayout(next: BookLayout) {
   document.value = { ...document.value, layout: next }
 }
 
+function updatePerson(blockIndex: number, text: string) {
+  if (!document.value) return
+  selectedBlockIndex.value = blockIndex
+  const blocks = [...document.value.blocks]
+  const block = blocks[blockIndex]
+  if (block?.type !== "person") return
+  blocks[blockIndex] = { ...block, text }
+  document.value = { ...document.value, blocks }
+}
+
 function updateViewMode(next: "single" | "spread") {
   viewMode.value = next
 }
@@ -236,6 +246,7 @@ async function exportPdf() {
         :viewMode="viewMode"
         :zoom="zoom"
         :selectedBlockIndex="selectedBlockIndex"
+        @updatePerson="updatePerson"
         @selectBlock="selectedBlockIndex = $event"
       />
     </div>
