@@ -75,6 +75,7 @@ export interface BookPageColumn {
 
 export interface BookPageLayout {
   pageNumber: number
+  sectionTitle?: string
   blocks: BookPageBlock[]
 }
 

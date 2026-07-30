@@ -185,8 +185,9 @@ function toHan(value: number): string {
         </template>
       </div>
       <aside v-if="!isCoverPage && layout.templateId === 'classic'" class="book-center" aria-hidden="true">
-        <i class="fish-tail fish-tail--top"></i>
         <span class="book-center-title">{{ bookTitle || "归源谱牒" }}</span>
+        <i class="fish-tail fish-tail--top"></i>
+        <span class="book-center-section">{{ page.sectionTitle || "正文" }}</span>
         <i class="fish-tail fish-tail--bottom"></i>
         <span class="book-center-page">{{ pageNumberText }}</span>
       </aside>
@@ -612,6 +613,7 @@ function toHan(value: number): string {
 .fish-tail--bottom { bottom: 28%; transform: rotate(180deg); }
 
 .book-center-title,
+.book-center-section,
 .book-center-page {
   position: absolute;
   left: 50%;
@@ -623,10 +625,19 @@ function toHan(value: number): string {
 }
 
 .book-center-title {
-  top: 34%;
-  padding: 0.35em 0;
-  font-size: 0.76em;
+  top: 7%;
+  max-height: 18%;
+  overflow: hidden;
+  padding: 0.25em 0;
+  font-size: 0.62em;
   letter-spacing: 0.12em;
+}
+
+.book-center-section {
+  top: 36%;
+  padding: 0.35em 0;
+  font-size: 0.78em;
+  letter-spacing: 0.14em;
 }
 
 .book-center-page {

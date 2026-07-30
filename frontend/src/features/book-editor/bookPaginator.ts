@@ -227,6 +227,13 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
   })
 
   const visiblePages = pages.filter(hasPrintableBlock)
+  let sectionTitle: string | undefined
+  visiblePages.forEach((visiblePage) => {
+    const section = visiblePage.blocks.find((item) => item.block.type === "preface" || item.block.type === "generationHeading")?.block
+    if (section?.type === "preface") sectionTitle = section.title
+    if (section?.type === "generationHeading") sectionTitle = section.text
+    visiblePage.sectionTitle = sectionTitle
+  })
   const orphanedPageBreaks = pages.flatMap((page) => hasPrintableBlock(page) ? [] : page.blocks)
   if (orphanedPageBreaks.length > 0) {
     const lastPage = visiblePages.at(-1)

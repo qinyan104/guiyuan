@@ -131,6 +131,7 @@ function drawBookCenter(
   metrics: BookPageMetrics,
   fonts: ReadonlyMap<string, PDFFont>,
   title: string,
+  sectionTitle: string,
   pageNumber: number,
 ) {
   const x = pageNumber % 2 === 0 ? metrics.pageMargin / 2 : metrics.pageWidth - metrics.pageMargin / 2
@@ -143,7 +144,8 @@ function drawBookCenter(
   })
   drawFishTail(page, metrics, x, metrics.pageHeight * 0.29)
   drawFishTail(page, metrics, x, metrics.pageHeight * 0.67)
-  drawVerticalColumn(page, metrics, fonts, [{ text: Array.from(title).slice(0, 12).join(""), fontFamily: BOOK_CALLIGRAPHY_FONT }], x, metrics.pageHeight * 0.37, 34, 26, COLORS.vermilion)
+  drawVerticalColumn(page, metrics, fonts, [{ text: Array.from(title).slice(0, 12).join(""), fontFamily: BOOK_CALLIGRAPHY_FONT }], x, metrics.pageHeight * 0.09, 26, 20, COLORS.vermilion)
+  drawVerticalColumn(page, metrics, fonts, [{ text: Array.from(sectionTitle).slice(0, 10).join(""), fontFamily: BOOK_CALLIGRAPHY_FONT }], x, metrics.pageHeight * 0.37, 34, 26, COLORS.vermilion)
   drawVerticalColumn(page, metrics, fonts, [{ text: toHan(pageNumber), fontFamily: BOOK_CALLIGRAPHY_FONT }], x, metrics.pageHeight * 0.79, 28, 22, COLORS.vermilion)
 }
 
@@ -240,7 +242,7 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
       })
     }
     drawColumnRules(page, metrics, isClassic ? COLORS.vermilion : COLORS.grid, isClassic ? 0.58 : 0.22)
-    if (isClassic) drawBookCenter(page, metrics, fonts, doc.title, pageLayout.pageNumber)
+    if (isClassic) drawBookCenter(page, metrics, fonts, doc.title, pageLayout.sectionTitle || "正文", pageLayout.pageNumber)
 
     let x = metrics.pageWidth - margin - lineHeight / 2
     const y = margin
