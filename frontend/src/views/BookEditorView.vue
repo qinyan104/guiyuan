@@ -10,7 +10,7 @@ import { getBookDocument, saveBookDocument } from "../features/book-editor/bookD
 import { loadBookFontSupport, type BookFontSupport } from "../features/book-editor/bookFonts"
 import { paginateBook } from "../features/book-editor/bookPaginator"
 import { exportBookPdf } from "../features/book-editor/bookPdfExport"
-import { DEFAULT_BOOK_LAYOUT, type BookDocument, type BookLayout } from "../types/bookDocument"
+import { DEFAULT_BOOK_LAYOUT, type BookBlock, type BookDocument, type BookLayout } from "../types/bookDocument"
 import type { PublicationData } from "../types/family"
 
 const route = useRoute()
@@ -115,13 +115,33 @@ function back() {
   router.push(`/publication/${publicationId.value}`)
 }
 
+function blockAnchor(block: BookBlock | undefined): string | null {
+  if (!block || block.type === "pageBreak") return null
+  if (block.type === "person") return `person:${block.personId}`
+  if (block.type === "generationHeading") return `generation:${block.generation}`
+  return block.type
+}
+
 function generate() {
   if (!publication.value) return
   if (document.value && !confirm("重新生成会覆盖当前书稿，确定继续吗？")) return
   error.value = ""
   try {
+    const previous = document.value
     const generated = generateBookDocument(publicationId.value, publication.value)
-    if (document.value) generated.layout = document.value.layout
+    if (previous) {
+      generated.layout = previous.layout
+      const pageBreaks = previous.blocks.flatMap((block, index, blocks) => {
+        const anchor = block.type === "pageBreak" ? blockAnchor(blocks[index - 1]) : null
+        return anchor ? [{ anchor, block }] : []
+      })
+      for (const pageBreak of pageBreaks) {
+        const anchorIndex = generated.blocks.findIndex((block) => blockAnchor(block) === pageBreak.anchor)
+        if (anchorIndex >= 0 && generated.blocks[anchorIndex + 1]?.type !== "pageBreak") {
+          generated.blocks.splice(anchorIndex + 1, 0, pageBreak.block)
+        }
+      }
+    }
     document.value = generated
     currentPageIndex.value = 0
     selectedBlockIndex.value = null
