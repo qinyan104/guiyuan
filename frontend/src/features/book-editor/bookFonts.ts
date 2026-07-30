@@ -1,6 +1,8 @@
 import fontkit from "@pdf-lib/fontkit"
 
 export const BOOK_FONT_URLS = {
+  MaShanZheng: "/vrain/fonts/MaShanZheng-Regular.ttf",
+  LXGWWenKai: "/vrain/fonts/LXGWWenKai-Regular.ttf",
   "qiji-combo": "/vrain/fonts/qiji-combo.ttf",
   "WenYue-GuTiFangSong": "/vrain/fonts/WenYue-GuTiFangSong-JRFC-2.otf",
   XiaolaiMonoSC: "/vrain/fonts/XiaolaiMonoSC-Regular.ttf",
@@ -12,8 +14,9 @@ export const BOOK_FONT_URLS = {
   Jigmo3: "/vrain/fonts/Jigmo3.ttf",
 } as const
 
-export const CJK_FALLBACK_FONT = "HanaMinA"
-export const CJK_FALLBACK_FONTS = [CJK_FALLBACK_FONT, "Jigmo", "Jigmo2", "Jigmo3"] as const
+export const BOOK_CALLIGRAPHY_FONT = "MaShanZheng"
+export const CJK_FALLBACK_FONT = "LXGWWenKai"
+export const CJK_FALLBACK_FONTS = [CJK_FALLBACK_FONT, "HanaMinA", "Jigmo", "Jigmo2", "Jigmo3"] as const
 
 export type BookFontSupport = (fontFamily: string, char: string) => boolean
 
@@ -44,7 +47,7 @@ async function loadFontCoverage(fontFamily: keyof typeof BOOK_FONT_URLS): Promis
 
 export async function loadBookFontSupport(fontFamily: string): Promise<BookFontSupport> {
   const preferredFont = resolveBookFontFamily(fontFamily)
-  const requiredFonts = new Set<keyof typeof BOOK_FONT_URLS>([preferredFont, "qiji-combo"])
+  const requiredFonts = new Set<keyof typeof BOOK_FONT_URLS>([preferredFont, BOOK_CALLIGRAPHY_FONT])
   const optionalFonts = CJK_FALLBACK_FONTS.filter((family) => !requiredFonts.has(family))
   const coverage = new Map(await Promise.all([
     ...Array.from(requiredFonts, async (family) => [family, await loadFontCoverage(family)] as const),

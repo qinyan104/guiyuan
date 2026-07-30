@@ -171,6 +171,18 @@ function toHan(value: number): string {
 
 <style scoped>
 @font-face {
+  font-family: "MaShanZheng";
+  src: url("/vrain/fonts/MaShanZheng-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "LXGWWenKai";
+  src: url("/vrain/fonts/LXGWWenKai-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
   font-family: "qiji-combo";
   src: url("/vrain/fonts/qiji-combo.ttf") format("truetype");
   font-display: swap;
@@ -383,7 +395,7 @@ function toHan(value: number): string {
 
 .cover h1 {
   margin: 0;
-  font-family: "qiji-combo", "XiaolaiMonoSC", serif;
+  font-family: "MaShanZheng", "LXGWWenKai", serif;
   font-size: 54px;
   font-weight: 500;
   letter-spacing: 0;

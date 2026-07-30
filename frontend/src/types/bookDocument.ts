@@ -86,7 +86,7 @@ export interface BookPaginationResult {
 
 export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   templateId: "classic",
-  fontFamily: "qiji-combo",
+  fontFamily: "LXGWWenKai",
   fontSize: 18,
   marginPreset: "standard",
 }

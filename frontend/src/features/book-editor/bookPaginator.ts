@@ -18,7 +18,7 @@ import {
   textColumnSlices,
   textColumns,
 } from "./bookPageMetrics"
-import { CJK_FALLBACK_FONTS, resolveBookFontFamily, type BookFontSupport } from "./bookFonts"
+import { BOOK_CALLIGRAPHY_FONT, CJK_FALLBACK_FONTS, resolveBookFontFamily, type BookFontSupport } from "./bookFonts"
 
 function isCjkFallbackCharacter(char: string): boolean {
   const point = char.codePointAt(0) ?? -1
@@ -74,7 +74,9 @@ function textRuns(text: string, fontFamily: string, supportsGlyph: BookFontSuppo
 function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, supportsGlyph: BookFontSupport): BookPageBlock {
   const sourceColumns = block.type === "person" ? textColumnSlices(block.text, doc.layout) : null
   const columns = sourceColumns?.map((column) => column.text) ?? blockTextColumns(block, doc)
-  const fontFamily = block.type === "cover" ? "qiji-combo" : resolveBookFontFamily(doc.layout.fontFamily)
+  const fontFamily = block.type === "cover" || block.type === "generationHeading"
+    ? BOOK_CALLIGRAPHY_FONT
+    : resolveBookFontFamily(doc.layout.fontFamily)
   return {
     block,
     blockIndex,

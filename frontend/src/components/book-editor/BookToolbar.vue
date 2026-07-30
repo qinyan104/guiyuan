@@ -41,6 +41,7 @@ const templateOptions = [
 ]
 
 const fontOptions = [
+  { value: "LXGWWenKai", label: "霞鹜文楷 · 手抄谱牒" },
   { value: "WenYue-GuTiFangSong", label: "文悦仿宋 · 世系昭穆" },
   { value: "PingXianZhenSong", label: "屏显真宋 · 谱牒修明" },
   { value: "HanaMinA", label: "花园明朝 · 宗支有序" },
@@ -161,6 +162,12 @@ function updateMargin(value: string) {
 </template>
 
 <style scoped>
+@font-face {
+  font-family: "LXGWWenKai";
+  src: url("/vrain/fonts/LXGWWenKai-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
 @font-face {
   font-family: "qiji-combo";
   src: url("/vrain/fonts/qiji-combo.ttf") format("truetype");
