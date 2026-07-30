@@ -122,10 +122,9 @@ function generate() {
   try {
     const generated = generateBookDocument(publicationId.value, publication.value)
     document.value = generated
-    savedSnapshot.value = draftSnapshot(generated)
     currentPageIndex.value = 0
     selectedBlockIndex.value = null
-    message.value = "已生成书稿"
+    message.value = "已生成书稿，请及时保存"
   } catch (e) {
     error.value = e instanceof Error ? e.message : "生成书稿失败"
   }
