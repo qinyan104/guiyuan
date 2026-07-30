@@ -14,7 +14,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  updateBlock: [blockIndex: number, field: "text" | "note", text: string]
+  updateBlock: [blockIndex: number, field: "text" | "note" | "title" | "subtitle", text: string]
   selectBlock: [blockIndex: number]
   goToPage: [pageNumber: number]
   zoom: [delta: number]

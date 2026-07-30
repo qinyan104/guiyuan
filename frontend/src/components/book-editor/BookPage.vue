@@ -14,7 +14,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  updateBlock: [blockIndex: number, field: "text" | "note", text: string]
+  updateBlock: [blockIndex: number, field: "text" | "note" | "title" | "subtitle", text: string]
   selectBlock: [blockIndex: number]
   goToPage: [pageNumber: number]
 }>()
@@ -61,6 +61,16 @@ function commitColumn(blockIndex: number, field: "text" | "note", sourceStart: n
   const nextColumnText = editableText(event.currentTarget as HTMLElement)
   if (nextColumnText === columnText) return
   emit("updateBlock", blockIndex, field, `${original.slice(0, sourceStart)}${nextColumnText}${original.slice(sourceEnd)}`)
+}
+
+function commitCover(blockIndex: number, field: "title" | "subtitle", original: string, event: Event) {
+  const element = event.currentTarget as HTMLElement
+  const text = editableText(element).replace(/\n+/g, "").trim()
+  if (field === "title" && !text) {
+    element.textContent = original
+    return
+  }
+  if (text !== original) emit("updateBlock", blockIndex, field, text)
 }
 
 function blurEditable(event: Event) {
@@ -113,16 +123,29 @@ function toHan(value: number): string {
           <div
             v-if="item.block.type === 'cover'"
             class="cover"
-            role="button"
-            tabindex="0"
             :style="{ fontFamily: fontStack(item.fontFamily) }"
             @click="emit('selectBlock', item.blockIndex)"
-            @keydown.enter.prevent="emit('selectBlock', item.blockIndex)"
-            @keydown.space.prevent="emit('selectBlock', item.blockIndex)"
           >
             <div class="cover-surface">
-              <h1><span v-for="(run, runIndex) in item.columns[0]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></h1>
-              <p v-if="item.block.subtitle"><span v-for="(run, runIndex) in item.columns[1]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></p>
+              <h1
+                contenteditable="plaintext-only"
+                role="textbox"
+                aria-label="编辑封面标题"
+                spellcheck="false"
+                @focus="emit('selectBlock', item.blockIndex)"
+                @blur="commitCover(item.blockIndex, 'title', item.block.title, $event)"
+                @keydown.enter.prevent="blurEditable"
+              ><span v-for="(run, runIndex) in item.columns[0]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></h1>
+              <p
+                contenteditable="plaintext-only"
+                role="textbox"
+                aria-label="编辑封面副标题"
+                data-placeholder="点击填写副标题"
+                spellcheck="false"
+                @focus="emit('selectBlock', item.blockIndex)"
+                @blur="commitCover(item.blockIndex, 'subtitle', item.block.subtitle || '', $event)"
+                @keydown.enter.prevent="blurEditable"
+              ><span v-for="(run, runIndex) in item.columns[1]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></p>
             </div>
           </div>
           <div v-else-if="item.block.type === 'contents'" class="contents-block" :style="personStyle(item.columnSpan)">
@@ -555,6 +578,22 @@ function toHan(value: number): string {
   margin: 28px 0 0;
   color: rgba(246, 231, 194, 0.82);
   font-family: "WenYue-GuTiFangSong", SimSun, serif;
+}
+
+.cover h1[contenteditable],
+.cover p[contenteditable] {
+  cursor: text;
+}
+
+.cover h1[contenteditable]:focus-visible,
+.cover p[contenteditable]:focus-visible {
+  outline: 2px dashed currentColor;
+  outline-offset: 6px;
+}
+
+.cover p:empty::before {
+  content: attr(data-placeholder);
+  opacity: 0.55;
 }
 
 .tpl-plain .cover-surface {

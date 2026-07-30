@@ -175,15 +175,16 @@ function updateLayout(next: BookLayout) {
   document.value = { ...document.value, layout: next }
 }
 
-function updateBlock(blockIndex: number, field: "text" | "note", text: string) {
+function updateBlock(blockIndex: number, field: "text" | "note" | "title" | "subtitle", text: string) {
   if (!document.value) return
   selectedBlockIndex.value = blockIndex
   const blocks = [...document.value.blocks]
   const block = blocks[blockIndex]
   if (field === "note" && block?.type === "person") blocks[blockIndex] = { ...block, note: text }
   else if (field === "text" && (block?.type === "person" || block?.type === "preface")) blocks[blockIndex] = { ...block, text }
+  else if ((field === "title" || field === "subtitle") && block?.type === "cover") blocks[blockIndex] = { ...block, [field]: text }
   else return
-  document.value = { ...document.value, blocks }
+  document.value = { ...document.value, title: field === "title" ? text : document.value.title, blocks }
 }
 
 function updateViewMode(next: "single" | "spread") {
