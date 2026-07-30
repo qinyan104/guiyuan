@@ -69,7 +69,14 @@ export interface BookPageColumn {
   text: string
   runs: BookTextRun[]
   variant?: "prefaceTitle" | "prefaceSpacer" | "annotation"
-  subcolumns?: BookTextRun[][]
+  subcolumns?: BookPageSubcolumn[]
+  sourceStart?: number
+  sourceEnd?: number
+}
+
+export interface BookPageSubcolumn {
+  text: string
+  runs: BookTextRun[]
   sourceStart?: number
   sourceEnd?: number
 }

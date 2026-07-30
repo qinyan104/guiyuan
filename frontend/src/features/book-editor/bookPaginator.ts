@@ -17,7 +17,6 @@ import {
   headingColumnCount,
   pageMargin,
   textColumnSlices,
-  textColumns,
 } from "./bookPageMetrics"
 import { BOOK_CALLIGRAPHY_FONT, CJK_FALLBACK_FONTS, resolveBookFontFamily, type BookFontSupport } from "./bookFonts"
 
@@ -51,11 +50,9 @@ function blockColumnSpan(block: BookBlock, columns: string[]): number {
   }
 }
 
-function blockTextColumns(block: BookBlock, doc: BookDocument): string[] {
+function blockTextColumns(block: BookBlock): string[] {
   if (block.type === "cover") return [block.title, block.subtitle ?? ""]
-  if (block.type === "preface") return [block.title, "", ...textColumns(block.text, doc.layout)]
   if (block.type === "generationHeading") return [block.text]
-  if (block.type === "person") return textColumns(block.text, doc.layout)
   return []
 }
 
@@ -91,8 +88,10 @@ function textRuns(
 }
 
 function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, supportsGlyph: BookFontSupport): BookPageBlock {
-  const sourceColumns = block.type === "person" ? textColumnSlices(block.text, doc.layout) : null
-  const columnTexts = sourceColumns?.map((column) => column.text) ?? blockTextColumns(block, doc)
+  const sourceColumns = block.type === "person" || block.type === "preface" ? textColumnSlices(block.text, doc.layout) : null
+  const columnTexts = block.type === "preface"
+    ? [block.title, "", ...(sourceColumns ?? []).map((column) => column.text)]
+    : sourceColumns?.map((column) => column.text) ?? blockTextColumns(block)
   const fontFamily = block.type === "cover" || block.type === "generationHeading"
     ? BOOK_CALLIGRAPHY_FONT
     : resolveBookFontFamily(doc.layout.fontFamily)
@@ -106,37 +105,43 @@ function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, su
     nameStart = 0
     nameEnd = firstSentenceEnd >= 0 ? firstSentenceEnd : block.text.length
   }
-  const columns: BookPageColumn[] = columnTexts.map((text, index) => ({
-    text,
-    runs: textRuns(
+  const columns: BookPageColumn[] = columnTexts.map((text, index) => {
+    const sourceColumn = block.type === "preface" ? sourceColumns?.[index - 2] : sourceColumns?.[index]
+    return {
       text,
-      block.type === "preface" && index === 0 ? BOOK_CALLIGRAPHY_FONT : fontFamily,
-      supportsGlyph,
-      block.type === "person" ? {
-        sourceStart: sourceColumns?.[index]?.start ?? 0,
-        nameStart,
-        nameEnd,
-        metadataStart: firstSentenceEnd >= 0 ? firstSentenceEnd + 1 : block.text.length,
-        textEnd: block.text.length,
-      } : undefined,
-      doc.layout.templateId === "classic" && (block.type === "person" || block.type === "preface"),
-    ),
-    variant: block.type === "preface" ? (index === 0 ? "prefaceTitle" : index === 1 ? "prefaceSpacer" : undefined) : undefined,
-    sourceStart: sourceColumns?.[index]?.start,
-    sourceEnd: sourceColumns?.[index]?.end,
-  }))
+      runs: textRuns(
+        text,
+        block.type === "preface" && index === 0 ? BOOK_CALLIGRAPHY_FONT : fontFamily,
+        supportsGlyph,
+        block.type === "person" ? {
+          sourceStart: sourceColumn?.start ?? 0,
+          nameStart,
+          nameEnd,
+          metadataStart: firstSentenceEnd >= 0 ? firstSentenceEnd + 1 : block.text.length,
+          textEnd: block.text.length,
+        } : undefined,
+        doc.layout.templateId === "classic" && (block.type === "person" || block.type === "preface"),
+      ),
+      variant: block.type === "preface" ? (index === 0 ? "prefaceTitle" : index === 1 ? "prefaceSpacer" : undefined) : undefined,
+      sourceStart: sourceColumn?.start,
+      sourceEnd: sourceColumn?.end,
+    }
+  })
   if (block.type === "person" && block.note?.trim()) {
-    const perLine = charsPerColumn(doc.layout)
-    const characters = Array.from(block.note.trim())
-    for (let index = 0; index < characters.length; index += perLine * 2) {
-      const first = characters.slice(index, index + perLine).join("")
-      const second = characters.slice(index + perLine, index + perLine * 2).join("")
-      const text = first + second
+    const noteColumns = textColumnSlices(block.note, doc.layout)
+    for (let index = 0; index < noteColumns.length; index += 2) {
+      const lines = noteColumns.slice(index, index + 2).map((line) => ({
+        text: line.text,
+        runs: textRuns(line.text, fontFamily, supportsGlyph, undefined, doc.layout.templateId === "classic"),
+        sourceStart: line.start,
+        sourceEnd: line.end,
+      }))
+      const text = lines.map((line) => line.text).join("")
       columns.push({
         text,
         runs: textRuns(text, fontFamily, supportsGlyph, undefined, doc.layout.templateId === "classic"),
         variant: "annotation",
-        subcolumns: [first, second].filter(Boolean).map((line) => textRuns(line, fontFamily, supportsGlyph, undefined, doc.layout.templateId === "classic")),
+        subcolumns: lines,
       })
     }
   }

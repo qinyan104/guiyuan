@@ -14,7 +14,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  updatePerson: [blockIndex: number, text: string]
+  updateBlock: [blockIndex: number, field: "text" | "note", text: string]
   selectBlock: [blockIndex: number]
 }>()
 
@@ -55,11 +55,11 @@ function editableText(element: HTMLElement) {
   return (element.textContent ?? "").replace(/\r\n?/g, "\n")
 }
 
-function commitColumn(blockIndex: number, sourceStart: number | undefined, sourceEnd: number | undefined, columnText: string, original: string, event: Event) {
+function commitColumn(blockIndex: number, field: "text" | "note", sourceStart: number | undefined, sourceEnd: number | undefined, columnText: string, original: string, event: Event) {
   if (sourceStart === undefined || sourceEnd === undefined) return
   const nextColumnText = editableText(event.currentTarget as HTMLElement)
   if (nextColumnText === columnText) return
-  emit("updatePerson", blockIndex, `${original.slice(0, sourceStart)}${nextColumnText}${original.slice(sourceEnd)}`)
+  emit("updateBlock", blockIndex, field, `${original.slice(0, sourceStart)}${nextColumnText}${original.slice(sourceEnd)}`)
 }
 
 function blurEditable(event: Event) {
@@ -133,6 +133,14 @@ function toHan(value: number): string {
               v-for="(column, columnIndex) in item.columns"
               :key="columnIndex"
               :class="['preface-column', `preface-column--${column.variant || 'body'}`]"
+              :contenteditable="column.sourceStart !== undefined ? 'plaintext-only' : undefined"
+              :role="column.sourceStart !== undefined ? 'textbox' : undefined"
+              :aria-multiline="column.sourceStart !== undefined ? 'true' : undefined"
+              spellcheck="false"
+              @focus="emit('selectBlock', item.blockIndex)"
+              @blur="commitColumn(item.blockIndex, 'text', column.sourceStart, column.sourceEnd, column.text, item.block.text, $event)"
+              @keydown.ctrl.enter.prevent="blurEditable"
+              @keydown.enter.exact.prevent="insertColumnBreak"
             >
               <span
                 v-for="(run, runIndex) in column.runs"
@@ -166,9 +174,22 @@ function toHan(value: number): string {
             <div class="person-columns">
               <template v-for="(column, columnIndex) in item.columns" :key="columnIndex">
                 <span v-if="column.variant === 'annotation'" class="person-column person-column--annotation" aria-label="夹注">
-                  <span v-for="(line, lineIndex) in column.subcolumns" :key="lineIndex" class="person-annotation-line">
+                  <span
+                    v-for="(line, lineIndex) in column.subcolumns"
+                    :key="lineIndex"
+                    class="person-annotation-line"
+                    contenteditable="plaintext-only"
+                    role="textbox"
+                    aria-label="编辑夹注"
+                    aria-multiline="true"
+                    spellcheck="false"
+                    @focus="emit('selectBlock', item.blockIndex)"
+                    @blur="commitColumn(item.blockIndex, 'note', line.sourceStart, line.sourceEnd, line.text, item.block.note || '', $event)"
+                    @keydown.ctrl.enter.prevent="blurEditable"
+                    @keydown.enter.exact.prevent="insertColumnBreak"
+                  >
                     <span
-                      v-for="(run, runIndex) in line"
+                      v-for="(run, runIndex) in line.runs"
                       :key="runIndex"
                       :class="run.variant ? `person-run--${run.variant}` : undefined"
                       :style="{ fontFamily: run.fontFamily }"
@@ -183,7 +204,7 @@ function toHan(value: number): string {
                   aria-multiline="true"
                   spellcheck="false"
                   @focus="emit('selectBlock', item.blockIndex)"
-                  @blur="commitColumn(item.blockIndex, column.sourceStart, column.sourceEnd, column.text, item.block.text, $event)"
+                  @blur="commitColumn(item.blockIndex, 'text', column.sourceStart, column.sourceEnd, column.text, item.block.text, $event)"
                   @keydown.ctrl.enter.prevent="blurEditable"
                   @keydown.enter.exact.prevent="insertColumnBreak"
                 >
@@ -531,6 +552,13 @@ function toHan(value: number): string {
 
 .preface-column--prefaceSpacer {
   opacity: 0;
+}
+
+.preface-column[contenteditable],
+.person-annotation-line[contenteditable] {
+  outline: none;
+  caret-color: var(--color-accent);
+  cursor: text;
 }
 
 .person-block {

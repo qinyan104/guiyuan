@@ -269,9 +269,9 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
         for (const column of item.columns) {
           if (column.variant === "annotation") {
             const lines = column.subcolumns ?? []
-            lines.forEach((runs, index) => {
+            lines.forEach((line, index) => {
               const offset = lines.length > 1 ? lineHeight * 0.22 - index * lineHeight * 0.44 : 0
-              drawVerticalColumn(page, metrics, fonts, runs, x + offset, y, lineHeight, size * 0.62, COLORS.red)
+              drawVerticalColumn(page, metrics, fonts, line.runs, x + offset, y, lineHeight, size * 0.62, COLORS.red)
             })
           } else {
             drawVerticalColumn(page, metrics, fonts, column.runs, x, y, lineHeight, size, COLORS.ink)
