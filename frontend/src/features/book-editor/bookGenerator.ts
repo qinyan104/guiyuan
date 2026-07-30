@@ -149,7 +149,6 @@ function personText(pid: string, generation: number, people: Record<string, Pers
   if (spouses.length) parts.push(spouses.join("，"))
   const children = childrenText(pid, people, families)
   if (children) parts.push(children)
-  if (p.note) parts.push(p.note)
   const text = parts
     .filter(Boolean)
     .map((part) => part.replace(/[。]+$/g, ""))
@@ -162,6 +161,7 @@ function personText(pid: string, generation: number, people: Record<string, Pers
     personName: p.name,
     generation,
     text: arabicToHan(text.endsWith("。") ? text : `${text}。`),
+    note: p.note?.trim() ? arabicToHan(p.note.trim().replace(/[。]+$/g, "") + "。") : undefined,
   }
 }
 
@@ -177,6 +177,8 @@ export function generateBookDocument(publicationId: number, data: PublicationDat
   const blocks: BookBlock[] = [
     { type: "cover", title: data.title || "未命名族谱", subtitle: data.subtitle || data.info?.hallName },
   ]
+  const preface = data.info?.description?.trim()
+  if (preface) blocks.push({ type: "preface", title: "谱序", text: arabicToHan(preface) })
   let currentGeneration: number | null = null
   for (const node of nodes) {
     if (!data.people[node.pid]) continue

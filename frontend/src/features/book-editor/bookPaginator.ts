@@ -5,6 +5,7 @@ import type {
   BookPageLayout,
   BookPageMetrics,
   BookPaginationResult,
+  BookPageColumn,
   BookTextRun,
 } from "../../types/bookDocument"
 import {
@@ -39,6 +40,8 @@ function blockColumnSpan(block: BookBlock, columns: string[]): number {
   switch (block.type) {
     case "cover":
       return 0
+    case "preface":
+      return columns.length
     case "generationHeading":
       return headingColumnCount()
     case "person":
@@ -50,6 +53,7 @@ function blockColumnSpan(block: BookBlock, columns: string[]): number {
 
 function blockTextColumns(block: BookBlock, doc: BookDocument): string[] {
   if (block.type === "cover") return [block.title, block.subtitle ?? ""]
+  if (block.type === "preface") return [block.title, "", ...textColumns(block.text, doc.layout)]
   if (block.type === "generationHeading") return [block.text]
   if (block.type === "person") return textColumns(block.text, doc.layout)
   return []
@@ -73,21 +77,38 @@ function textRuns(text: string, fontFamily: string, supportsGlyph: BookFontSuppo
 
 function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, supportsGlyph: BookFontSupport): BookPageBlock {
   const sourceColumns = block.type === "person" ? textColumnSlices(block.text, doc.layout) : null
-  const columns = sourceColumns?.map((column) => column.text) ?? blockTextColumns(block, doc)
+  const columnTexts = sourceColumns?.map((column) => column.text) ?? blockTextColumns(block, doc)
   const fontFamily = block.type === "cover" || block.type === "generationHeading"
     ? BOOK_CALLIGRAPHY_FONT
     : resolveBookFontFamily(doc.layout.fontFamily)
+  const columns: BookPageColumn[] = columnTexts.map((text, index) => ({
+    text,
+    runs: textRuns(text, block.type === "preface" && index === 0 ? BOOK_CALLIGRAPHY_FONT : fontFamily, supportsGlyph),
+    variant: block.type === "preface" ? (index === 0 ? "prefaceTitle" : index === 1 ? "prefaceSpacer" : undefined) : undefined,
+    sourceStart: sourceColumns?.[index]?.start,
+    sourceEnd: sourceColumns?.[index]?.end,
+  }))
+  if (block.type === "person" && block.note?.trim()) {
+    const perLine = charsPerColumn(doc.layout)
+    const characters = Array.from(block.note.trim())
+    for (let index = 0; index < characters.length; index += perLine * 2) {
+      const first = characters.slice(index, index + perLine).join("")
+      const second = characters.slice(index + perLine, index + perLine * 2).join("")
+      const text = first + second
+      columns.push({
+        text,
+        runs: textRuns(text, fontFamily, supportsGlyph),
+        variant: "annotation",
+        subcolumns: [first, second].filter(Boolean).map((line) => textRuns(line, fontFamily, supportsGlyph)),
+      })
+    }
+  }
   return {
     block,
     blockIndex,
-    columnSpan: blockColumnSpan(block, columns),
+    columnSpan: blockColumnSpan(block, columns.map((column) => column.text)),
     fontFamily,
-    columns: columns.map((text, index) => ({
-      text,
-      runs: textRuns(text, fontFamily, supportsGlyph),
-      sourceStart: sourceColumns?.[index]?.start,
-      sourceEnd: sourceColumns?.[index]?.end,
-    })),
+    columns,
   }
 }
 
@@ -139,6 +160,20 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
         used = 0
       }
       page.blocks.push(item)
+      return
+    }
+
+    if (block.type === "preface") {
+      if (hasPrintableBlock(page)) page = makePage(pages)
+      let remainingColumns = item.columns
+      while (remainingColumns.length > 0) {
+        const fragmentColumns = remainingColumns.slice(0, metrics.columnsPerPage)
+        page.blocks.push(withColumns(item, fragmentColumns))
+        remainingColumns = remainingColumns.slice(fragmentColumns.length)
+        if (remainingColumns.length > 0) page = makePage(pages)
+      }
+      page = makePage(pages)
+      used = 0
       return
     }
 

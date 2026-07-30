@@ -1,4 +1,4 @@
-export type BookBlockType = "cover" | "generationHeading" | "person" | "pageBreak"
+export type BookBlockType = "cover" | "preface" | "generationHeading" | "person" | "pageBreak"
 
 export interface BookLayout {
   templateId: string
@@ -13,6 +13,12 @@ export interface CoverBlock {
   subtitle?: string
 }
 
+export interface PrefaceBlock {
+  type: "preface"
+  title: string
+  text: string
+}
+
 export interface GenerationHeadingBlock {
   type: "generationHeading"
   generation: number
@@ -25,6 +31,7 @@ export interface PersonBlock {
   personName: string
   generation: number
   text: string
+  note?: string
 }
 
 export interface PageBreakBlock {
@@ -32,7 +39,7 @@ export interface PageBreakBlock {
   id: string
 }
 
-export type BookBlock = CoverBlock | GenerationHeadingBlock | PersonBlock | PageBreakBlock
+export type BookBlock = CoverBlock | PrefaceBlock | GenerationHeadingBlock | PersonBlock | PageBreakBlock
 
 export interface BookDocument {
   id?: number
@@ -60,6 +67,8 @@ export interface BookTextRun {
 export interface BookPageColumn {
   text: string
   runs: BookTextRun[]
+  variant?: "prefaceTitle" | "prefaceSpacer" | "annotation"
+  subcolumns?: BookTextRun[][]
   sourceStart?: number
   sourceEnd?: number
 }

@@ -124,6 +124,19 @@ function toHan(value: number): string {
               <p v-if="item.block.subtitle"><span v-for="(run, runIndex) in item.columns[1]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></p>
             </div>
           </div>
+          <div
+            v-else-if="item.block.type === 'preface'"
+            class="preface-block"
+            :style="personStyle(item.columnSpan)"
+          >
+            <span
+              v-for="(column, columnIndex) in item.columns"
+              :key="columnIndex"
+              :class="['preface-column', `preface-column--${column.variant || 'body'}`]"
+            >
+              <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+            </span>
+          </div>
           <h2
             v-else-if="item.block.type === 'generationHeading'"
             class="generation"
@@ -146,21 +159,27 @@ function toHan(value: number): string {
             @click="emit('selectBlock', item.blockIndex)"
           >
             <div class="person-columns">
-              <span
-                v-for="(column, columnIndex) in item.columns"
-                :key="columnIndex"
-                class="person-column"
-                contenteditable="plaintext-only"
-                role="textbox"
-                aria-multiline="true"
-                spellcheck="false"
-                @focus="emit('selectBlock', item.blockIndex)"
-                @blur="commitColumn(item.blockIndex, column.sourceStart, column.sourceEnd, column.text, item.block.text, $event)"
-                @keydown.ctrl.enter.prevent="blurEditable"
-                @keydown.enter.exact.prevent="insertColumnBreak"
-              >
-                <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
-              </span>
+              <template v-for="(column, columnIndex) in item.columns" :key="columnIndex">
+                <span v-if="column.variant === 'annotation'" class="person-column person-column--annotation" aria-label="夹注">
+                  <span v-for="(line, lineIndex) in column.subcolumns" :key="lineIndex" class="person-annotation-line">
+                    <span v-for="(run, runIndex) in line" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+                  </span>
+                </span>
+                <span
+                  v-else
+                  class="person-column"
+                  contenteditable="plaintext-only"
+                  role="textbox"
+                  aria-multiline="true"
+                  spellcheck="false"
+                  @focus="emit('selectBlock', item.blockIndex)"
+                  @blur="commitColumn(item.blockIndex, column.sourceStart, column.sourceEnd, column.text, item.block.text, $event)"
+                  @keydown.ctrl.enter.prevent="blurEditable"
+                  @keydown.enter.exact.prevent="insertColumnBreak"
+                >
+                  <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+                </span>
+              </template>
             </div>
           </div>
         </template>
@@ -458,12 +477,44 @@ function toHan(value: number): string {
   max-width: var(--column-gap);
   overflow: hidden;
   color: #8a1f16;
-  background: rgba(138, 31, 22, 0.055);
-  border-left: 1px solid rgba(138, 31, 22, 0.32);
-  font-size: 1.18em;
+  background: linear-gradient(90deg, rgba(138, 31, 22, 0.02), rgba(138, 31, 22, 0.1));
+  border: 1px solid rgba(138, 31, 22, 0.38);
+  font-size: 1.28em;
   font-weight: 600;
   line-height: var(--column-gap);
   text-align: center;
+}
+
+.preface-block {
+  display: flex;
+  flex-direction: row-reverse;
+  width: var(--grid-width);
+  height: var(--grid-height);
+  margin: 0;
+  font: inherit;
+  font-weight: 400;
+  writing-mode: horizontal-tb;
+}
+
+.preface-column {
+  box-sizing: border-box;
+  flex: 0 0 var(--column-gap);
+  height: var(--grid-height);
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  line-height: var(--column-gap);
+  white-space: pre;
+}
+
+.preface-column--prefaceTitle {
+  color: #9d281b;
+  font-size: 1.42em;
+  font-weight: 500;
+  text-align: center;
+}
+
+.preface-column--prefaceSpacer {
+  opacity: 0;
 }
 
 .person-block {
@@ -500,6 +551,24 @@ function toHan(value: number): string {
   white-space: pre;
   outline: none;
   caret-color: var(--color-accent);
+}
+
+.person-column--annotation {
+  display: flex;
+  flex-direction: row-reverse;
+  writing-mode: horizontal-tb;
+  color: rgba(138, 31, 22, 0.78);
+  font-size: 0.62em;
+  cursor: default;
+}
+
+.person-annotation-line {
+  flex: 0 0 50%;
+  height: var(--grid-height);
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  line-height: calc(var(--column-gap) / 2);
+  white-space: pre;
 }
 
 .book-center {

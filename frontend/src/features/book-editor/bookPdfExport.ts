@@ -246,7 +246,15 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
     const y = margin
     for (const item of pageLayout.blocks) {
       const block = item.block
-      if (block.type === "generationHeading") {
+      if (block.type === "preface") {
+        for (const column of item.columns) {
+          if (column.variant !== "prefaceSpacer") {
+            const isTitle = column.variant === "prefaceTitle"
+            drawVerticalColumn(page, metrics, fonts, column.runs, x, y, isTitle ? lineHeight * 1.3 : lineHeight, isTitle ? size + 12 : size, isTitle ? COLORS.vermilion : COLORS.ink)
+          }
+          x -= lineHeight
+        }
+      } else if (block.type === "generationHeading") {
         for (const column of item.columns) {
           drawVerticalColumn(page, metrics, fonts, column.runs, x, y, lineHeight, size + 8, COLORS.red)
           x -= lineHeight
@@ -254,7 +262,15 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
         x -= lineHeight * Math.max(0, item.columnSpan - item.columns.length)
       } else if (block.type === "person") {
         for (const column of item.columns) {
-          drawVerticalColumn(page, metrics, fonts, column.runs, x, y, lineHeight, size, COLORS.ink)
+          if (column.variant === "annotation") {
+            const lines = column.subcolumns ?? []
+            lines.forEach((runs, index) => {
+              const offset = lines.length > 1 ? lineHeight * 0.22 - index * lineHeight * 0.44 : 0
+              drawVerticalColumn(page, metrics, fonts, runs, x + offset, y, lineHeight, size * 0.62, COLORS.red)
+            })
+          } else {
+            drawVerticalColumn(page, metrics, fonts, column.runs, x, y, lineHeight, size, COLORS.ink)
+          }
           x -= lineHeight
         }
       }
