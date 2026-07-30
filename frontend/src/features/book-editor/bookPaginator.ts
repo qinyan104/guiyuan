@@ -63,13 +63,17 @@ function textRuns(
   text: string,
   fontFamily: string,
   supportsGlyph: BookFontSupport,
-  format?: { sourceStart: number; nameStart: number; nameEnd: number; metadataStart: number },
+  format?: { sourceStart: number; nameStart: number; nameEnd: number; metadataStart: number; textEnd: number },
+  ancientPunctuation = false,
 ): BookTextRun[] {
   const runs: BookTextRun[] = []
   let offset = 0
   Array.from(text).forEach((char) => {
     const sourceOffset = (format?.sourceStart ?? 0) + offset
-    const variant = format && sourceOffset >= format.nameStart && sourceOffset < format.nameEnd
+    const isPunctuation = ancientPunctuation && /[，。、；：！？]/.test(char)
+    const variant = isPunctuation
+      ? (char === "。" && format && sourceOffset + char.length >= format.textEnd ? "sentenceEnd" : "punctuation")
+      : format && sourceOffset >= format.nameStart && sourceOffset < format.nameEnd
       ? "name"
       : format && sourceOffset >= format.metadataStart ? "metadata" : undefined
     let actualFont = variant === "name" ? BOOK_CALLIGRAPHY_FONT : fontFamily
@@ -113,7 +117,9 @@ function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, su
         nameStart,
         nameEnd,
         metadataStart: firstSentenceEnd >= 0 ? firstSentenceEnd + 1 : block.text.length,
+        textEnd: block.text.length,
       } : undefined,
+      doc.layout.templateId === "classic" && (block.type === "person" || block.type === "preface"),
     ),
     variant: block.type === "preface" ? (index === 0 ? "prefaceTitle" : index === 1 ? "prefaceSpacer" : undefined) : undefined,
     sourceStart: sourceColumns?.[index]?.start,
@@ -128,9 +134,9 @@ function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, su
       const text = first + second
       columns.push({
         text,
-        runs: textRuns(text, fontFamily, supportsGlyph),
+        runs: textRuns(text, fontFamily, supportsGlyph, undefined, doc.layout.templateId === "classic"),
         variant: "annotation",
-        subcolumns: [first, second].filter(Boolean).map((line) => textRuns(line, fontFamily, supportsGlyph)),
+        subcolumns: [first, second].filter(Boolean).map((line) => textRuns(line, fontFamily, supportsGlyph, undefined, doc.layout.templateId === "classic")),
       })
     }
   }

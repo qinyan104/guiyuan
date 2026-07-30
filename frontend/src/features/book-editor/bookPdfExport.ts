@@ -68,17 +68,18 @@ function drawVerticalColumn(
     const font = fonts.get(run.fontFamily)
     if (!font) throw new Error("无法加载 PDF 字体")
     Array.from(run.text).forEach((char) => {
-      const runSize = run.variant === "name" ? size * 1.18 : run.variant === "metadata" ? size * 0.92 : size
-      const runColor = run.variant === "name" ? COLORS.vermilion : run.variant === "metadata" ? COLORS.muted : color
+      const isPunctuation = run.variant === "punctuation" || run.variant === "sentenceEnd"
+      const runSize = isPunctuation ? size * 0.52 : run.variant === "name" ? size * 1.18 : run.variant === "metadata" ? size * 0.92 : size
+      const runColor = run.variant === "sentenceEnd" ? COLORS.vermilion : run.variant === "punctuation" ? COLORS.ink : run.variant === "name" ? COLORS.vermilion : run.variant === "metadata" ? COLORS.muted : color
       const charWidth = font.widthOfTextAtSize(char, runSize)
       page.drawText(char, {
-        x: x - charWidth / 2,
-        y: topY(metrics, y + index * step, runSize),
+        x: x + (isPunctuation ? step * 0.26 : 0) - charWidth / 2,
+        y: topY(metrics, y + index * step - (isPunctuation ? step * 0.08 : 0), runSize),
         size: runSize,
         font,
         color: runColor,
       })
-      index += 1
+      index += isPunctuation ? 0.48 : 1
     })
   })
 }

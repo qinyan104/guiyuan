@@ -62,7 +62,7 @@ export interface BookPageBlock {
 export interface BookTextRun {
   text: string
   fontFamily: string
-  variant?: "name" | "metadata"
+  variant?: "name" | "metadata" | "punctuation" | "sentenceEnd"
 }
 
 export interface BookPageColumn {

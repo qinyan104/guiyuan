@@ -134,7 +134,12 @@ function toHan(value: number): string {
               :key="columnIndex"
               :class="['preface-column', `preface-column--${column.variant || 'body'}`]"
             >
-              <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+              <span
+                v-for="(run, runIndex) in column.runs"
+                :key="runIndex"
+                :class="run.variant ? `person-run--${run.variant}` : undefined"
+                :style="{ fontFamily: run.fontFamily }"
+              >{{ run.text }}</span>
             </span>
           </div>
           <h2
@@ -162,7 +167,12 @@ function toHan(value: number): string {
               <template v-for="(column, columnIndex) in item.columns" :key="columnIndex">
                 <span v-if="column.variant === 'annotation'" class="person-column person-column--annotation" aria-label="夹注">
                   <span v-for="(line, lineIndex) in column.subcolumns" :key="lineIndex" class="person-annotation-line">
-                    <span v-for="(run, runIndex) in line" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+                    <span
+                      v-for="(run, runIndex) in line"
+                      :key="runIndex"
+                      :class="run.variant ? `person-run--${run.variant}` : undefined"
+                      :style="{ fontFamily: run.fontFamily }"
+                    >{{ run.text }}</span>
                   </span>
                 </span>
                 <span
@@ -577,6 +587,17 @@ function toHan(value: number): string {
 .person-run--metadata {
   color: rgba(65, 43, 26, 0.72);
   font-size: 0.92em;
+}
+
+.tpl-classic .person-run--punctuation,
+.tpl-classic .person-run--sentenceEnd {
+  display: inline-block;
+  font-size: 0.52em;
+  transform: translate(0.42em, -0.12em);
+}
+
+.tpl-classic .person-run--sentenceEnd {
+  color: #b33222;
 }
 
 .person-annotation-line {
