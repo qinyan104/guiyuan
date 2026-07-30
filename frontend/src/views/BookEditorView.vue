@@ -165,6 +165,12 @@ function updateViewMode(next: "single" | "spread") {
   viewMode.value = next
 }
 
+function goToPage(pageNumber: number) {
+  const index = pages.value.findIndex((page) => page.pageNumber === pageNumber)
+  if (index >= 0) currentPageIndex.value = index
+  selectedBlockIndex.value = null
+}
+
 function updateZoom(delta: number) {
   zoom.value = Math.max(0.6, Math.min(1.8, Number((zoom.value + delta).toFixed(3))))
 }
@@ -250,6 +256,7 @@ async function exportPdf() {
         :selectedBlockIndex="selectedBlockIndex"
         @updateBlock="updateBlock"
         @selectBlock="selectedBlockIndex = $event"
+        @goToPage="goToPage"
         @zoom="updateZoom"
       />
     </div>

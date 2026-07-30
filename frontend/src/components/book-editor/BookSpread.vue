@@ -16,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   updateBlock: [blockIndex: number, field: "text" | "note", text: string]
   selectBlock: [blockIndex: number]
+  goToPage: [pageNumber: number]
   zoom: [delta: number]
 }>()
 
@@ -214,6 +215,7 @@ onBeforeUnmount(() => {
         :selectedBlockIndex="selectedBlockIndex"
         @updateBlock="(blockIndex, field, text) => emit('updateBlock', blockIndex, field, text)"
         @selectBlock="emit('selectBlock', $event)"
+        @goToPage="emit('goToPage', $event)"
       />
       <div v-else class="book-spread">
         <div class="spread-side spread-side--left">
@@ -229,6 +231,7 @@ onBeforeUnmount(() => {
             :selectedBlockIndex="selectedBlockIndex"
             @updateBlock="(blockIndex, field, text) => emit('updateBlock', blockIndex, field, text)"
             @selectBlock="emit('selectBlock', $event)"
+            @goToPage="emit('goToPage', $event)"
           />
           <div v-else class="blank-leaf" :style="blankLeafStyle" aria-hidden="true"></div>
         </div>
@@ -245,6 +248,7 @@ onBeforeUnmount(() => {
             :selectedBlockIndex="selectedBlockIndex"
             @updateBlock="(blockIndex, field, text) => emit('updateBlock', blockIndex, field, text)"
             @selectBlock="emit('selectBlock', $event)"
+            @goToPage="emit('goToPage', $event)"
           />
         </div>
       </div>

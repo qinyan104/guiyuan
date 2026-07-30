@@ -16,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   updateBlock: [blockIndex: number, field: "text" | "note", text: string]
   selectBlock: [blockIndex: number]
+  goToPage: [pageNumber: number]
 }>()
 
 const pageScale = computed(() => props.scale ?? 0.56)
@@ -123,6 +124,22 @@ function toHan(value: number): string {
               <h1><span v-for="(run, runIndex) in item.columns[0]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></h1>
               <p v-if="item.block.subtitle"><span v-for="(run, runIndex) in item.columns[1]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></p>
             </div>
+          </div>
+          <div v-else-if="item.block.type === 'contents'" class="contents-block" :style="personStyle(item.columnSpan)">
+            <template v-for="(column, columnIndex) in item.columns" :key="columnIndex">
+              <button
+                v-if="column.variant === 'contentsEntry'"
+                type="button"
+                class="contents-column contents-column--entry"
+                :disabled="!column.targetPageNumber"
+                @click.stop="column.targetPageNumber && emit('goToPage', column.targetPageNumber)"
+              >
+                <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+              </button>
+              <span v-else :class="['contents-column', `contents-column--${column.variant}`]">
+                <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+              </span>
+            </template>
           </div>
           <div
             v-else-if="item.block.type === 'preface'"
@@ -606,7 +623,8 @@ function toHan(value: number): string {
   font-size: 1.16em;
 }
 
-.preface-block {
+.preface-block,
+.contents-block {
   display: flex;
   flex-direction: row-reverse;
   width: var(--grid-width);
@@ -617,7 +635,8 @@ function toHan(value: number): string {
   writing-mode: horizontal-tb;
 }
 
-.preface-column {
+.preface-column,
+.contents-column {
   box-sizing: border-box;
   flex: 0 0 var(--column-gap);
   height: var(--grid-height);
@@ -625,6 +644,36 @@ function toHan(value: number): string {
   text-orientation: upright;
   line-height: var(--column-gap);
   white-space: pre;
+}
+
+.contents-column {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+
+.contents-column--contentsTitle {
+  color: #9d281b;
+  font-size: 1.42em;
+  font-weight: 500;
+  text-align: center;
+}
+
+.contents-column--contentsSpacer { opacity: 0; }
+
+.contents-column--entry {
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.contents-column--entry:hover,
+.contents-column--entry:focus-visible {
+  color: #9d281b;
+  background: rgba(157, 40, 27, 0.06);
+  outline: none;
 }
 
 .preface-column--prefaceTitle {
@@ -636,6 +685,8 @@ function toHan(value: number): string {
 
 .tpl-plain .preface-column--prefaceTitle { color: #4b3a29; }
 .tpl-white .preface-column--prefaceTitle { color: #2b3138; }
+.tpl-plain .contents-column--contentsTitle { color: #4b3a29; }
+.tpl-white .contents-column--contentsTitle { color: #2b3138; }
 
 .preface-column--prefaceSpacer {
   opacity: 0;

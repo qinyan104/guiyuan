@@ -188,6 +188,9 @@ export function generateBookDocument(publicationId: number, data: PublicationDat
     }
     blocks.push(personText(node.pid, node.generation, data.people, data.families))
   }
+  const firstHeading = blocks.findIndex((block) => block.type === "generationHeading")
+  const entries = blocks.flatMap((block) => block.type === "generationHeading" ? [{ generation: block.generation, text: block.text }] : [])
+  if (firstHeading >= 0) blocks.splice(firstHeading, 0, { type: "contents", title: "目录", entries })
   return {
     publicationId,
     title: data.title || "未命名族谱",

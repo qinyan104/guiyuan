@@ -271,7 +271,15 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
     const y = margin
     for (const item of pageLayout.blocks) {
       const block = item.block
-      if (block.type === "preface") {
+      if (block.type === "contents") {
+        for (const column of item.columns) {
+          if (column.variant !== "contentsSpacer") {
+            const isTitle = column.variant === "contentsTitle"
+            drawVerticalColumn(page, metrics, fonts, column.runs, x, y, isTitle ? lineHeight * 1.3 : lineHeight, isTitle ? size + 12 : size, isTitle ? headingColor : COLORS.ink, nameColor, secondaryColor)
+          }
+          x -= lineHeight
+        }
+      } else if (block.type === "preface") {
         for (const column of item.columns) {
           if (column.variant !== "prefaceSpacer") {
             const isTitle = column.variant === "prefaceTitle"

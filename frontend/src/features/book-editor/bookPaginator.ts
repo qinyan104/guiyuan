@@ -40,6 +40,7 @@ function blockColumnSpan(block: BookBlock, columns: string[]): number {
     case "cover":
       return 0
     case "preface":
+    case "contents":
       return columns.length
     case "generationHeading":
       return headingColumnCount()
@@ -91,6 +92,8 @@ function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, su
   const sourceColumns = block.type === "person" || block.type === "preface" ? textColumnSlices(block.text, doc.layout) : null
   const columnTexts = block.type === "preface"
     ? [block.title, "", ...(sourceColumns ?? []).map((column) => column.text)]
+    : block.type === "contents"
+      ? [block.title, "", ...block.entries.map((entry) => entry.text)]
     : sourceColumns?.map((column) => column.text) ?? blockTextColumns(block)
   const fontFamily = block.type === "cover" || block.type === "generationHeading"
     ? BOOK_CALLIGRAPHY_FONT
@@ -111,7 +114,7 @@ function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, su
       text,
       runs: textRuns(
         text,
-        block.type === "preface" && index === 0 ? BOOK_CALLIGRAPHY_FONT : fontFamily,
+        (block.type === "preface" || block.type === "contents") && index === 0 ? BOOK_CALLIGRAPHY_FONT : fontFamily,
         supportsGlyph,
         block.type === "person" ? {
           sourceStart: sourceColumn?.start ?? 0,
@@ -122,7 +125,10 @@ function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, su
         } : undefined,
         doc.layout.templateId === "classic" && (block.type === "person" || block.type === "preface"),
       ),
-      variant: block.type === "preface" ? (index === 0 ? "prefaceTitle" : index === 1 ? "prefaceSpacer" : undefined) : undefined,
+      variant: block.type === "preface"
+        ? (index === 0 ? "prefaceTitle" : index === 1 ? "prefaceSpacer" : undefined)
+        : block.type === "contents" ? (index === 0 ? "contentsTitle" : index === 1 ? "contentsSpacer" : "contentsEntry") : undefined,
+      targetGeneration: block.type === "contents" ? block.entries[index - 2]?.generation : undefined,
       sourceStart: sourceColumn?.start,
       sourceEnd: sourceColumn?.end,
     }
@@ -235,7 +241,7 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
       return
     }
 
-    if (block.type === "preface") {
+    if (block.type === "preface" || block.type === "contents") {
       if (hasPrintableBlock(page)) page = makePage(pages)
       let remainingColumns = item.columns
       while (remainingColumns.length > 0) {
@@ -301,10 +307,28 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
 
   const visiblePages = pages.filter(hasPrintableBlock)
   balanceLastPage(visiblePages, metrics.columnsPerPage)
+  const generationPages = new Map<number, number>()
+  visiblePages.forEach((visiblePage) => visiblePage.blocks.forEach((item) => {
+    if (item.block.type === "generationHeading" && !generationPages.has(item.block.generation)) {
+      generationPages.set(item.block.generation, visiblePage.pageNumber)
+    }
+  }))
+  visiblePages.forEach((visiblePage) => visiblePage.blocks.forEach((item) => {
+    if (item.block.type !== "contents") return
+    item.columns.forEach((column) => {
+      if (column.targetGeneration === undefined) return
+      const targetPageNumber = generationPages.get(column.targetGeneration)
+      if (!targetPageNumber) return
+      column.targetPageNumber = targetPageNumber
+      column.text = `${column.text}　···　第${targetPageNumber}页`
+      column.runs = textRuns(column.text, item.fontFamily, supportsGlyph)
+    })
+  }))
   let sectionTitle: string | undefined
   visiblePages.forEach((visiblePage) => {
-    const section = visiblePage.blocks.find((item) => item.block.type === "preface" || item.block.type === "generationHeading")?.block
+    const section = visiblePage.blocks.find((item) => item.block.type === "preface" || item.block.type === "contents" || item.block.type === "generationHeading")?.block
     if (section?.type === "preface") sectionTitle = section.title
+    if (section?.type === "contents") sectionTitle = section.title
     if (section?.type === "generationHeading") sectionTitle = section.text
     visiblePage.sectionTitle = sectionTitle
   })
