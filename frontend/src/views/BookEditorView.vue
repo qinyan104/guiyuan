@@ -118,12 +118,17 @@ function back() {
 function generate() {
   if (!publication.value) return
   if (document.value && !confirm("重新生成会覆盖当前书稿，确定继续吗？")) return
-  const generated = generateBookDocument(publicationId.value, publication.value)
-  document.value = generated
-  savedSnapshot.value = draftSnapshot(generated)
-  currentPageIndex.value = 0
-  selectedBlockIndex.value = null
-  message.value = "已生成书稿"
+  error.value = ""
+  try {
+    const generated = generateBookDocument(publicationId.value, publication.value)
+    document.value = generated
+    savedSnapshot.value = draftSnapshot(generated)
+    currentPageIndex.value = 0
+    selectedBlockIndex.value = null
+    message.value = "已生成书稿"
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : "生成书稿失败"
+  }
 }
 
 async function save() {
@@ -237,7 +242,7 @@ async function exportPdf() {
     />
 
     <div v-if="loading" class="state">正在加载书稿...</div>
-    <div v-else-if="error && !document" class="state error">{{ error }}</div>
+    <div v-else-if="error && !publication" class="state error">{{ error }}</div>
     <div v-else-if="!document" class="start">
       <h1>{{ publication?.title || "古籍族谱" }}</h1>
       <p>从当前族谱自动生成封面和世系录，之后可在书页中直接编辑人物条目。</p>

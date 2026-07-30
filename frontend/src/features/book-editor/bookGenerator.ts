@@ -1,5 +1,5 @@
 import type { FamilyUnit, Person, PublicationData } from "../../types/family"
-import { findFamilyEntryPersonId } from "../../lib/familyBranchMode"
+import { findFamilyEntryPersonId, resolveFamilyBranchMode } from "../../lib/familyBranchMode"
 import {
   DEFAULT_BOOK_LAYOUT,
   type BookBlock,
@@ -54,16 +54,35 @@ function findRoots(people: Record<string, Person>, families: Record<string, Fami
   })
 }
 
-function childIdsFor(pid: string, families: Record<string, FamilyUnit>): string[] {
+function childIdsFor(pid: string, data: PublicationData): string[] {
   const ids: string[] = []
-  for (const family of Object.values(families)) {
+  for (const family of Object.values(data.families)) {
+    const branchMode = resolveFamilyBranchMode(data, family.id)
     if (family.adults[0] === pid) {
-      if (family.branchMode !== "married-out") ids.push(...family.children)
-    } else if (family.adults[1] === pid && family.branchMode !== "uxorilocal") {
+      if (branchMode !== "married-out") ids.push(...family.children)
+    } else if (family.adults[1] === pid && branchMode !== "uxorilocal") {
       ids.push(...family.children)
     }
   }
   return [...new Set(ids)]
+}
+
+function generationFor(pid: string, data: PublicationData): number {
+  let currentId = pid
+  let generation = 0
+  const seen = new Set<string>()
+  while (true) {
+    if (seen.has(currentId)) throw new Error(`世代关系存在循环：${data.people[currentId]?.name || currentId}`)
+    seen.add(currentId)
+    const parentFamilies = Object.values(data.families).filter((family) => family.children.includes(currentId))
+    if (parentFamilies.length === 0) return generation
+    if (parentFamilies.length > 1) throw new Error(`世代关系冲突：${data.people[currentId]?.name || currentId} 同时属于多个父母家庭`)
+    const family = parentFamilies[0]
+    const parentId = resolveFamilyBranchMode(data, family.id) === "married-out" ? family.adults[1] : family.adults[0]
+    if (!parentId || !data.people[parentId]) throw new Error(`世代关系不完整：无法确定 ${data.people[currentId]?.name || currentId} 的承系长辈`)
+    currentId = parentId
+    generation += 1
+  }
 }
 
 function rootIdsFor(data: PublicationData): string[] {
@@ -79,29 +98,33 @@ function rootIdsFor(data: PublicationData): string[] {
 function buildNode(
   pid: string,
   generation: number,
-  people: Record<string, Person>,
-  families: Record<string, FamilyUnit>,
+  data: PublicationData,
   seen: Set<string>,
 ): GenNode {
   const node: GenNode = { pid, generation, children: [] }
-  if (seen.has(pid)) return node
+  if (seen.has(pid)) throw new Error(`世代关系存在循环：${data.people[pid]?.name || pid}`)
   seen.add(pid)
-  node.children = childIdsFor(pid, families)
-    .filter((id) => people[id])
-    .map((id) => buildNode(id, generation + 1, people, families, seen))
+  node.children = childIdsFor(pid, data)
+    .filter((id) => data.people[id])
+    .map((id) => buildNode(id, generation + 1, data, seen))
   seen.delete(pid)
   return node
 }
 
-function collectByGeneration(roots: GenNode[]): GenNode[] {
+function collectByGeneration(roots: GenNode[], people: Record<string, Person>): GenNode[] {
   const result: GenNode[] = []
   let queue = roots
-  const visited = new Set<string>()
+  const generations = new Map<string, number>()
   while (queue.length > 0) {
     const next: GenNode[] = []
     for (const node of queue) {
-      if (visited.has(node.pid)) continue
-      visited.add(node.pid)
+      const knownGeneration = generations.get(node.pid)
+      if (knownGeneration !== undefined) {
+        const name = people[node.pid]?.name || node.pid
+        if (knownGeneration !== node.generation) throw new Error(`世代关系冲突：${name} 同时出现在第${knownGeneration + 1}世和第${node.generation + 1}世`)
+        throw new Error(`世代关系冲突：${name} 存在重复父系关系`)
+      }
+      generations.set(node.pid, node.generation)
       result.push(node)
       next.push(...node.children)
     }
@@ -110,16 +133,16 @@ function collectByGeneration(roots: GenNode[]): GenNode[] {
   return result
 }
 
-function spouseTexts(pid: string, p: Person, people: Record<string, Person>, families: Record<string, FamilyUnit>): string[] {
+function spouseTexts(pid: string, p: Person, data: PublicationData): string[] {
   const result: string[] = []
-  const fams = Object.values(families).filter((family) => family.adults.includes(pid))
+  const fams = Object.values(data.families).filter((family) => family.adults.includes(pid))
   for (let i = 0; i < fams.length; i++) {
     const family = fams[i]
     const spouseId = family.adults.find((id) => id !== pid)
-    const spouse = spouseId ? people[spouseId] : null
+    const spouse = spouseId ? data.people[spouseId] : null
     if (!spouse) continue
     const prefix = p.gender === "female"
-      ? (family.branchMode === "uxorilocal" ? "招贅" : "適")
+      ? (resolveFamilyBranchMode(data, family.id) === "uxorilocal" ? "招贅" : "適")
       : (i === 0 ? "配" : "繼配")
     const suffix = spouse.gender === "female" && !spouse.name.endsWith("氏") ? "氏" : ""
     result.push(`${prefix}${spouse.name}${suffix}`)
@@ -127,27 +150,27 @@ function spouseTexts(pid: string, p: Person, people: Record<string, Person>, fam
   return result
 }
 
-function childrenText(pid: string, people: Record<string, Person>, families: Record<string, FamilyUnit>): string {
-  const children = childIdsFor(pid, families).filter((id) => people[id])
-  const sons = children.filter((id) => people[id]?.gender === "male")
-  const daughters = children.filter((id) => people[id]?.gender === "female")
+function childrenText(pid: string, data: PublicationData): string {
+  const children = childIdsFor(pid, data).filter((id) => data.people[id])
+  const sons = children.filter((id) => data.people[id]?.gender === "male")
+  const daughters = children.filter((id) => data.people[id]?.gender === "female")
   const parts: string[] = []
-  if (sons.length) parts.push(`子${sons.length}，${sons.map((id, i) => `${ordinal(i)}${people[id].name}`).join("、")}`)
-  if (daughters.length) parts.push(`女${daughters.length}，${daughters.map((id, i) => `${ordinal(i)}${people[id].name}`).join("、")}`)
+  if (sons.length) parts.push(`子${sons.length}，${sons.map((id, i) => `${ordinal(i)}${data.people[id].name}`).join("、")}`)
+  if (daughters.length) parts.push(`女${daughters.length}，${daughters.map((id, i) => `${ordinal(i)}${data.people[id].name}`).join("、")}`)
   return parts.join("，")
 }
 
-function personText(pid: string, generation: number, people: Record<string, Person>, families: Record<string, FamilyUnit>): PersonBlock {
-  const p = people[pid]
+function personText(pid: string, generation: number, data: PublicationData): PersonBlock {
+  const p = data.people[pid]
   const parts: string[] = []
   const name = p.titleName ? `${p.titleName}公諱${p.name}` : (p.gender === "male" ? `公諱${p.name}` : `${p.clan || p.name}氏`)
   parts.push(name)
   if (p.birth) parts.push(`生於${p.birth}`)
   if (p.death) parts.push(`卒於${p.death}`)
   if (p.age) parts.push(`${p.gender === "male" ? "享壽" : "享年"}${p.age}`)
-  const spouses = spouseTexts(pid, p, people, families)
+  const spouses = spouseTexts(pid, p, data)
   if (spouses.length) parts.push(spouses.join("，"))
-  const children = childrenText(pid, people, families)
+  const children = childrenText(pid, data)
   if (children) parts.push(children)
   const text = parts
     .filter(Boolean)
@@ -172,8 +195,8 @@ function cnGen(generation: number): string {
 
 export function generateBookDocument(publicationId: number, data: PublicationData): BookDocument {
   const rootIds = rootIdsFor(data)
-  const rootNodes = rootIds.map((pid) => buildNode(pid, 0, data.people, data.families, new Set()))
-  const nodes = collectByGeneration(rootNodes)
+  const rootNodes = rootIds.map((pid) => buildNode(pid, generationFor(pid, data), data, new Set()))
+  const nodes = collectByGeneration(rootNodes, data.people)
   const blocks: BookBlock[] = [
     { type: "cover", title: data.title || "未命名族谱", subtitle: data.subtitle || data.info?.hallName },
   ]
@@ -186,7 +209,7 @@ export function generateBookDocument(publicationId: number, data: PublicationDat
       currentGeneration = node.generation
       blocks.push({ type: "generationHeading", generation: node.generation, text: cnGen(node.generation) })
     }
-    blocks.push(personText(node.pid, node.generation, data.people, data.families))
+    blocks.push(personText(node.pid, node.generation, data))
   }
   const firstHeading = blocks.findIndex((block) => block.type === "generationHeading")
   const entries = blocks.flatMap((block) => block.type === "generationHeading" ? [{ generation: block.generation, text: block.text }] : [])
