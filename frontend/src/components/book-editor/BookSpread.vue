@@ -5,6 +5,7 @@ import type { BookLayout, BookPaginationResult } from "../../types/bookDocument"
 
 const props = defineProps<{
   pagination: BookPaginationResult
+  title?: string
   currentPageIndex: number
   layout: BookLayout
   viewMode: "single" | "spread"
@@ -205,6 +206,7 @@ onBeforeUnmount(() => {
       <BookPage
         v-if="viewMode === 'single' || isCover"
         :page="currentPage"
+        :bookTitle="title"
         :layout="layout"
         :metrics="pagination.metrics"
         :scale="singleScale"
@@ -218,6 +220,7 @@ onBeforeUnmount(() => {
           <BookPage
             v-if="spreadPages.left"
             :page="spreadPages.left"
+            :bookTitle="title"
             :layout="layout"
             :metrics="pagination.metrics"
             :scale="spreadScale"
@@ -233,6 +236,7 @@ onBeforeUnmount(() => {
         <div class="spread-side spread-side--right">
           <BookPage
             :page="spreadPages.right"
+            :bookTitle="title"
             :layout="layout"
             :metrics="pagination.metrics"
             :scale="spreadScale"

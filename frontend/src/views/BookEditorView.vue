@@ -241,6 +241,7 @@ async function exportPdf() {
       <PageThumbnailRail :pages="pages" :currentPage="currentPageIndex" @select="currentPageIndex = $event" />
       <BookSpread
         :pagination="pagination"
+        :title="document.title"
         :currentPageIndex="currentPageIndex"
         :layout="document.layout"
         :viewMode="viewMode"

@@ -1,17 +1,18 @@
 import fontkit from "@pdf-lib/fontkit"
 import { PDFDocument, rgb, type Color, type PDFFont, type PDFPage } from "pdf-lib"
 import type { BookDocument, BookPageMetrics, BookPaginationResult, BookTextRun } from "../../types/bookDocument"
-import { BOOK_FONT_URLS, resolveBookFontFamily } from "./bookFonts"
+import { BOOK_CALLIGRAPHY_FONT, BOOK_FONT_URLS, resolveBookFontFamily } from "./bookFonts"
 
 const COLORS = {
   ink: rgb(0.13, 0.09, 0.06),
   muted: rgb(0.43, 0.32, 0.21),
   red: rgb(0.54, 0.12, 0.09),
+  vermilion: rgb(0.72, 0.2, 0.12),
   frame: rgb(0.2, 0.15, 0.1),
   grid: rgb(0.24, 0.18, 0.12),
   cover: rgb(0.13, 0.22, 0.26),
   coverLabel: rgb(0.94, 0.86, 0.72),
-  classicPaper: rgb(0.97, 0.94, 0.87),
+  classicPaper: rgb(0.96, 0.89, 0.72),
   plainPaper: rgb(1, 0.98, 0.94),
   whitePaper: rgb(1, 1, 1),
 }
@@ -80,7 +81,7 @@ function drawVerticalColumn(
   })
 }
 
-function drawColumnRules(page: PDFPage, metrics: BookPageMetrics) {
+function drawColumnRules(page: PDFPage, metrics: BookPageMetrics, color = COLORS.grid, opacity = 0.22) {
   const gridWidth = metrics.columnsPerPage * metrics.columnGap
   const gridHeight = metrics.charsPerColumn * metrics.columnGap
   const left = metrics.pageWidth - metrics.pageMargin - gridWidth
@@ -89,9 +90,9 @@ function drawColumnRules(page: PDFPage, metrics: BookPageMetrics) {
   const right = left + gridWidth
 
   drawTopRect(page, metrics, left, top, gridWidth, gridHeight, {
-    borderColor: COLORS.frame,
+    borderColor: color,
     borderWidth: 1,
-    borderOpacity: 0.34,
+    borderOpacity: Math.min(1, opacity + 0.14),
   })
 
   for (let x = metrics.pageWidth - metrics.pageMargin - metrics.columnGap; x > left; x -= metrics.columnGap) {
@@ -99,8 +100,8 @@ function drawColumnRules(page: PDFPage, metrics: BookPageMetrics) {
       start: { x, y: bottom },
       end: { x, y: metrics.pageHeight - top },
       thickness: 0.7,
-      color: COLORS.grid,
-      opacity: 0.22,
+      color,
+      opacity,
     })
   }
 
@@ -108,9 +109,42 @@ function drawColumnRules(page: PDFPage, metrics: BookPageMetrics) {
     start: { x: right, y: bottom },
     end: { x: right, y: metrics.pageHeight - top },
     thickness: 1,
-    color: COLORS.frame,
-    opacity: 0.32,
+    color,
+    opacity: Math.min(1, opacity + 0.1),
   })
+}
+
+function drawFishTail(page: PDFPage, metrics: BookPageMetrics, x: number, top: number) {
+  const width = 46
+  const height = 18
+  const bottom = topY(metrics, top, height)
+  const middle = bottom + height / 2
+  drawTopRect(page, metrics, x - width / 2, top, width, height, { color: COLORS.vermilion, opacity: 0.9 })
+  for (const side of [-1, 1]) {
+    page.drawLine({ start: { x: x + side * 18, y: bottom + 2 }, end: { x, y: middle }, thickness: 2.2, color: COLORS.classicPaper })
+    page.drawLine({ start: { x, y: middle }, end: { x: x + side * 18, y: bottom + height - 2 }, thickness: 2.2, color: COLORS.classicPaper })
+  }
+}
+
+function drawBookCenter(
+  page: PDFPage,
+  metrics: BookPageMetrics,
+  fonts: ReadonlyMap<string, PDFFont>,
+  title: string,
+  pageNumber: number,
+) {
+  const x = pageNumber % 2 === 0 ? metrics.pageMargin / 2 : metrics.pageWidth - metrics.pageMargin / 2
+  page.drawLine({
+    start: { x, y: metrics.pageMargin },
+    end: { x, y: metrics.pageHeight - metrics.pageMargin },
+    thickness: 0.7,
+    color: COLORS.vermilion,
+    opacity: 0.28,
+  })
+  drawFishTail(page, metrics, x, metrics.pageHeight * 0.29)
+  drawFishTail(page, metrics, x, metrics.pageHeight * 0.67)
+  drawVerticalColumn(page, metrics, fonts, [{ text: Array.from(title).slice(0, 12).join(""), fontFamily: BOOK_CALLIGRAPHY_FONT }], x, metrics.pageHeight * 0.37, 34, 26, COLORS.vermilion)
+  drawVerticalColumn(page, metrics, fonts, [{ text: toHan(pageNumber), fontFamily: BOOK_CALLIGRAPHY_FONT }], x, metrics.pageHeight * 0.79, 28, 22, COLORS.vermilion)
 }
 
 function drawCover(
@@ -166,7 +200,7 @@ function downloadPdf(bytes: Uint8Array, fileName: string) {
 export async function exportBookPdf(doc: BookDocument, pagination: BookPaginationResult) {
   const pdf = await PDFDocument.create()
   const bodyFontFamily = resolveBookFontFamily(doc.layout.fontFamily)
-  const fontFamilies = new Set<string>([bodyFontFamily])
+  const fontFamilies = new Set<string>([bodyFontFamily, BOOK_CALLIGRAPHY_FONT])
   pagination.pages.forEach((page) => page.blocks.forEach((item) => {
     fontFamilies.add(item.fontFamily)
     item.columns.forEach((column) => column.runs.forEach((run) => fontFamilies.add(run.fontFamily)))
@@ -191,20 +225,22 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
     }
 
     page.drawRectangle({ x: 0, y: 0, width: metrics.pageWidth, height: metrics.pageHeight, color: pageBackground(doc.layout.templateId) })
+    const ruleColor = isClassic ? COLORS.vermilion : COLORS.frame
     drawTopRect(page, metrics, 44, 44, metrics.pageWidth - 88, metrics.pageHeight - 88, {
-      borderColor: COLORS.frame,
-      borderWidth: 1,
-      borderOpacity: 0.34,
+      borderColor: ruleColor,
+      borderWidth: isClassic ? 2 : 1,
+      borderOpacity: isClassic ? 0.9 : 0.34,
     })
     if (isClassic) {
       const innerInset = margin - 38
       drawTopRect(page, metrics, innerInset, innerInset, metrics.pageWidth - innerInset * 2, metrics.pageHeight - innerInset * 2, {
-        borderColor: COLORS.frame,
-        borderWidth: 1,
-        borderOpacity: 0.3,
+        borderColor: COLORS.vermilion,
+        borderWidth: 1.2,
+        borderOpacity: 0.72,
       })
     }
-    drawColumnRules(page, metrics)
+    drawColumnRules(page, metrics, isClassic ? COLORS.vermilion : COLORS.grid, isClassic ? 0.58 : 0.22)
+    if (isClassic) drawBookCenter(page, metrics, fonts, doc.title, pageLayout.pageNumber)
 
     let x = metrics.pageWidth - margin - lineHeight / 2
     const y = margin
@@ -224,15 +260,17 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
       }
     }
 
-    const pageNumber = `第 ${toHan(pageLayout.pageNumber)} 页`
-    page.drawText(pageNumber, {
-      x: metrics.pageWidth / 2 - bodyFont.widthOfTextAtSize(pageNumber, 20) / 2,
-      y: 54,
-      size: 20,
-      font: bodyFont,
-      color: COLORS.muted,
-      opacity: 0.62,
-    })
+    if (!isClassic) {
+      const pageNumber = `第 ${toHan(pageLayout.pageNumber)} 页`
+      page.drawText(pageNumber, {
+        x: metrics.pageWidth / 2 - bodyFont.widthOfTextAtSize(pageNumber, 20) / 2,
+        y: 54,
+        size: 20,
+        font: bodyFont,
+        color: COLORS.muted,
+        opacity: 0.62,
+      })
+    }
   }
 
   downloadPdf(await pdf.save(), doc.title)

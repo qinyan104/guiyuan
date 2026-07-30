@@ -6,6 +6,7 @@ const props = defineProps<{
   page: BookPageLayout | null
   layout: BookLayout
   metrics: BookPageMetrics
+  bookTitle?: string
   scale?: number
   framed?: boolean
   side?: "left" | "right" | "single"
@@ -35,6 +36,7 @@ const pageStyle = computed(() => ({
   "--page-scale": pageScale.value,
   "--page-width": `${props.metrics.pageWidth}px`,
   "--page-height": `${props.metrics.pageHeight}px`,
+  "--outer-frame-inset": `${44 * pageScale.value}px`,
   "--column-gap": `${props.metrics.columnGap * pageScale.value}px`,
   "--grid-width": `${props.metrics.columnsPerPage * props.metrics.columnGap * pageScale.value}px`,
   "--grid-height": `${props.metrics.charsPerColumn * props.metrics.columnGap * pageScale.value}px`,
@@ -163,7 +165,13 @@ function toHan(value: number): string {
           </div>
         </template>
       </div>
-      <footer v-if="!isCoverPage">第 {{ pageNumberText }} 页</footer>
+      <aside v-if="!isCoverPage && layout.templateId === 'classic'" class="book-center" aria-hidden="true">
+        <i class="fish-tail fish-tail--top"></i>
+        <span class="book-center-title">{{ bookTitle || "归源谱牒" }}</span>
+        <i class="fish-tail fish-tail--bottom"></i>
+        <span class="book-center-page">{{ pageNumberText }}</span>
+      </aside>
+      <footer v-if="!isCoverPage && layout.templateId !== 'classic'">第 {{ pageNumberText }} 页</footer>
     </section>
     <section v-else class="empty-page">暂无书页</section>
   </main>
@@ -294,6 +302,17 @@ function toHan(value: number): string {
   overflow: hidden;
 }
 
+.book-page.tpl-classic {
+  color: rgba(48, 31, 18, 0.9);
+  background:
+    radial-gradient(circle at 18% 22%, rgba(129, 82, 35, 0.055) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 76% 68%, rgba(129, 82, 35, 0.045) 0 1px, transparent 1.6px),
+    repeating-linear-gradient(4deg, rgba(137, 91, 42, 0.018) 0 1px, transparent 1px 7px),
+    linear-gradient(100deg, rgba(255, 248, 222, 0.72), rgba(244, 224, 179, 0.84)),
+    #f2dfb6;
+  border-color: rgba(175, 53, 34, 0.7);
+}
+
 .page-content {
   position: absolute;
   top: var(--page-margin);
@@ -316,6 +335,17 @@ function toHan(value: number): string {
   );
 }
 
+.book-page.tpl-classic:not(.is-cover-page) .page-content {
+  outline-color: rgba(190, 53, 34, 0.78);
+  background-image: repeating-linear-gradient(
+    to left,
+    rgba(190, 53, 34, 0.68) 0,
+    rgba(190, 53, 34, 0.68) 1px,
+    transparent 1px,
+    transparent var(--column-gap)
+  );
+}
+
 .is-cover-page .page-content {
   inset: 0;
   width: auto;
@@ -329,9 +359,18 @@ function toHan(value: number): string {
 .book-page::after {
   content: "";
   position: absolute;
-  inset: 28px;
+  inset: var(--outer-frame-inset);
   pointer-events: none;
   border: 1px solid rgba(32, 24, 16, 0.36);
+}
+
+.book-page.tpl-classic::before {
+  border-width: 2px;
+  border-color: rgba(181, 48, 30, 0.9);
+}
+
+.book-page.tpl-classic::after {
+  border-color: rgba(190, 53, 34, 0.72);
 }
 
 .book-page::after {
@@ -439,6 +478,10 @@ function toHan(value: number): string {
   contain: layout paint;
 }
 
+.tpl-classic .person-block {
+  border-left-color: transparent;
+}
+
 .person-columns {
   width: 100%;
   height: var(--grid-height);
@@ -457,6 +500,70 @@ function toHan(value: number): string {
   white-space: pre;
   outline: none;
   caret-color: var(--color-accent);
+}
+
+.book-center {
+  position: absolute;
+  z-index: 2;
+  top: var(--page-margin);
+  bottom: var(--page-margin);
+  width: calc(var(--column-gap) * 0.8);
+  color: rgba(177, 48, 31, 0.9);
+  pointer-events: none;
+}
+
+.book-page--right .book-center,
+.book-page--single .book-center {
+  left: calc((var(--page-margin) - var(--column-gap)) / 2);
+}
+
+.book-page--left .book-center {
+  right: calc((var(--page-margin) - var(--column-gap)) / 2);
+}
+
+.book-center::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 1px solid rgba(190, 53, 34, 0.24);
+}
+
+.fish-tail {
+  position: absolute;
+  left: 8%;
+  width: 84%;
+  height: calc(var(--column-gap) * 0.28);
+  background: rgba(177, 48, 31, 0.88);
+  clip-path: polygon(0 0, 100% 0, 64% 50%, 100% 100%, 0 100%, 36% 50%);
+}
+
+.fish-tail--top { top: 28%; }
+.fish-tail--bottom { bottom: 28%; transform: rotate(180deg); }
+
+.book-center-title,
+.book-center-page {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  background: #f2dfb6;
+  font-family: "MaShanZheng", "LXGWWenKai", serif;
+}
+
+.book-center-title {
+  top: 34%;
+  padding: 0.35em 0;
+  font-size: 0.76em;
+  letter-spacing: 0.12em;
+}
+
+.book-center-page {
+  bottom: 8%;
+  padding: 0.25em 0;
+  font-size: 0.62em;
 }
 
 footer {
