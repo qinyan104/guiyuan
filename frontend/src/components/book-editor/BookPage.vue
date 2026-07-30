@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from "vue"
-import { textColumnCount } from "../../features/book-editor/bookPageMetrics"
+import { computed } from "vue"
 import type { BookLayout, BookPageLayout, BookPageMetrics } from "../../types/bookDocument"
 
 const props = defineProps<{
@@ -14,11 +13,9 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  updatePerson: [blockIndex: number, text: string]
   selectBlock: [blockIndex: number]
 }>()
 
-const editingIndex = ref<number | null>(null)
 const pageScale = computed(() => props.scale ?? 0.56)
 const isCoverPage = computed(() => props.page?.blocks.some((item) => item.block.type === "cover") ?? false)
 const pageSide = computed(() => props.side ?? "single")
@@ -46,50 +43,6 @@ function personStyle(columnCount: number) {
     width: `${columns * props.metrics.columnGap * pageScale.value}px`,
     maxWidth: "var(--grid-width)",
   }
-}
-
-function editableText(element: HTMLElement) {
-  return (element.textContent ?? "").replace(/\r\n?/g, "\n")
-}
-
-function resizeEditable(event: Event) {
-  const element = event.currentTarget as HTMLElement
-  const block = element.parentElement
-  if (!block) return
-  Object.assign(block.style, personStyle(textColumnCount(editableText(element), props.layout)))
-}
-
-async function startEdit(blockIndex: number, event: MouseEvent) {
-  if (editingIndex.value === blockIndex) return
-  const block = event.currentTarget as HTMLElement
-  editingIndex.value = blockIndex
-  emit("selectBlock", blockIndex)
-  await nextTick()
-  block.querySelector<HTMLElement>(".person-text")?.focus()
-}
-
-function commit(blockIndex: number, event: Event) {
-  const text = editableText(event.currentTarget as HTMLElement)
-  emit("updatePerson", blockIndex, text)
-  editingIndex.value = null
-}
-
-function blurEditable(event: Event) {
-  ;(event.currentTarget as HTMLElement).blur()
-}
-
-function insertColumnBreak(event: Event) {
-  const selection = window.getSelection()
-  if (!selection?.rangeCount) return
-  selection.deleteFromDocument()
-  const range = selection.getRangeAt(0)
-  const breakNode = document.createTextNode("\n")
-  range.insertNode(breakNode)
-  range.setStartAfter(breakNode)
-  range.collapse(true)
-  selection.removeAllRanges()
-  selection.addRange(range)
-  resizeEditable(event)
 }
 
 const pageNumberText = computed(() => toHan(props.page?.pageNumber ?? 1))
@@ -151,22 +104,16 @@ function toHan(value: number): string {
           </h2>
           <div
             v-else-if="item.block.type === 'person'"
-            :class="['person-block', { editing: editingIndex === item.blockIndex }]"
+            class="person-block"
             :data-book-block-index="item.blockIndex"
             :style="[personStyle(item.columnSpan), { fontFamily: fontStack(item.fontFamily) }]"
-            @click="startEdit(item.blockIndex, $event)"
+            role="button"
+            tabindex="0"
+            @click="emit('selectBlock', item.blockIndex)"
+            @keydown.enter.prevent="emit('selectBlock', item.blockIndex)"
+            @keydown.space.prevent="emit('selectBlock', item.blockIndex)"
           >
-            <p
-              v-if="editingIndex === item.blockIndex"
-              class="person-text"
-              contenteditable="true"
-              spellcheck="false"
-              @input="resizeEditable"
-              @blur="commit(item.blockIndex, $event)"
-              @keydown.ctrl.enter.prevent="blurEditable"
-              @keydown.enter.exact.prevent="insertColumnBreak"
-            >{{ item.block.text }}</p>
-            <div v-else class="person-columns">
+            <div class="person-columns">
               <span v-for="(column, columnIndex) in item.columns" :key="columnIndex" class="person-column">
                 <span v-for="(run, runIndex) in column.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
               </span>
@@ -430,15 +377,11 @@ function toHan(value: number): string {
   margin: 0;
   padding-left: 0.18em;
   border-left: 1px dotted rgba(78, 51, 29, 0.12);
-  cursor: text;
+  cursor: pointer;
   height: var(--grid-height);
   max-width: var(--grid-width);
   overflow: hidden;
   contain: layout paint;
-}
-
-.person-block.editing {
-  background: rgba(255, 252, 246, 0.52);
 }
 
 .person-columns {
@@ -457,19 +400,6 @@ function toHan(value: number): string {
   text-orientation: upright;
   line-height: var(--column-gap);
   white-space: pre;
-}
-
-.person-text {
-  margin: 0;
-  width: 100%;
-  height: var(--grid-height);
-  outline: none;
-  line-height: var(--column-gap);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  overflow: hidden;
-  caret-color: var(--color-accent);
-  color: rgba(33, 23, 15, 0.9);
 }
 
 footer {
