@@ -121,6 +121,7 @@ function generate() {
   error.value = ""
   try {
     const generated = generateBookDocument(publicationId.value, publication.value)
+    if (document.value) generated.layout = document.value.layout
     document.value = generated
     currentPageIndex.value = 0
     selectedBlockIndex.value = null
