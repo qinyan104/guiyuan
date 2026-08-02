@@ -322,7 +322,7 @@ export function validateSettings(input: unknown): ValidationIssue[] {
     }
   })
 
-  ;(['compactNameColor', 'compactLineColor'] as const).forEach((field) => {
+  ;(['compactNameColor', 'compactLineColor', 'cardBackgroundColor'] as const).forEach((field) => {
     if (typeof settings[field] !== 'string' || settings[field].trim().length === 0) {
       issues.push(issue('invalid-settings', `settings.${field}`, `${field} must be a non-empty string.`))
     }

@@ -61,6 +61,7 @@ export interface PublicationSettings {
   cardWidth: number
   cardRadius: number
   cardShadowOpacity: number
+  cardBackgroundColor: string
   generationGap: number
   siblingGap: number
   partnerGap: number

@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS: PublicationSettings = {
   cardWidth: 160,
   cardRadius: 24,
   cardShadowOpacity: 18,
+  cardBackgroundColor: '#F3F1EB',
   generationGap: 100,
   siblingGap: 40,
   partnerGap: 20,

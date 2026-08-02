@@ -159,6 +159,7 @@ export const defaultSettings: PublicationSettings = {
   cardWidth: 158,
   cardRadius: 24,
   cardShadowOpacity: 18,
+  cardBackgroundColor: '#F3F1EB',
   generationGap: 170,
   siblingGap: 88,
   partnerGap: 96,

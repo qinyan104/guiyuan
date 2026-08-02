@@ -78,6 +78,10 @@ function readCheckedValue(event: Event): boolean {
   return (event.target as HTMLInputElement).checked
 }
 
+function readStringValue(event: Event): string {
+  return (event.target as HTMLInputElement).value
+}
+
 function sliderFill(value: number, min: number, max: number): string {
   const pct = ((value - min) / (max - min)) * 100
   return `${Math.round(pct)}%`
@@ -234,7 +238,7 @@ watch(
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 12.5h10" /><path d="M5 12.5V7.5" /><path d="M8 12.5V4.5" /><path d="M11 12.5V9.5" /></svg>
             </div>
             <div>
-              <p class="lp-section-title">间距与尺寸</p>
+              <p class="lp-section-title">卡片与间距</p>
             </div>
           </div>
 
@@ -272,6 +276,17 @@ watch(
                 type="range" min="0" max="40" step="2"
                 :style="{ '--lp-fill': sliderFill(settings.cardShadowOpacity, 0, 40) }"
                 @input="updateSetting('cardShadowOpacity', readNumericValue($event))"
+              />
+            </label>
+
+            <label class="lp-field">
+              <span class="lp-label">卡片背景</span>
+              <span class="lp-value">{{ settings.cardBackgroundColor.toUpperCase() }}</span>
+              <input
+                class="lp-color"
+                :value="settings.cardBackgroundColor"
+                type="color"
+                @input="updateSetting('cardBackgroundColor', readStringValue($event))"
               />
             </label>
 
@@ -1202,6 +1217,17 @@ watch(
   font-size: 10px;
   margin-left: 1px;
   opacity: 0.7;
+}
+
+.lp-color {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-2);
+  cursor: pointer;
 }
 
 /* ── Custom range slider with filled track ── */

@@ -120,6 +120,12 @@ const nameFontSize = computed(() => {
 
 const DEFAULT_COMPACT_NAME_COLOR = '#1D1D1F'
 const DEFAULT_COMPACT_LINE_COLOR = '#B5A99A'
+const DEFAULT_CARD_BACKGROUND_COLOR = '#F3F1EB'
+const cardPanelStyle = computed(() => {
+  const color = props.settings.cardBackgroundColor?.trim()
+  if (!color || color.toLowerCase() === DEFAULT_CARD_BACKGROUND_COLOR.toLowerCase()) return undefined
+  return { '--card-panel-fill': color, '--card-hover-fill': color }
+})
 const compactNameFontSize = computed(() => props.settings.compactNameSize)
 const compactNameColor = computed(() => {
   const configuredColor = props.settings.compactNameColor?.trim()
@@ -192,6 +198,7 @@ function handleMouseLeave() {
     :class="cardClasses"
     :data-person-id="person.id"
     :transform="`translate(${card.x}, ${card.y})`"
+    :style="cardPanelStyle"
     @click="handleSelect"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
