@@ -20,6 +20,20 @@ const card: PositionedCard = {
 }
 
 describe('PersonCardSvg', () => {
+  it('uses the configured card corner radius', () => {
+    const wrapper = mount(PersonCardSvg, {
+      props: {
+        person,
+        card,
+        settings: { ...defaultSettings, cardRadius: 8 },
+        selected: false,
+      },
+    })
+
+    expect(wrapper.get('.person-card__panel').attributes('rx')).toBe('8')
+    expect(wrapper.get('.person-card__panel').attributes('ry')).toBe('8')
+  })
+
   it('uses compact mode typography settings when cards are hidden', () => {
     const settings: PublicationSettings = {
       ...defaultSettings,

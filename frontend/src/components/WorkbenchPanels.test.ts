@@ -37,6 +37,17 @@ function mountPanels() {
 }
 
 describe('WorkbenchPanels', () => {
+  it('updates the card corner radius from the layout panel', async () => {
+    const wrapper = mountPanels()
+    await wrapper.setProps({ layoutPanelOpen: true })
+
+    const field = wrapper.findAll('.lp-field').find((item) => item.text().includes('卡片圆角'))
+    expect(field).toBeDefined()
+
+    await field!.get('input[type="range"]').setValue(12)
+    expect(wrapper.emitted('update-settings')).toContainEqual([{ cardRadius: 12 }])
+  })
+
   it('exposes one canvas toolbar and shows validation feedback in a dialog', async () => {
     const wrapper = mountPanels()
 
