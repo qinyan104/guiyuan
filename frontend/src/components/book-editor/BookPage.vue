@@ -28,6 +28,13 @@ function fontStack(fontFamily: string) {
   return `"${fontFamily}"`
 }
 
+function coverTitleClass(title: string) {
+  const length = Array.from(title.trim()).length
+  if (length > 14) return "cover-surface--compact"
+  if (length > 8) return "cover-surface--medium"
+  return ""
+}
+
 const pageStyle = computed(() => ({
   width: `${props.metrics.pageWidth * pageScale.value}px`,
   height: `${props.metrics.pageHeight * pageScale.value}px`,
@@ -126,7 +133,7 @@ function toHan(value: number): string {
             :style="{ fontFamily: fontStack(item.fontFamily) }"
             @click="emit('selectBlock', item.blockIndex)"
           >
-            <div class="cover-surface">
+            <div :class="['cover-surface', coverTitleClass(item.block.title)]">
               <h1
                 contenteditable="plaintext-only"
                 role="textbox"
@@ -525,6 +532,10 @@ function toHan(value: number): string {
 }
 
 .cover-surface {
+  --cover-title-size: 54px;
+  --cover-title-height: 720px;
+  --cover-title-padding: 56px 24px;
+  --cover-subtitle-gap: 28px;
   position: absolute;
   top: 0;
   right: 0;
@@ -550,6 +561,20 @@ function toHan(value: number): string {
   color: #1e1710;
 }
 
+.cover-surface--medium {
+  --cover-title-size: 46px;
+  --cover-title-height: 760px;
+  --cover-title-padding: 44px 22px;
+  --cover-subtitle-gap: 24px;
+}
+
+.cover-surface--compact {
+  --cover-title-size: 32px;
+  --cover-title-height: 820px;
+  --cover-title-padding: 36px 20px;
+  --cover-subtitle-gap: 20px;
+}
+
 .cover-surface::before {
   content: "";
   position: absolute;
@@ -563,11 +588,14 @@ function toHan(value: number): string {
 .cover h1 {
   margin: 0;
   font-family: "MaShanZheng", "LXGWWenKai", serif;
-  font-size: 54px;
+  box-sizing: border-box;
+  height: var(--cover-title-height);
+  max-height: calc(var(--page-height) - 180px);
+  padding: var(--cover-title-padding);
+  font-size: var(--cover-title-size);
   font-weight: 500;
   letter-spacing: 0;
-  min-height: 720px;
-  padding: 56px 24px;
+  white-space: nowrap;
   border: 1px solid rgba(118, 42, 31, 0.36);
   background:
     linear-gradient(180deg, rgba(255, 252, 242, 0.98), rgba(239, 226, 196, 0.98));
@@ -575,7 +603,7 @@ function toHan(value: number): string {
 }
 
 .cover p {
-  margin: 28px 0 0;
+  margin: var(--cover-subtitle-gap) 0 0;
   color: rgba(246, 231, 194, 0.82);
   font-family: "WenYue-GuTiFangSong", SimSun, serif;
 }
