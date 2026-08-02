@@ -60,6 +60,7 @@ export interface PublicationSettings {
   layoutMode: 'modern' | 'su' | 'ou'
   cardWidth: number
   cardRadius: number
+  cardShadowOpacity: number
   generationGap: number
   siblingGap: number
   partnerGap: number

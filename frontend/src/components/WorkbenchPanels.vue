@@ -264,6 +264,18 @@ watch(
             </label>
 
             <label class="lp-field">
+              <span class="lp-label">卡片阴影</span>
+              <span class="lp-value">{{ settings.cardShadowOpacity }}<small>%</small></span>
+              <input
+                class="lp-slider"
+                :value="settings.cardShadowOpacity"
+                type="range" min="0" max="40" step="2"
+                :style="{ '--lp-fill': sliderFill(settings.cardShadowOpacity, 0, 40) }"
+                @input="updateSetting('cardShadowOpacity', readNumericValue($event))"
+              />
+            </label>
+
+            <label class="lp-field">
               <span class="lp-label">代际间距</span>
               <span class="lp-value">{{ settings.generationGap }}<small>px</small></span>
               <input

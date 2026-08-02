@@ -269,6 +269,7 @@ export function normalizeSettings(settings: PublicationSettings): PublicationSet
     ...settings,
     cardWidth: clampNumber(settings.cardWidth, 142, 176),
     cardRadius: clampNumber(settings.cardRadius, 0, 32),
+    cardShadowOpacity: clampNumber(settings.cardShadowOpacity, 0, 40),
     generationGap: clampNumber(settings.generationGap, 120, 220),
     siblingGap: clampNumber(settings.siblingGap, 56, 140),
     partnerGap: clampNumber(settings.partnerGap, 72, 128),
@@ -295,6 +296,7 @@ export function validateSettings(input: unknown): ValidationIssue[] {
   ;([
     ['cardWidth', 142, 176],
     ['cardRadius', 0, 32],
+    ['cardShadowOpacity', 0, 40],
     ['generationGap', 120, 220],
     ['siblingGap', 56, 140],
     ['partnerGap', 72, 128],

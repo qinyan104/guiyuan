@@ -465,7 +465,7 @@ function resetView() {
         >
           <defs>
             <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="var(--color-shadow, #6d4f31)" flood-opacity="0.18" />
+              <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="var(--color-shadow, #6d4f31)" :flood-opacity="settings.cardShadowOpacity / 100" />
             </filter>
             <!-- Ou Grid Pattern -->
             <pattern v-if="isOu" id="ou-grid" width="40" height="40" patternUnits="userSpaceOnUse">

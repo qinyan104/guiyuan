@@ -158,6 +158,7 @@ export const defaultSettings: PublicationSettings = {
   layoutMode: 'modern',
   cardWidth: 158,
   cardRadius: 24,
+  cardShadowOpacity: 18,
   generationGap: 170,
   siblingGap: 88,
   partnerGap: 96,
