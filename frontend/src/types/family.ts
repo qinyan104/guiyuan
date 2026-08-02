@@ -59,6 +59,7 @@ export interface PublicationSettings {
   paper: PublicationPaper
   layoutMode: 'modern' | 'su' | 'ou'
   cardWidth: number
+  cardRadius: number
   generationGap: number
   siblingGap: number
   partnerGap: number

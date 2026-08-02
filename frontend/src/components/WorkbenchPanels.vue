@@ -252,6 +252,18 @@ watch(
             </label>
 
             <label class="lp-field">
+              <span class="lp-label">卡片圆角</span>
+              <span class="lp-value">{{ settings.cardRadius }}<small>px</small></span>
+              <input
+                class="lp-slider"
+                :value="settings.cardRadius"
+                type="range" min="0" max="32" step="2"
+                :style="{ '--lp-fill': sliderFill(settings.cardRadius, 0, 32) }"
+                @input="updateSetting('cardRadius', readNumericValue($event))"
+              />
+            </label>
+
+            <label class="lp-field">
               <span class="lp-label">代际间距</span>
               <span class="lp-value">{{ settings.generationGap }}<small>px</small></span>
               <input

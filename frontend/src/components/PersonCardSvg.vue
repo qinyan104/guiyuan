@@ -212,8 +212,8 @@ function handleMouseLeave() {
       class="person-card__panel"
       :width="card.width"
       :height="card.height"
-      :rx="isOu ? 4 : 24"
-      :ry="isOu ? 4 : 24"
+      :rx="settings.cardRadius"
+      :ry="settings.cardRadius"
     />
 
 
@@ -246,8 +246,8 @@ function handleMouseLeave() {
       y="5"
       :width="card.width - 10"
       :height="card.height - 10"
-      rx="20"
-      ry="20"
+      :rx="Math.max(0, settings.cardRadius - 5)"
+      :ry="Math.max(0, settings.cardRadius - 5)"
     />
     <rect v-if="settings.showCard" class="person-card__header" x="16" y="16" :width="card.width - 32" height="28" rx="14" ry="14" />
 

@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS: PublicationSettings = {
   paper: 'A3',
   layoutMode: 'modern',
   cardWidth: 160,
+  cardRadius: 24,
   generationGap: 100,
   siblingGap: 40,
   partnerGap: 20,

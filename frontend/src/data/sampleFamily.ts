@@ -157,6 +157,7 @@ export const defaultSettings: PublicationSettings = {
   paper: 'A3',
   layoutMode: 'modern',
   cardWidth: 158,
+  cardRadius: 24,
   generationGap: 170,
   siblingGap: 88,
   partnerGap: 96,
