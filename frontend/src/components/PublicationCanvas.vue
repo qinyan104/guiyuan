@@ -34,25 +34,44 @@ const isDragging = ref(false)
 const isInertiaActive = ref(false)
 const isZooming = ref(false)
 const renderedZoom = ref(props.settings.zoom)
-const viewportWidth = ref(0)
-const viewportHeight = ref(0)
+const viewportWidth = ref(typeof window === 'undefined' ? 1280 : window.innerWidth)
+const viewportHeight = ref(typeof window === 'undefined' ? 720 : window.innerHeight)
 
 const LARGE_TREE_THRESHOLD = 500
-const INITIAL_CARD_BATCH = 60
-const CARD_BATCH_SIZE = 60
-const INITIAL_LINE_BATCH = 160
-const LINE_BATCH_SIZE = 200
-const shouldRenderProgressively = () => props.layout.cards.length >= LARGE_TREE_THRESHOLD
-const renderedCardCount = ref(shouldRenderProgressively() ? Math.min(INITIAL_CARD_BATCH, props.layout.cards.length) : props.layout.cards.length)
-const renderedLineCount = ref(shouldRenderProgressively() ? Math.min(INITIAL_LINE_BATCH, props.layout.lines.length) : props.layout.lines.length)
-const renderedCards = computed(() => props.layout.cards.slice(0, renderedCardCount.value))
-const renderedLines = computed(() => props.layout.lines.slice(0, renderedLineCount.value))
-const isProgressivelyRendering = computed(() =>
-  renderedCardCount.value < props.layout.cards.length || renderedLineCount.value < props.layout.lines.length,
-)
-const isCanvasMoving = computed(() =>
-  isDragging.value || isInertiaActive.value || isZooming.value || isProgressivelyRendering.value,
-)
+const renderAllForExport = ref(false)
+const renderPanX = ref(props.panX)
+const renderPanY = ref(props.panY)
+const renderZoom = ref(props.settings.zoom)
+const shouldCull = computed(() => props.layout.cards.length >= LARGE_TREE_THRESHOLD && !renderAllForExport.value)
+const renderBounds = computed(() => {
+  const zoom = Math.max(0.1, renderZoom.value)
+  const overscanX = viewportWidth.value
+  const overscanY = viewportHeight.value
+  return {
+    left: props.layout.width / 2 + (-viewportWidth.value / 2 - renderPanX.value - overscanX) / zoom,
+    right: props.layout.width / 2 + (viewportWidth.value / 2 - renderPanX.value + overscanX) / zoom,
+    top: props.layout.height / 2 + (-viewportHeight.value / 2 - renderPanY.value - overscanY) / zoom,
+    bottom: props.layout.height / 2 + (viewportHeight.value / 2 - renderPanY.value + overscanY) / zoom,
+  }
+})
+const renderedCards = computed(() => {
+  if (!shouldCull.value) return props.layout.cards
+  const bounds = renderBounds.value
+  return props.layout.cards.filter((card) =>
+    card.x + card.width >= bounds.left && card.x <= bounds.right &&
+    card.y + card.height >= bounds.top && card.y <= bounds.bottom,
+  )
+})
+const indexedLines = computed(() => props.layout.lines.map((line, index) => ({ line, index })))
+const renderedLines = computed(() => {
+  if (!shouldCull.value) return indexedLines.value
+  const bounds = renderBounds.value
+  return indexedLines.value.filter(({ line }) =>
+    Math.max(line.x1, line.x2) >= bounds.left && Math.min(line.x1, line.x2) <= bounds.right &&
+    Math.max(line.y1, line.y2) >= bounds.top && Math.min(line.y1, line.y2) <= bounds.bottom,
+  )
+})
+const isCanvasMoving = computed(() => isDragging.value || isInertiaActive.value || isZooming.value)
 
 // Theme adaptation
 const isSu = computed(() => false)
@@ -141,6 +160,22 @@ let localPanX = props.panX
 let localPanY = props.panY
 let localZoom = props.settings.zoom
 
+function refreshRenderWindow(force = false) {
+  const panThresholdX = Math.max(240, viewportWidth.value * 0.5)
+  const panThresholdY = Math.max(180, viewportHeight.value * 0.5)
+  const zoomRatio = localZoom / renderZoom.value
+  if (
+    !force &&
+    Math.abs(localPanX - renderPanX.value) < panThresholdX &&
+    Math.abs(localPanY - renderPanY.value) < panThresholdY &&
+    zoomRatio > 0.67 && zoomRatio < 1.5
+  ) return
+
+  renderPanX.value = localPanX
+  renderPanY.value = localPanY
+  renderZoom.value = localZoom
+}
+
 function applyLocalViewport() {
   cameraRef.value?.style.setProperty('transform', cameraTransform(localPanX, localPanY))
   stageRef.value?.style.setProperty('transform', `scale(${localZoom / renderedZoom.value})`)
@@ -157,6 +192,7 @@ function setPan(x: number, y: number, commit = false) {
   localPanX = x
   localPanY = y
   applyLocalViewport()
+  refreshRenderWindow()
   if (commit) commitViewport()
 }
 
@@ -179,19 +215,22 @@ let pendingMoveX = 0
 let pendingMoveY = 0
 let pendingMoveTime = 0
 let zoomIdleTimer: ReturnType<typeof setTimeout> | null = null
-let progressiveRenderRafId: number | null = null
 let pinchMidX = 0
 let pinchMidY = 0
 
 onBeforeUnmount(() => {
   if (inertiaRafId !== null) { cancelAnimationFrame(inertiaRafId); inertiaRafId = null }
   if (panRafId !== null) cancelAnimationFrame(panRafId)
-  if (progressiveRenderRafId !== null) cancelAnimationFrame(progressiveRenderRafId)
   if (zoomIdleTimer !== null) clearTimeout(zoomIdleTimer)
+  resizeObserver?.disconnect()
 })
 
 onMounted(() => {
-  scheduleProgressiveRender()
+  updateViewportSize()
+  if (viewportRef.value && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(updateViewportSize)
+    resizeObserver.observe(viewportRef.value)
+  }
 })
 
 const DRAG_SELECT_THRESHOLD = 5
@@ -220,6 +259,7 @@ watch(
     localPanX = props.panX
     localPanY = props.panY
     applyLocalViewport()
+    refreshRenderWindow()
   },
 )
 
@@ -230,10 +270,11 @@ watch(
     localZoom = zoom
     beginZoomInteraction()
     applyLocalViewport()
+    refreshRenderWindow()
   },
 )
 
-watch(() => props.layout, resetProgressiveRender)
+watch(() => props.layout, () => refreshRenderWindow(true))
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -285,38 +326,24 @@ function revealPerson(personId: string, options: RevealPersonOptions = {}) {
   return true
 }
 
-function scheduleProgressiveRender() {
-  if (!isProgressivelyRendering.value || progressiveRenderRafId !== null) return
-  progressiveRenderRafId = requestAnimationFrame(() => {
-    progressiveRenderRafId = null
-    renderedCardCount.value = Math.min(props.layout.cards.length, renderedCardCount.value + CARD_BATCH_SIZE)
-    renderedLineCount.value = Math.min(props.layout.lines.length, renderedLineCount.value + LINE_BATCH_SIZE)
-    scheduleProgressiveRender()
-  })
-}
-
-function resetProgressiveRender() {
-  if (progressiveRenderRafId !== null) {
-    cancelAnimationFrame(progressiveRenderRafId)
-    progressiveRenderRafId = null
-  }
-  const progressive = shouldRenderProgressively()
-  renderedCardCount.value = progressive ? Math.min(INITIAL_CARD_BATCH, props.layout.cards.length) : props.layout.cards.length
-  renderedLineCount.value = progressive ? Math.min(INITIAL_LINE_BATCH, props.layout.lines.length) : props.layout.lines.length
-  scheduleProgressiveRender()
-}
-
 async function prepareForExport() {
-  if (progressiveRenderRafId !== null) {
-    cancelAnimationFrame(progressiveRenderRafId)
-    progressiveRenderRafId = null
-  }
-  renderedCardCount.value = props.layout.cards.length
-  renderedLineCount.value = props.layout.lines.length
+  renderAllForExport.value = true
   await nextTick()
 }
 
-defineExpose({ getSvgElement: () => svgRef.value, resetView, revealPerson, getCardScreenPosition, prepareForExport })
+function releaseExportLock() {
+  renderAllForExport.value = false
+  refreshRenderWindow(true)
+}
+
+defineExpose({
+  getSvgElement: () => svgRef.value,
+  resetView,
+  revealPerson,
+  getCardScreenPosition,
+  prepareForExport,
+  releaseExportLock,
+})
 
 function updateViewportSize() {
   if (!viewportRef.value) {
@@ -325,6 +352,7 @@ function updateViewportSize() {
 
   viewportWidth.value = viewportRef.value.clientWidth
   viewportHeight.value = viewportRef.value.clientHeight
+  refreshRenderWindow(true)
 }
 
 function handlePointerDown(event: PointerEvent) {
@@ -454,6 +482,7 @@ function finishDrag(event: PointerEvent) {
 function finishZoomInteraction() {
   zoomIdleTimer = null
   renderedZoom.value = localZoom
+  refreshRenderWindow(true)
   nextTick(() => {
     applyLocalViewport()
     isZooming.value = false
@@ -601,7 +630,7 @@ function resetView() {
 
           <g class="tree-lines" :style="isSu ? { filter: 'blur(0.3px)' } : {}">
             <line
-              v-for="(line, index) in renderedLines"
+              v-for="{ line, index } in renderedLines"
               :key="`line-${index}`"
               :class="{ 'tree-lines__line--spousal': line.type === 'spousal' }"
               :x1="line.x1"
