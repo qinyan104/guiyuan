@@ -36,7 +36,23 @@ const isZooming = ref(false)
 const renderedZoom = ref(props.settings.zoom)
 const viewportWidth = ref(0)
 const viewportHeight = ref(0)
-const isCanvasMoving = computed(() => isDragging.value || isInertiaActive.value || isZooming.value)
+
+const LARGE_TREE_THRESHOLD = 500
+const INITIAL_CARD_BATCH = 60
+const CARD_BATCH_SIZE = 60
+const INITIAL_LINE_BATCH = 160
+const LINE_BATCH_SIZE = 200
+const shouldRenderProgressively = () => props.layout.cards.length >= LARGE_TREE_THRESHOLD
+const renderedCardCount = ref(shouldRenderProgressively() ? Math.min(INITIAL_CARD_BATCH, props.layout.cards.length) : props.layout.cards.length)
+const renderedLineCount = ref(shouldRenderProgressively() ? Math.min(INITIAL_LINE_BATCH, props.layout.lines.length) : props.layout.lines.length)
+const renderedCards = computed(() => props.layout.cards.slice(0, renderedCardCount.value))
+const renderedLines = computed(() => props.layout.lines.slice(0, renderedLineCount.value))
+const isProgressivelyRendering = computed(() =>
+  renderedCardCount.value < props.layout.cards.length || renderedLineCount.value < props.layout.lines.length,
+)
+const isCanvasMoving = computed(() =>
+  isDragging.value || isInertiaActive.value || isZooming.value || isProgressivelyRendering.value,
+)
 
 // Theme adaptation
 const isSu = computed(() => false)
@@ -163,13 +179,19 @@ let pendingMoveX = 0
 let pendingMoveY = 0
 let pendingMoveTime = 0
 let zoomIdleTimer: ReturnType<typeof setTimeout> | null = null
+let progressiveRenderRafId: number | null = null
 let pinchMidX = 0
 let pinchMidY = 0
 
 onBeforeUnmount(() => {
   if (inertiaRafId !== null) { cancelAnimationFrame(inertiaRafId); inertiaRafId = null }
   if (panRafId !== null) cancelAnimationFrame(panRafId)
+  if (progressiveRenderRafId !== null) cancelAnimationFrame(progressiveRenderRafId)
   if (zoomIdleTimer !== null) clearTimeout(zoomIdleTimer)
+})
+
+onMounted(() => {
+  scheduleProgressiveRender()
 })
 
 const DRAG_SELECT_THRESHOLD = 5
@@ -210,6 +232,8 @@ watch(
     applyLocalViewport()
   },
 )
+
+watch(() => props.layout, resetProgressiveRender)
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -261,7 +285,38 @@ function revealPerson(personId: string, options: RevealPersonOptions = {}) {
   return true
 }
 
-defineExpose({ getSvgElement: () => svgRef.value, resetView, revealPerson, getCardScreenPosition })
+function scheduleProgressiveRender() {
+  if (!isProgressivelyRendering.value || progressiveRenderRafId !== null) return
+  progressiveRenderRafId = requestAnimationFrame(() => {
+    progressiveRenderRafId = null
+    renderedCardCount.value = Math.min(props.layout.cards.length, renderedCardCount.value + CARD_BATCH_SIZE)
+    renderedLineCount.value = Math.min(props.layout.lines.length, renderedLineCount.value + LINE_BATCH_SIZE)
+    scheduleProgressiveRender()
+  })
+}
+
+function resetProgressiveRender() {
+  if (progressiveRenderRafId !== null) {
+    cancelAnimationFrame(progressiveRenderRafId)
+    progressiveRenderRafId = null
+  }
+  const progressive = shouldRenderProgressively()
+  renderedCardCount.value = progressive ? Math.min(INITIAL_CARD_BATCH, props.layout.cards.length) : props.layout.cards.length
+  renderedLineCount.value = progressive ? Math.min(INITIAL_LINE_BATCH, props.layout.lines.length) : props.layout.lines.length
+  scheduleProgressiveRender()
+}
+
+async function prepareForExport() {
+  if (progressiveRenderRafId !== null) {
+    cancelAnimationFrame(progressiveRenderRafId)
+    progressiveRenderRafId = null
+  }
+  renderedCardCount.value = props.layout.cards.length
+  renderedLineCount.value = props.layout.lines.length
+  await nextTick()
+}
+
+defineExpose({ getSvgElement: () => svgRef.value, resetView, revealPerson, getCardScreenPosition, prepareForExport })
 
 function updateViewportSize() {
   if (!viewportRef.value) {
@@ -546,7 +601,7 @@ function resetView() {
 
           <g class="tree-lines" :style="isSu ? { filter: 'blur(0.3px)' } : {}">
             <line
-              v-for="(line, index) in layout.lines"
+              v-for="(line, index) in renderedLines"
               :key="`line-${index}`"
               :class="{ 'tree-lines__line--spousal': line.type === 'spousal' }"
               :x1="line.x1"
@@ -568,7 +623,7 @@ function resetView() {
 
           <g :filter="isCanvasMoving || settings.cardShadowOpacity <= 0 ? undefined : 'url(#cardShadow)'">
             <PersonCardSvg
-              v-for="card in layout.cards"
+              v-for="card in renderedCards"
               :key="card.personId"
               :data-person-id="card.personId"
               :person="resolvePerson(card.personId)"
