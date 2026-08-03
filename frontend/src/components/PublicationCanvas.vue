@@ -62,14 +62,23 @@ const renderedCards = computed(() => {
     card.y + card.height >= bounds.top && card.y <= bounds.bottom,
   )
 })
-const indexedLines = computed(() => props.layout.lines.map((line, index) => ({ line, index })))
 const renderedLines = computed(() => {
-  if (!shouldCull.value) return indexedLines.value
+  if (!shouldCull.value) return props.layout.lines
   const bounds = renderBounds.value
-  return indexedLines.value.filter(({ line }) =>
+  return props.layout.lines.filter((line) =>
     Math.max(line.x1, line.x2) >= bounds.left && Math.min(line.x1, line.x2) <= bounds.right &&
     Math.max(line.y1, line.y2) >= bounds.top && Math.min(line.y1, line.y2) <= bounds.bottom,
   )
+})
+const renderedLinePaths = computed(() => {
+  const regular: string[] = []
+  const spousal: string[] = []
+  for (const line of renderedLines.value) {
+    const segment = `M${line.x1} ${line.y1}L${line.x2} ${line.y2}`
+    if (line.type === 'spousal') spousal.push(segment)
+    else regular.push(segment)
+  }
+  return { regular: regular.join(''), spousal: spousal.join('') }
 })
 const isCanvasMoving = computed(() => isDragging.value || isInertiaActive.value || isZooming.value)
 
@@ -629,14 +638,15 @@ function resetView() {
           <rect v-if="isOu" width="100%" height="100%" fill="url(#ou-grid)" />
 
           <g class="tree-lines" :style="isSu ? { filter: 'blur(0.3px)' } : {}">
-            <line
-              v-for="{ line, index } in renderedLines"
-              :key="`line-${index}`"
-              :class="{ 'tree-lines__line--spousal': line.type === 'spousal' }"
-              :x1="line.x1"
-              :y1="line.y1"
-              :x2="line.x2"
-              :y2="line.y2"
+            <path
+              v-if="renderedLinePaths.regular"
+              :d="renderedLinePaths.regular"
+              :stroke-linejoin="isSu ? 'round' : 'miter'"
+            />
+            <path
+              v-if="renderedLinePaths.spousal"
+              class="tree-lines__line--spousal"
+              :d="renderedLinePaths.spousal"
               :stroke-linejoin="isSu ? 'round' : 'miter'"
             />
             <!-- Su-style Pearl Connectors -->
@@ -726,13 +736,14 @@ function resetView() {
   -webkit-user-select: none;
 }
 
-.tree-lines line {
+.tree-lines path {
+  fill: none;
   stroke: var(--tree-line-color);
   stroke-width: 2.6;
   stroke-linecap: round;
 }
 
-.tree-lines line.tree-lines__line--spousal {
+.tree-lines path.tree-lines__line--spousal {
   stroke-width: 2.2;
   stroke-linecap: butt;
 }

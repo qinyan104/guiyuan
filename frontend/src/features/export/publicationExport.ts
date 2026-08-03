@@ -52,7 +52,8 @@ const EXPORT_SVG_STYLE = `
     shape-rendering: geometricPrecision;
   }
 
-  .tree-lines line {
+  .tree-lines path {
+    fill: none;
     stroke: var(--tree-line-color, #000);
     stroke-width: 2.2;
     stroke-linecap: round;
