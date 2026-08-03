@@ -38,6 +38,7 @@ import java.util.Set;
 public class PublicationService {
 
     private static final Logger log = LoggerFactory.getLogger(PublicationService.class);
+    private static final String FEDERATED_ID_PREFIX = "branch_";
     private static final List<String> PUBLICATION_MUTATION_ACTIONS = List.of(
             "CREATE_PUB",
             "UPDATE_PUB",
@@ -222,13 +223,15 @@ public class PublicationService {
     public Long createPublication(Long userId, String title, String subtitle,
                                   Map<String, Object> publicationData, String settingsJson,
                                   String infoJson) {
+        Map<String, Object> localPublicationData = localPublicationData(publicationData);
         Publication publication = new Publication();
         publication.setUserId(userId);
         publication.setTitle(title != null ? title : "Untitled publication");
         publication.setSubtitle(subtitle != null ? subtitle : "");
         publication.setSettingsJson(settingsJson);
         publication.setPublicationInfoJson(infoJson);
-        publication.setFocusFamilyId((String) publicationData.get("focusFamilyId"));
+        String focusFamilyId = (String) localPublicationData.get("focusFamilyId");
+        publication.setFocusFamilyId(isFederatedId(focusFamilyId) ? null : focusFamilyId);
         publication = publicationRepository.save(publication);
 
         PublicationAccess ownerAccess = new PublicationAccess();
@@ -238,7 +241,7 @@ public class PublicationService {
         ownerAccess.setCreatedBy(userId);
         publicationAccessRepository.save(ownerAccess);
 
-        savePersonsAndFamilies(publication.getId(), publicationData, List.of(), List.of(), true);
+        savePersonsAndFamilies(publication.getId(), localPublicationData, List.of(), List.of(), true);
         return publication.getId();
     }
 
@@ -246,6 +249,7 @@ public class PublicationService {
     public SaveResult updatePublication(Long publicationId, Long expectedRevision, String title, String subtitle,
                                   Map<String, Object> publicationData, String settingsJson,
                                   String infoJson) {
+        Map<String, Object> localPublicationData = localPublicationData(publicationData);
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new NotFoundException("Publication not found"));
 
@@ -259,7 +263,10 @@ public class PublicationService {
         }
         publication.setSettingsJson(settingsJson);
         publication.setPublicationInfoJson(infoJson);
-        publication.setFocusFamilyId((String) publicationData.get("focusFamilyId"));
+        String focusFamilyId = (String) localPublicationData.get("focusFamilyId");
+        if (!isFederatedId(focusFamilyId)) {
+            publication.setFocusFamilyId(focusFamilyId);
+        }
         publicationRepository.save(publication);
 
         List<Person> existingPersons = personRepository.findByPublicationId(publicationId);
@@ -269,12 +276,12 @@ public class PublicationService {
         }
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> people = (Map<String, Object>) publicationData.get("people");
+        Map<String, Object> people = (Map<String, Object>) localPublicationData.get("people");
         String diff = personDiffService.computePersonDiff(people, dbPersonCache);
 
         savePersonsAndFamilies(
                 publicationId,
-                publicationData,
+                localPublicationData,
                 existingPersons,
                 familyRepository.findByPublicationId(publicationId),
                 false
@@ -303,6 +310,10 @@ public class PublicationService {
                 .orElseThrow(() -> new NotFoundException("Publication not found"));
 
         verifyRevision(publication, expectedRevision);
+
+        if (isFederatedId(personId)) {
+            throw new BadRequestException("挂载分支人物为只读，请进入来源族谱编辑。");
+        }
 
         Person person = personRepository.findByPublicationIdAndPersonId(publicationId, personId)
                 .orElseThrow(() -> new NotFoundException("Person not found"));
@@ -550,6 +561,31 @@ public class PublicationService {
 
     private String familyMemberKey(FamilyMember member) {
         return member.getPersonDbId() + ":" + member.getRole() + ":" + member.getSortOrder();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> localPublicationData(Map<String, Object> data) {
+        Map<String, Object> localData = new LinkedHashMap<>(data);
+        localData.put("people", filterFederatedEntries((Map<String, Object>) data.get("people")));
+        localData.put("families", filterFederatedEntries((Map<String, Object>) data.get("families")));
+        return localData;
+    }
+
+    private Map<String, Object> filterFederatedEntries(Map<String, Object> entries) {
+        if (entries == null) {
+            return null;
+        }
+        Map<String, Object> localEntries = new LinkedHashMap<>();
+        entries.forEach((id, value) -> {
+            if (!isFederatedId(id)) {
+                localEntries.put(id, value);
+            }
+        });
+        return localEntries;
+    }
+
+    private boolean isFederatedId(String id) {
+        return id != null && id.startsWith(FEDERATED_ID_PREFIX);
     }
 
     @SuppressWarnings("unchecked")

@@ -165,10 +165,19 @@ const personEditor = usePersonEditor(context.pub, () => {
 })
 
 const selectedKinshipLabel = computed(() => context.pub.getKinshipNote(context.pub.selectedPersonId.value))
+const selectedPersonIsFederated = computed(() => context.pub.selectedPersonId.value.startsWith('branch_'))
+
+function showFederatedReadOnlyMessage() {
+  feedback.statusMessage.value = '挂载分支人物为只读，请进入来源族谱编辑'
+}
 
 // ─── UI Action Handlers ─────────────────────────────────────────
 function handleSelectPerson(personId: string) {
   if (context.pub.selectedPersonId.value === personId) {
+    if (selectedPersonIsFederated.value) {
+      showFederatedReadOnlyMessage()
+      return
+    }
     panels.editorOpen.value = true
   } else {
     context.pub.selectedPersonId.value = personId
@@ -178,6 +187,10 @@ function handleSelectPerson(personId: string) {
 
 function openEditor() {
   if (!context.pub.selectedPerson.value) return
+  if (selectedPersonIsFederated.value) {
+    showFederatedReadOnlyMessage()
+    return
+  }
   panels.editorOpen.value = true
 }
 
@@ -233,7 +246,7 @@ useWorkbenchRouteFocus({
 watch(
   () => context.pub.selectedPerson.value,
   (person) => {
-    if (!person) {
+    if (!person || person.id.startsWith('branch_')) {
       panels.editorOpen.value = false
     }
   },
@@ -286,7 +299,7 @@ watch(
           :selectedPersonName="context.pub.selectedPerson.value?.name || ''"
           :selectedPersonMeta="context.pub.selectedPersonMeta.value"
           :relationshipToSelected="context.pub.relationshipToSelected.value"
-          :canFocusSelectedBranch="Boolean(context.pub.selectedPerson.value && !context.pub.isSelectedBranchFocused.value)"
+          :canFocusSelectedBranch="Boolean(context.pub.selectedPerson.value && !selectedPersonIsFederated && !context.pub.isSelectedBranchFocused.value)"
           :settings="context.pub.settings"
           :historyPastCount="context.history.historyPast.value.length"
           :historyFutureCount="context.history.historyFuture.value.length"
