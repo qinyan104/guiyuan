@@ -27,12 +27,13 @@ export function formatHistoryTime(date = new Date()): string {
 }
 
 export function serializeTrackedSnapshot(snapshot: EditorSnapshot): string {
+  return serializeTrackedState(snapshot.publication, snapshot.settings)
+}
+
+export function serializeTrackedState(publication: PublicationData, settings: PublicationSettings): string {
   return JSON.stringify({
-    publication: snapshot.publication,
-    settings: {
-      ...snapshot.settings,
-      zoom: 0,
-    },
+    publication: Object.fromEntries(Object.entries(publication).filter(([key]) => key !== 'revision')),
+    settings: Object.fromEntries(Object.entries(settings).filter(([key]) => key !== 'zoom')),
   })
 }
 

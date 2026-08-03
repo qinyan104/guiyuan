@@ -9,7 +9,7 @@ import { usePublicationState } from '../composables/usePublicationState'
 import { defaultSettings } from '../data/sampleFamily'
 import { clearConflictDraft, getConflictDraft, saveConflictDraft, type ConflictDraft } from '../features/conflict/conflictDraft'
 import { useEditorHistory } from '../features/history/useEditorHistory'
-import type { EditorSnapshot } from '../features/history/historyCore'
+import { serializeTrackedState, type EditorSnapshot } from '../features/history/historyCore'
 import { PUBLICATION_CONTEXT_KEY, type PublicationContext, type PublicationData, type PublicationSettings } from '../types/family'
 
 const route = useRoute()
@@ -66,26 +66,8 @@ const history = useEditorHistory({
   restoreSnapshot: restoreEditorSnapshot,
 })
 
-function buildSignature(publication: PublicationData, settings: PublicationSettings) {
-  const publicationSnapshot = Object.fromEntries(
-    Object.keys(publication)
-      .filter((key) => key !== 'revision')
-      .map((key) => [key, publication[key as keyof PublicationData]]),
-  )
-  const settingsSnapshot = Object.fromEntries(
-    Object.keys(settings)
-      .filter((key) => key !== 'zoom')
-      .map((key) => [key, settings[key as keyof PublicationSettings]]),
-  )
-
-  return JSON.stringify({
-    publication: publicationSnapshot,
-    settings: settingsSnapshot,
-  })
-}
-
 function buildPersistedSignature() {
-  return buildSignature(pub.publication as unknown as PublicationData, pub.settings as PublicationSettings)
+  return serializeTrackedState(pub.publication as unknown as PublicationData, pub.settings as PublicationSettings)
 }
 
 const persistedSignature = computed(() => baselineReady.value ? buildPersistedSignature() : lastSyncedSignature.value)
@@ -186,9 +168,23 @@ function initializeLargeStateAfterPaint(
   baselineInitTimeout = setTimeout(async () => {
     baselineInitTimeout = null
     if (myGeneration !== loadGeneration || loading.value) return
-    lastSyncedSignature.value = buildSignature(publication, settings)
+    const signature = serializeTrackedState(publication, settings)
+    const revision = serverRevision.value ?? publication.revision
+    const zoom = settings.zoom
+    const selectedPersonId = pub.selectedPersonId.value
+    lastSyncedSignature.value = signature
+    history.initializeHistoryBaseline({
+      trackedStateSerialized: signature,
+      createSnapshot: () => {
+        const baseline = JSON.parse(signature) as Pick<EditorSnapshot, 'publication' | 'settings'>
+        return {
+          publication: { ...baseline.publication, revision },
+          settings: { ...baseline.settings, zoom },
+          selectedPersonId,
+        }
+      },
+    })
     baselineReady.value = true
-    history.initializeHistoryBaseline()
     await detectViewerPerson()
   }, 600)
 }
@@ -197,7 +193,7 @@ watch(
   persistedSignature,
   (nextSignature) => {
     if (!baselineReady.value) return
-    history.scheduleHistoryCommit()
+    history.scheduleHistoryCommit(nextSignature)
     if (!serverPublicationId.value || loading.value || syncStatus.value === 'conflict') return
     if (nextSignature === lastSyncedSignature.value) return
 

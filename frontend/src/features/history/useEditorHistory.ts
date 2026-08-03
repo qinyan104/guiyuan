@@ -25,34 +25,51 @@ export function useEditorHistory(input: {
   let historyIdSeed = 0
   let isRestoringHistory = false
   let pendingHistoryLabel = ''
+  let pendingTrackedStateSerialized = ''
   let lastHistorySnapshot: EditorSnapshot | null = null
+  let createBaselineSnapshot: (() => EditorSnapshot) | null = null
   let lastTrackedStateSerialized = ''
 
-  function initializeHistoryBaseline() {
-    lastHistorySnapshot = input.createSnapshot()
-    lastTrackedStateSerialized = serializeTrackedSnapshot(lastHistorySnapshot)
+  function initializeHistoryBaseline(baseline?: {
+    createSnapshot: () => EditorSnapshot
+    trackedStateSerialized: string
+  }) {
+    createBaselineSnapshot = baseline?.createSnapshot ?? null
+    lastHistorySnapshot = baseline ? null : input.createSnapshot()
+    lastTrackedStateSerialized = baseline?.trackedStateSerialized ?? serializeTrackedSnapshot(lastHistorySnapshot!)
     historyPast.value = []
     historyFuture.value = []
     pendingHistoryLabel = ''
+    pendingTrackedStateSerialized = ''
   }
 
-  function commitHistory(label = pendingHistoryLabel) {
-    if (isRestoringHistory || !lastHistorySnapshot) {
+  function materializeLastHistorySnapshot() {
+    if (!lastHistorySnapshot && createBaselineSnapshot) {
+      lastHistorySnapshot = createBaselineSnapshot()
+      createBaselineSnapshot = null
+    }
+    return lastHistorySnapshot
+  }
+
+  function commitHistory(label = pendingHistoryLabel, trackedStateSerialized = '') {
+    const previousSnapshot = materializeLastHistorySnapshot()
+    if (isRestoringHistory || !previousSnapshot) {
       return
     }
 
     const currentSnapshot = input.createSnapshot()
-    const currentTrackedStateSerialized = serializeTrackedSnapshot(currentSnapshot)
+    const currentTrackedStateSerialized = trackedStateSerialized || serializeTrackedSnapshot(currentSnapshot)
     if (currentTrackedStateSerialized === lastTrackedStateSerialized) {
       pendingHistoryLabel = ''
+      pendingTrackedStateSerialized = ''
       return
     }
 
     const entry: HistoryEntry = {
       id: `h${Date.now()}-${historyIdSeed++}`,
-      label: label || inferHistoryLabel(lastHistorySnapshot, currentSnapshot, pendingHistoryLabel),
+      label: label || inferHistoryLabel(previousSnapshot, currentSnapshot, pendingHistoryLabel),
       time: formatHistoryTime(),
-      snapshot: lastHistorySnapshot,
+      snapshot: previousSnapshot,
     }
 
     historyPast.value = [...historyPast.value, entry].slice(-MAX_HISTORY_ENTRIES)
@@ -60,6 +77,7 @@ export function useEditorHistory(input: {
     lastHistorySnapshot = currentSnapshot
     lastTrackedStateSerialized = currentTrackedStateSerialized
     pendingHistoryLabel = ''
+    pendingTrackedStateSerialized = ''
   }
 
   function flushPendingHistory() {
@@ -68,21 +86,32 @@ export function useEditorHistory(input: {
       historyTimer = undefined
     }
 
-    commitHistory()
+    commitHistory(pendingHistoryLabel, pendingTrackedStateSerialized)
   }
 
-  function scheduleHistoryCommit() {
+  function scheduleHistoryCommit(trackedStateSerialized = '') {
     if (isRestoringHistory) {
+      return
+    }
+
+    if (trackedStateSerialized && trackedStateSerialized === lastTrackedStateSerialized) {
+      if (historyTimer !== undefined) {
+        window.clearTimeout(historyTimer)
+        historyTimer = undefined
+      }
+      pendingHistoryLabel = ''
+      pendingTrackedStateSerialized = ''
       return
     }
 
     if (historyTimer !== undefined) {
       window.clearTimeout(historyTimer)
     }
+    pendingTrackedStateSerialized = trackedStateSerialized
 
     historyTimer = window.setTimeout(() => {
       historyTimer = undefined
-      commitHistory()
+      commitHistory(pendingHistoryLabel, pendingTrackedStateSerialized)
     }, 420)
   }
 
@@ -94,6 +123,7 @@ export function useEditorHistory(input: {
   function restoreHistorySnapshot(snapshot: EditorSnapshot) {
     isRestoringHistory = true
     input.restoreSnapshot(cloneJson(snapshot))
+    createBaselineSnapshot = null
     lastHistorySnapshot = input.createSnapshot()
     lastTrackedStateSerialized = serializeTrackedSnapshot(lastHistorySnapshot)
     window.setTimeout(() => {
@@ -131,6 +161,7 @@ export function useEditorHistory(input: {
     if (historyTimer !== undefined) {
       window.clearTimeout(historyTimer)
     }
+    createBaselineSnapshot = null
   }
 
   return {

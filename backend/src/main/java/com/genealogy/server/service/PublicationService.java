@@ -238,7 +238,7 @@ public class PublicationService {
         ownerAccess.setCreatedBy(userId);
         publicationAccessRepository.save(ownerAccess);
 
-        savePersonsAndFamilies(publication.getId(), publicationData, Map.of(), true);
+        savePersonsAndFamilies(publication.getId(), publicationData, List.of(), List.of(), true);
         return publication.getId();
     }
 
@@ -262,27 +262,24 @@ public class PublicationService {
         publication.setFocusFamilyId((String) publicationData.get("focusFamilyId"));
         publicationRepository.save(publication);
 
-        Map<String, Long> photoIdMap = new HashMap<>();
+        List<Person> existingPersons = personRepository.findByPublicationId(publicationId);
         Map<String, Person> dbPersonCache = new HashMap<>();
-        for (Person person : personRepository.findByPublicationId(publicationId)) {
-            if (person.getPhotoId() != null) {
-                photoIdMap.put(person.getPersonId(), person.getPhotoId());
-            }
+        for (Person person : existingPersons) {
             dbPersonCache.put(person.getPersonId(), person);
         }
-
-        List<Family> oldFamilies = familyRepository.findByPublicationId(publicationId);
-        for (Family oldFamily : oldFamilies) {
-            familyMemberRepository.deleteByFamilyDbId(oldFamily.getId());
-        }
-        familyRepository.deleteByPublicationId(publicationId);
-        personRepository.deleteByPublicationId(publicationId);
-
-        savePersonsAndFamilies(publicationId, publicationData, photoIdMap, false);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> people = (Map<String, Object>) publicationData.get("people");
         String diff = personDiffService.computePersonDiff(people, dbPersonCache);
+
+        savePersonsAndFamilies(
+                publicationId,
+                publicationData,
+                existingPersons,
+                familyRepository.findByPublicationId(publicationId),
+                false
+        );
+        publicationRepository.flush();
 
         return new SaveResult(publication.getRevision(), diff);
     }
@@ -400,8 +397,15 @@ public class PublicationService {
     }
 
     @SuppressWarnings("unchecked")
-    private void savePersonsAndFamilies(Long publicationId, Map<String, Object> data, Map<String, Long> photoIdMap,
+    private void savePersonsAndFamilies(Long publicationId, Map<String, Object> data,
+                                        List<Person> existingPersons, List<Family> existingFamilies,
                                         boolean cloneReferencedPhotos) {
+        validatePublicationData(data);
+
+        Map<String, Person> remainingPeople = new HashMap<>();
+        for (Person person : existingPersons) {
+            remainingPeople.put(person.getPersonId(), person);
+        }
         Map<String, Long> personIdToDbId = new HashMap<>();
         Map<String, Object> people = (Map<String, Object>) data.get("people");
         if (people != null) {
@@ -409,9 +413,13 @@ public class PublicationService {
                 String personId = entry.getKey();
                 Map<String, Object> personData = (Map<String, Object>) entry.getValue();
 
-                Person entity = new Person();
-                entity.setPublicationId(publicationId);
-                entity.setPersonId(personId);
+                Person entity = remainingPeople.remove(personId);
+                boolean isNew = entity == null;
+                if (isNew) {
+                    entity = new Person();
+                    entity.setPublicationId(publicationId);
+                    entity.setPersonId(personId);
+                }
                 entity.setName((String) personData.getOrDefault("name", "Unknown"));
                 entity.setGender((String) personData.getOrDefault("gender", "unknown"));
                 entity.setBirth((String) personData.get("birth"));
@@ -426,12 +434,15 @@ public class PublicationService {
                 entity.setHighlightRole((String) personData.get("highlightRole"));
                 applyMountPointMetadata(entity, personData);
 
-                entity = personRepository.save(entity);
+                if (isNew) {
+                    entity = personRepository.save(entity);
+                }
                 personIdToDbId.put(personId, entity.getId());
 
                 if (personData.containsKey("avatarUrl")) {
                     String avatarUrl = (String) personData.get("avatarUrl");
-                    if (avatarUrl != null) {
+                    String currentAvatarUrl = entity.getPhotoId() == null ? null : "/api/photos/" + entity.getPhotoId();
+                    if (avatarUrl != null && !avatarUrl.equals(currentAvatarUrl)) {
                         Long photoId = photoService.handlePersonAvatar(entity.getId(), avatarUrl, cloneReferencedPhotos);
                         if (photoId != null) {
                             entity.setPhotoId(photoId);
@@ -439,95 +450,42 @@ public class PublicationService {
                         }
                     }
                 }
-
-                if (entity.getPhotoId() == null && photoIdMap.containsKey(personId)) {
-                    Long photoId = photoIdMap.get(personId);
-                    entity.setPhotoId(photoId);
-                    personRepository.save(entity);
-
-                    photoService.reassignPhoto(entity.getId(), photoId);
-                }
             }
         }
 
-        // Data validation: check each person's birth/death dates and life status
-        // (runs regardless of whether families are present, reuses 'people' from above)
-        if (people != null) {
-            for (Map.Entry<String, Object> entry : people.entrySet()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> person = (Map<String, Object>) entry.getValue();
-                DataValidationService.validatePersonDates(person);
-                DataValidationService.validatePersonLifeStatus(person);
+        Map<Long, List<FamilyMember>> membersByFamilyId = new HashMap<>();
+        if (!existingFamilies.isEmpty()) {
+            List<Long> familyDbIds = existingFamilies.stream().map(Family::getId).toList();
+            for (FamilyMember member : familyMemberRepository
+                    .findByFamilyDbIdInOrderByFamilyDbIdAscSortOrderAsc(familyDbIds)) {
+                membersByFamilyId.computeIfAbsent(member.getFamilyDbId(), ignored -> new ArrayList<>()).add(member);
             }
+        }
+
+        Map<String, Family> remainingFamilies = new HashMap<>();
+        for (Family family : existingFamilies) {
+            remainingFamilies.put(family.getFamilyId(), family);
         }
 
         Map<String, Object> families = (Map<String, Object>) data.get("families");
         if (families != null) {
-            // Cross-family duplicate validation
-            Map<String, List<String>> adultToFamilies = new HashMap<>();
-            Map<String, List<String>> childToFamilies = new HashMap<>();
-
-            for (Map.Entry<String, Object> entry : families.entrySet()) {
-                Map<String, Object> familyData = (Map<String, Object>) entry.getValue();
-                List<String> adults = (List<String>) familyData.get("adults");
-                if (adults != null) {
-                    for (String adultId : adults) {
-                        adultToFamilies.computeIfAbsent(adultId, k -> new ArrayList<>()).add(entry.getKey());
-                    }
-                }
-                List<String> children = (List<String>) familyData.get("children");
-                if (children != null) {
-                    for (String childId : children) {
-                        childToFamilies.computeIfAbsent(childId, k -> new ArrayList<>()).add(entry.getKey());
-                    }
-                }
-            }
-
-            List<String> errors = new ArrayList<>();
-            adultToFamilies.forEach((personId, familyIds) -> {
-                if (familyIds.size() > 1) {
-                    errors.add("人物 " + personId + " 不能同时作为多个家庭的父母：" + String.join(", ", familyIds));
-                }
-            });
-            childToFamilies.forEach((personId, familyIds) -> {
-                if (familyIds.size() > 1) {
-                    errors.add("人物 " + personId + " 不能同时作为多个家庭的子女：" + String.join(", ", familyIds));
-                }
-            });
-
-            if (!errors.isEmpty()) {
-                throw new BadRequestException("数据校验失败：" + String.join("; ", errors));
-            }
-
-            // Build ancestry map from current families and check for circular references.
-            // Uses the first adult as parent (genealogy convention: the primary bloodline
-            // parent is listed first). A cycle through the second adult would still be
-            // caught because both adults share children — the child-to-parent mapping
-            // only needs one edge per child to detect any reachable cycle.
-            Map<String, String> childToParent = new HashMap<>();
-            for (Map.Entry<String, Object> entry : families.entrySet()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> familyData = (Map<String, Object>) entry.getValue();
-                List<String> adults = (List<String>) familyData.getOrDefault("adults", List.of());
-                List<String> children = (List<String>) familyData.getOrDefault("children", List.of());
-                for (String childId : children) {
-                    if (!adults.isEmpty()) {
-                        childToParent.putIfAbsent(childId, adults.get(0));
-                    }
-                }
-            }
-            DataValidationService.checkCircularAncestry(childToParent);
-
             for (Map.Entry<String, Object> entry : families.entrySet()) {
                 String familyId = entry.getKey();
                 Map<String, Object> familyData = (Map<String, Object>) entry.getValue();
 
-                Family familyEntity = new Family();
-                familyEntity.setPublicationId(publicationId);
-                familyEntity.setFamilyId(familyId);
+                Family familyEntity = remainingFamilies.remove(familyId);
+                boolean isNew = familyEntity == null;
+                if (isNew) {
+                    familyEntity = new Family();
+                    familyEntity.setPublicationId(publicationId);
+                    familyEntity.setFamilyId(familyId);
+                }
                 familyEntity.setBranchMode((String) familyData.get("branchMode"));
-                familyEntity = familyRepository.save(familyEntity);
+                if (isNew) {
+                    familyEntity = familyRepository.save(familyEntity);
+                }
 
+                List<FamilyMember> desiredMembers = new ArrayList<>();
                 List<String> adults = (List<String>) familyData.get("adults");
                 if (adults != null) {
                     for (int i = 0; i < adults.size(); i++) {
@@ -541,7 +499,7 @@ public class PublicationService {
                         member.setPersonDbId(personDbId);
                         member.setRole("adult");
                         member.setSortOrder(i);
-                        familyMemberRepository.save(member);
+                        desiredMembers.add(member);
                     }
                 }
 
@@ -558,11 +516,92 @@ public class PublicationService {
                         member.setPersonDbId(personDbId);
                         member.setRole("child");
                         member.setSortOrder(i);
-                        familyMemberRepository.save(member);
+                        desiredMembers.add(member);
                     }
+                }
+
+                List<FamilyMember> currentMembers = membersByFamilyId.getOrDefault(familyEntity.getId(), List.of());
+                if (!sameFamilyMembers(currentMembers, desiredMembers)) {
+                    if (!currentMembers.isEmpty()) {
+                        familyMemberRepository.deleteByFamilyDbId(familyEntity.getId());
+                    }
+                    familyMemberRepository.saveAll(desiredMembers);
                 }
             }
         }
+
+        for (Family family : remainingFamilies.values()) {
+            if (!membersByFamilyId.getOrDefault(family.getId(), List.of()).isEmpty()) {
+                familyMemberRepository.deleteByFamilyDbId(family.getId());
+            }
+        }
+        familyRepository.deleteAll(remainingFamilies.values());
+        personRepository.deleteAll(remainingPeople.values());
+    }
+
+    private boolean sameFamilyMembers(List<FamilyMember> current, List<FamilyMember> desired) {
+        if (current.size() != desired.size()) {
+            return false;
+        }
+        List<String> currentKeys = current.stream().map(this::familyMemberKey).sorted().toList();
+        List<String> desiredKeys = desired.stream().map(this::familyMemberKey).sorted().toList();
+        return currentKeys.equals(desiredKeys);
+    }
+
+    private String familyMemberKey(FamilyMember member) {
+        return member.getPersonDbId() + ":" + member.getRole() + ":" + member.getSortOrder();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validatePublicationData(Map<String, Object> data) {
+        Map<String, Object> people = (Map<String, Object>) data.get("people");
+        if (people != null) {
+            for (Object value : people.values()) {
+                Map<String, Object> person = (Map<String, Object>) value;
+                DataValidationService.validatePersonDates(person);
+                DataValidationService.validatePersonLifeStatus(person);
+            }
+        }
+
+        Map<String, Object> families = (Map<String, Object>) data.get("families");
+        if (families == null) {
+            return;
+        }
+
+        Map<String, List<String>> adultToFamilies = new HashMap<>();
+        Map<String, List<String>> childToFamilies = new HashMap<>();
+        Map<String, String> childToParent = new HashMap<>();
+
+        for (Map.Entry<String, Object> entry : families.entrySet()) {
+            Map<String, Object> familyData = (Map<String, Object>) entry.getValue();
+            List<String> adults = (List<String>) familyData.getOrDefault("adults", List.of());
+            List<String> children = (List<String>) familyData.getOrDefault("children", List.of());
+            for (String adultId : adults) {
+                adultToFamilies.computeIfAbsent(adultId, ignored -> new ArrayList<>()).add(entry.getKey());
+            }
+            for (String childId : children) {
+                childToFamilies.computeIfAbsent(childId, ignored -> new ArrayList<>()).add(entry.getKey());
+                if (!adults.isEmpty()) {
+                    childToParent.putIfAbsent(childId, adults.get(0));
+                }
+            }
+        }
+
+        List<String> errors = new ArrayList<>();
+        adultToFamilies.forEach((personId, familyIds) -> {
+            if (familyIds.size() > 1) {
+                errors.add("人物 " + personId + " 不能同时作为多个家庭的父母：" + String.join(", ", familyIds));
+            }
+        });
+        childToFamilies.forEach((personId, familyIds) -> {
+            if (familyIds.size() > 1) {
+                errors.add("人物 " + personId + " 不能同时作为多个家庭的子女：" + String.join(", ", familyIds));
+            }
+        });
+        if (!errors.isEmpty()) {
+            throw new BadRequestException("数据校验失败：" + String.join("; ", errors));
+        }
+        DataValidationService.checkCircularAncestry(childToParent);
     }
 
     @SuppressWarnings("unchecked")
