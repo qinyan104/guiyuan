@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { getPublication, updatePublication } from '../api/publication'
 import { listAccounts } from '../api/account'
 import { getUsername } from '../api/tokenStore'
@@ -233,14 +233,14 @@ async function detectViewerPerson() {
 
 let loadGeneration = 0
 
-async function load() {
+async function load(force = false) {
   const targetId = publicationId.value
   if (!targetId) {
     loading.value = false
     return
   }
 
-  if (serverPublicationId.value === targetId && Object.keys(pub.publication.people).length > 0) {
+  if (!force && serverPublicationId.value === targetId && Object.keys(pub.publication.people).length > 0) {
     loading.value = false
     return
   }
@@ -300,6 +300,7 @@ provide(PUBLICATION_CONTEXT_KEY, {
   history,
   syncStatus,
   saveToServer,
+  reloadFromServer: () => load(true),
   serverPublicationId,
   viewportPan,
 })
@@ -322,10 +323,32 @@ function handleHistoryShortcut(event: KeyboardEvent) {
 }
 
 async function reloadFromServerAfterConflict() {
-  conflictMessage.value = ''
-  conflictDraftSaved.value = false
-  await load()
+  await load(true)
 }
+
+async function confirmLeaveWithUnsavedChanges() {
+  if (syncStatus.value === 'saved') return true
+  if (syncStatus.value !== 'conflict' && syncStatus.value !== 'syncing') {
+    try {
+      await saveToServer()
+    } catch {
+      // A conflict is handled below by the explicit leave confirmation.
+    }
+  }
+  if (syncStatus.value === 'saved') return true
+  return window.confirm('当前修改尚未保存到服务器，确定离开吗？')
+}
+
+function protectBrowserLeave(event: BeforeUnloadEvent) {
+  if (syncStatus.value === 'saved') return
+  event.preventDefault()
+  event.returnValue = ''
+}
+
+onBeforeRouteLeave(confirmLeaveWithUnsavedChanges)
+onBeforeRouteUpdate((to, from) => (
+  to.params.id === from.params.id ? true : confirmLeaveWithUnsavedChanges()
+))
 
 function restoreConflictDraft() {
   if (!conflictDraft.value) return
@@ -347,10 +370,12 @@ function dismissConflictDraft() {
 onMounted(() => {
   load()
   window.addEventListener('keydown', handleHistoryShortcut)
+  window.addEventListener('beforeunload', protectBrowserLeave)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleHistoryShortcut)
+  window.removeEventListener('beforeunload', protectBrowserLeave)
   history.disposeHistory()
   clearScheduledSave()
   clearBaselineInit()
@@ -385,7 +410,7 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
       <span>{{ conflictMessage }}</span>
       <small v-if="conflictDraftSaved">本地未同步副本已保留，刷新后可作为手动恢复参考。</small>
     </div>
-    <button type="button" @click="reloadFromServerAfterConflict">Reload latest version</button>
+    <button type="button" @click="reloadFromServerAfterConflict">重新加载最新版本</button>
   </div>
 </template>
 

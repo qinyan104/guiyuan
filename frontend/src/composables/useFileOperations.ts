@@ -34,6 +34,7 @@ interface FileOperationsDeps {
   errorMessage: Ref<string>
   getErrorMessage: (error: unknown, fallback: string) => string
   initializeHistoryBaseline: () => void
+  markHistory: (label: string) => void
   canvasRef: Ref<{
     getSvgElement?: () => SVGSVGElement | null
     resetView?: () => void
@@ -52,6 +53,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     errorMessage,
     getErrorMessage,
     initializeHistoryBaseline,
+    markHistory,
     canvasRef,
     layout,
     serverPublicationId,
@@ -181,7 +183,10 @@ export function useFileOperations(deps: FileOperationsDeps) {
     return rawName.toLowerCase().endsWith('.json') ? rawName : `${rawName}.json`
   }
 
-  function shouldReplaceCurrentDraft(): boolean {
+  function shouldReplaceCurrentDraft(action = '导入文件'): boolean {
+    if (serverPublicationId.value) {
+      return window.confirm(`${action}会完整替换当前族谱“${publication.title || '未命名族谱'}”，并自动保存到服务器。确定继续吗？`)
+    }
     if (!hasUnsavedFileChanges.value) return true
     return window.confirm('当前草稿还有未保存到文件的修改，继续打开其他文件会覆盖当前内容。是否继续？')
   }
@@ -195,6 +200,9 @@ export function useFileOperations(deps: FileOperationsDeps) {
     },
   ) {
     isApplyingFileDraft = true
+    if (serverPublicationId.value) {
+      markHistory(`导入文件 · ${options.fileName || 'JSON'}`)
+    }
     replaceReactiveObject(publication, draft.publication)
     replaceReactiveObject(settings, draft.settings)
     selectedPersonId.value = getDefaultSelectedPersonId(draft.publication)
@@ -203,7 +211,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     hasUnsavedFileChanges.value = false
     errorMessage.value = ''
     statusMessage.value = options.statusMessage
-    initializeHistoryBaseline()
+    if (!serverPublicationId.value) initializeHistoryBaseline()
     canvasRef.value?.resetView?.()
     onImport?.()
     void nextTick(() => {
@@ -213,11 +221,11 @@ export function useFileOperations(deps: FileOperationsDeps) {
 
   async function openDraftFile() {
     if (!nativeFileAccessSupported) return
-    if (!shouldReplaceCurrentDraft()) return
 
     try {
       const openedDraft = await openDraftFileWithPicker()
       if (!openedDraft) return
+      if (!shouldReplaceCurrentDraft()) return
 
       const parsed = parseDraftJson(openedDraft.content)
       if (!parsed.ok) {

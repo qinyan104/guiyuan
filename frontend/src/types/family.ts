@@ -184,6 +184,8 @@ export interface PublicationContext {
 
   saveToServer: () => Promise<void>
 
+  reloadFromServer?: () => Promise<void>
+
   serverPublicationId: Ref<number | null>
 
   viewportPan: Ref<{ x: number; y: number }>

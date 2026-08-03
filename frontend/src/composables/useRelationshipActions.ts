@@ -15,10 +15,9 @@ interface RelationshipActionsDeps {
   layoutPanelOpen: Ref<boolean>
   historyOpen: Ref<boolean>
   markHistory: (label: string) => void
-  initializeHistoryBaseline: () => void
   canvasRef: Ref<{ resetView?: () => void; revealPerson?: (personId: string, options?: object) => void } | null>
   revealPersonInCanvas: (personId: string) => void
-  shouldReplaceCurrentDraft: () => boolean
+  shouldReplaceCurrentDraft: (action?: string) => boolean
   draftFileHandle: Ref<unknown>
   draftFileName: Ref<string>
   hasUnsavedFileChanges: Ref<boolean>
@@ -34,7 +33,6 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     layoutPanelOpen,
     historyOpen,
     markHistory,
-    initializeHistoryBaseline,
     canvasRef,
     revealPersonInCanvas,
     shouldReplaceCurrentDraft,
@@ -187,8 +185,9 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
   }
 
   function createBlankDraft() {
-    if (!shouldReplaceCurrentDraft()) return
+    if (!shouldReplaceCurrentDraft('新建空白族谱')) return
 
+    markHistory('新建空白族谱')
     replaceReactiveObject(publication, structuredClone(blankPublication))
     replaceReactiveObject(settings, structuredClone(defaultSettings))
     selectedPersonId.value = getDefaultSelectedPersonId(blankPublication)
@@ -200,7 +199,6 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     historyOpen.value = false
     errorMessage.value = ''
     statusMessage.value = '已新建空白族谱，可先修改始祖姓名，再继续补配偶和子女。'
-    initializeHistoryBaseline()
     nextTick(() => {
       canvasRef.value?.resetView?.()
     })

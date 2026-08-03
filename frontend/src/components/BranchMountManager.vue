@@ -244,7 +244,11 @@ async function executeMerge() {
       return
     }
     await mergeBranch(props.publicationId, props.person.id)
-    await refreshPublicationFromServer()
+    if (context.reloadFromServer) {
+      await context.reloadFromServer()
+    } else {
+      await refreshPublicationFromServer()
+    }
     invalidateMergePreview()
     feedbackMessage.value = '物理合并已完成。'
   } catch (error) {

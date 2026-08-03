@@ -116,7 +116,7 @@ watch([() => props.person.birth, () => props.person.death], ([b, d]) => {
       <div v-if="open" class="ak-overlay" @click.self="$emit('close')">
         <article class="ak-card" @click.stop>
           <div class="ak-bar">
-            <button class="ak-bar__btn" @click="$emit('close')">取消</button>
+            <button class="ak-bar__btn" @click="$emit('close')">关闭</button>
             <span class="ak-bar__title">编辑人物</span>
             <button class="ak-bar__btn ak-bar__done" @click="$emit('close')">完成</button>
           </div>

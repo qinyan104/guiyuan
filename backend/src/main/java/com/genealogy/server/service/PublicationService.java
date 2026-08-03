@@ -387,6 +387,10 @@ public class PublicationService {
     @Transactional
     public void mergeBranch(Long masterPubId, String mountPointPersonId, UserSubject subject) {
         branchMergeService.mergeBranch(masterPubId, mountPointPersonId, subject);
+        Publication publication = publicationRepository.findById(masterPubId)
+                .orElseThrow(() -> new NotFoundException("Publication not found"));
+        publication.setRevision((publication.getRevision() == null ? 0L : publication.getRevision()) + 1);
+        publicationRepository.save(publication);
     }
 
     @Transactional
