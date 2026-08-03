@@ -7,7 +7,16 @@ import { getUsername } from '../api/tokenStore'
 import { useFeedback } from '../composables/useFeedback'
 import { usePublicationState } from '../composables/usePublicationState'
 import { defaultSettings } from '../data/sampleFamily'
-import { clearConflictDraft, getConflictDraft, saveConflictDraft, type ConflictDraft } from '../features/conflict/conflictDraft'
+import {
+  clearConflictDraft,
+  clearRecoveryDraft,
+  getConflictDraft,
+  getRecoveryDraft,
+  saveConflictDraft,
+  saveRecoveryDraft,
+  type ConflictDraft,
+  type RecoveryDraft,
+} from '../features/conflict/conflictDraft'
 import { useEditorHistory } from '../features/history/useEditorHistory'
 import { serializeTrackedState, type EditorSnapshot } from '../features/history/historyCore'
 import { PUBLICATION_CONTEXT_KEY, type PublicationContext, type PublicationData, type PublicationSettings } from '../types/family'
@@ -23,6 +32,7 @@ const syncStatus = ref<'saved' | 'pending' | 'syncing' | 'error' | 'conflict'>('
 const conflictMessage = ref('')
 const conflictDraftSaved = ref(false)
 const conflictDraft = ref<ConflictDraft | null>(null)
+const recoveryDraft = ref<RecoveryDraft | null>(null)
 const serverRevision = ref<number | null>(null)
 const lastSyncedSignature = ref('')
 const baselineReady = ref(false)
@@ -97,8 +107,28 @@ function scheduleAutosave(delay = 3000) {
   }, delay)
 }
 
+// ponytail: event-triggered snapshots avoid O(n) storage work per edit; use IndexedDB if continuous crash recovery is needed.
+function saveRecoverySnapshot(message: string) {
+  if (loading.value || !serverPublicationId.value || (syncStatus.value === 'saved' && baselineReady.value)) return true
+  const snapshot = {
+    publicationId: serverPublicationId.value,
+    serverRevision: serverRevision.value,
+    message,
+    publication: pub.publication,
+    settings: pub.settings,
+  }
+  if (syncStatus.value === 'conflict') {
+    const savedDraft = saveConflictDraft({ ...snapshot, message: conflictMessage.value || message })
+    conflictDraftSaved.value = Boolean(savedDraft)
+    conflictDraft.value = savedDraft
+    return Boolean(savedDraft)
+  }
+  return Boolean(saveRecoveryDraft(snapshot))
+}
+
 async function saveToServer() {
-  if (syncStatus.value === 'conflict' || !serverPublicationId.value) return
+  const currentPublicationId = serverPublicationId.value
+  if (syncStatus.value === 'conflict' || !currentPublicationId) return
   if (syncStatus.value === 'syncing') {
     saveRequestedWhileSyncing = true
     return
@@ -115,7 +145,7 @@ async function saveToServer() {
 
   try {
     pub.publication.revision = serverRevision.value ?? 0
-    const newRevision = await updatePublication(serverPublicationId.value, pub.publication, pub.settings)
+    const newRevision = await updatePublication(currentPublicationId, pub.publication, pub.settings)
     serverRevision.value = newRevision
     pub.publication.revision = newRevision
     lastSyncedSignature.value = signatureAtSaveStart
@@ -125,7 +155,7 @@ async function saveToServer() {
     const conflict = asPublicationConflict(err)
 
     if (conflict) {
-      const draftPublicationId = conflict.publicationId ?? serverPublicationId.value
+      const draftPublicationId = conflict.publicationId ?? currentPublicationId
       if (draftPublicationId) {
         conflictDraftSaved.value = saveConflictDraft({
           publicationId: draftPublicationId,
@@ -134,6 +164,10 @@ async function saveToServer() {
           publication: pub.publication,
           settings: pub.settings,
         }) !== null
+        if (conflictDraftSaved.value) {
+          clearRecoveryDraft(draftPublicationId)
+          recoveryDraft.value = null
+        }
       }
       syncStatus.value = 'conflict'
       conflictMessage.value = conflict.message
@@ -143,12 +177,17 @@ async function saveToServer() {
     }
 
     syncStatus.value = 'error'
-    feedback.setError('同步到服务器失败')
+    const recoverySaved = saveRecoverySnapshot('服务器同步失败时保存的本地恢复副本')
+    feedback.setError(recoverySaved ? '同步到服务器失败，本地恢复副本已保留' : '同步失败且无法保存本地副本，请立即导出 JSON 备份')
     return
   }
 
   // After successful save:
   const hasUnsavedChanges = persistedSignature.value !== lastSyncedSignature.value
+  if (!hasUnsavedChanges) {
+    clearRecoveryDraft(currentPublicationId)
+    recoveryDraft.value = null
+  }
   if (saveRequestedWhileSyncing || hasUnsavedChanges) {
     saveRequestedWhileSyncing = false
     syncStatus.value = 'pending'
@@ -269,6 +308,13 @@ async function load(force = false) {
     loadError.value = ''
     conflictDraftSaved.value = false
     conflictDraft.value = getConflictDraft(result.id)
+    const storedRecoveryDraft = getRecoveryDraft(result.id)
+    if (storedRecoveryDraft && serializeTrackedState(storedRecoveryDraft.publication, storedRecoveryDraft.settings) === buildPersistedSignature()) {
+      clearRecoveryDraft(result.id)
+      recoveryDraft.value = null
+    } else {
+      recoveryDraft.value = storedRecoveryDraft
+    }
     syncStatus.value = 'saved'
     lastSyncedSignature.value = `revision:${result.revision}`
     loading.value = false
@@ -336,13 +382,21 @@ async function confirmLeaveWithUnsavedChanges() {
     }
   }
   if (syncStatus.value === 'saved') return true
+  saveRecoverySnapshot('离开页面前保存的本地恢复副本')
   return window.confirm('当前修改尚未保存到服务器，确定离开吗？')
 }
 
 function protectBrowserLeave(event: BeforeUnloadEvent) {
   if (syncStatus.value === 'saved') return
+  saveRecoverySnapshot('关闭页面前保存的本地恢复副本')
   event.preventDefault()
   event.returnValue = ''
+}
+
+function preserveRecoveryWhenHidden() {
+  if (document.visibilityState === 'hidden') {
+    saveRecoverySnapshot('页面隐藏时保存的本地恢复副本')
+  }
 }
 
 onBeforeRouteLeave(confirmLeaveWithUnsavedChanges)
@@ -350,11 +404,29 @@ onBeforeRouteUpdate((to, from) => (
   to.params.id === from.params.id ? true : confirmLeaveWithUnsavedChanges()
 ))
 
-function restoreConflictDraft() {
-  if (!conflictDraft.value) return
+function applyStoredDraft(draft: ConflictDraft) {
+  if (!baselineReady.value) {
+    clearBaselineInit()
+    lastSyncedSignature.value = buildPersistedSignature()
+    history.initializeHistoryBaseline()
+    baselineReady.value = true
+  }
+  applyPublicationSnapshot(draft.publication, draft.settings)
+  return draft.serverRevision === serverRevision.value
+}
 
-  applyPublicationSnapshot(conflictDraft.value.publication, conflictDraft.value.settings)
-  clearConflictDraft(conflictDraft.value.publicationId)
+function restoreConflictDraft() {
+  const draft = conflictDraft.value
+  if (!draft) return
+
+  if (!applyStoredDraft(draft)) {
+    syncStatus.value = 'conflict'
+    conflictMessage.value = '本地草稿基于旧版本，已恢复供查看，但不会自动覆盖服务器。请先导出备份，再重新加载最新版本。'
+    conflictDraftSaved.value = true
+    return
+  }
+
+  clearConflictDraft(draft.publicationId)
   conflictDraft.value = null
   syncStatus.value = 'pending'
   scheduleAutosave(0)
@@ -367,15 +439,54 @@ function dismissConflictDraft() {
   conflictDraft.value = null
 }
 
+function restoreRecoveryDraft() {
+  const draft = recoveryDraft.value
+  if (!draft) return
+
+  if (!applyStoredDraft(draft)) {
+    const message = '服务器已有更新，本地恢复副本已打开供查看，但不会自动覆盖新版本。请先导出备份，再重新加载最新版本。'
+    const savedConflictDraft = saveConflictDraft({
+      publicationId: draft.publicationId,
+      serverRevision: draft.serverRevision,
+      message,
+      publication: draft.publication,
+      settings: draft.settings,
+    })
+    conflictDraftSaved.value = Boolean(savedConflictDraft)
+    conflictDraft.value = savedConflictDraft
+    if (savedConflictDraft) {
+      clearRecoveryDraft(draft.publicationId)
+      recoveryDraft.value = null
+    }
+    syncStatus.value = 'conflict'
+    conflictMessage.value = message
+    clearScheduledSave()
+    return
+  }
+
+  clearRecoveryDraft(draft.publicationId)
+  recoveryDraft.value = null
+  syncStatus.value = 'pending'
+  scheduleAutosave(0)
+}
+
+function dismissRecoveryDraft() {
+  if (!recoveryDraft.value) return
+  clearRecoveryDraft(recoveryDraft.value.publicationId)
+  recoveryDraft.value = null
+}
+
 onMounted(() => {
   load()
   window.addEventListener('keydown', handleHistoryShortcut)
   window.addEventListener('beforeunload', protectBrowserLeave)
+  document.addEventListener('visibilitychange', preserveRecoveryWhenHidden)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleHistoryShortcut)
   window.removeEventListener('beforeunload', protectBrowserLeave)
+  document.removeEventListener('visibilitychange', preserveRecoveryWhenHidden)
   history.disposeHistory()
   clearScheduledSave()
   clearBaselineInit()
@@ -403,6 +514,16 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
     <div class="conflict-draft-notice__actions">
       <button type="button" data-testid="restore-conflict-draft" @click="restoreConflictDraft">恢复本地草稿</button>
       <button type="button" class="ghost" @click="dismissConflictDraft">忽略</button>
+    </div>
+  </div>
+  <div v-if="recoveryDraft && !conflictDraft && syncStatus !== 'conflict'" class="conflict-draft-notice">
+    <div class="conflict-draft-notice__text">
+      <span>检测到未保存的本地修改：{{ recoveryDraft.publication.title || '未命名族谱' }}</span>
+      <small>{{ recoveryDraft.message }} · {{ new Date(recoveryDraft.savedAt).toLocaleString() }}</small>
+    </div>
+    <div class="conflict-draft-notice__actions">
+      <button type="button" @click="restoreRecoveryDraft">恢复本地修改</button>
+      <button type="button" class="ghost" @click="dismissRecoveryDraft">使用服务器版本</button>
     </div>
   </div>
   <div v-if="syncStatus === 'conflict'" class="sync-conflict-banner">
