@@ -7,8 +7,11 @@ import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import { mergeBranch } from '../api/accessManage'
 import { getPublication, listPublications, type PublicationSummary } from '../api/publication'
-import { PUBLICATION_CONTEXT_KEY, type MountPointTarget, type Person } from '../types/family'
+import { buildBranchMergePreview, type BranchMergePreview } from '../features/branch/mergePreview'
+import { layoutPublication } from '../lib/layout'
+import { PUBLICATION_CONTEXT_KEY, type MountPointTarget, type Person, type PublicationSettings } from '../types/family'
 import ConfirmDialog from './ConfirmDialog.vue'
+import PublicationCanvas from './PublicationCanvas.vue'
 import SubtreeRootSelector from './SubtreeRootSelector.vue'
 
 const props = defineProps<{
@@ -16,26 +19,26 @@ const props = defineProps<{
   publicationId: number | null
 }>()
 
-const context = inject(PUBLICATION_CONTEXT_KEY) as
-  | {
-      pub: {
-        publication: Record<string, unknown>
-        settings: Record<string, unknown>
-        replaceReactiveObject: <T extends object>(target: T, source: T) => void
-        selectedPersonId: { value: string }
-        getDefaultSelectedPersonId: (sourcePublication: any) => string
-      }
-    }
-  | undefined
+const context = inject(PUBLICATION_CONTEXT_KEY)
 
 const publications = ref<PublicationSummary[]>([])
 const loading = ref(false)
 const mergePending = ref(false)
 const feedbackMessage = ref('')
 const showMergeConfirm = ref(false)
+const showMergePreview = ref(false)
 const showRootSelector = ref(false)
 const selectedTargetId = ref('')
 const isDropdownOpen = ref(false)
+const previewLoading = ref(false)
+const mergePreview = ref<BranchMergePreview | null>(null)
+const previewSettings = ref<PublicationSettings | null>(null)
+
+const previewLayout = computed(() => {
+  if (!mergePreview.value || !previewSettings.value) return null
+  return layoutPublication(mergePreview.value.publication, previewSettings.value)
+})
+const canExecuteMerge = computed(() => Boolean(mergePreview.value && mergePreview.value.blockers.length === 0))
 
 const availablePublications = computed(() =>
   publications.value.filter(
@@ -64,6 +67,11 @@ const selectedTarget = computed(() =>
 )
 const mountPointTarget = computed<MountPointTarget | null>(() => props.person.mountPointTarget ?? null)
 const rootPersonName = computed(() => mountPointTarget.value?.rootPersonName ?? '')
+
+function updateMountPerson(patch: Partial<Person>) {
+  if (!context) return
+  context.pub.publication.people[props.person.id] = { ...props.person, ...patch }
+}
 
 function selectPublication(pub: PublicationSummary) {
   selectedTargetId.value = String(pub.id)
@@ -100,44 +108,52 @@ function applyTargetPublication(publication: PublicationSummary | null) {
   const currentMountPointTarget = mountPointTarget.value
 
   if (!publication) {
-    props.person.isMountPoint = false
-    props.person.mountPointTarget = undefined
+    updateMountPerson({ isMountPoint: false, mountPointTarget: undefined })
+    invalidateMergePreview()
     feedbackMessage.value = '已清除挂载目标。'
     return
   }
 
-  props.person.isMountPoint = true
-  props.person.mountPointTarget = {
-    publicationId: publication.id,
-    publicationTitle: publication.title,
-    rootPersonId: currentMountPointTarget?.rootPersonId,
-    rootPersonName: currentMountPointTarget?.rootPersonName,
-  }
+  const keepRoot = currentMountPointTarget?.publicationId === publication.id
+  updateMountPerson({
+    isMountPoint: true,
+    mountPointTarget: {
+      publicationId: publication.id,
+      publicationTitle: publication.title,
+      rootPersonId: keepRoot ? currentMountPointTarget?.rootPersonId : undefined,
+      rootPersonName: keepRoot ? currentMountPointTarget?.rootPersonName : undefined,
+    },
+  })
+  invalidateMergePreview()
   feedbackMessage.value = `已选择目标族谱：${publication.title}`
 }
 
 function handleRootSelected(dbId: number, name: string) {
   if (props.person.mountPointTarget) {
-    props.person.mountPointTarget.rootPersonId = dbId
-    props.person.mountPointTarget.rootPersonName = name
-    feedbackMessage.value = `已设定子树起点：${name}`
+    updateMountPerson({
+      mountPointTarget: { ...props.person.mountPointTarget, rootPersonId: dbId, rootPersonName: name },
+    })
+    invalidateMergePreview()
+    feedbackMessage.value = `已选择目标合并人物：${name}`
   }
 }
 
 function clearRootSelection() {
   if (props.person.mountPointTarget) {
-    props.person.mountPointTarget.rootPersonId = undefined
-    props.person.mountPointTarget.rootPersonName = undefined
-    feedbackMessage.value = '已清除子树起点，将执行全量合并。'
+    updateMountPerson({
+      mountPointTarget: { ...props.person.mountPointTarget, rootPersonId: undefined, rootPersonName: undefined },
+    })
+    invalidateMergePreview()
+    feedbackMessage.value = '已清除合并人物，请重新选择。'
   }
 }
 
 function handleToggleMountPoint(enabled: boolean) {
   feedbackMessage.value = ''
   if (!enabled) {
-    props.person.isMountPoint = false
-    props.person.mountPointTarget = undefined
+    updateMountPerson({ isMountPoint: false, mountPointTarget: undefined })
     selectedTargetId.value = ''
+    invalidateMergePreview()
     feedbackMessage.value = '已关闭挂载点。'
     return
   }
@@ -156,13 +172,17 @@ async function refreshPublicationFromServer() {
   if (!props.publicationId || !context) return
 
   const result = await getPublication(props.publicationId)
-  // replaceReactiveObject 内部用 Object.keys 操作，PublicationData/PublicationSettings 无 index signature
-  // TypeScript 不允许直接 cast 到 Record<string, unknown>，这里的 as any 是已知限制
-  context.pub.replaceReactiveObject(context.pub.publication, result.publication as any)
-  context.pub.replaceReactiveObject(context.pub.settings, result.settings as any)
+  context.pub.replaceReactiveObject(context.pub.publication, result.publication)
+  context.pub.replaceReactiveObject(context.pub.settings, result.settings)
   context.pub.selectedPersonId.value = result.publication.people[props.person.id]
     ? props.person.id
     : context.pub.getDefaultSelectedPersonId(result.publication)
+}
+
+function invalidateMergePreview() {
+  mergePreview.value = null
+  previewSettings.value = null
+  showMergePreview.value = false
 }
 
 async function handleMerge() {
@@ -174,18 +194,58 @@ async function handleMerge() {
     feedback.errorMessage.value = '请先将当前人物设置为有效挂载点。'
     return
   }
+  if (!props.person.mountPointTarget.rootPersonId) {
+    feedback.errorMessage.value = '请先在目标族谱中选择与当前人物对应的合并人物。'
+    return
+  }
+  if (!context) return
+
+  previewLoading.value = true
+  showMergePreview.value = true
+  mergePreview.value = null
+  try {
+    const target = await getPublication(props.person.mountPointTarget.publicationId)
+    mergePreview.value = buildBranchMergePreview(
+      context.pub.publication,
+      props.person.id,
+      target.publication,
+      target.id,
+      props.person.mountPointTarget.rootPersonId,
+    )
+    previewSettings.value = { ...context.pub.settings }
+    if (!mergePreview.value) {
+      throw new Error('找不到目标合并人物')
+    }
+  } catch (error) {
+    console.error('branch merge preview failed', error)
+    showMergePreview.value = false
+    feedback.errorMessage.value = '生成合并预览失败，请重新选择目标人物。'
+  } finally {
+    previewLoading.value = false
+  }
+}
+
+function confirmPreviewMerge() {
+  if (!canExecuteMerge.value) return
+  showMergePreview.value = false
   showMergeConfirm.value = true
 }
 
 async function executeMerge() {
-  if (!props.publicationId || !props.person.isMountPoint || !props.person.mountPointTarget?.publicationId) return
+  if (!context || !canExecuteMerge.value || !props.publicationId || !props.person.isMountPoint || !props.person.mountPointTarget?.publicationId) return
 
   showMergeConfirm.value = false
   mergePending.value = true
   feedbackMessage.value = ''
   try {
+    await context.saveToServer()
+    if (context.syncStatus.value !== 'saved') {
+      feedback.errorMessage.value = '挂载设置尚未保存成功，请保存后再合并。'
+      return
+    }
     await mergeBranch(props.publicationId, props.person.id)
     await refreshPublicationFromServer()
+    invalidateMergePreview()
     feedbackMessage.value = '物理合并已完成。'
   } catch (error) {
     console.error('branch merge failed', error)
@@ -283,12 +343,12 @@ onUnmounted(() => {
         </div>
         <div v-if="person.isMountPoint && selectedTarget" class="subtree-config">
           <div class="subtree-info">
-            <span class="label">子树起点</span>
+            <span class="label">合并人物</span>
             <div class="root-display">
               <strong v-if="rootPersonName" class="root-name">
                 {{ rootPersonName }}
               </strong>
-              <em v-else class="root-none">未指定（全量）</em>
+              <em v-else class="root-none">必须指定</em>
               <button
                 v-if="rootPersonName"
                 class="clear-root-btn"
@@ -304,7 +364,7 @@ onUnmounted(() => {
             type="button"
             @click="showRootSelector = true"
           >
-            {{ rootPersonName ? '更换起点' : '视觉化指定起点' }}
+            {{ rootPersonName ? '更换人物' : '预览并选择人物' }}
           </button>
         </div>
       </div>
@@ -336,22 +396,69 @@ onUnmounted(() => {
       <strong>高级合并操作</strong>
     </div>
     <p>
-      物理合并会不可逆地将目标族谱“{{ selectedTarget?.title }}”的数据副本直接写入当前稿件。操作完成后，该挂载点将被清除。
+      先预览“{{ person.name }}”与目标人物合并后的完整族谱；姓名一致且没有关系冲突时才能执行物理合并。
     </p>
     <button
       class="relation-btn relation-btn--accent"
       type="button"
-      :disabled="mergePending"
+      :disabled="mergePending || previewLoading || !mountPointTarget?.rootPersonId"
       @click="handleMerge"
     >
-      {{ mergePending ? '正在物理合并...' : '确认执行物理合并' }}
+      {{ previewLoading ? '正在生成预览...' : '预览合并效果' }}
     </button>
   </section>
+
+  <Teleport to="body">
+    <div v-if="showMergePreview" class="merge-preview-overlay" role="dialog" aria-modal="true" @click.self="showMergePreview = false">
+      <article class="merge-preview-dialog">
+        <header class="merge-preview-header">
+          <div>
+            <h3>合并效果预览</h3>
+            <p>仅供预览，确认前不会修改任何族谱数据。</p>
+          </div>
+          <button type="button" aria-label="关闭预览" @click="showMergePreview = false">×</button>
+        </header>
+
+        <div v-if="previewLoading" class="merge-preview-loading">正在生成合并后的族谱...</div>
+        <template v-else-if="mergePreview && previewSettings && previewLayout">
+          <section class="merge-preview-summary">
+            <div class="merge-preview-anchor">
+              <span>主谱</span><strong>{{ person.name }}</strong><i>合并为同一人</i><strong>{{ mergePreview.targetPerson.name }}</strong><span>目标谱</span>
+            </div>
+            <p>预计新增 {{ mergePreview.addedPeople }} 人、{{ mergePreview.addedFamilies }} 个家庭，目标锚点不会重复复制。</p>
+            <ul v-if="mergePreview.blockers.length" class="merge-preview-issues merge-preview-issues--error">
+              <li v-for="issue in mergePreview.blockers" :key="issue">{{ issue }}</li>
+            </ul>
+            <ul v-if="mergePreview.warnings.length" class="merge-preview-issues">
+              <li v-for="issue in mergePreview.warnings" :key="issue">{{ issue }}</li>
+            </ul>
+          </section>
+          <div class="merge-preview-canvas">
+            <PublicationCanvas
+              :publication="mergePreview.publication"
+              :settings="previewSettings"
+              :layout="previewLayout"
+              :selectedPersonId="person.id"
+              :panX="0"
+              :panY="0"
+            />
+          </div>
+        </template>
+
+        <footer class="merge-preview-footer">
+          <button type="button" class="relation-btn" @click="showMergePreview = false">返回调整</button>
+          <button type="button" class="relation-btn relation-btn--accent" :disabled="!canExecuteMerge" @click="confirmPreviewMerge">
+            确认物理合并
+          </button>
+        </footer>
+      </article>
+    </div>
+  </Teleport>
 
   <ConfirmDialog
     :modelValue="showMergeConfirm"
     title="物理合并确认"
-    message="物理合并会把目标族谱当前快照复制进当前族谱，并清除这个挂载点。确定继续吗？"
+    :message="`将保留主谱人物“${person.name}”，并接入目标人物“${mergePreview?.targetPerson.name || ''}”的后代关系。此操作不可撤销，确定继续吗？`"
     confirmLabel="确认合并"
     tone="danger"
     @confirm="executeMerge"
@@ -364,6 +471,7 @@ onUnmounted(() => {
     v-model="showRootSelector"
     :publicationId="Number(selectedTargetId)"
     :publicationTitle="selectedTarget?.title"
+    :anchorPersonName="person.name"
     @selected="handleRootSelected"
   />
 </template>
@@ -644,6 +752,51 @@ onUnmounted(() => {
 }
 .relation-btn--accent:hover { opacity: .85; }
 .relation-btn--accent:disabled { opacity: .4; cursor: not-allowed; }
+
+.merge-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-critical);
+  display: grid;
+  place-items: center;
+  padding: 4vh 4vw;
+  background: color-mix(in srgb, var(--color-neutral-10) 60%, transparent);
+  backdrop-filter: blur(4px);
+}
+.merge-preview-dialog {
+  width: 92vw;
+  height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line-soft, var(--color-neutral-4));
+  border-radius: 16px;
+  background: var(--bg-panel-strong, var(--color-neutral-1));
+  box-shadow: var(--shadow-whisper);
+}
+.merge-preview-header,
+.merge-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--bg-panel, var(--color-neutral-1));
+}
+.merge-preview-header { border-bottom: 1px solid var(--line-soft, var(--color-neutral-2)); }
+.merge-preview-header h3 { margin: 0; font-size: 18px; color: var(--text-main, var(--color-neutral-9)); }
+.merge-preview-header p { margin: 3px 0 0; font-size: 12px; color: var(--text-soft, var(--color-neutral-6)); }
+.merge-preview-header > button { border: 0; background: none; color: var(--text-soft); font-size: 26px; cursor: pointer; }
+.merge-preview-summary { padding: 12px 20px; border-bottom: 1px solid var(--line-soft, var(--color-neutral-2)); }
+.merge-preview-summary > p { margin: 8px 0 0; color: var(--text-soft, var(--color-neutral-6)); font-size: 12px; }
+.merge-preview-anchor { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--text-sub, var(--color-neutral-7)); font-size: 12px; }
+.merge-preview-anchor strong { color: var(--text-main, var(--color-neutral-9)); font-size: 14px; }
+.merge-preview-anchor i { color: var(--color-success); font-style: normal; }
+.merge-preview-issues { margin: 8px 0 0; padding-left: 18px; color: var(--color-warning); font-size: 12px; }
+.merge-preview-issues--error { color: var(--color-error); }
+.merge-preview-canvas { flex: 1; min-height: 0; overflow: hidden; background: var(--bg-shell); }
+.merge-preview-loading { flex: 1; display: grid; place-items: center; color: var(--text-soft); }
+.merge-preview-footer { border-top: 1px solid var(--line-soft, var(--color-neutral-2)); justify-content: flex-end; }
 
 @media (max-width: 640px) {
   .branch-mount-panel__grid { grid-template-columns: 1fr; }

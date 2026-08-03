@@ -10,6 +10,7 @@ const props = defineProps<{
   modelValue: boolean
   publicationId: number
   publicationTitle?: string
+  anchorPersonName?: string
 }>()
 
 const emit = defineEmits<{
@@ -24,20 +25,30 @@ const publicationData = ref<PublicationData | null>(null)
 const previewSettings = ref<PublicationSettings>(structuredClone(defaultSettings))
 const selectedPersonId = ref<string | null>(null)
 const selectedPersonName = ref<string | null>(null)
+const selectionMessage = ref('')
 type PublicationPersonWithDbId = Person & { dbId?: number }
 
 const selectedPersonIdForCanvas = computed(() => selectedPersonId.value || '')
+const selectionValid = computed(() => Boolean(selectedPersonId.value && !selectionMessage.value))
 const previewLayout = computed(() => {
   if (!publicationData.value) return null
   return layoutPublication(publicationData.value, previewSettings.value)
 })
 
 function onSelectPerson(personId: string) {
+  if (personId.startsWith('branch_')) {
+    selectionMessage.value = '挂载进目标谱的外部分支人物不能作为合并锚点'
+    return
+  }
+  selectionMessage.value = ''
   selectedPersonId.value = personId
   if (publicationData.value) {
     const person = publicationData.value.people[personId]
     if (person) {
       selectedPersonName.value = person.name
+      if (props.anchorPersonName?.trim() && person.name.trim() !== props.anchorPersonName.trim()) {
+        selectionMessage.value = `姓名不一致：主谱“${props.anchorPersonName}”，目标谱“${person.name}”`
+      }
     }
   }
 }
@@ -57,7 +68,7 @@ async function loadData() {
 }
 
 function onConfirm() {
-  if (selectedPersonId.value && publicationData.value) {
+  if (selectionValid.value && selectedPersonId.value && publicationData.value) {
     const person = publicationData.value.people[selectedPersonId.value] as PublicationPersonWithDbId
     const dbId = person.dbId
     if (dbId) {
@@ -87,11 +98,11 @@ onMounted(() => {
       <div class="selector-dialog">
         <header class="selector-header">
           <div class="header-main">
-            <h3>选择子树起点</h3>
+            <h3>选择对应人物</h3>
             <span v-if="publicationTitle" class="pub-title">{{ publicationTitle }}</span>
           </div>
           <p class="header-hint">
-            请在下方预览图中选择一个人物作为合并或查看的起点。选定后，将仅包含该人物及其后代。
+            请在目标族谱中选择与“{{ anchorPersonName || '当前人物' }}”对应的同一人物；确认后仅接入其配偶和后代。
           </p>
         </header>
 
@@ -119,7 +130,10 @@ onMounted(() => {
 
         <footer class="selector-footer">
           <div class="selection-status">
-            <template v-if="selectedPersonName">
+            <template v-if="selectionMessage">
+              {{ selectionMessage }}
+            </template>
+            <template v-else-if="selectedPersonName">
               已选中：<span class="selected-name">{{ selectedPersonName }}</span>
             </template>
             <template v-else>
@@ -130,7 +144,7 @@ onMounted(() => {
             <button class="action-btn cancel" @click="onCancel">取消</button>
             <button
               class="action-btn confirm"
-              :disabled="!selectedPersonId"
+              :disabled="!selectionValid"
               @click="onConfirm"
             >
               确认选择

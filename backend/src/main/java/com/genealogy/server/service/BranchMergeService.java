@@ -62,33 +62,35 @@ public class BranchMergeService {
 
         String idPrefix = "merged_" + targetPubId + "_";
 
-        // Resolve the root person in the target publication (for subtree pruning)
-        Person rootPerson = null;
-        if (mountPoint.getTargetRootPersonId() != null) {
-            rootPerson = personRepository.findById(mountPoint.getTargetRootPersonId()).orElse(null);
+        if (mountPoint.getTargetRootPersonId() == null) {
+            throw new BadRequestException("请先选择目标族谱中的合并人物");
         }
-        if (rootPerson == null) {
-            // Fallback: use the mount point person's own personId to look up in the target publication
-            rootPerson = personRepository.findByPublicationIdAndPersonId(
-                    targetPubId, mountPointPersonId).orElse(null);
+        Person rootPerson = personRepository.findById(mountPoint.getTargetRootPersonId())
+                .filter(person -> targetPubId.equals(person.getPublicationId()))
+                .orElseThrow(() -> new BadRequestException("目标合并人物不存在"));
+        if (!sameName(mountPoint, rootPerson)) {
+            throw new BadRequestException("两位合并人物的姓名必须一致");
+        }
+        if (Boolean.TRUE.equals(rootPerson.getIsMountPoint())) {
+            throw new BadRequestException("目标合并人物本身仍是挂载点，请先处理其挂载关系");
+        }
+        if (hasAdultFamily(mountPoint.getId()) && hasAdultFamily(rootPerson.getId())) {
+            throw new BadRequestException("两位合并人物都已有下游家庭，暂不支持自动合并");
         }
 
-        // Collect the people and families to clone (subtree or full)
-        List<Person> targetPeople;
-        List<Family> targetFamilies;
-
-        if (rootPerson != null) {
-            SubtreeResult result = collectSubtreeIds(rootPerson.getId());
-            targetPeople = personRepository.findAllById(result.personDbIds());
-            targetFamilies = familyRepository.findAllById(result.familyDbIds());
-        } else {
-            // Fallback: no root person found, clone everything (original behavior)
-            targetPeople = personRepository.findByPublicationId(targetPubId);
-            targetFamilies = familyRepository.findByPublicationId(targetPubId);
+        SubtreeResult result = collectSubtreeIds(rootPerson.getId());
+        List<Person> targetPeople = personRepository.findAllById(result.personDbIds());
+        if (targetPeople.stream().anyMatch(person -> Boolean.TRUE.equals(person.getIsMountPoint()))) {
+            throw new BadRequestException("合并范围内包含嵌套挂载点，请先处理其挂载关系");
         }
+        List<Family> targetFamilies = familyRepository.findAllById(result.familyDbIds());
         Map<String, Long> mergedPersonDbIds = new HashMap<>();
+        mergedPersonDbIds.put(rootPerson.getPersonId(), mountPoint.getId());
 
         for (Person sourcePerson : targetPeople) {
+            if (sourcePerson.getId().equals(rootPerson.getId())) {
+                continue;
+            }
             Person mergedPerson = new Person();
             mergedPerson.setPublicationId(masterPubId);
             mergedPerson.setPersonId(idPrefix + sourcePerson.getPersonId());
@@ -154,6 +156,16 @@ public class BranchMergeService {
         personRepository.save(mountPoint);
     }
 
+    private boolean sameName(Person left, Person right) {
+        return left.getName() != null && right.getName() != null
+                && left.getName().trim().equals(right.getName().trim());
+    }
+
+    private boolean hasAdultFamily(Long personDbId) {
+        return familyMemberRepository.findByPersonDbId(personDbId).stream()
+                .anyMatch(member -> "adult".equals(member.getRole()));
+    }
+
     public SubtreeResult collectSubtreeIds(Long rootPersonDbId) {
         Set<Long> collectedPersonDbIds = new HashSet<>();
         Set<Long> collectedFamilyDbIds = new HashSet<>();
@@ -167,12 +179,15 @@ public class BranchMergeService {
             List<FamilyMember> memberships = familyMemberRepository.findByPersonDbId(currentPersonDbId);
 
             for (FamilyMember membership : memberships) {
+                if (!"adult".equals(membership.getRole())) {
+                    continue;
+                }
                 if (collectedFamilyDbIds.add(membership.getFamilyDbId())) {
-                    // Collect all members of this family and enqueue them
                     List<FamilyMember> allFamilyMembers = familyMemberRepository
                             .findByFamilyDbIdOrderBySortOrder(membership.getFamilyDbId());
                     for (FamilyMember fm : allFamilyMembers) {
-                        if (collectedPersonDbIds.add(fm.getPersonDbId())) {
+                        boolean added = collectedPersonDbIds.add(fm.getPersonDbId());
+                        if (added && "child".equals(fm.getRole())) {
                             queue.add(fm.getPersonDbId());
                         }
                     }
