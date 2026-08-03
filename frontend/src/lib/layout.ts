@@ -65,13 +65,14 @@ function buildTreeNode(
   familyId: string,
   data: PublicationData,
   adultFamilyMap: Map<string, string>,
+  childPersonIds: ReadonlySet<string>,
   visited = new Set<string>(),
   entryPersonId?: string,
   outMarriageEntryPersonId?: string,
 ): TreeNode {
   const family = data.families[familyId]
   const familyAdults = family?.adults.filter(isPersonId) ?? []
-  const branchMode = family ? resolveFamilyBranchMode(data, familyId) : undefined
+  const branchMode = family ? resolveFamilyBranchMode(data, familyId, childPersonIds) : undefined
 
   if (!family) {
     return {
@@ -98,14 +99,14 @@ function buildTreeNode(
   const children = family.children.map((childId) => {
     const childFamilyId = adultFamilyMap.get(childId)
     if (childFamilyId && !nextVisited.has(childFamilyId)) {
-      const branchMode = resolveFamilyBranchMode(data, childFamilyId)
+      const branchMode = resolveFamilyBranchMode(data, childFamilyId, childPersonIds)
       if (branchMode === 'married-out') {
-        const node = buildTreeNode(childFamilyId, data, adultFamilyMap, nextVisited, childId, childId)
+        const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, nextVisited, childId, childId)
         node.inLawAdultIds = node.adults.filter((adultId) => adultId !== childId)
         return node
       }
 
-      const node = buildTreeNode(childFamilyId, data, adultFamilyMap, nextVisited, childId)
+      const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, nextVisited, childId)
       if (branchMode === 'uxorilocal') {
         node.inLawAdultIds = node.adults.filter((adultId) => adultId !== childId)
       }
@@ -436,8 +437,9 @@ export function layoutPublication(data: PublicationData, settings: PublicationSe
   const cards: PositionedCard[] = []
   const lines: LineSegment[] = []
   const adultFamilyMap = buildAdultFamilyMap(data.families)
+  const childPersonIds = new Set(Object.values(data.families).flatMap((family) => family.children))
   const rootFamilyId = data.families[data.focusFamilyId] ? data.focusFamilyId : Object.keys(data.families)[0]
-  const tree = buildTreeNode(rootFamilyId, data, adultFamilyMap)
+  const tree = buildTreeNode(rootFamilyId, data, adultFamilyMap, childPersonIds)
 
   let width = 0
   let height = 0

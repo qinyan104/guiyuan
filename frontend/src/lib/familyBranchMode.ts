@@ -12,16 +12,26 @@ function findParentFamilyIdForPerson(publication: PublicationData, personId: str
   return listFamilies(publication).find((family) => family.children.includes(personId))?.id
 }
 
-export function findFamilyEntryPersonId(publication: PublicationData, familyId: string): string | undefined {
+export function findFamilyEntryPersonId(
+  publication: PublicationData,
+  familyId: string,
+  childPersonIds?: ReadonlySet<string>,
+): string | undefined {
   const family = publication.families[familyId]
   if (!family) {
     return undefined
   }
 
-  return family.adults.find((adultId) => isPersonId(adultId) && Boolean(findParentFamilyIdForPerson(publication, adultId)))
+  return family.adults.find((adultId) =>
+    isPersonId(adultId) && (childPersonIds?.has(adultId) ?? Boolean(findParentFamilyIdForPerson(publication, adultId))),
+  )
 }
 
-export function resolveFamilyBranchMode(publication: PublicationData, familyId: string): FamilyBranchMode | undefined {
+export function resolveFamilyBranchMode(
+  publication: PublicationData,
+  familyId: string,
+  childPersonIds?: ReadonlySet<string>,
+): FamilyBranchMode | undefined {
   const family = publication.families[familyId]
   if (!family) {
     return undefined
@@ -31,7 +41,7 @@ export function resolveFamilyBranchMode(publication: PublicationData, familyId: 
     return family.branchMode
   }
 
-  const entryPersonId = findFamilyEntryPersonId(publication, familyId)
+  const entryPersonId = findFamilyEntryPersonId(publication, familyId, childPersonIds)
   if (!entryPersonId) {
     return undefined
   }

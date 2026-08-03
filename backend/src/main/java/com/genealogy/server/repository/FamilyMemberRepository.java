@@ -8,11 +8,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface FamilyMemberRepository extends JpaRepository<FamilyMember, Long> {
     List<FamilyMember> findByFamilyDbIdOrderBySortOrder(Long familyDbId);
+    List<FamilyMember> findByFamilyDbIdInOrderByFamilyDbIdAscSortOrderAsc(Collection<Long> familyDbIds);
     List<FamilyMember> findByPersonDbId(Long personDbId);
     @Modifying
     @Transactional

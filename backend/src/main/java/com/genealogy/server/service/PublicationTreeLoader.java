@@ -65,6 +65,14 @@ public class PublicationTreeLoader {
             personEntities = personRepository.findByPublicationId(publicationId);
             familyEntities = familyRepository.findByPublicationId(publicationId);
         }
+
+        Map<Long, List<FamilyMember>> membersByFamilyId = new HashMap<>();
+        if (!familyEntities.isEmpty()) {
+            List<Long> familyIds = familyEntities.stream().map(Family::getId).toList();
+            for (FamilyMember member : familyMemberRepository.findByFamilyDbIdInOrderByFamilyDbIdAscSortOrderAsc(familyIds)) {
+                membersByFamilyId.computeIfAbsent(member.getFamilyDbId(), ignored -> new ArrayList<>()).add(member);
+            }
+        }
         
         Map<Long, String> dbIdToFederatedId = new HashMap<>();
 
@@ -110,7 +118,7 @@ public class PublicationTreeLoader {
         for (Family family : familyEntities) {
             String federatedFamilyId = idPrefix + family.getFamilyId();
             
-            List<FamilyMember> members = familyMemberRepository.findByFamilyDbIdOrderBySortOrder(family.getId());
+            List<FamilyMember> members = membersByFamilyId.getOrDefault(family.getId(), List.of());
             List<String> adults = new ArrayList<>();
             List<String> children = new ArrayList<>();
 

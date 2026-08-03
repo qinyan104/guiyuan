@@ -67,15 +67,20 @@ const history = useEditorHistory({
 })
 
 function buildSignature(publication: PublicationData, settings: PublicationSettings) {
-  const publicationSnapshot = JSON.parse(JSON.stringify(publication)) as PublicationData
-  delete (publicationSnapshot as Partial<PublicationData>).revision
+  const publicationSnapshot = Object.fromEntries(
+    Object.keys(publication)
+      .filter((key) => key !== 'revision')
+      .map((key) => [key, publication[key as keyof PublicationData]]),
+  )
+  const settingsSnapshot = Object.fromEntries(
+    Object.keys(settings)
+      .filter((key) => key !== 'zoom')
+      .map((key) => [key, settings[key as keyof PublicationSettings]]),
+  )
 
   return JSON.stringify({
     publication: publicationSnapshot,
-    settings: {
-      ...(JSON.parse(JSON.stringify(settings)) as PublicationSettings),
-      zoom: 0,
-    },
+    settings: settingsSnapshot,
   })
 }
 
@@ -198,7 +203,6 @@ watch(
 
     syncStatus.value = 'pending'
     scheduleAutosave()
-    history.scheduleHistoryCommit()
   },
   { flush: 'post' },
 )
