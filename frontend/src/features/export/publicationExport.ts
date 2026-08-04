@@ -1,5 +1,12 @@
 ﻿import type { PublicationLayout, PublicationPaper } from '../../types/family'
 import PERSON_CARD_STYLE from '../../components/PersonCardSvg.style?raw'
+import {
+  DEFAULT_DROP_LINE_PRINT_PROFILE,
+  isPrintedNameTooSmall,
+  normalizeDropLinePrintProfile,
+  type DropLinePrintOrientation,
+  type DropLinePrintProfile,
+} from './dropLinePrint'
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink'
@@ -33,15 +40,11 @@ const SVG_THEME_VARIABLES = [
   '--text-sub',
 ] as const
 
-const PAPER_SIZE_NAMES: Record<PublicationPaper, string> = {
-  A4: 'A4 landscape',
-  A3: 'A3 landscape',
-}
-
 const PAPER_MM: Record<PublicationPaper, { width: number; height: number }> = {
-  A4: { width: 297, height: 210 },
-  A3: { width: 420, height: 297 },
+  A4: { width: 210, height: 297 },
+  A3: { width: 297, height: 420 },
 }
+const PX_PER_MM = 96 / 25.4
 
 const EXPORT_SVG_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
@@ -97,7 +100,14 @@ export interface PrintLayoutPage {
   height: number
   widthMm: number
   heightMm: number
+  scale?: number
+  warning?: 'name-cut' | 'name-too-small'
 }
+
+export type PrintLayoutOptions = Pick<
+  DropLinePrintProfile,
+  'paper' | 'orientation' | 'nameSize' | 'lineWidth' | 'marginMm' | 'scale' | 'overlapMm'
+>
 
 export interface RasterExportSize {
   width: number
@@ -108,6 +118,7 @@ export interface RasterExportSize {
 export interface CreatePrintDocumentOptions {
   title: string
   paper: PublicationPaper
+  orientation?: DropLinePrintOrientation
   pages: PrintLayoutPage[]
   pageSvgMarkups: string[]
 }
@@ -401,11 +412,15 @@ function scopeInternalIds(svg: SVGSVGElement, suffix: string) {
       }
 
       let nextValue = value
-      idMap.forEach((nextId, previousId) => {
-        nextValue = nextValue
-          .replaceAll(`url(#${previousId})`, `url(#${nextId})`)
-          .replaceAll(`#${previousId}`, `#${nextId}`)
-      })
+      if (value.startsWith('#')) {
+        const nextId = idMap.get(value.slice(1))
+        if (nextId) nextValue = `#${nextId}`
+      } else {
+        nextValue = value.replace(/url\(#([^)]+)\)/g, (reference, id: string) => {
+          const nextId = idMap.get(id)
+          return nextId ? `url(#${nextId})` : reference
+        })
+      }
 
       if (nextValue !== value) {
         element.setAttribute(attribute, nextValue)
@@ -593,13 +608,96 @@ export async function rasterizeSvgToPngBlob(
   }
 }
 
-export function createPrintLayoutPages(layout: PublicationLayout, paper: PublicationPaper): PrintLayoutPage[] {
-  // To print on a single continuous PDF page, we output exactly one page matching the full layout
-  const paperMm = PAPER_MM[paper]
-  const scale = paperMm.width / layout.paperPixelWidth
+function getPaperSize(paper: PublicationPaper, orientation: DropLinePrintOrientation) {
+  const size = PAPER_MM[paper]
+  return orientation === 'portrait' ? size : { width: size.height, height: size.width }
+}
 
-  return [
-    {
+interface AxisRange {
+  start: number
+  end: number
+  warning?: 'name-cut'
+}
+
+function boundaryCutsName(
+  boundary: number,
+  cards: PublicationLayout['cards'],
+  axis: 'x' | 'y',
+  padding: number,
+): boolean {
+  return cards.some(card => {
+    const start = card[axis] - padding
+    const end = card[axis] + (axis === 'x' ? card.width : card.height) + padding
+    return boundary > start && boundary < end
+  })
+}
+
+function createAxisRanges(
+  total: number,
+  tile: number,
+  overlap: number,
+  cards: PublicationLayout['cards'],
+  axis: 'x' | 'y',
+  padding: number,
+): AxisRange[] {
+  if (total <= tile) return [{ start: 0, end: total }]
+
+  const step = tile - overlap
+  const count = Math.ceil((total - overlap) / step)
+  const ranges: AxisRange[] = Array.from({ length: count }, (_, index) => ({
+    start: index * step,
+    end: Math.min(total, index * step + tile),
+  }))
+
+  for (let index = 0; index < ranges.length - 1; index += 1) {
+    const left = ranges[index]
+    const right = ranges[index + 1]
+    let offset: number | undefined
+
+    for (let distance = 0; distance <= Math.ceil(overlap); distance += 1) {
+      for (const candidate of distance === 0 ? [0] : [-distance, distance]) {
+        if (
+          !boundaryCutsName(left.end + candidate, cards, axis, padding)
+          && !boundaryCutsName(right.start + candidate, cards, axis, padding)
+        ) {
+          offset = candidate
+          break
+        }
+      }
+      if (offset !== undefined) break
+    }
+
+    if (offset === undefined) {
+      left.warning = 'name-cut'
+      right.warning = 'name-cut'
+    } else {
+      left.end += offset
+      right.start += offset
+    }
+  }
+
+  return ranges
+}
+
+export function createPrintLayoutPages(
+  layout: PublicationLayout,
+  options: PrintLayoutOptions | PublicationPaper,
+): PrintLayoutPage[] {
+  if (layout.width <= 0 || layout.height <= 0) return []
+
+  const profile = normalizeDropLinePrintProfile(
+    typeof options === 'string' ? { ...DEFAULT_DROP_LINE_PRINT_PROFILE, paper: options } : options,
+  )
+  const paper = getPaperSize(profile.paper, profile.orientation)
+  const printableWidthMm = paper.width - profile.marginMm * 2
+  const printableHeightMm = paper.height - profile.marginMm * 2
+  const fit = Math.min(
+    printableWidthMm * PX_PER_MM / layout.width,
+    printableHeightMm * PX_PER_MM / layout.height,
+  )
+
+  if (!isPrintedNameTooSmall(profile.nameSize, fit)) {
+    return [{
       index: 1,
       total: 1,
       row: 0,
@@ -608,31 +706,57 @@ export function createPrintLayoutPages(layout: PublicationLayout, paper: Publica
       y: 0,
       width: layout.width,
       height: layout.height,
-      widthMm: layout.width * scale,
-      heightMm: layout.height * scale,
-    },
-  ]
+      widthMm: layout.width * fit / PX_PER_MM,
+      heightMm: layout.height * fit / PX_PER_MM,
+      scale: fit,
+    }]
+  }
+
+  const tileWidth = printableWidthMm * PX_PER_MM / profile.scale
+  const tileHeight = printableHeightMm * PX_PER_MM / profile.scale
+  const overlap = profile.overlapMm * PX_PER_MM / profile.scale
+  const padding = profile.lineWidth / 2
+  const columns = createAxisRanges(layout.width, tileWidth, overlap, layout.cards, 'x', padding)
+  const rows = createAxisRanges(layout.height, tileHeight, overlap, layout.cards, 'y', padding)
+  const nameTooSmall = isPrintedNameTooSmall(profile.nameSize, profile.scale)
+  const pages = rows.flatMap((row, rowIndex) => columns.map((column, columnIndex) => ({
+    index: 0,
+    total: 0,
+    row: rowIndex,
+    column: columnIndex,
+    x: column.start,
+    y: row.start,
+    width: column.end - column.start,
+    height: row.end - row.start,
+    widthMm: (column.end - column.start) * profile.scale / PX_PER_MM,
+    heightMm: (row.end - row.start) * profile.scale / PX_PER_MM,
+    scale: profile.scale,
+    warning: column.warning ?? row.warning ?? (nameTooSmall ? 'name-too-small' as const : undefined),
+  })))
+
+  return pages.map((page, index) => ({ ...page, index: index + 1, total: pages.length }))
 }
 
 export function createPrintDocument(options: CreatePrintDocumentOptions): string {
   const escapedTitle = escapeHtml(options.title)
-
-  const singlePage = options.pages[0]
-  const pageWidth = singlePage ? `${formatNumber(singlePage.widthMm)}mm` : PAPER_SIZE_NAMES[options.paper]
-  const pageHeight = singlePage ? `${formatNumber(singlePage.heightMm)}mm` : 'auto'
+  const orientation = options.orientation ?? 'landscape'
+  const paper = getPaperSize(options.paper, orientation)
 
   const pagesHtml = options.pages
     .map((page, index) => {
       const svgMarkup = options.pageSvgMarkups[index] ?? ''
+      const pageNumber = escapeHtml(String(page.index))
+      const pageTotal = escapeHtml(String(page.total))
 
       return `
-        <section class="print-sheet" aria-label="排版画布">
+        <section class="print-sheet" aria-label="第 ${pageNumber} / ${pageTotal} 页">
           <div
             class="print-canvas"
             style="width: ${formatNumber(page.widthMm)}mm; height: ${formatNumber(page.heightMm)}mm;"
           >
             ${svgMarkup}
           </div>
+          <span class="print-page-label" aria-hidden="true">第 ${pageNumber} / ${pageTotal} 页</span>
         </section>
       `
     })
@@ -649,7 +773,7 @@ export function createPrintDocument(options: CreatePrintDocumentOptions): string
       @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
 
       @page {
-        size: ${pageWidth} ${pageHeight};
+        size: ${options.paper} ${orientation};
         margin: 0;
       }
 
@@ -671,8 +795,10 @@ export function createPrintDocument(options: CreatePrintDocumentOptions): string
 
       .print-sheet {
         position: relative;
-        width: ${singlePage ? formatNumber(singlePage.widthMm) : 'auto'}mm;
-        height: ${singlePage ? formatNumber(singlePage.heightMm) : 'auto'}mm;
+        display: grid;
+        place-items: center;
+        width: ${formatNumber(paper.width)}mm;
+        height: ${formatNumber(paper.height)}mm;
         overflow: hidden;
         background: var(--canvas-bg, var(--bg-paper, #fff9ef));
         break-after: page;
