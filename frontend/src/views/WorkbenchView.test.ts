@@ -61,6 +61,7 @@ vi.mock('../composables/useFileOperations', () => ({
   useFileOperations: () => ({
     draftFileName: ref('test-draft.json'),
     hasUnsavedFileChanges: ref(false),
+    isExporting: ref(false),
     nativeFileAccessSupported: false,
     shouldReplaceCurrentDraft: vi.fn(() => false),
     draftFileHandle: ref(null),
@@ -103,7 +104,7 @@ vi.mock('../components/WorkbenchHeader.vue', () => ({
     template: '<div class="mock-header" />',
     props: [
       'fileName', 'dirty', 'nativeFileAccess', 'currentTheme',
-      'currentUsername', 'syncStatus',
+      'currentUsername', 'syncStatus', 'exporting',
     ],
   },
 }))

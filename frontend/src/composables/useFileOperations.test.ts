@@ -71,6 +71,7 @@ function createOperations() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.useFakeTimers()
   vi.stubGlobal('URL', {
     createObjectURL: vi.fn(() => 'blob:test'),
     revokeObjectURL: vi.fn(),
@@ -79,6 +80,8 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.runOnlyPendingTimers()
+  vi.useRealTimers()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })

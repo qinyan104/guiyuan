@@ -124,6 +124,7 @@ describe('shareHtmlExport helpers', () => {
     const script = buildEmbeddedScript('{"v":1}', true)
 
     expect(() => new Function(script)).not.toThrow()
+    expect(script).toContain('split(/[\\s,]+/)')
     expect(script).toContain('\u8bf7\u8f93\u5165\u5bc6\u7801')
     expect(script).toContain('\u5bc6\u7801\u9519\u8bef\u6216\u6587\u4ef6\u5df2\u635f\u574f')
     expect(script).toContain('\u79f0\u53f7')
@@ -157,7 +158,7 @@ describe('shareHtmlExport helpers', () => {
     expect(doc.querySelector('#detail-panel')).not.toBeNull()
     expect(doc.querySelector('#tree-camera')).not.toBeNull()
     expect(doc.querySelector('#detail-content')).not.toBeNull()
-    expect(html).toContain('<svg')
+    expect(html).not.toContain('<svg')
     expect(payload.svgMarkup).toContain('<g class="person-card"')
     expect(payload.svgMarkup).toContain('data-person-id="p1"')
     expect(html).toContain('setupCardClick')

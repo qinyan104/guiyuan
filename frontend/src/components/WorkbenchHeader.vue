@@ -13,7 +13,6 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const showExportDialog = ref(false)
 const showGedcomImport = ref(false)
 const showCollabDialog = ref(false)
-const isExporting = ref(false)
 const headerRoot = ref<HTMLElement | null>(null)
 const activeMenu = ref<'research' | 'export' | null>(null)
 
@@ -73,6 +72,7 @@ const props = withDefaults(
     nativeFileAccess?: boolean
     currentUsername?: string
     syncStatus?: 'saved' | 'pending' | 'syncing' | 'error' | 'conflict'
+    exporting?: boolean
   }>(),
   {
     fileName: '',
@@ -80,6 +80,7 @@ const props = withDefaults(
     nativeFileAccess: false,
     currentUsername: '',
     syncStatus: 'saved',
+    exporting: false,
   },
 )
 
@@ -250,11 +251,11 @@ onBeforeUnmount(() => {
                 导出与分享
               </button>
               <div class="dropdown-divider"></div>
-              <button class="dropdown-item" type="button" @click="activeMenu = null; emit('download-svg')">
+              <button class="dropdown-item" type="button" :disabled="exporting" @click="activeMenu = null; emit('download-svg')">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
                 下载画布 SVG
               </button>
-              <button class="dropdown-item" type="button" @click="activeMenu = null; emit('download-png')">
+              <button class="dropdown-item" type="button" :disabled="exporting" @click="activeMenu = null; emit('download-png')">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                 下载画布 PNG
               </button>
@@ -311,7 +312,7 @@ onBeforeUnmount(() => {
     <Teleport to="body">
       <ExportDialog
         v-model="showExportDialog"
-        :isProcessing="isExporting"
+        :isProcessing="exporting"
         @export-png="emit('download-png'); showExportDialog = false"
         @export-svg="emit('download-svg'); showExportDialog = false"
         @export-share-html="handleExportShareHtml"

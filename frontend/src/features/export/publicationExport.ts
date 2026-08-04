@@ -68,6 +68,14 @@ const EXPORT_SVG_STYLE = `
     user-select: none;
   }
 
+  .person-card__drop-line {
+    stroke: var(--line-soft, rgba(0, 0, 0, 0.15));
+  }
+
+  .person-card__name--compact {
+    font-family: 'Noto Serif SC', 'Songti SC', serif;
+  }
+
   .person-card__panel {
     fill: var(--card-panel-fill, rgba(248, 244, 237, 0.97));
     stroke: var(--card-panel-stroke, #6f5943);
@@ -287,6 +295,7 @@ export interface CreatePrintDocumentOptions {
 
 const DEFAULT_RASTER_PIXEL_RATIO = 2
 const MAX_RASTER_SIDE = 8192
+const MAX_RASTER_PIXELS = 32 * 1024 * 1024
 
 function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
@@ -503,9 +512,10 @@ function insertBackground(svg: SVGSVGElement, layout: PublicationLayout) {
   svg.insertBefore(background, defs?.nextSibling ?? svg.firstChild)
 }
 
-function removeSelectionState(svg: SVGSVGElement) {
-  svg.querySelectorAll('.person-card--selected').forEach((element) => {
-    element.classList.remove('person-card--selected')
+function removeTransientState(svg: SVGSVGElement, includeSelection = false) {
+  svg.querySelectorAll('.person-card').forEach((element) => {
+    if (!includeSelection) element.classList.remove('person-card--selected')
+    element.classList.remove('person-card--hovered', 'person-card--subdued')
   })
 }
 
@@ -605,9 +615,7 @@ export async function createStandalonePublicationSvg(options: CreateStandaloneSv
   svg.setAttribute('height', formatNumber(totalHeight))
   svg.removeAttribute('style')
 
-  if (!options.includeSelection) {
-    removeSelectionState(svg)
-  }
+  removeTransientState(svg, options.includeSelection)
 
   if (headerHeight > 0) {
     const contentGroup = document.createElementNS(SVG_NAMESPACE, 'g')
@@ -645,6 +653,7 @@ export async function createStandalonePublicationSvg(options: CreateStandaloneSv
 
     try {
       const response = await fetch(href)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
       const blob = await response.blob()
       const reader = new FileReader()
       const base64 = await new Promise<string>((resolve) => {
@@ -653,7 +662,7 @@ export async function createStandalonePublicationSvg(options: CreateStandaloneSv
       })
       setImageHref(img, base64)
     } catch (err) {
-      console.error('Failed to embed image in SVG export', href, err)
+      throw new Error(`导出图片嵌入失败：${href}`, { cause: err })
     }
   }))
 
@@ -693,12 +702,17 @@ export function getRasterExportSize(
 ): RasterExportSize {
   const width = Math.max(1, layout.width)
   const height = Math.max(1, layout.height)
-  const ratio = Math.min(pixelRatio, maxSide / width, maxSide / height)
-  const safeRatio = Math.max(0.1, ratio)
+  const ratio = Math.min(
+    pixelRatio,
+    maxSide / width,
+    maxSide / height,
+    Math.sqrt(MAX_RASTER_PIXELS / (width * height)),
+  )
+  const safeRatio = Math.max(Number.EPSILON, ratio)
 
   return {
-    width: Math.max(1, Math.round(width * safeRatio)),
-    height: Math.max(1, Math.round(height * safeRatio)),
+    width: Math.max(1, Math.floor(width * safeRatio)),
+    height: Math.max(1, Math.floor(height * safeRatio)),
     pixelRatio: safeRatio,
   }
 }

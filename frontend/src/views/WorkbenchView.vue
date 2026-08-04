@@ -261,6 +261,7 @@ watch(
       :nativeFileAccess="fileOps.nativeFileAccessSupported"
       :currentUsername="currentUsername"
       :syncStatus="context.syncStatus.value"
+      :exporting="fileOps.isExporting.value"
       @import-json="fileOps.importDraftFromFileEvent"
       @open-file="fileOps.openDraftFile"
       @create-blank="relActions.createBlankDraft"

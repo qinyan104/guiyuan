@@ -117,13 +117,23 @@ function buildStatsHtml(pub: PublicationData): string {
   return parts.join(' ? ')
 }
 
+function serializeInlineScriptValue(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+}
+
 export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
+  const plainData = isEncrypted ? 'null' : serializeInlineScriptValue(dataJson)
+  const encryptedBlob = isEncrypted ? serializeInlineScriptValue(JSON.parse(dataJson)) : 'null'
+
   return `
 (function() {
   'use strict';
 
-  var DATA_JSON = ${isEncrypted ? 'null' : JSON.stringify(dataJson)};
-  var ENCRYPTED_BLOB = ${isEncrypted ? dataJson : 'null'};
+  var DATA_JSON = ${plainData};
+  var ENCRYPTED_BLOB = ${encryptedBlob};
 
   // --- Base64 helpers ---
   function base64ToArrayBuffer(base64) {
@@ -282,6 +292,30 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     return escapeHtml(str).replace(/'/g, '&#39;');
   }
 
+  function renderPublicationMetadata(data) {
+    var pub = data.publication || {};
+    var info = pub.info || {};
+    var parts = [];
+    if (pub.title) parts.push('<h1>' + escapeHtml(pub.title) + '</h1>');
+    if (pub.subtitle) parts.push('<h2>' + escapeHtml(pub.subtitle) + '</h2>');
+
+    var infoItems = [];
+    if (info.description) infoItems.push('<p class="info-desc">' + escapeHtml(info.description) + '</p>');
+    if (info.ancestralOrigin) infoItems.push('<span class="info-tag">郡望/祖籍：' + escapeHtml(info.ancestralOrigin) + '</span>');
+    if (info.hallName) infoItems.push('<span class="info-tag">堂号：' + escapeHtml(info.hallName) + '</span>');
+    if (info.familyMotto) infoItems.push('<span class="info-tag">族训：' + escapeHtml(info.familyMotto) + '</span>');
+    if (infoItems.length) parts.push('<div class="pub-info">' + infoItems.join('') + '</div>');
+    document.getElementById('pub-header-content').innerHTML = parts.join('');
+
+    var people = Object.values(pub.people || {});
+    var deceased = people.filter(function(person) { return Boolean(person.deceased || person.death); }).length;
+    var stats = ['共 ' + people.length + ' 人'];
+    if (people.length - deceased > 0) stats.push('在世 ' + (people.length - deceased) + ' 人');
+    if (deceased > 0) stats.push('已故 ' + deceased + ' 人');
+    document.getElementById('pub-stats').textContent = stats.join(' · ');
+    document.title = (pub.title || '未命名') + ' - 族谱分享';
+  }
+
   // --- Pan / Zoom ---
   function setupInteraction(viewport, camera) {
     var zoom = 1, panX = 0, panY = 0;
@@ -289,7 +323,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     var vb = svg ? svg.getAttribute('viewBox') : null;
     var vbW = 0, vbH = 0;
     if (vb) {
-      var parts = vb.split(/[\s,]+/);
+      var parts = vb.split(/[\\s,]+/);
       vbW = parseFloat(parts[2]) || 0;
       vbH = parseFloat(parts[3]) || 0;
     }
@@ -432,6 +466,8 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     var camera = document.getElementById('tree-camera');
     var viewport = document.getElementById('tree-viewport');
 
+    renderPublicationMetadata(data);
+
     // Inject SVG
     camera.innerHTML = data.svgMarkup;
 
@@ -492,7 +528,7 @@ export function buildHtmlTemplate(options: {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(options.title)} - 族谱分享</title>
+<title>${escapeHtml(options.isEncrypted ? '加密族谱' : options.title)} - 族谱分享</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
 
@@ -1001,7 +1037,7 @@ body {
 <div id="app">
   <header id="pub-header">
     <button id="header-toggle">收起</button>
-    ${options.infoHeader}
+    <div id="pub-header-content">${options.isEncrypted ? '' : options.infoHeader}</div>
   </header>
 
   <main id="tree-viewport">
@@ -1020,7 +1056,7 @@ body {
   </aside>
 
   <footer id="pub-footer">
-    <span>${options.statsHtml}</span>
+    <span id="pub-stats">${options.isEncrypted ? '' : options.statsHtml}</span>
     <span>生成于：${escapeHtml(options.generatedAt)} · 族谱分享</span>
   </footer>
 </div>

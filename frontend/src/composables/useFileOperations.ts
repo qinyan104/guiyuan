@@ -72,8 +72,23 @@ export function useFileOperations(deps: FileOperationsDeps) {
   const draftFileHandle = shallowRef<DraftFileHandle | null>(null)
   const draftFileName = ref('')
   const hasUnsavedFileChanges = ref(false)
+  const isExporting = ref(false)
   const nativeFileAccessSupported = isNativeDraftFileAccessSupported()
   let isApplyingFileDraft = false
+
+  async function runCanvasExport(fallback: string, task: () => Promise<void>): Promise<void> {
+    if (isExporting.value) return
+    isExporting.value = true
+    errorMessage.value = ''
+    try {
+      await task()
+    } catch (error) {
+      errorMessage.value = getErrorMessage(error, fallback)
+      statusMessage.value = ''
+    } finally {
+      isExporting.value = false
+    }
+  }
 
   function getIsApplyingFileDraft(): boolean {
     return isApplyingFileDraft
@@ -282,37 +297,34 @@ export function useFileOperations(deps: FileOperationsDeps) {
     }
   }
 
-  async function downloadSvg() {
-    const serialized = await serializeCurrentSvg()
-    if (!serialized) {
-      errorMessage.value = '当前画布没有可导出的SVG。'
-      statusMessage.value = ''
-      return
-    }
-    errorMessage.value = ''
-    downloadTextFile(`${sanitizeFileName(publication.title)}.svg`, serialized, 'image/svg+xml;charset=utf-8')
-    statusMessage.value = 'SVG 已下载。'
+  function downloadSvg() {
+    return runCanvasExport('导出 SVG 失败。', async () => {
+      statusMessage.value = '正在导出 SVG...'
+      const serialized = await serializeCurrentSvg()
+      if (!serialized) {
+        errorMessage.value = '当前画布没有可导出的SVG。'
+        statusMessage.value = ''
+        return
+      }
+      downloadTextFile(`${sanitizeFileName(publication.title)}.svg`, serialized, 'image/svg+xml;charset=utf-8')
+      statusMessage.value = 'SVG 已下载。'
+    })
   }
 
-  async function downloadPng() {
-    statusMessage.value = '正在导出 PNG...'
-    const exportLayout = getPngExportLayout()
-    const svg = await createCurrentStandaloneSvg(exportLayout)
-    if (!svg) {
-      errorMessage.value = '当前画布没有可导出的内容。'
-      statusMessage.value = ''
-      return
-    }
-
-    try {
+  function downloadPng() {
+    return runCanvasExport('导出 PNG 失败。', async () => {
+      statusMessage.value = '正在导出 PNG...'
+      const exportLayout = getPngExportLayout()
+      const svg = await createCurrentStandaloneSvg(exportLayout)
+      if (!svg) {
+        errorMessage.value = '当前画布没有可导出的内容。'
+        statusMessage.value = ''
+        return
+      }
       const blob = await rasterizeSvgToPngBlob(svg, exportLayout)
       downloadBlobFile(`${sanitizeFileName(publication.title)}.png`, blob)
-      errorMessage.value = ''
       statusMessage.value = 'PNG 已下载。'
-    } catch (err) {
-      errorMessage.value = getErrorMessage(err, '导出 PNG 失败。')
-      statusMessage.value = ''
-    }
+    })
   }
 
   async function printPublication() {
@@ -404,48 +416,45 @@ export function useFileOperations(deps: FileOperationsDeps) {
     })
   }
 
-  async function exportShareHtml(password?: string) {
-    // 方案一安全锁：导出前强制渲染全部节点
-    await canvasRef.value?.prepareForExport?.()
-    const svgElement = canvasRef.value?.getSvgElement?.()
-    if (!svgElement || layout.value.cards.length === 0) {
-      canvasRef.value?.releaseExportLock?.()
-      errorMessage.value = '当前画布没有可导出的内容。'
-      statusMessage.value = ''
-      return
-    }
+  function exportShareHtml(password?: string) {
+    return runCanvasExport('生成分享页面失败。', async () => {
+      // 方案一安全锁：导出前强制渲染全部节点
+      await canvasRef.value?.prepareForExport?.()
+      const svgElement = canvasRef.value?.getSvgElement?.()
+      if (!svgElement || layout.value.cards.length === 0) {
+        canvasRef.value?.releaseExportLock?.()
+        errorMessage.value = '当前画布没有可导出的内容。'
+        statusMessage.value = ''
+        return
+      }
 
-    statusMessage.value = '正在生成分享页面...'
-    errorMessage.value = ''
+      statusMessage.value = '正在生成分享页面...'
+      try {
+        const html = await generateShareHtml({
+          publication,
+          settings,
+          layout: layout.value,
+          svgElement,
+          password: password || undefined,
+          onProgress: (_stage, percent) => {
+            statusMessage.value = `正在生成分享页面... ${percent}%`
+          },
+        })
 
-    try {
-      const html = await generateShareHtml({
-        publication,
-        settings,
-        layout: layout.value,
-        svgElement,
-        password: password || undefined,
-        onProgress: (stage, percent) => {
-          statusMessage.value = `Generating share page... ${percent}%`
-        },
-      })
-
-      const fileName = `${sanitizeFileName(publication.title)}-分享.html`
-      downloadTextFile(fileName, html, 'text/html;charset=utf-8')
-      statusMessage.value = '分享页面已生成并下载。'
-      errorMessage.value = ''
-    } catch (err) {
-      errorMessage.value = getErrorMessage(err, '生成分享页面失败。')
-      statusMessage.value = ''
-    } finally {
-      canvasRef.value?.releaseExportLock?.()
-    }
+        const fileName = `${sanitizeFileName(publication.title)}-分享.html`
+        downloadTextFile(fileName, html, 'text/html;charset=utf-8')
+        statusMessage.value = '分享页面已生成并下载。'
+      } finally {
+        canvasRef.value?.releaseExportLock?.()
+      }
+    })
   }
 
   return {
     draftFileHandle,
     draftFileName,
     hasUnsavedFileChanges,
+    isExporting,
     nativeFileAccessSupported,
     getIsApplyingFileDraft,
     sanitizeFileName,
