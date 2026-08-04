@@ -1,18 +1,12 @@
-﻿import type { PublicationData, PublicationLayout, PublicationSettings } from '../../types/family'
-import {
-  createStandalonePublicationSvg,
-  escapeHtml,
-  getSvgThemeMap,
-  serializeSvg,
-} from './publicationExport'
+﻿import type { PublicationData, PublicationSettings } from '../../types/family'
+import { escapeHtml, getSvgThemeMap, serializeSvg } from './publicationExport'
 import { createPortablePublication } from '../persistence/draftPersistence'
 import { isPersonDeceased } from '../../lib/personStatus'
 
 export interface ShareHtmlOptions {
   publication: PublicationData
   settings: PublicationSettings
-  layout: PublicationLayout
-  svgElement: SVGSVGElement
+  standaloneSvg: SVGSVGElement
   password?: string
   onProgress?: (stage: string, percent: number) => void
 }
@@ -38,13 +32,7 @@ async function encryptPayload(jsonString: string, password: string): Promise<Enc
   const salt = crypto.getRandomValues(new Uint8Array(16))
   const iv = crypto.getRandomValues(new Uint8Array(12))
 
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(password),
-    'PBKDF2',
-    false,
-    ['deriveKey'],
-  )
+  const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveKey'])
 
   const key = await crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
@@ -54,11 +42,7 @@ async function encryptPayload(jsonString: string, password: string): Promise<Enc
     ['encrypt'],
   )
 
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    encoder.encode(jsonString),
-  )
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(jsonString))
 
   return {
     v: 1,
@@ -82,7 +66,9 @@ export function buildInfoHeader(pub: PublicationData): string {
     infoItems.push(`<p class="info-desc">${escapeHtml(pub.info.description)}</p>`)
   }
   if (pub.info?.ancestralOrigin) {
-    infoItems.push(`<span class="info-tag">\u90e1\u671b/\u7956\u7c4d\uff1a${escapeHtml(pub.info.ancestralOrigin)}</span>`)
+    infoItems.push(
+      `<span class="info-tag">\u90e1\u671b/\u7956\u7c4d\uff1a${escapeHtml(pub.info.ancestralOrigin)}</span>`,
+    )
   }
   if (pub.info?.hallName) {
     infoItems.push(`<span class="info-tag">\u5802\u53f7\uff1a${escapeHtml(pub.info.hallName)}</span>`)
@@ -114,7 +100,7 @@ function buildStatsHtml(pub: PublicationData): string {
   const parts: string[] = [`<span>\u5171 ${total} \u4eba</span>`]
   if (alive > 0) parts.push(`<span>\u5728\u4e16 ${alive} \u4eba</span>`)
   if (deceased > 0) parts.push(`<span>\u5df2\u6545 ${deceased} \u4eba</span>`)
-  return parts.join(' ? ')
+  return parts.join(' \u00b7 ')
 }
 
 function serializeInlineScriptValue(value: unknown): string {
@@ -1069,17 +1055,8 @@ ${options.script}
 }
 
 export async function generateShareHtml(options: ShareHtmlOptions): Promise<string> {
-  const { publication, settings, layout, svgElement, password, onProgress } = options
+  const { publication, settings, standaloneSvg, password, onProgress } = options
 
-  onProgress?.('capturing', 10)
-
-  // Phase 1: Capture SVG with embedded images
-  const standaloneSvg = await createStandalonePublicationSvg({
-    svgElement,
-    layout,
-    title: publication.title.trim() || '未命名族谱',
-    embedImages: true,
-  })
   onProgress?.('capturing', 25)
 
   // Phase 2: Capture theme variables
@@ -1139,4 +1116,3 @@ export async function generateShareHtml(options: ShareHtmlOptions): Promise<stri
   onProgress?.('done', 100)
   return html
 }
-

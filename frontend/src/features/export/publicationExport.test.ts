@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { PublicationLayout } from '../../types/family'
 
 import {
   absolutizeExportResourceUrl,
@@ -58,10 +59,10 @@ describe('getRasterExportSize', () => {
 })
 
 describe('createStandalonePublicationSvg', () => {
-  const layout = {
+  const layout: PublicationLayout = {
     width: 100,
     height: 100,
-    cards: [{}],
+    cards: [{ personId: 'p1', x: 0, y: 0, width: 80, height: 100 }],
     lines: [],
     displayedPeople: 1,
     generationCount: 1,
@@ -98,6 +99,6 @@ describe('createStandalonePublicationSvg', () => {
     expect(css).toContain('.person-card__drop-line')
     expect(css).toContain('.person-card__name--compact')
     expect(card.classList.contains('person-card--selected')).toBe(true)
-    expect(exported.querySelector('.person-card')?.className.baseVal).toBe('person-card')
+    expect(exported.querySelector('.person-card')?.getAttribute('class')).toBe('person-card')
   })
 })

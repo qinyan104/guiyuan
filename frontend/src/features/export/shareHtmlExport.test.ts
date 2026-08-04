@@ -1,22 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type {
-  PublicationData,
-  PublicationLayout,
-  PublicationSettings,
-} from '../../types/family'
+import type { PublicationData, PublicationSettings } from '../../types/family'
 import { defaultSettings } from '../../data/sampleFamily'
 
 vi.mock('../persistence/draftPersistence', () => ({
   createPortablePublication: vi.fn(async (publication: PublicationData) => publication),
 }))
 
-import {
-  buildEmbeddedScript,
-  buildHtmlTemplate,
-  buildInfoHeader,
-  generateShareHtml,
-} from './shareHtmlExport'
+import { buildEmbeddedScript, buildHtmlTemplate, buildInfoHeader, generateShareHtml } from './shareHtmlExport'
 
 const samplePublication: PublicationData = {
   title: '\u674e\u6c0f\u5b97\u8c31',
@@ -63,19 +54,6 @@ const sampleSettings: PublicationSettings = {
   zoom: 1,
   paddingX: 40,
   paddingY: 40,
-}
-
-const sampleLayout: PublicationLayout = {
-  width: 100,
-  height: 100,
-  cards: [],
-  lines: [],
-  displayedPeople: 2,
-  generationCount: 2,
-  pageCount: 1,
-  paperPixelWidth: 100,
-  paperPixelHeight: 100,
-  titleAreaHeight: 0,
 }
 
 function createSvgFixture(): SVGSVGElement {
@@ -141,8 +119,7 @@ describe('shareHtmlExport helpers', () => {
     const html = await generateShareHtml({
       publication: samplePublication,
       settings: sampleSettings,
-      layout: sampleLayout,
-      svgElement: createSvgFixture(),
+      standaloneSvg: createSvgFixture(),
     })
 
     const doc = new DOMParser().parseFromString(html, 'text/html')
@@ -168,6 +145,7 @@ describe('shareHtmlExport helpers', () => {
     expect(doc.body.textContent).toContain('\u65cf\u8bad\uff1a\u6566\u4eb2\u7766\u65cf')
     expect(doc.body.textContent).toContain('\u5171 2 \u4eba')
     expect(doc.body.textContent).toContain('\u5728\u4e16 1 \u4eba')
+    expect(doc.querySelector('#pub-stats')?.textContent).toBe('共 2 人 · 在世 1 人 · 已故 1 人')
     expect(doc.body.textContent).toContain('\u5df2\u6545 1 \u4eba')
     expect(doc.body.textContent).toContain('\u65cf\u8c31\u5df2\u52a0\u5bc6')
     expect(doc.body.textContent).toContain('\u8bf7\u8f93\u5165\u5bc6\u7801\u4ee5\u67e5\u770b\u5185\u5bb9')

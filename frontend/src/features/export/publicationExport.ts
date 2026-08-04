@@ -1,4 +1,5 @@
 ﻿import type { PublicationLayout, PublicationPaper } from '../../types/family'
+import PERSON_CARD_STYLE from '../../components/PersonCardSvg.style?raw'
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink'
@@ -59,196 +60,8 @@ const EXPORT_SVG_STYLE = `
     stroke-linecap: round;
   }
 
-  .person-card {
-    cursor: default;
-  }
-
-  .person-card text {
-    pointer-events: none;
-    user-select: none;
-  }
-
-  .person-card__drop-line {
-    stroke: var(--line-soft, rgba(0, 0, 0, 0.15));
-  }
-
-  .person-card__name--compact {
-    font-family: 'Noto Serif SC', 'Songti SC', serif;
-  }
-
-  .person-card__panel {
-    fill: var(--card-panel-fill, rgba(248, 244, 237, 0.97));
-    stroke: var(--card-panel-stroke, #6f5943);
-    stroke-width: 1.2;
-  }
-
-  .person-card__inner {
-    fill: none;
-    stroke: var(--card-inner-stroke, rgba(120, 94, 63, 0.16));
-    stroke-width: 1;
-  }
-
-  .person-card__accent-frame {
-    fill: none;
-    stroke: transparent;
-    stroke-width: 0;
-  }
-
-  .person-card__header {
-    fill: none;
-  }
-
-  .person-card__divider {
-    stroke: rgba(126, 101, 74, 0.24);
-    stroke-width: 1;
-  }
-
-  .person-card__seal {
-    fill: rgba(170, 138, 103, 0.08);
-    stroke: rgba(143, 113, 78, 0.16);
-    stroke-width: 1;
-  }
-
-  .person-card__seal-mark {
-    fill: none;
-    stroke: rgba(126, 90, 49, 0.56);
-    stroke-width: 1.4;
-    stroke-linecap: round;
-  }
-
-  .person-card__status {
-    font-family: 'Manrope', sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    fill: #2f241a;
-  }
-
-  .person-card__name {
-    font-family: 'Noto Serif SC', 'Songti SC', serif;
-    font-weight: 600;
-    fill: var(--card-name-fill, #24170d);
-    letter-spacing: 0.08em;
-  }
-
-  .person-card__note-pill {
-    fill: none;
-  }
-
-  .person-card__imperial-ribbon {
-    stroke: rgba(255, 255, 255, 0.16);
-    stroke-width: 0.8;
-  }
-
-  .person-card__imperial-ribbon--emperor {
-    fill: #c6932f;
-  }
-
-  .person-card__imperial-ribbon--heir {
-    fill: #9a4d36;
-  }
-
-  .person-card__imperial-label {
-    font-family: 'Manrope', sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    fill: #fffaf0;
-  }
-
-  .person-card__note,
-  .person-card__detail,
-  .person-card__lineage-text {
-    font-family: 'Noto Serif SC', 'Songti SC', serif;
-  }
-
-  .person-card__detail {
-    fill: #33271d;
-  }
-
-  .person-card__note {
-    fill: #4a3a2b;
-    letter-spacing: 0.1em;
-  }
-
-  .person-card__lineage-text {
-    fill: #4a3a2b;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-  }
-
-  .person-card__detail-band {
-    fill: none;
-    stroke: none;
-  }
-
-  .person-card--male .person-card__header,
-  .person-card--male .person-card__note-pill,
-  .person-card--male .person-card__detail-band {
-    fill: none;
-  }
-
-  .person-card--female .person-card__header,
-  .person-card--female .person-card__note-pill,
-  .person-card--female .person-card__detail-band {
-    fill: none;
-  }
-
-  .person-card--emperor .person-card__accent-frame--emperor {
-    stroke: rgba(198, 147, 47, 0.92);
-    stroke-width: 2.6;
-  }
-
-  .person-card--emperor .person-card__panel {
-    stroke: rgba(198, 147, 47, 0.56);
-    stroke-width: 2.2;
-  }
-
-  .person-card--emperor .person-card__header,
-  .person-card--emperor .person-card__note-pill,
-  .person-card--emperor .person-card__detail-band {
-    fill: none;
-    stroke: none;
-  }
-
-  .person-card--heir .person-card__accent-frame--heir {
-    stroke: rgba(154, 77, 54, 0.82);
-    stroke-width: 2.2;
-    stroke-dasharray: 8 5;
-  }
-
-  .person-card--heir .person-card__panel {
-    stroke: rgba(154, 77, 54, 0.48);
-    stroke-width: 2;
-  }
-
-  .person-card--heir .person-card__header,
-  .person-card--heir .person-card__note-pill,
-  .person-card--heir .person-card__detail-band {
-    fill: none;
-    stroke: none;
-  }
-
-  .person-card--consort .person-card__panel {
-    stroke: rgba(180, 110, 140, 0.48);
-    stroke-width: 2;
-  }
-
-  .person-card--consort .person-card__header,
-  .person-card--consort .person-card__note-pill,
-  .person-card--consort .person-card__detail-band {
-    fill: none;
-    stroke: none;
-  }
-
-  .person-card--selected .person-card__panel {
-    stroke: var(--card-selected-stroke, #ab6d30);
-    stroke-width: 2.4;
-  }
-
-  .person-card--selected .person-card__inner {
-    stroke: rgba(171, 109, 48, 0.28);
-  }
+  ${PERSON_CARD_STYLE.replace(/:global\(([^)]+)\)/g, '$1')}
 `
-
 
 export interface PdfExportHeader {
   title: string
@@ -358,14 +171,17 @@ function resolveCssValue(value: string, themeValues: Record<string, string>): st
   let resolved = value
 
   while (resolved.includes('var(')) {
-    const next = resolved.replace(/var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,\s*([^)]+))?\)/g, (_, variableName: string, fallback?: string) => {
-      const themeValue = themeValues[variableName]
-      if (themeValue) {
-        return themeValue
-      }
+    const next = resolved.replace(
+      /var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,\s*([^)]+))?\)/g,
+      (_, variableName: string, fallback?: string) => {
+        const themeValue = themeValues[variableName]
+        if (themeValue) {
+          return themeValue
+        }
 
-      return fallback ? resolveCssValue(fallback.trim(), themeValues) : ''
-    })
+        return fallback ? resolveCssValue(fallback.trim(), themeValues) : ''
+      },
+    )
 
     if (next === resolved) {
       break
@@ -383,8 +199,7 @@ function buildExportStyle(pdfFriendly = false): string {
 
   const themeValues = getSvgThemeMap()
   return resolveCssValue(
-    EXPORT_SVG_STYLE
-      .replace(/^\s*@import\s+url\([^)]*\)\s*;\s*/m, '\n')
+    EXPORT_SVG_STYLE.replace(/^\s*@import\s+url\([^)]*\)\s*;\s*/m, '\n')
       .replaceAll("'Noto Serif SC', 'Songti SC', serif", PDF_SERIF_FONT_STACK)
       .replaceAll("'Manrope', sans-serif", PDF_SANS_FONT_STACK),
     themeValues,
@@ -440,7 +255,7 @@ function insertExportHeader(svg: SVGSVGElement, header?: PdfExportHeader) {
     currentY += 24
   }
 
-  header.lines?.forEach((line) => {
+  header.lines?.forEach(line => {
     const text = document.createElementNS(SVG_NAMESPACE, 'text')
     text.setAttribute('x', '0')
     text.setAttribute('y', String(currentY))
@@ -470,7 +285,7 @@ function insertBackground(svg: SVGSVGElement, layout: PublicationLayout) {
   if (canvasBg.includes('linear-gradient') || canvasBg.includes('radial-gradient')) {
     const colorRegex = /(rgba?\([^)]+\)|hsla?\([^)]+\)|#[0-9a-fA-F]{3,8})/g
     const colors = canvasBg.match(colorRegex)
-    
+
     if (colors && colors.length >= 2) {
       const defs = getOrCreateDefs(svg)
       const gradient = document.createElementNS(SVG_NAMESPACE, 'linearGradient')
@@ -479,19 +294,19 @@ function insertBackground(svg: SVGSVGElement, layout: PublicationLayout) {
       gradient.setAttribute('y1', '0%')
       gradient.setAttribute('x2', '0%')
       gradient.setAttribute('y2', '100%')
-      
+
       const stop1 = document.createElementNS(SVG_NAMESPACE, 'stop')
       stop1.setAttribute('offset', '0%')
       stop1.setAttribute('stop-color', colors[0])
-      
+
       const stop2 = document.createElementNS(SVG_NAMESPACE, 'stop')
       stop2.setAttribute('offset', '100%')
       stop2.setAttribute('stop-color', colors[colors.length - 1])
-      
+
       gradient.appendChild(stop1)
       gradient.appendChild(stop2)
       defs.appendChild(gradient)
-      
+
       fillValue = 'url(#canvas-bg-gradient)'
     } else {
       fillValue = computed.getPropertyValue('--bg-shell').trim() || '#e8ddc8'
@@ -505,7 +320,7 @@ function insertBackground(svg: SVGSVGElement, layout: PublicationLayout) {
   background.setAttribute('y', '0')
   background.setAttribute('width', formatNumber(layout.width))
   background.setAttribute('height', formatNumber(layout.height))
-  
+
   background.style.fill = fillValue
 
   const defs = svg.querySelector(':scope > defs')
@@ -513,7 +328,7 @@ function insertBackground(svg: SVGSVGElement, layout: PublicationLayout) {
 }
 
 function removeTransientState(svg: SVGSVGElement, includeSelection = false) {
-  svg.querySelectorAll('.person-card').forEach((element) => {
+  svg.querySelectorAll('.person-card').forEach(element => {
     if (!includeSelection) element.classList.remove('person-card--selected')
     element.classList.remove('person-card--hovered', 'person-card--subdued')
   })
@@ -523,8 +338,8 @@ function resolveCssVariablesInAttributes(svg: SVGSVGElement) {
   const themeValues = getSvgThemeMap()
   const elements = [svg, ...Array.from(svg.querySelectorAll<SVGElement>('*'))]
 
-  elements.forEach((element) => {
-    Array.from(element.attributes).forEach((attribute) => {
+  elements.forEach(element => {
+    Array.from(element.attributes).forEach(attribute => {
       if (!attribute.value.includes('var(')) {
         return
       }
@@ -535,15 +350,15 @@ function resolveCssVariablesInAttributes(svg: SVGSVGElement) {
 }
 
 function stripPdfUnsupportedFilters(svg: SVGSVGElement) {
-  svg.querySelectorAll('filter').forEach((element) => element.remove())
-  svg.querySelectorAll<SVGElement>('[filter]').forEach((element) => element.removeAttribute('filter'))
+  svg.querySelectorAll('filter').forEach(element => element.remove())
+  svg.querySelectorAll<SVGElement>('[filter]').forEach(element => element.removeAttribute('filter'))
 }
 
 function scopeInternalIds(svg: SVGSVGElement, suffix: string) {
   const idMap = new Map<string, string>()
   const elementsWithIds = Array.from(svg.querySelectorAll<SVGElement>('[id]'))
 
-  elementsWithIds.forEach((element) => {
+  elementsWithIds.forEach(element => {
     const nextId = `${element.id}-${suffix}`
     idMap.set(element.id, nextId)
     element.id = nextId
@@ -556,8 +371,8 @@ function scopeInternalIds(svg: SVGSVGElement, suffix: string) {
   const scopedElements = [svg, ...Array.from(svg.querySelectorAll<SVGElement>('*'))]
   const referenceAttributes = ['filter', 'clip-path', 'mask', 'fill', 'stroke', 'href', 'xlink:href']
 
-  scopedElements.forEach((element) => {
-    referenceAttributes.forEach((attribute) => {
+  scopedElements.forEach(element => {
+    referenceAttributes.forEach(attribute => {
       const value = element.getAttribute(attribute)
       if (!value) {
         return
@@ -565,7 +380,9 @@ function scopeInternalIds(svg: SVGSVGElement, suffix: string) {
 
       let nextValue = value
       idMap.forEach((nextId, previousId) => {
-        nextValue = nextValue.replaceAll(`url(#${previousId})`, `url(#${nextId})`).replaceAll(`#${previousId}`, `#${nextId}`)
+        nextValue = nextValue
+          .replaceAll(`url(#${previousId})`, `url(#${nextId})`)
+          .replaceAll(`#${previousId}`, `#${nextId}`)
       })
 
       if (nextValue !== value) {
@@ -637,34 +454,36 @@ export async function createStandalonePublicationSvg(options: CreateStandaloneSv
   // Embed images as base64 to ensure they are visible in standalone files
   const images = Array.from(svg.querySelectorAll('image'))
   const shouldEmbedImages = options.embedImages ?? true
-  await Promise.all(images.map(async (img) => {
-    const href = img.getAttribute('href') || img.getAttribute('xlink:href')
-    if (!href || href.startsWith('data:')) {
-      if (href) {
-        setImageHref(img, href)
+  await Promise.all(
+    images.map(async img => {
+      const href = img.getAttribute('href') || img.getAttribute('xlink:href')
+      if (!href || href.startsWith('data:')) {
+        if (href) {
+          setImageHref(img, href)
+        }
+        return
       }
-      return
-    }
 
-    if (!shouldEmbedImages) {
-      setImageHref(img, absolutizeExportResourceUrl(href, options.resourceBaseUrl))
-      return
-    }
+      if (!shouldEmbedImages) {
+        setImageHref(img, absolutizeExportResourceUrl(href, options.resourceBaseUrl))
+        return
+      }
 
-    try {
-      const response = await fetch(href)
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      const blob = await response.blob()
-      const reader = new FileReader()
-      const base64 = await new Promise<string>((resolve) => {
-        reader.onloadend = () => resolve(reader.result as string)
-        reader.readAsDataURL(blob)
-      })
-      setImageHref(img, base64)
-    } catch (err) {
-      throw new Error(`导出图片嵌入失败：${href}`, { cause: err })
-    }
-  }))
+      try {
+        const response = await fetch(href)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const blob = await response.blob()
+        const reader = new FileReader()
+        const base64 = await new Promise<string>(resolve => {
+          reader.onloadend = () => resolve(reader.result as string)
+          reader.readAsDataURL(blob)
+        })
+        setImageHref(img, base64)
+      } catch (err) {
+        throw new Error(`导出图片嵌入失败：${href}`, { cause: err })
+      }
+    }),
+  )
 
   if (options.pdfFriendly) {
     stripPdfUnsupportedFilters(svg)
@@ -702,12 +521,7 @@ export function getRasterExportSize(
 ): RasterExportSize {
   const width = Math.max(1, layout.width)
   const height = Math.max(1, layout.height)
-  const ratio = Math.min(
-    pixelRatio,
-    maxSide / width,
-    maxSide / height,
-    Math.sqrt(MAX_RASTER_PIXELS / (width * height)),
-  )
+  const ratio = Math.min(pixelRatio, maxSide / width, maxSide / height, Math.sqrt(MAX_RASTER_PIXELS / (width * height)))
   const safeRatio = Math.max(Number.EPSILON, ratio)
 
   return {
@@ -746,7 +560,7 @@ export async function rasterizeSvgToPngBlob(
     ctx.drawImage(image, 0, 0, size.width, size.height)
 
     return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((blob) => {
+      canvas.toBlob(blob => {
         if (blob) resolve(blob)
         else reject(new Error('PNG 导出失败'))
       }, 'image/png')
@@ -761,23 +575,25 @@ export function createPrintLayoutPages(layout: PublicationLayout, paper: Publica
   const paperMm = PAPER_MM[paper]
   const scale = paperMm.width / layout.paperPixelWidth
 
-  return [{
-    index: 1,
-    total: 1,
-    row: 0,
-    column: 0,
-    x: 0,
-    y: 0,
-    width: layout.width,
-    height: layout.height,
-    widthMm: layout.width * scale,
-    heightMm: layout.height * scale,
-  }]
+  return [
+    {
+      index: 1,
+      total: 1,
+      row: 0,
+      column: 0,
+      x: 0,
+      y: 0,
+      width: layout.width,
+      height: layout.height,
+      widthMm: layout.width * scale,
+      heightMm: layout.height * scale,
+    },
+  ]
 }
 
 export function createPrintDocument(options: CreatePrintDocumentOptions): string {
   const escapedTitle = escapeHtml(options.title)
-  
+
   const singlePage = options.pages[0]
   const pageWidth = singlePage ? `${formatNumber(singlePage.widthMm)}mm` : PAPER_SIZE_NAMES[options.paper]
   const pageHeight = singlePage ? `${formatNumber(singlePage.heightMm)}mm` : 'auto'

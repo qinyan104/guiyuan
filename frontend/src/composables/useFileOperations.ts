@@ -59,13 +59,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
     serverPublicationId,
   } = deps
 
-  const {
-    publication,
-    settings,
-    selectedPersonId,
-    replaceReactiveObject,
-    getDefaultSelectedPersonId,
-  } = pub
+  const { publication, settings, selectedPersonId, replaceReactiveObject, getDefaultSelectedPersonId } = pub
 
   const onImport = deps.onImport
 
@@ -116,12 +110,10 @@ export function useFileOperations(deps: FileOperationsDeps) {
     const people = draft.publication.people
     if (!people) return
 
-    const entries = Object.entries(people).filter(
-      ([, p]: [string, unknown]) => {
-        const person = p as Person
-        return person.avatarUrl?.startsWith('data:')
-      },
-    )
+    const entries = Object.entries(people).filter(([, p]: [string, unknown]) => {
+      const person = p as Person
+      return person.avatarUrl?.startsWith('data:')
+    })
 
     if (entries.length === 0) return
 
@@ -150,7 +142,9 @@ export function useFileOperations(deps: FileOperationsDeps) {
     return layoutPublication(publication, { ...settings, zoom: 1 })
   }
 
-  async function createCurrentStandaloneSvg(exportLayout: PublicationLayout = layout.value): Promise<SVGSVGElement | null> {
+  async function createCurrentStandaloneSvg(
+    exportLayout: PublicationLayout = layout.value,
+  ): Promise<SVGSVGElement | null> {
     // 方案一安全锁：导出前强制渲染全部节点，防止视口裁剪导致导出残缺
     await canvasRef.value?.prepareForExport?.()
     const svgElement = canvasRef.value?.getSvgElement?.()
@@ -200,7 +194,9 @@ export function useFileOperations(deps: FileOperationsDeps) {
 
   function shouldReplaceCurrentDraft(action = '导入文件'): boolean {
     if (serverPublicationId.value) {
-      return window.confirm(`${action}会完整替换当前族谱“${publication.title || '未命名族谱'}”，并自动保存到服务器。确定继续吗？`)
+      return window.confirm(
+        `${action}会完整替换当前族谱“${publication.title || '未命名族谱'}”，并自动保存到服务器。确定继续吗？`,
+      )
     }
     if (!hasUnsavedFileChanges.value) return true
     return window.confirm('当前草稿还有未保存到文件的修改，继续打开其他文件会覆盖当前内容。是否继续？')
@@ -337,9 +333,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
 
     const title = publication.title.trim() || '归元档案预览'
     const pages = createPrintLayoutPages(layout.value, settings.paper)
-    const pageSvgMarkups = pages.map((page) =>
-      serializeStandaloneSvg(createPrintPageSvg(svg, page, title), false),
-    )
+    const pageSvgMarkups = pages.map(page => serializeStandaloneSvg(createPrintPageSvg(svg, page, title), false))
     const printWindow = window.open('', '_blank', 'width=1440,height=960')
 
     if (!printWindow) {
@@ -418,35 +412,27 @@ export function useFileOperations(deps: FileOperationsDeps) {
 
   function exportShareHtml(password?: string) {
     return runCanvasExport('生成分享页面失败。', async () => {
-      // 方案一安全锁：导出前强制渲染全部节点
-      await canvasRef.value?.prepareForExport?.()
-      const svgElement = canvasRef.value?.getSvgElement?.()
-      if (!svgElement || layout.value.cards.length === 0) {
-        canvasRef.value?.releaseExportLock?.()
+      statusMessage.value = '正在生成分享页面...'
+      const standaloneSvg = await createCurrentStandaloneSvg()
+      if (!standaloneSvg) {
         errorMessage.value = '当前画布没有可导出的内容。'
         statusMessage.value = ''
         return
       }
 
-      statusMessage.value = '正在生成分享页面...'
-      try {
-        const html = await generateShareHtml({
-          publication,
-          settings,
-          layout: layout.value,
-          svgElement,
-          password: password || undefined,
-          onProgress: (_stage, percent) => {
-            statusMessage.value = `正在生成分享页面... ${percent}%`
-          },
-        })
+      const html = await generateShareHtml({
+        publication,
+        settings,
+        standaloneSvg,
+        password: password || undefined,
+        onProgress: (_stage, percent) => {
+          statusMessage.value = `正在生成分享页面... ${percent}%`
+        },
+      })
 
-        const fileName = `${sanitizeFileName(publication.title)}-分享.html`
-        downloadTextFile(fileName, html, 'text/html;charset=utf-8')
-        statusMessage.value = '分享页面已生成并下载。'
-      } finally {
-        canvasRef.value?.releaseExportLock?.()
-      }
+      const fileName = `${sanitizeFileName(publication.title)}-分享.html`
+      downloadTextFile(fileName, html, 'text/html;charset=utf-8')
+      statusMessage.value = '分享页面已生成并下载。'
     })
   }
 
