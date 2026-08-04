@@ -687,6 +687,9 @@ body {
 #tree-camera svg {
   display: block;
 }
+#tree-camera .person-card {
+  cursor: pointer;
+}
 
 /* Detail panel */
 #detail-panel {

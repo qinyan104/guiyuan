@@ -184,13 +184,13 @@
 }
 
 .person-card:hover .person-card__panel {
-  fill: var(--card-hover-fill);
-  stroke: var(--card-hover-stroke);
+  fill: var(--card-hover-fill, var(--card-panel-fill));
+  stroke: var(--card-hover-stroke, var(--card-panel-stroke));
 }
 
 .person-card--hovered .person-card__panel {
-  fill: var(--card-hover-fill);
-  stroke: var(--card-hover-stroke);
+  fill: var(--card-hover-fill, var(--card-panel-fill));
+  stroke: var(--card-hover-stroke, var(--card-panel-stroke));
   stroke-width: 2;
 }
 

@@ -15,6 +15,8 @@ const SVG_THEME_VARIABLES = [
   '--tree-line-color',
   '--card-panel-fill',
   '--card-panel-stroke',
+  '--card-hover-fill',
+  '--card-hover-stroke',
   '--card-inner-stroke',
   '--card-header-fill',
   '--card-selected-stroke',
@@ -61,6 +63,10 @@ const EXPORT_SVG_STYLE = `
   }
 
   ${PERSON_CARD_STYLE.replace(/:global\(([^)]+)\)/g, '$1')}
+
+  .person-card {
+    cursor: help;
+  }
 `
 
 export interface PdfExportHeader {
@@ -334,6 +340,22 @@ function removeTransientState(svg: SVGSVGElement, includeSelection = false) {
   })
 }
 
+function insertCardTitles(svg: SVGSVGElement) {
+  svg.querySelectorAll<SVGGElement>('.person-card').forEach(card => {
+    const labels = Array.from(card.querySelectorAll<SVGTextElement>('text'))
+      .map(text => text.textContent?.replace(/\s+/g, ' ').trim())
+      .filter((text): text is string => Boolean(text))
+    const label = [...new Set(labels)].join(' · ')
+    if (!label) return
+
+    const title = document.createElementNS(SVG_NAMESPACE, 'title')
+    title.textContent = label
+    card.prepend(title)
+    card.setAttribute('role', 'img')
+    card.setAttribute('aria-label', label)
+  })
+}
+
 function resolveCssVariablesInAttributes(svg: SVGSVGElement) {
   const themeValues = getSvgThemeMap()
   const elements = [svg, ...Array.from(svg.querySelectorAll<SVGElement>('*'))]
@@ -433,6 +455,7 @@ export async function createStandalonePublicationSvg(options: CreateStandaloneSv
   svg.removeAttribute('style')
 
   removeTransientState(svg, options.includeSelection)
+  insertCardTitles(svg)
 
   if (headerHeight > 0) {
     const contentGroup = document.createElementNS(SVG_NAMESPACE, 'g')
