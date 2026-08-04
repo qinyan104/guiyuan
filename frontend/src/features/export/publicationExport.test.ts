@@ -164,7 +164,7 @@ describe('createPrintLayoutPages', () => {
   it.each([
     ['horizontal', 2600, 500, 2, 1],
     ['vertical', 700, 2000, 1, 2],
-    ['both axes', 2400, 1700, 2, 2],
+    ['both axes', 2800, 2000, 2, 2],
   ])('tiles layouts that overflow %s', (_label, width, height, minColumns, minRows) => {
     const pages = createPrintLayoutPages(createLayout(width, height), {
       ...DEFAULT_DROP_LINE_PRINT_PROFILE,
@@ -189,7 +189,7 @@ describe('createPrintLayoutPages', () => {
   })
 
   it('moves a page seam away from a compact person name', () => {
-    const card = { personId: 'p1', x: 1000, y: 100, width: 32, height: 110 }
+    const card = { personId: 'p1', x: 1470, y: 100, width: 40, height: 110 }
     const pages = createPrintLayoutPages(createLayout(2600, 500, [card]), {
       ...DEFAULT_DROP_LINE_PRINT_PROFILE,
       nameSize: 18,
@@ -204,7 +204,7 @@ describe('createPrintLayoutPages', () => {
   })
 
   it('returns a blocking warning when no nearby seam can avoid a name', () => {
-    const card = { personId: 'p1', x: 850, y: 100, width: 400, height: 110 }
+    const card = { personId: 'p1', x: 1350, y: 100, width: 300, height: 110 }
     const pages = createPrintLayoutPages(createLayout(2600, 500, [card]), {
       ...DEFAULT_DROP_LINE_PRINT_PROFILE,
       nameSize: 18,
