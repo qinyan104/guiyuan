@@ -139,6 +139,7 @@ describe('shareHtmlExport helpers', () => {
     expect(payload.svgMarkup).toContain('<g class="person-card"')
     expect(payload.svgMarkup).toContain('data-person-id="p1"')
     expect(html).toContain('setupCardClick')
+    expect(html).toContain('#tree-camera .person-card')
     expect(doc.body.textContent).toContain('\u674e\u6c0f\u5b97\u8c31')
     expect(doc.body.textContent).toContain('\u90e1\u671b/\u7956\u7c4d\uff1a\u9647\u897f')
     expect(doc.body.textContent).toContain('\u5802\u53f7\uff1a\u6566\u672c\u5802')

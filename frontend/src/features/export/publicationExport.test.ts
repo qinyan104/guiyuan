@@ -90,7 +90,11 @@ describe('createStandalonePublicationSvg', () => {
   it('includes compact-card styles and removes transient canvas state', async () => {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     const card = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+    const name = document.createElementNS('http://www.w3.org/2000/svg', 'text')
     card.setAttribute('class', 'person-card person-card--selected person-card--hovered person-card--subdued')
+    name.setAttribute('class', 'person-card__name')
+    name.textContent = '李明'
+    card.appendChild(name)
     svg.appendChild(card)
 
     const exported = await createStandalonePublicationSvg({ svgElement: svg, layout, title: 'test' })
@@ -98,7 +102,11 @@ describe('createStandalonePublicationSvg', () => {
 
     expect(css).toContain('.person-card__drop-line')
     expect(css).toContain('.person-card__name--compact')
+    expect(css).toContain('fill: var(--card-hover-fill, var(--card-panel-fill));')
+    expect(css).toContain('cursor: help')
     expect(card.classList.contains('person-card--selected')).toBe(true)
     expect(exported.querySelector('.person-card')?.getAttribute('class')).toBe('person-card')
+    expect(exported.querySelector('.person-card > title')?.textContent).toBe('李明')
+    expect(exported.querySelector('.person-card')?.getAttribute('aria-label')).toBe('李明')
   })
 })
