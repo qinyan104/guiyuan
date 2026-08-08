@@ -2,14 +2,20 @@ const STORAGE_KEY_TOKEN = 'authToken'
 const STORAGE_KEY_USERNAME = 'authUsername'
 const STORAGE_KEY_ROLE = 'authRole'
 
-/** Restore from localStorage on module load (survives page refresh). */
-let accessToken: string | null = (() => {
+function removeStoredAccessToken(): void {
   try {
-    return localStorage.getItem(STORAGE_KEY_TOKEN)
+    localStorage.removeItem(STORAGE_KEY_TOKEN)
   } catch {
-    /* localStorage may be unavailable in private mode */ return null
+    /* localStorage may be unavailable in private mode */
   }
-})()
+}
+
+// Access tokens are intentionally memory-only. A refresh-cookie session is
+// restored through /auth/refresh during app bootstrap; keeping bearer tokens in
+// localStorage makes them available to any injected script.
+removeStoredAccessToken()
+
+let accessToken: string | null = null
 let username: string | null = (() => {
   try {
     return localStorage.getItem(STORAGE_KEY_USERNAME)
@@ -31,20 +37,12 @@ export function getAccessToken(): string | null {
 
 export function setAccessToken(token: string): void {
   accessToken = token
-  try {
-    localStorage.setItem(STORAGE_KEY_TOKEN, token)
-  } catch {
-    /* localStorage may be unavailable in private mode */
-  }
+  removeStoredAccessToken()
 }
 
 export function clearAccessToken(): void {
   accessToken = null
-  try {
-    localStorage.removeItem(STORAGE_KEY_TOKEN)
-  } catch {
-    /* localStorage may be unavailable in private mode */
-  }
+  removeStoredAccessToken()
 }
 
 export function getUsername(): string | null {
