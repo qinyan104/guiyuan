@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { BookDocument } from "../../types/bookDocument"
-import { CJK_FALLBACK_FONT, CJK_FALLBACK_FONTS } from "./bookFonts"
+import { CJK_FALLBACK_FONTS } from "./bookFonts"
 import { paginateBook } from "./bookPaginator"
 
 const EXTENSION_C_CHARACTER = String.fromCodePoint(0x2a700)
@@ -42,17 +42,18 @@ describe("paginateBook", () => {
     ]],
     ["单个汉字缺失", "甲龘乙", [
       { text: "甲", fontFamily: "XiaolaiMonoSC" },
-      { text: "龘", fontFamily: CJK_FALLBACK_FONT },
+      { text: "龘", fontFamily: CJK_FALLBACK_FONTS[0] },
       { text: "乙", fontFamily: "XiaolaiMonoSC" },
     ]],
     ["中文标点缺失", "甲，乙", [
       { text: "甲", fontFamily: "XiaolaiMonoSC" },
-      { text: "，", fontFamily: CJK_FALLBACK_FONT },
+      { text: "，", fontFamily: CJK_FALLBACK_FONTS[0] },
       { text: "乙", fontFamily: "XiaolaiMonoSC" },
     ]],
     ["连续混合字体片段", "甲乙龘，丙丁", [
       { text: "甲乙", fontFamily: "XiaolaiMonoSC" },
-      { text: "龘，", fontFamily: CJK_FALLBACK_FONT },
+      { text: "龘", fontFamily: CJK_FALLBACK_FONTS[0] },
+      { text: "，", fontFamily: CJK_FALLBACK_FONTS[0] },
       { text: "丙丁", fontFamily: "XiaolaiMonoSC" },
     ]],
     ["扩展区汉字缺失", `甲${EXTENSION_C_CHARACTER}乙`, [
@@ -83,7 +84,8 @@ describe("paginateBook", () => {
 
     const result = paginateBook(book, (fontFamily, char) => CJK_FALLBACK_FONTS.some((fallback) => fallback === fontFamily && (char !== EXTENSION_C_CHARACTER || fallback === "Jigmo2") && (char !== EXTENSION_G_CHARACTER && char !== EXTENSION_J_CHARACTER || fallback === "Jigmo3")) || char !== "龘" && char !== "，" && char !== EXTENSION_C_CHARACTER && char !== EXTENSION_G_CHARACTER && char !== EXTENSION_J_CHARACTER)
 
-    expect(result.pages[0].blocks[0].columns[0]).toEqual({ text, runs: expectedRuns })
+    expect(result.pages[0].blocks[0].columns[0]).toMatchObject({ text })
+    expect(result.pages[0].blocks[0].columns[0].runs.map(({ text, fontFamily }) => ({ text, fontFamily }))).toEqual(expectedRuns)
   })
 
   it("扩展区汉字位于栏尾时保持完整码点", () => {

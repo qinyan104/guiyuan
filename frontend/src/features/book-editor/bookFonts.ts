@@ -16,7 +16,7 @@ export const BOOK_FONT_URLS = {
 
 export const BOOK_CALLIGRAPHY_FONT = "MaShanZheng"
 export const CJK_FALLBACK_FONT = "LXGWWenKai"
-export const CJK_FALLBACK_FONTS = [CJK_FALLBACK_FONT, "HanaMinA", "Jigmo", "Jigmo2", "Jigmo3"] as const
+export const CJK_FALLBACK_FONTS = ["HanaMinA", "Jigmo", "Jigmo2", "Jigmo3"] as const
 
 export type BookFontSupport = (fontFamily: string, char: string) => boolean
 

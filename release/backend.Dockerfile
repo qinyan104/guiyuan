@@ -13,8 +13,8 @@ RUN mvn package -DskipTests -DskipITs -q && \
 # ─── Stage 2: Runtime ───
 FROM eclipse-temurin:17-jre-alpine
 
-# Minimal runtime dependencies
-RUN apk add --no-cache curl
+# Runtime dependencies: curl for health checks, mariadb-client for backup/restore commands.
+RUN apk add --no-cache curl mariadb-client
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 

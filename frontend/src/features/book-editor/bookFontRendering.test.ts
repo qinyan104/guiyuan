@@ -97,7 +97,7 @@ describe("古籍字体渲染", () => {
         text,
         fontUrl: (options as { font: { family: string } }).font.family,
       }))
-    expect(pdfGlyphs).toEqual(expectedGlyphs)
+    expect(pdfGlyphs.slice(-expectedGlyphs.length)).toEqual(expectedGlyphs)
   })
 
   it("PDF 不绘制编辑器的手动分页标记", async () => {

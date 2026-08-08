@@ -516,14 +516,12 @@ export function buildHtmlTemplate(options: {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(options.isEncrypted ? '加密族谱' : options.title)} - 族谱分享</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
-
 ${options.themeCss}
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'Manrope', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
   background: var(--shell-bg-image, var(--bg-shell, #f5f0e8));
   color: var(--text-main, #241a10);
   overflow: hidden;
@@ -555,7 +553,7 @@ body {
   box-shadow: 0 8px 32px rgba(0,0,0,0.06);
 }
 #password-gate h2 {
-  font-family: 'Noto Serif SC', serif;
+  font-family: 'Songti SC', 'SimSun', serif;
   font-size: 1.2rem;
   margin-bottom: 8px;
 }
@@ -623,13 +621,13 @@ body {
   border-bottom: none;
 }
 #pub-header h1 {
-  font-family: 'Noto Serif SC', serif;
+  font-family: 'Songti SC', 'SimSun', serif;
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 4px;
 }
 #pub-header h2 {
-  font-family: 'Noto Serif SC', serif;
+  font-family: 'Songti SC', 'SimSun', serif;
   font-size: 0.95rem;
   font-weight: 400;
   color: var(--text-soft, #8a8078);
@@ -828,7 +826,7 @@ body {
   font-weight: 700;
 }
 .detail-name {
-  font-family: 'Noto Serif SC', serif;
+  font-family: 'Songti SC', 'SimSun', serif;
   font-size: 28px;
   line-height: 1.2;
   font-weight: 700;

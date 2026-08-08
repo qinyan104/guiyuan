@@ -372,8 +372,12 @@ async function reloadFromServerAfterConflict() {
   await load(true)
 }
 
+function isSynced() {
+  return syncStatus.value === 'saved'
+}
+
 async function confirmLeaveWithUnsavedChanges() {
-  if (syncStatus.value === 'saved') return true
+  if (isSynced()) return true
   if (syncStatus.value !== 'conflict' && syncStatus.value !== 'syncing') {
     try {
       await saveToServer()
@@ -381,7 +385,7 @@ async function confirmLeaveWithUnsavedChanges() {
       // A conflict is handled below by the explicit leave confirmation.
     }
   }
-  if (syncStatus.value === 'saved') return true
+  if (isSynced()) return true
   saveRecoverySnapshot('离开页面前保存的本地恢复副本')
   return window.confirm('当前修改尚未保存到服务器，确定离开吗？')
 }

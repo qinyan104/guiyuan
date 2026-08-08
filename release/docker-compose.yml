@@ -51,6 +51,7 @@ services:
       DB_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
       JWT_SECRET: ${JWT_SECRET}
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
+      APP_SECURE_COOKIE: ${APP_SECURE_COOKIE:-false}
       JAVA_OPTS: ${JAVA_OPTS:-}
     ports:
       - "8080:8080"

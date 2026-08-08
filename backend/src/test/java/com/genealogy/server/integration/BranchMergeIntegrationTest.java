@@ -132,18 +132,19 @@ class BranchMergeIntegrationTest {
     /**
      * 构建带挂载点属性的族谱数据。
      */
-    private Map<String, Object> masterDataWithMountPoint(long targetPubId) {
+    private Map<String, Object> masterDataWithMountPoint(long targetPubId, long targetRootPersonId) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("focusFamilyId", "");
 
         Map<String, Object> mountPerson = new LinkedHashMap<>();
         mountPerson.put("id", "mount-p1");
-        mountPerson.put("name", "挂载点人物");
+        mountPerson.put("name", "分支张三");
         mountPerson.put("gender", "male");
         mountPerson.put("deceased", false);
         mountPerson.put("birth", "1950");
         mountPerson.put("isMountPoint", true);
         mountPerson.put("targetPublicationId", targetPubId);
+        mountPerson.put("targetRootPersonId", targetRootPersonId);
 
         Map<String, Object> people = new LinkedHashMap<>();
         people.put("mount-p1", mountPerson);
@@ -170,39 +171,45 @@ class BranchMergeIntegrationTest {
         // 验证分支数据已写入
         List<Person> branchPeople = personRepository.findByPublicationId(branchPubId);
         assertThat(branchPeople).as("分支族谱应有 2 人").hasSize(2);
+        long branchRootPersonId = branchPeople.stream()
+                .filter(person -> "branch-p1".equals(person.getPersonId()))
+                .findFirst()
+                .orElseThrow()
+                .getId();
 
         // 2. 创建主谱，挂载点指向分支
         long masterPubId = publicationService.createPublication(
                 USER_ID, "主谱", "",
-                masterDataWithMountPoint(branchPubId), "{}", "{}");
+                masterDataWithMountPoint(branchPubId, branchRootPersonId), "{}", "{}");
 
         Person mountPoint = personRepository
                 .findByPublicationIdAndPersonId(masterPubId, "mount-p1")
                 .orElseThrow();
         assertThat(mountPoint.getIsMountPoint()).as("创建时应标记为挂载点").isTrue();
         assertThat(mountPoint.getTargetPublicationId()).as("应指向分支族谱").isEqualTo(branchPubId);
+        assertThat(mountPoint.getTargetRootPersonId()).as("应指向分支根人物").isEqualTo(branchRootPersonId);
 
         // 3. 执行合并
         publicationService.mergeBranch(masterPubId, "mount-p1", actor);
 
-        // 4. 验证主谱中已有分支人物（加上原来的挂载点，共 3 人）
+        // 4. 验证主谱中已有分支人物（目标根人物并入原挂载点，非根人物克隆）
         List<Person> masterPeople = personRepository.findByPublicationId(masterPubId);
-        assertThat(masterPeople).as("合并后主谱应有 3 人").hasSize(3);
+        assertThat(masterPeople).as("合并后主谱应有 2 人").hasSize(2);
 
         // 分支人物应该带有 merged_ 前缀的 personId
         assertThat(masterPeople)
                 .extracting(Person::getPersonId)
-                .contains("merged_" + branchPubId + "_branch-p1",
-                        "merged_" + branchPubId + "_branch-p2");
+                .contains("mount-p1", "merged_" + branchPubId + "_branch-p2")
+                .doesNotContain("merged_" + branchPubId + "_branch-p1");
 
         // 验证人物姓名正确迁移
-        String expectedId = "merged_" + branchPubId + "_branch-p1";
-        Person mergedZhang = masterPeople.stream()
+        String expectedId = "merged_" + branchPubId + "_branch-p2";
+        Person mergedLi = masterPeople.stream()
                 .filter(p -> expectedId.equals(p.getPersonId()))
                 .findFirst().orElseThrow();
-        assertThat(mergedZhang.getName()).isEqualTo("分支张三");
-        assertThat(mergedZhang.getGender()).isEqualTo("male");
-        assertThat(mergedZhang.getBirth()).isEqualTo("1960");
+        assertThat(mergedLi.getName()).isEqualTo("分支李四");
+        assertThat(mergedLi.getGender()).isEqualTo("female");
+        assertThat(mergedLi.getBirth()).isEqualTo("1965");
 
         // 5. 验证家庭已迁移
         List<com.genealogy.server.model.Family> masterFamilies =

@@ -117,7 +117,7 @@ class BranchMergeTest {
         mountPoint.setId(10L);
         mountPoint.setPublicationId(MASTER_PUB_ID);
         mountPoint.setPersonId(MOUNT_POINT_PERSON_ID);
-        mountPoint.setName("Mount Point");
+        mountPoint.setName("Branch Root");
         mountPoint.setGender("male");
         mountPoint.setIsMountPoint(true);
         mountPoint.setTargetPublicationId(TARGET_PUB_ID);
@@ -137,9 +137,8 @@ class BranchMergeTest {
         branchChild.setPersonId("branch-child");
         branchChild.setName("Branch Child");
         branchChild.setGender("female");
-        branchChild.setIsMountPoint(true);
-        branchChild.setTargetPublicationId(8L);
-        branchChild.setTargetRootPersonId(88L);
+        branchChild.setIsMountPoint(false);
+        branchChild.setPhotoId(70L);
 
         Family branchFamily = new Family();
         branchFamily.setId(30L);
@@ -165,15 +164,17 @@ class BranchMergeTest {
 
         when(personRepository.findByPublicationIdAndPersonId(MASTER_PUB_ID, MOUNT_POINT_PERSON_ID))
                 .thenReturn(Optional.of(mountPoint));
-        when(personRepository.findByPublicationId(TARGET_PUB_ID))
-                .thenReturn(List.of(branchRoot, branchChild));
-        when(familyRepository.findByPublicationId(TARGET_PUB_ID))
-                .thenReturn(List.of(branchFamily));
+        com.genealogy.server.model.Publication masterPublication = new com.genealogy.server.model.Publication();
+        masterPublication.setId(MASTER_PUB_ID);
+        masterPublication.setRevision(0L);
+        when(publicationRepository.findById(MASTER_PUB_ID)).thenReturn(Optional.of(masterPublication));
         when(familyMemberRepository.findByFamilyDbIdOrderBySortOrder(30L))
                 .thenReturn(List.of(adultMember, childMember));
-        when(personRepository.findById(200L)).thenReturn(Optional.empty()); // BFS root fallback: person 200 does not exist in target
+        when(personRepository.findById(200L)).thenReturn(Optional.of(branchRoot));
         when(personRepository.findById(20L)).thenReturn(Optional.of(branchRoot));
         when(personRepository.findById(21L)).thenReturn(Optional.of(branchChild));
+        when(personRepository.findAllById(any())).thenReturn(List.of(branchRoot, branchChild));
+        when(familyRepository.findAllById(any())).thenReturn(List.of(branchFamily));
 
         when(photoService.clonePhotoForPerson(anyLong(), anyLong())).thenAnswer(invocation -> {
             Photo cloned = new Photo();
@@ -210,17 +211,15 @@ class BranchMergeTest {
 
         verify(authorizationService).require(actor, TARGET_PUB_ID, AccessPermission.READ_FULL);
 
-        Person mergedRoot = mergedPeopleBySourceId.get("branch-root");
         Person mergedChild = mergedPeopleBySourceId.get("branch-child");
-        assertThat(mergedRoot).isNotNull();
+        assertThat(mergedPeopleBySourceId).doesNotContainKey("branch-root");
         assertThat(mergedChild).isNotNull();
-        assertThat(mergedRoot.getPublicationId()).isEqualTo(MASTER_PUB_ID);
-        assertThat(mergedRoot.getPersonId()).isEqualTo("merged_2_branch-root");
-        assertThat(mergedRoot.getPhotoId()).isEqualTo(3000L);
+        assertThat(mergedChild.getPublicationId()).isEqualTo(MASTER_PUB_ID);
         assertThat(mergedChild.getPersonId()).isEqualTo("merged_2_branch-child");
-        assertThat(mergedChild.getIsMountPoint()).isTrue();
-        assertThat(mergedChild.getTargetPublicationId()).isEqualTo(8L);
-        assertThat(mergedChild.getTargetRootPersonId()).isEqualTo(88L);
+        assertThat(mergedChild.getPhotoId()).isEqualTo(3000L);
+        assertThat(mergedChild.getIsMountPoint()).isFalse();
+        assertThat(mergedChild.getTargetPublicationId()).isNull();
+        assertThat(mergedChild.getTargetRootPersonId()).isNull();
 
         ArgumentCaptor<Family> familyCaptor = ArgumentCaptor.forClass(Family.class);
         verify(familyRepository).save(familyCaptor.capture());
@@ -234,7 +233,7 @@ class BranchMergeTest {
         List<FamilyMember> mergedMembers = familyMemberCaptor.getAllValues();
         assertThat(mergedMembers).extracting(FamilyMember::getRole).containsExactly("adult", "child");
         assertThat(mergedMembers).extracting(FamilyMember::getPersonDbId)
-                .containsExactly(mergedRoot.getId(), mergedChild.getId());
+                .containsExactly(mountPoint.getId(), mergedChild.getId());
 
         verify(personRepository, atLeastOnce()).save(mountPoint);
         assertThat(mountPoint.getIsMountPoint()).isFalse();

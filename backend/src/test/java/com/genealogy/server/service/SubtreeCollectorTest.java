@@ -61,8 +61,6 @@ class SubtreeCollectorTest {
         when(familyMemberRepository.findByPersonDbId(p3DbId)).thenReturn(Collections.singletonList(m3f2));
         when(familyMemberRepository.findByFamilyDbIdOrderBySortOrder(f2DbId)).thenReturn(Arrays.asList(m3f2, m4f2, m5f2));
         
-        // P4 has no other families
-        when(familyMemberRepository.findByPersonDbId(p4DbId)).thenReturn(Collections.singletonList(m4f2));
         // P5 has no other families
         when(familyMemberRepository.findByPersonDbId(p5DbId)).thenReturn(Collections.singletonList(m5f2));
 

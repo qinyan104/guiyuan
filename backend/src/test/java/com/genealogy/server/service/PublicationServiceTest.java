@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +40,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -158,8 +158,6 @@ class PublicationServiceTest {
 
     @Test
     void updatePublicationKeepsExistingPhotoReferenceWithoutCreatingAnotherPhotoRow() {
-        AtomicLong recreatedPersonIds = new AtomicLong(201L);
-        AtomicInteger newPhotoRows = new AtomicInteger();
         AtomicLong recreatedFamilyIds = new AtomicLong(401L);
 
         Publication publication = new Publication();
@@ -174,14 +172,6 @@ class PublicationServiceTest {
         existingPerson.setPhotoId(7L);
         when(personRepository.findByPublicationId(100L)).thenReturn(List.of(existingPerson));
 
-        when(personRepository.save(any(Person.class))).thenAnswer(invocation -> {
-            Person person = invocation.getArgument(0);
-            if (person.getId() == null) {
-                person.setId(recreatedPersonIds.getAndIncrement());
-            }
-            return person;
-        });
-
         when(familyRepository.save(any(Family.class))).thenAnswer(invocation -> {
             Family family = invocation.getArgument(0);
             if (family.getId() == null) {
@@ -190,23 +180,10 @@ class PublicationServiceTest {
             return family;
         });
 
-        when(photoService.handlePersonAvatar(anyLong(), any(), anyBoolean())).thenReturn(null);
-
-        Photo existingPhoto = new Photo();
-        existingPhoto.setId(7L);
-        existingPhoto.setPersonDbId(200L);
-        existingPhoto.setMimeType("image/png");
-        existingPhoto.setData(new byte[]{1, 2, 3});
-        // reassignPhoto is void on a mock; stubbing not needed
-
         publicationService.updatePublication(100L, 0L, "李氏族谱", "更新", buildPublicationData("/api/photos/7"), null, null);
 
-        assertThat(newPhotoRows.get()).isZero();
-
-        ArgumentCaptor<Person> personCaptor = ArgumentCaptor.forClass(Person.class);
-        verify(personRepository, atLeast(2)).save(personCaptor.capture());
-        Person recreatedPerson = personCaptor.getAllValues().get(personCaptor.getAllValues().size() - 1);
-        assertThat(recreatedPerson.getPhotoId()).isEqualTo(7L);
+        verify(photoService, never()).handlePersonAvatar(anyLong(), any(), anyBoolean());
+        assertThat(existingPerson.getPhotoId()).isEqualTo(7L);
     }
 
     @Test

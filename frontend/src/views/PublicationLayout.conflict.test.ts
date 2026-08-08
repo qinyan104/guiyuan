@@ -7,6 +7,8 @@ import { defaultSettings } from '../data/sampleFamily'
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { id: '7' } }),
   useRouter: () => ({ push: vi.fn() }),
+  onBeforeRouteLeave: vi.fn(),
+  onBeforeRouteUpdate: vi.fn(),
 }))
 
 // Mock the API
@@ -181,7 +183,7 @@ describe('PublicationLayout conflict handling', () => {
   it('shows a local draft notice after loading a publication with a saved conflict draft', async () => {
     saveConflictDraft({
       publicationId: 7,
-      serverRevision: 4,
+      serverRevision: 5,
       message: 'Previous save conflicted.',
       publication: {
         ...mockPublicationData.publication,
@@ -203,7 +205,7 @@ describe('PublicationLayout conflict handling', () => {
   it('restores and clears a saved local draft', async () => {
     saveConflictDraft({
       publicationId: 7,
-      serverRevision: 4,
+      serverRevision: 5,
       message: 'Previous save conflicted.',
       publication: {
         ...mockPublicationData.publication,

@@ -143,6 +143,7 @@ function generate() {
       }
     }
     document.value = generated
+    savedSnapshot.value = draftSnapshot(generated)
     currentPageIndex.value = 0
     selectedBlockIndex.value = null
     message.value = "已生成书稿，请及时保存"
@@ -185,6 +186,10 @@ function updateBlock(blockIndex: number, field: "text" | "note" | "title" | "sub
   else if ((field === "title" || field === "subtitle") && block?.type === "cover") blocks[blockIndex] = { ...block, [field]: text }
   else return
   document.value = { ...document.value, title: field === "title" ? text : document.value.title, blocks }
+}
+
+function updatePerson(blockIndex: number, text: string) {
+  updateBlock(blockIndex, "text", text)
 }
 
 function updateViewMode(next: "single" | "spread") {
@@ -281,6 +286,7 @@ async function exportPdf() {
         :zoom="zoom"
         :selectedBlockIndex="selectedBlockIndex"
         @updateBlock="updateBlock"
+        @updatePerson="updatePerson"
         @selectBlock="selectedBlockIndex = $event"
         @goToPage="goToPage"
         @zoom="updateZoom"

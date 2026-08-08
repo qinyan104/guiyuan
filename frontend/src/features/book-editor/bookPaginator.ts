@@ -18,7 +18,7 @@ import {
   pageMargin,
   textColumnSlices,
 } from "./bookPageMetrics"
-import { BOOK_CALLIGRAPHY_FONT, CJK_FALLBACK_FONTS, resolveBookFontFamily, type BookFontSupport } from "./bookFonts"
+import { BOOK_CALLIGRAPHY_FONT, CJK_FALLBACK_FONT, CJK_FALLBACK_FONTS, resolveBookFontFamily, type BookFontSupport } from "./bookFonts"
 
 function isCjkFallbackCharacter(char: string): boolean {
   const point = char.codePointAt(0) ?? -1
@@ -76,7 +76,7 @@ function textRuns(
       : format && sourceOffset >= format.metadataStart ? "metadata" : undefined
     let actualFont = variant === "name" ? BOOK_CALLIGRAPHY_FONT : fontFamily
     if (isCjkFallbackCharacter(char) && !supportsGlyph(actualFont, char)) {
-      const fallbackFont = CJK_FALLBACK_FONTS.find((family) => supportsGlyph(family, char))
+      const fallbackFont = [CJK_FALLBACK_FONT, ...CJK_FALLBACK_FONTS].find((family) => supportsGlyph(family, char))
       if (!fallbackFont) throw new Error(`后备字体缺少字形：${char}`)
       actualFont = fallbackFont
     }
@@ -95,19 +95,13 @@ function layoutBlock(block: BookBlock, blockIndex: number, doc: BookDocument, su
     : block.type === "contents"
       ? [block.title, "", ...block.entries.map((entry) => entry.text)]
     : sourceColumns?.map((column) => column.text) ?? blockTextColumns(block)
-  const fontFamily = block.type === "cover" || block.type === "generationHeading"
-    ? BOOK_CALLIGRAPHY_FONT
-    : resolveBookFontFamily(doc.layout.fontFamily)
+  const fontFamily = resolveBookFontFamily(doc.layout.fontFamily)
   const firstSentenceEnd = block.type === "person" ? block.text.indexOf("。") : -1
   const nameMarkerStart = block.type === "person" ? block.text.indexOf(`公諱${block.personName}`) : -1
-  let nameStart = block.type === "person"
+  const nameStart = block.type === "person"
     ? (nameMarkerStart >= 0 ? nameMarkerStart + 2 : block.text.indexOf(block.personName))
     : -1
-  let nameEnd = nameStart + (block.type === "person" ? block.personName.length : 0)
-  if (block.type === "person" && nameStart < 0) {
-    nameStart = 0
-    nameEnd = firstSentenceEnd >= 0 ? firstSentenceEnd : block.text.length
-  }
+  const nameEnd = nameStart >= 0 ? nameStart + (block.type === "person" ? block.personName.length : 0) : -1
   const columns: BookPageColumn[] = columnTexts.map((text, index) => {
     const sourceColumn = block.type === "preface" ? sourceColumns?.[index - 2] : sourceColumns?.[index]
     return {
@@ -188,32 +182,12 @@ function withColumns(item: BookPageBlock, columns: BookPageBlock["columns"]): Bo
 
 function fragmentColumnCount(columns: BookPageBlock["columns"], capacity: number): number {
   let count = Math.min(capacity, columns.length)
-  const remainder = columns.length - count
-  if (remainder > 0 && remainder < 3 && count > 3) count -= 3 - remainder
-  if (remainder > 0 && columns.slice(count).every((column) => column.variant === "annotation")) {
+  if (columns.length > count && columns.slice(count).every((column) => column.variant === "annotation")) {
     const lastBodyColumn = columns.slice(0, count).findLastIndex((column) => column.variant !== "annotation")
     // ponytail: notes longer than a page may still continue alone; add note-only page rules if real data needs them.
     if (lastBodyColumn >= 2) count = lastBodyColumn
   }
   return Math.max(1, count)
-}
-
-function balanceLastPage(pages: BookPageLayout[], columnsPerPage: number) {
-  const lastPage = pages.at(-1)
-  const previousPage = pages.at(-2)
-  if (!lastPage || !previousPage || lastPage.blocks.some((item) => item.block.type === "pageBreak")) return
-  const lastUsed = lastPage.blocks.reduce((sum, item) => sum + item.columnSpan, 0)
-  if (lastUsed === 0 || lastUsed >= 3) return
-  let moveFrom = previousPage.blocks.length - 1
-  if (previousPage.blocks[moveFrom]?.block.type !== "person") return
-  if (previousPage.blocks[moveFrom]?.blockIndex === lastPage.blocks.find((item) => item.block.type !== "pageBreak")?.blockIndex) return
-  if (previousPage.blocks[moveFrom - 1]?.block.type === "generationHeading") moveFrom -= 1
-  const staying = previousPage.blocks.slice(0, moveFrom)
-  const moving = previousPage.blocks.slice(moveFrom)
-  const movingColumns = moving.reduce((sum, item) => sum + item.columnSpan, 0)
-  if (!staying.some((item) => item.block.type !== "pageBreak") || lastUsed + movingColumns > columnsPerPage) return
-  previousPage.blocks = staying
-  lastPage.blocks = [...moving, ...lastPage.blocks]
 }
 
 export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport = () => true): BookPaginationResult {
@@ -259,8 +233,10 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
     let reservedNextColumns = 0
     if (block.type === "generationHeading" && nextBlock?.type === "person") {
       const nextItem = layoutBlock(nextBlock, blockIndex + 1, doc, supportsGlyph)
-      const availableAfterHeading = metrics.columnsPerPage - item.columnSpan
-      reservedNextColumns = nextItem.columnSpan <= availableAfterHeading ? nextItem.columnSpan : Math.min(2, nextItem.columnSpan)
+      const availableAfterHeading = metrics.columnsPerPage - used - item.columnSpan
+      reservedNextColumns = nextItem.columnSpan <= availableAfterHeading
+        ? nextItem.columnSpan
+        : nextItem.columnSpan <= 2 ? nextItem.columnSpan : 1
     }
     if (block.type !== "person" && hasPrintableBlock(page) && used + item.columnSpan + reservedNextColumns > metrics.columnsPerPage) {
       page = makePage(pages)
@@ -306,7 +282,6 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
   })
 
   const visiblePages = pages.filter(hasPrintableBlock)
-  balanceLastPage(visiblePages, metrics.columnsPerPage)
   const generationPages = new Map<number, number>()
   visiblePages.forEach((visiblePage) => visiblePage.blocks.forEach((item) => {
     if (item.block.type === "generationHeading" && !generationPages.has(item.block.generation)) {
@@ -320,7 +295,7 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
       const targetPageNumber = generationPages.get(column.targetGeneration)
       if (!targetPageNumber) return
       column.targetPageNumber = targetPageNumber
-      column.text = `${column.text}　···　第${targetPageNumber}页`
+      column.text = `${column.text}\u3000···\u3000第${targetPageNumber}页`
       column.runs = textRuns(column.text, item.fontFamily, supportsGlyph)
     })
   }))
