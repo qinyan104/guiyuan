@@ -1,12 +1,18 @@
 import { test, expect } from '@playwright/test'
-import { loginPage } from '../helpers/auth'
+import { authenticatedRequest, ensureTestUser, loginPage } from '../helpers/auth'
 
 const ADMIN_USER = 'root'
 const ADMIN_PASS = '123456'
 const NEW_NAME = 'E2E 测试姓名'
-const NEW_PASSWORD = 'e2e_new_pass_456'
+const PROFILE_USER = 'e2e_profile'
+const PROFILE_PASS = 'E2e_Profile_123'
+const NEW_PASSWORD = 'E2e_Profile_456'
 
 test.describe('Profile / Settings', () => {
+  test.beforeAll(async ({ request }) => {
+    await ensureTestUser(request, PROFILE_USER, PROFILE_PASS)
+  })
+
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
@@ -44,57 +50,57 @@ test.describe('Profile / Settings', () => {
   })
 
   test('should change password and verify login with new password', async ({ page }) => {
-    await page.goto('/dashboard/settings')
-    await expect(page.getByText('账户设置')).toBeVisible()
+    const authToken = await loginPage(page, PROFILE_USER, PROFILE_PASS)
+    let passwordChanged = false
 
-    const passwordSection = page.locator('.settings-card').filter({ hasText: '登录密码' })
-    await expect(passwordSection).toBeVisible()
+    try {
+      await page.goto('/dashboard/settings')
+      await expect(page.getByText('账户设置')).toBeVisible()
 
-    // Fill in password change form
-    await passwordSection.locator('input[placeholder="输入当前密码"]').fill(ADMIN_PASS)
-    await passwordSection.locator('input[placeholder="至少 4 个字符"]').fill(NEW_PASSWORD)
-    await passwordSection.locator('input[placeholder="再次输入新密码"]').fill(NEW_PASSWORD)
+      const passwordSection = page.locator('.settings-card').filter({ hasText: '登录密码' })
+      await expect(passwordSection).toBeVisible()
 
-    // Click "更新密码" button
-    await passwordSection.locator('button:has-text("更新密码")').click()
+      // Fill in password change form
+      await passwordSection.locator('input[placeholder="输入当前密码"]').fill(PROFILE_PASS)
+      await passwordSection.locator('input[placeholder="至少 8 个字符，含大小写和数字"]').fill(NEW_PASSWORD)
+      await passwordSection.locator('input[placeholder="再次输入新密码"]').fill(NEW_PASSWORD)
 
-    // Should see success message "已更新"
-    await expect(passwordSection.locator('.msg.ok')).toBeVisible({ timeout: 5000 })
-    await expect(passwordSection.locator('.msg.ok')).toContainText('已更新')
+      // Click "更新密码" button
+      await passwordSection.locator('button:has-text("更新密码")').click()
 
-    // Now logout and verify we can login with the new password
-    await page.goto('/login')
-    await page.evaluate(() => localStorage.clear())
-    await page.context().clearCookies()
+      // Should see success message "已更新"
+      await expect(passwordSection.locator('.msg.ok')).toBeVisible({ timeout: 5000 })
+      await expect(passwordSection.locator('.msg.ok')).toContainText('已更新')
+      passwordChanged = true
 
-    // Re-navigate to login (will be redirected since auth cleared)
-    await page.goto('/login')
-    await expect(page.locator('form.auth-form')).toBeVisible()
+      // Now logout and verify we can login with the new password
+      await page.goto('/login')
+      await page.evaluate(() => localStorage.clear())
+      await page.context().clearCookies()
 
-    // Login with new password
-    const usernameInput = page.locator('form .input-group').filter({ hasText: '账号' }).locator('input')
-    const passwordInput = page.locator('form .input-group').filter({ hasText: '密码' }).locator('input')
-    await usernameInput.fill(ADMIN_USER)
-    await passwordInput.fill(NEW_PASSWORD)
-    await page.locator('button.submit-btn').click()
+      // Re-navigate to login (will be redirected since auth cleared)
+      await page.goto('/login')
+      await expect(page.locator('form.auth-form')).toBeVisible()
 
-    // Should redirect to dashboard after login
-    await page.waitForURL(/\/$|\/dashboard/)
-    await expect(page.locator('.spatial-workspace')).toBeVisible()
+      // Login with new password
+      const usernameInput = page.locator('form .input-group').filter({ hasText: '账号' }).locator('input')
+      const passwordInput = page.locator('form .input-group').filter({ hasText: '密码' }).locator('input')
+      await usernameInput.fill(PROFILE_USER)
+      await passwordInput.fill(NEW_PASSWORD)
+      await page.locator('button.submit-btn').click()
 
-    // Reset password back to original
-    await page.goto('/dashboard/settings')
-    await expect(page.getByText('账户设置')).toBeVisible()
-
-    const resetPasswordSection = page.locator('.settings-card').filter({ hasText: '登录密码' })
-    await resetPasswordSection.locator('input[placeholder="输入当前密码"]').fill(NEW_PASSWORD)
-    await resetPasswordSection.locator('input[placeholder="至少 4 个字符"]').fill(ADMIN_PASS)
-    await resetPasswordSection.locator('input[placeholder="再次输入新密码"]').fill(ADMIN_PASS)
-    await resetPasswordSection.locator('button:has-text("更新密码")').click()
-
-    // Verify password was reset
-    await expect(resetPasswordSection.locator('.msg.ok')).toBeVisible({ timeout: 5000 })
-    await expect(resetPasswordSection.locator('.msg.ok')).toContainText('已更新')
+      // Should redirect to dashboard after login
+      await page.waitForURL(/\/$|\/dashboard/)
+      await expect(page.locator('.spatial-workspace')).toBeVisible()
+    } finally {
+      if (passwordChanged) {
+        const restoreResponse = await authenticatedRequest(page.request, authToken, '/api/user/password', {
+          method: 'PUT',
+          data: { oldPassword: NEW_PASSWORD, newPassword: PROFILE_PASS },
+        })
+        expect(restoreResponse.ok()).toBeTruthy()
+      }
+    }
   })
 
   test('should show error when password fields do not match', async ({ page }) => {
@@ -105,8 +111,8 @@ test.describe('Profile / Settings', () => {
 
     // Fill mismatched passwords
     await passwordSection.locator('input[placeholder="输入当前密码"]').fill(ADMIN_PASS)
-    await passwordSection.locator('input[placeholder="至少 4 个字符"]').fill('new_pass_1')
-    await passwordSection.locator('input[placeholder="再次输入新密码"]').fill('new_pass_2')
+    await passwordSection.locator('input[placeholder="至少 8 个字符，含大小写和数字"]').fill('E2e_Mismatch_1')
+    await passwordSection.locator('input[placeholder="再次输入新密码"]').fill('E2e_Mismatch_2')
 
     await passwordSection.locator('button:has-text("更新密码")').click()
 

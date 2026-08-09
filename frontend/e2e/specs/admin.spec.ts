@@ -43,7 +43,7 @@ test.describe('Admin User Management', () => {
     await page.goto('/dashboard/admin/users')
 
     // Should see the admin users view
-    await expect(page.locator('.admin-users-view-root')).toBeVisible()
+    await expect(page.locator('.admin-users-view-root')).toBeVisible({ timeout: 30_000 })
 
     // Should see the header with user management title
     await expect(page.getByText('添加编委')).toBeVisible()

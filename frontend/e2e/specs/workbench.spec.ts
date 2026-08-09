@@ -147,9 +147,8 @@ test.describe('Workbench / Person Editing', () => {
     await expect(addChildBtn).toBeVisible()
     await addChildBtn.click()
 
-    // The children row (3rd .ak-rel__row) should now have a child chip
-    const childrenRow = page.locator('.ak-rel__row').nth(2)
-    await expect(childrenRow.locator('.ak-pchp')).toBeVisible({ timeout: 5000 })
+    // Adding a child selects it in the editor so it can be named immediately.
+    await expect(page.locator('.ak-inp--hero')).toHaveValue('待命名儿子', { timeout: 5000 })
 
     // Close editor
     await page.locator('.ak-bar__btn.ak-bar__done').click()
@@ -195,7 +194,7 @@ test.describe('Workbench / Person Editing', () => {
       await expect(page.locator('.confirm-dialog')).toBeVisible()
 
       // Confirm the deletion
-      await page.locator('.confirm-dialog .bento-btn.danger').click()
+      await page.locator('.confirm-dialog button[data-role="confirm"]').click()
 
       // Editor should close and the person card should be removed
       await expect(page.locator('.ak-overlay')).not.toBeVisible({ timeout: 5000 })

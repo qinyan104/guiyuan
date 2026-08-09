@@ -90,7 +90,11 @@ const passwordLoading = ref(false)
 async function handleChangePassword() {
   passwordMsg.value = ''; passwordError.value = ''
   if (!oldPassword.value.trim()) { passwordError.value = '请输入当前密码'; return }
-  if (newPassword.value.length < 4) { passwordError.value = '新密码至少4个字符'; return }
+  if (newPassword.value.length < 8) { passwordError.value = '新密码至少8个字符'; return }
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/.test(newPassword.value)) {
+    passwordError.value = '新密码须包含大小写字母和数字'
+    return
+  }
   if (newPassword.value !== confirmPassword.value) { passwordError.value = '两次输入不一致'; return }
   passwordLoading.value = true
   try {
@@ -196,7 +200,7 @@ async function handleRestore() {
         </label>
         <label class="field">
           <span>新密码</span>
-          <input v-model="newPassword" type="password" placeholder="至少 4 个字符" />
+          <input v-model="newPassword" type="password" placeholder="至少 8 个字符，含大小写和数字" />
         </label>
         <label class="field">
           <span>确认新密码</span>

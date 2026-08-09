@@ -154,11 +154,11 @@ test.describe('Publication CRUD', () => {
     }
 
     // Click delete button
-    await targetCard.locator('button[title="焚毁档案"]').click()
+    await targetCard.locator('button[title="删除档案"]').click()
     await expect(targetCard.locator('.delete-overlay')).toBeVisible()
 
     // Confirm deletion
-    await targetCard.locator('button:has-text("确认焚毁")').click()
+    await targetCard.locator('button:has-text("确认删除")').click()
 
     // Wait for card to disappear
     await expect(targetCard).not.toBeVisible()
