@@ -67,7 +67,7 @@ watch(() => props.pubId, runValidation)
     <header class="vp-header">
       <h3 class="vp-title">数据质量校验</h3>
       <button class="vp-refresh" :disabled="loading" @click="runValidation" title="重新校验">
-        <svg :class="{ spinning: loading }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg>
+        <svg :class="{ spinning: loading }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /><polyline points="21 3 21 9 15 9" /></svg>
       </button>
     </header>
 
@@ -115,7 +115,9 @@ watch(() => props.pubId, runValidation)
           class="finding-locate"
           @click.stop="locatePerson(finding.personId)"
           title="定位到人物"
-        >定位 →</button>
+        >
+          定位 →
+        </button>
       </li>
     </ul>
   </div>

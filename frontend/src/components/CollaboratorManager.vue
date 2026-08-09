@@ -374,10 +374,6 @@ async function handleAdd() {
   }
 }
 
-function requestRoleChange(record: AccessRecord) {
-  pendingRoleChange.value = { userId: record.userId, role: record.role as 'EDITOR' | 'VIEWER', name: record.nickname }
-}
-
 function requestInlineRoleChange(record: AccessRecord, role: 'EDITOR' | 'VIEWER') {
   pendingRoleChange.value = { userId: record.userId, role, name: record.nickname }
 }
@@ -461,7 +457,7 @@ onUnmounted(() => {
     <!-- Error strip -->
     <Transition name="slide">
       <div v-if="error" class="error-strip">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
         <span>{{ error }}</span>
         <button class="error-dismiss" @click="error = null">&times;</button>
       </div>
@@ -471,11 +467,11 @@ onUnmounted(() => {
     <section class="invite-section">
       <div class="invite-header">
         <div class="invite-title-row">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>
           <span>邀请协作者</span>
         </div>
         <button class="role-guide-toggle" @click="showRoleGuide = !showRoleGuide">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
           权限说明
         </button>
       </div>
@@ -511,7 +507,7 @@ onUnmounted(() => {
               </div>
             </template>
             <template v-else>
-              <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
               <input
                 v-model="searchQuery"
                 type="text"
@@ -530,7 +526,7 @@ onUnmounted(() => {
               :disabled="!selectedUser || adding"
               @click="handleAdd"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
               {{ adding ? '添加中' : '邀请' }}
             </button>
           </div>
@@ -568,7 +564,7 @@ onUnmounted(() => {
       </div>
 
       <div v-else-if="records.length === 0" class="empty-state">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
         <span>暂无协作者，在上方搜索并邀请他人。</span>
       </div>
 
@@ -588,7 +584,7 @@ onUnmounted(() => {
             <div class="user-card-right">
               <template v-if="record.role === 'OWNER'">
                 <span class="role-label owner-badge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
                   所有者
                 </span>
               </template>
@@ -604,7 +600,7 @@ onUnmounted(() => {
                   title="移除协作者"
                   @click="handleRemove(record)"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                 </button>
               </template>
             </div>
@@ -614,36 +610,36 @@ onUnmounted(() => {
           <Transition name="expand">
             <div v-if="record.role === 'VIEWER'" class="privacy-section">
               <div class="privacy-header">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                 隐私脱敏
               </div>
               <div class="privacy-grid">
                 <label class="privacy-field">
                   <span>生卒日期</span>
-                <AppSelect
-                  variant="privacy"
-                  :model-value="parseProfile(record.redactionProfile).dates"
-                  :options="[{value:'NONE',label:'公开'},{value:'LIVING',label:'隐藏在世'},{value:'ALL',label:'全部隐藏'}]"
-                  @change="(v: string) => handleProfileChange(record, 'dates', v)"
-                />
+                  <AppSelect
+                    variant="privacy"
+                    :model-value="parseProfile(record.redactionProfile).dates"
+                    :options="[{value:'NONE',label:'公开'},{value:'LIVING',label:'隐藏在世'},{value:'ALL',label:'全部隐藏'}]"
+                    @change="(v: string) => handleProfileChange(record, 'dates', v)"
+                  />
                 </label>
                 <label class="privacy-field">
                   <span>个人简介</span>
-                <AppSelect
-                  variant="privacy"
-                  :model-value="parseProfile(record.redactionProfile).note"
-                  :options="[{value:'NONE',label:'公开'},{value:'LIVING',label:'隐藏在世'},{value:'ALL',label:'全部隐藏'}]"
-                  @change="(v: string) => handleProfileChange(record, 'note', v)"
-                />
+                  <AppSelect
+                    variant="privacy"
+                    :model-value="parseProfile(record.redactionProfile).note"
+                    :options="[{value:'NONE',label:'公开'},{value:'LIVING',label:'隐藏在世'},{value:'ALL',label:'全部隐藏'}]"
+                    @change="(v: string) => handleProfileChange(record, 'note', v)"
+                  />
                 </label>
                 <label class="privacy-field">
                   <span>照片</span>
-                <AppSelect
-                  variant="privacy"
-                  :model-value="parseProfile(record.redactionProfile).photo"
-                  :options="[{value:'NONE',label:'公开'},{value:'LIVING',label:'隐藏在世'},{value:'ALL',label:'全部隐藏'}]"
-                  @change="(v: string) => handleProfileChange(record, 'photo', v)"
-                />
+                  <AppSelect
+                    variant="privacy"
+                    :model-value="parseProfile(record.redactionProfile).photo"
+                    :options="[{value:'NONE',label:'公开'},{value:'LIVING',label:'隐藏在世'},{value:'ALL',label:'全部隐藏'}]"
+                    @change="(v: string) => handleProfileChange(record, 'photo', v)"
+                  />
                 </label>
               </div>
             </div>
@@ -662,7 +658,7 @@ onUnmounted(() => {
 
       <Transition name="slide">
         <div v-if="accountsError" class="error-strip">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
           <span>{{ accountsError }}</span>
           <button class="error-dismiss" @click="accountsError = null">&times;</button>
         </div>
@@ -670,11 +666,11 @@ onUnmounted(() => {
 
       <div class="derive-bar">
         <button class="btn btn--primary btn-derive" :disabled="accountsLoading || derivingAccounts" @click="handleDeriveAccounts">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" /></svg>
           {{ derivingAccounts ? '派生中...' : '派生账号' }}
         </button>
         <button class="btn btn--ghost btn-derive" :disabled="accountsLoading || cleaningOrphans" @click="handleCleanupOrphans">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
           {{ cleaningOrphans ? '清理中...' : '清理空悬账号' }}
         </button>
       </div>
@@ -723,7 +719,7 @@ onUnmounted(() => {
             <div v-if="selectedAccountIds.size > 0" class="batch-bar">
               <span class="batch-count">已选 {{ selectedAccountIds.size }} 项</span>
               <button class="btn btn--text btn--danger" :disabled="batchDeleting" @click="handleBatchDelete">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                 删除所选
               </button>
               <button class="btn btn--text" @click="selectedAccountIds = new Set()">取消选择</button>
@@ -793,7 +789,7 @@ onUnmounted(() => {
       </Transition>
 
       <div v-if="!accountsLoading && !accountsError && accounts.length === 0" class="empty-state-sm">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.25"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.25"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
         <span>还没有账号，点击"派生账号"为在世族人创建。</span>
       </div>
     </section>

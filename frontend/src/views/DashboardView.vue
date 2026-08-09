@@ -94,7 +94,7 @@ async function handleCreateFromDashboard() {
 <template>
   <div class="dashboard-view-root">
     <div class="dashboard-stage">
-    <FeedbackStrip :status-message="feedback.statusMessage.value" :error-message="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
+      <FeedbackStrip :status-message="feedback.statusMessage.value" :error-message="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
       <PoeticHeader
         :eyebrow="lexicon.dashboard.headerEyebrow"
         :title="lexicon.dashboard.headerTitle"
@@ -124,7 +124,7 @@ async function handleCreateFromDashboard() {
       </div>
 
       <div v-else-if="pubCount > 0" class="bento-grid">
-                <!-- Box A: Latest Publication (Hero) -->
+        <!-- Box A: Latest Publication (Hero) -->
         <div v-if="latestPub" class="bento-card panel-glass card-hero" @click="openPublication(latestPub.id)">
           <div class="hero-bg-layer"></div>
           <div class="hero-accent-line"></div>

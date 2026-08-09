@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted, nextTick } from "vue"
+import { computed, ref, watch } from "vue"
 import type { LineagePage } from "../../types/publishing"
 
 const props = defineProps<{
@@ -46,36 +46,6 @@ const CN_NUMS = ["", "一", "二", "三", "四", "五", "六", "七", "八", "�
   "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"]
 function cnGen(g: number): string { return CN_NUMS[g] || `${g}` }
 
-/** 整篇文档文本 */
-const fullDocument = computed(() => {
-  const pages = props.allPages || []
-  // 始终按世代排列
-  const genMap = new Map<number, string[]>()
-    for (const page of pages) {
-      for (const entry of page.entries || []) {
-        if (!genMap.has(entry.generation)) genMap.set(entry.generation, [])
-        genMap.get(entry.generation)!.push(entry.formattedText)
-      }
-    }
-    const lines: string[] = []
-    const gens = [...genMap.keys()].sort((a, b) => a - b)
-    for (const g of gens) {
-      lines.push(`## 第${cnGen(g + 1)}世`)
-      for (const t of genMap.get(g)!) { lines.push(t); lines.push("") }
-    }
-    return lines.join("\n")
-  })
-
-/** 整篇文档输入 → 解析拆分 */
-const fullDocTimer = ref<ReturnType<typeof setTimeout> | null>(null)
-function onFullDocInput(e: Event) {
-  const text = (e.target as HTMLTextAreaElement).value
-  if (fullDocTimer.value) clearTimeout(fullDocTimer.value)
-  fullDocTimer.value = setTimeout(() => {
-    emit("parseDocument", text)
-  }, 400)
-}
-
 /** 按世代合并全部条目，标记当前页归属（保留给其他用途） */
 const lineageDocument = computed(() => {
   const pages = props.allPages || (props.pageData ? [props.pageData] : [])
@@ -101,17 +71,12 @@ const lineageDocument = computed(() => {
 
 // --- highlight sync from Canvas ---
 const highlightedEntryIndex = ref<number | null>(null)
-const editorListRef = ref<HTMLElement | null>(null)
 
 watch(() => props.highlightedPersonId, (personId) => {
   highlightedEntryIndex.value = personId
     ? props.pageData?.entries?.findIndex(e => e.personId === personId) ?? null
     : null
 })
-
-// ── 撤销 ──
-const undoNotice = ref("")
-let undoNoticeTimer: ReturnType<typeof setTimeout> | null = null
 
 /** 去抖输入：200ms 无输入后触发更新 */
 const inputTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -139,31 +104,6 @@ function addNewEntry(e: KeyboardEvent) {
   ta.value = ""
 }
 
-/** 世代大文本块输入 → 拆分回条目并更新 */
-const genInputTimers = new Map<number, ReturnType<typeof setTimeout>>()
-function onGenInput(gen: { generation: number; items: { entryIndex: number; pageIndex: number }[] }, e: Event) {
-  const text = (e.target as HTMLTextAreaElement).value
-  const lines = text.split("\n")
-  const key = gen.generation
-  if (genInputTimers.has(key)) clearTimeout(genInputTimers.get(key))
-  genInputTimers.set(key, setTimeout(() => {
-    for (let i = 0; i < gen.items.length; i++) {
-      const item = gen.items[i]
-      const newText = lines[i] ?? ""
-      if (newText !== "") {
-        emit("updateEntryAt", item.pageIndex, item.entryIndex, newText)
-      }
-    }
-    // 多余的行作为新条目追加
-    for (let i = gen.items.length; i < lines.length; i++) {
-      if (lines[i].trim()) {
-        emit("addEntry", gen.items[0]?.pageIndex ?? 0, "", lines[i])
-      }
-    }
-    genInputTimers.delete(key)
-  }, 300))
-}
-
 function onEntryInput(pi: number, ei: number, e: Event) {
   const text = (e.target as HTMLTextAreaElement).value
   const key = `${pi}-${ei}`
@@ -174,35 +114,6 @@ function onEntryInput(pi: number, ei: number, e: Event) {
   }, 200))
 }
 
-// ── 弹层编辑 ──
-const editing = ref(false)
-const editText = ref("")
-const editTarget = ref<{ pageIndex: number; entryIndex: number } | null>(null)
-const editTA = ref<HTMLTextAreaElement | null>(null)
-
-function startEdit(item: { pageIndex: number; entryIndex: number; text: string }) {
-  editTarget.value = { pageIndex: item.pageIndex, entryIndex: item.entryIndex }
-  editText.value = item.text
-  editing.value = true
-  nextTick(() => editTA.value?.focus())
-}
-
-function commitEdit() {
-  if (editTarget.value) {
-    emit("updateEntryAt", editTarget.value.pageIndex, editTarget.value.entryIndex, editText.value)
-  }
-  editing.value = false
-}
-
-function cancelEdit() {
-  editing.value = false
-}
-
-function showUndoNotice() {
-  undoNotice.value = "已撤销"
-  if (undoNoticeTimer) clearTimeout(undoNoticeTimer)
-  undoNoticeTimer = setTimeout(() => { undoNotice.value = ""; undoNoticeTimer = null }, 2000)
-}
 </script>
 
 <template>
@@ -219,9 +130,6 @@ function showUndoNotice() {
           <button class="editor-close" @click="emit('close')">×</button>
         </div>
       </div>
-
-      <!-- undo notice -->
-      <div v-if="undoNotice" class="undo-indicator">{{ undoNotice }}</div>
 
       <!-- 设置栏 -->
       <div class="settings-bar">
@@ -264,7 +172,7 @@ function showUndoNotice() {
         </template>
       </div>
 
-            <div class="editor-footer" v-if="pageData?.entries?.length">
+      <div class="editor-footer" v-if="pageData?.entries?.length">
         <button class="btn btn--primary" :disabled="relayouting" @click="emit('saveAndRelayout')">
           {{ relayouting ? '正在保存...' : '保存并重新排版' }}
         </button>

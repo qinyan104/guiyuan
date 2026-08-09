@@ -124,7 +124,7 @@ watch([() => props.person.birth, () => props.person.death], ([b, d]) => {
             <div class="ak-left">
               <label class="ak-av">
                 <img v-if="person.avatarUrl" :src="person.avatarUrl" class="ak-av__img" />
-                <svg v-else width="36" height="36" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <svg v-else width="36" height="36" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="4" stroke="currentColor" stroke-width="1.2" /><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" /></svg>
                 <input type="file" accept="image/*" class="ak-av__inp" @change="upAvatar" />
               </label>
               <div class="ak-identity">

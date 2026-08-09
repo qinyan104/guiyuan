@@ -404,15 +404,15 @@ function avatarLetter(name: string): string {
 
             <div class="kinship-result__chips">
               <span v-if="relationshipPath?.bloodPath?.commonAncestorId" class="kinship-chip">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2"/></svg>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6" /><circle cx="8" cy="8" r="2" /></svg>
                 共同祖先：{{ personById(relationshipPath.bloodPath.commonAncestorId)?.name ?? '未知' }}
               </span>
               <span v-if="ageComparison" class="kinship-chip">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="8 2 8 8 12 10"/></svg>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="8 2 8 8 12 10" /></svg>
                 {{ ageComparison.older === 'A' ? personById(selectedA)?.name : personById(selectedB)?.name }} 年长 {{ ageComparison.diff }} 岁
               </span>
               <span v-if="relationshipPath" class="kinship-chip" :class="{ 'chip--inlaw': relationshipPath.isInLaw }">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="12" rx="2"/><line x1="5" y1="2" x2="5" y2="14"/></svg>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="12" rx="2" /><line x1="5" y1="2" x2="5" y2="14" /></svg>
                 {{ relationshipLineLabel }} · {{ generationLabel }}
               </span>
             </div>
@@ -422,7 +422,7 @@ function avatarLetter(name: string): string {
           <div v-if="selectedA && selectedB && !result" class="kinship-empty">
             <div class="kinship-empty__icon">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
-                <circle cx="24" cy="24" r="20"/><line x1="24" y1="16" x2="24" y2="28"/><circle cx="24" cy="32" r="1.5" fill="currentColor"/>
+                <circle cx="24" cy="24" r="20" /><line x1="24" y1="16" x2="24" y2="28" /><circle cx="24" cy="32" r="1.5" fill="currentColor" />
               </svg>
             </div>
             <p>未找到这两位族人之间的关系</p>
@@ -433,8 +433,8 @@ function avatarLetter(name: string): string {
           <div v-if="!selectedA || !selectedB" class="kinship-empty">
             <div class="kinship-empty__icon">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
-                <circle cx="18" cy="14" r="6"/><circle cx="30" cy="14" r="6"/>
-                <path d="M6 40c0-8 5-14 12-14s12 6 12 14M18 40c0-8 6-14 12-14s12 6 12 14"/>
+                <circle cx="18" cy="14" r="6" /><circle cx="30" cy="14" r="6" />
+                <path d="M6 40c0-8 5-14 12-14s12 6 12 14M18 40c0-8 6-14 12-14s12 6 12 14" />
               </svg>
             </div>
             <p>选择两位族人，查看他们之间的亲戚关系</p>

@@ -56,14 +56,12 @@ function openTpl() {
 
 <template>
   <header class="toolbar">
-
     <!-- left: back + title + template selector -->
     <div class="tb-left">
       <button class="tb-back" @click="emit('back')">← 返回编辑工作室</button>
       <div class="tb-title">{{ draftTitle }}</div>
 
       <!-- template selector -->
-      
     </div>
 
     <!-- right: actions -->
@@ -77,9 +75,11 @@ function openTpl() {
           <div v-if="tplOpen" class="tpl-backdrop" @click="tplOpen = false" />
           <div v-if="tplOpen" class="tpl-menu" :style="{ position: 'fixed', top: tplPos.top + 'px', left: tplPos.left + 'px', zIndex: 99999 }">
             <div class="tpl-grid">
-              <button v-for="t in CANVAS_TEMPLATES" :key="t.id"
+              <button
+                v-for="t in CANVAS_TEMPLATES" :key="t.id"
                 :class="['tpl-card', { active: canvasId === t.id }]"
-                @click="select(t)">
+                @click="select(t)"
+              >
                 <img :src="t.thumbnail" :alt="t.name" class="tpl-thumb" />
                 <span class="tpl-card-name">{{ t.name }}</span>
                 <span v-if="canvasId === t.id" class="tpl-check">✓</span>
@@ -108,26 +108,31 @@ function openTpl() {
   <!-- tweaks drawer -->
   <Transition name="tweak-slide">
     <div v-if="tweaksOpen" class="tweak-bar">
-      <div class="tweak-row"><span class="tweak-label">字号</span>
+      <div class="tweak-row">
+        <span class="tweak-label">字号</span>
         <button class="tweak-btn" @click="emit('updateTweakFontSize', Math.max(14, tweakFontSize - 1))">−</button>
         <span class="tweak-val">{{ tweakFontSize }}pt</span>
         <button class="tweak-btn" @click="emit('updateTweakFontSize', Math.min(72, tweakFontSize + 1))">+</button>
       </div>
-      <div class="tweak-row"><span class="tweak-label">行距</span>
+      <div class="tweak-row">
+        <span class="tweak-label">行距</span>
         <button class="tweak-btn" @click="emit('updateTweakLineHeight', Math.round(Math.max(1.0, tweakLineHeight - 0.1) * 10) / 10)">−</button>
         <span class="tweak-val">{{ tweakLineHeight.toFixed(1) }}</span>
         <button class="tweak-btn" @click="emit('updateTweakLineHeight', Math.round(Math.min(4.0, tweakLineHeight + 0.1) * 10) / 10)">+</button>
       </div>
-      <div class="tweak-row"><span class="tweak-label">栏数</span>
+      <div class="tweak-row">
+        <span class="tweak-label">栏数</span>
         <button :class="['tweak-seg', { on: tweakColumns === 1 }]" @click="emit('updateTweakColumns', 1)">1</button>
         <button :class="['tweak-seg', { on: tweakColumns === 2 }]" @click="emit('updateTweakColumns', 2)">2</button>
       </div>
-      <div class="tweak-row"><span class="tweak-label">字体</span>
+      <div class="tweak-row">
+        <span class="tweak-label">字体</span>
         <select class="tweak-select" :value="selectedFont" @change="emit('updateFont', ($event.target as HTMLSelectElement).value)">
           <option v-for="f in FONT_OPTIONS" :key="f.id" :value="f.id">{{ f.name }}</option>
         </select>
       </div>
-      <div class="tweak-row"><span class="tweak-label">边距</span>
+      <div class="tweak-row">
+        <span class="tweak-label">边距</span>
         <button :class="['tweak-seg', { on: tweakMarginPreset === 'compact' }]" @click="emit('updateTweakMarginPreset', 'compact')">紧凑</button>
         <button :class="['tweak-seg', { on: tweakMarginPreset === 'standard' }]" @click="emit('updateTweakMarginPreset', 'standard')">标准</button>
         <button :class="['tweak-seg', { on: tweakMarginPreset === 'loose' }]" @click="emit('updateTweakMarginPreset', 'loose')">宽松</button>

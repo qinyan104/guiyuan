@@ -118,7 +118,9 @@ function toHan(value: number): string {
         type="button"
         :class="['page-break-marker', { selected: selectedBlockIndex === item.blockIndex }]"
         @click="emit('selectBlock', item.blockIndex)"
-      >手动分页 · 点击选择</button>
+      >
+        手动分页 · 点击选择
+      </button>
     </div>
     <section
       v-if="page"
@@ -142,7 +144,9 @@ function toHan(value: number): string {
                 @focus="emit('selectBlock', item.blockIndex)"
                 @blur="commitCover(item.blockIndex, 'title', item.block.title, $event)"
                 @keydown.enter.prevent="blurEditable"
-              ><span v-for="(run, runIndex) in item.columns[0]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></h1>
+              >
+                <span v-for="(run, runIndex) in item.columns[0]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+              </h1>
               <p
                 contenteditable="plaintext-only"
                 role="textbox"
@@ -152,7 +156,9 @@ function toHan(value: number): string {
                 @focus="emit('selectBlock', item.blockIndex)"
                 @blur="commitCover(item.blockIndex, 'subtitle', item.block.subtitle || '', $event)"
                 @keydown.enter.prevent="blurEditable"
-              ><span v-for="(run, runIndex) in item.columns[1]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span></p>
+              >
+                <span v-for="(run, runIndex) in item.columns[1]?.runs" :key="runIndex" :style="{ fontFamily: run.fontFamily }">{{ run.text }}</span>
+              </p>
             </div>
           </div>
           <div v-else-if="item.block.type === 'contents'" class="contents-block" :style="personStyle(item.columnSpan)">

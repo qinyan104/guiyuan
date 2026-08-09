@@ -189,7 +189,7 @@ function genderLabel(g: string) {
       <div v-else-if="error" class="empty-state">
         <div class="empty-icon">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-            <circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
+            <circle cx="12" cy="8" r="4" /><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
           </svg>
         </div>
         <h2>暂未关联族谱人物</h2>
@@ -199,7 +199,7 @@ function genderLabel(g: string) {
       <!-- Pending approval banner -->
       <div v-else-if="profile?.hasPendingChanges && !submitSuccess" class="pending-banner">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
         </svg>
         <span>您的修改已提交，等待管理员审核。审核期间无法再次提交。</span>
       </div>
@@ -207,7 +207,7 @@ function genderLabel(g: string) {
       <!-- Submit success banner -->
       <div v-else-if="submitSuccess" class="success-banner">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
         </svg>
         <span>修改已提交，等待管理员审核。</span>
         <button class="btn" @click="submitSuccess = false; loadProfile()">刷新状态</button>

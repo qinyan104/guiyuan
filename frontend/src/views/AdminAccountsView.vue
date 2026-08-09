@@ -211,7 +211,7 @@ function genderLabel(g: string) {
       <PoeticHeader eyebrow="族谱管理" title="族人账号">
         <template #extra>
           <button class="btn" :disabled="cleaningOrphans" @click="showCleanupConfirm = true">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
             {{ cleaningOrphans ? '清理中...' : '清理空悬' }}
           </button>
           <button class="btn btn--primary" :disabled="deriving" @click="handleDerive">
@@ -257,7 +257,7 @@ function genderLabel(g: string) {
           <div v-if="selectedAccountIds.size > 0" class="batch-bar">
             <span class="batch-count">已选 {{ selectedAccountIds.size }} 项</span>
             <button class="btn btn--sm btn--danger" :disabled="batchDeleting" @click="showBatchDeleteConfirm = true">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
               删除所选
             </button>
             <button class="btn btn--sm" @click="selectedAccountIds = new Set()">取消</button>

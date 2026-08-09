@@ -406,8 +406,6 @@ defineExpose({
   <button v-if="layoutReady" class="immersive-btn" @click="toggleImmersive" :title="immersive ? '退出沉浸' : '沉浸预览'">
     {{ immersive ? '✕' : '⛶' }}
   </button>
-
-
 </template>
 
 <style scoped>

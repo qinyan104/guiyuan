@@ -2,7 +2,6 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { calculateRevealPan, type RevealPersonOptions } from '../lib/canvasViewport'
 import type { KinshipTerm } from '../lib/kinship'
-import { getPersonStatusLabel } from '../lib/personStatus'
 import type { Person, PublicationData, PublicationLayout, PublicationSettings } from '../types/family'
 import PersonCardSvg from './PersonCardSvg.vue'
 
@@ -300,9 +299,6 @@ function handleHoverPerson(personId: string | null) {
 function resolvePerson(personId: string): Person {
   return props.publication.people[personId]
 }
-
-const selectedPerson = computed(() => props.selectedPersonId ? props.publication.people[props.selectedPersonId] ?? null : null)
-const hoveredPerson = computed(() => props.hoveredPersonId ? props.publication.people[props.hoveredPersonId] ?? null : null)
 
 const CARD_TO_SCREEN_RATIO = 1
 

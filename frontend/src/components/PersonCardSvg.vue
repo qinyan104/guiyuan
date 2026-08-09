@@ -371,7 +371,9 @@ function handleMouseLeave() {
           fill: 'var(--color-accent, #c43a31)',
           opacity: 0.85
         }"
-      >{{ kinshipNote }}</text>
+      >
+        {{ kinshipNote }}
+      </text>
 
       <!-- Lineage Note (Compact — top right) -->
       <text

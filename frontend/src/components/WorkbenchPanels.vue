@@ -483,7 +483,7 @@ watch(
       </div>
 
       <p v-else class="hp-empty">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M3 1h10a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="9" y2="8"/></svg>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M3 1h10a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" /><line x1="5" y1="5" x2="11" y2="5" /><line x1="5" y1="8" x2="9" y2="8" /></svg>
         <span>开始编辑画布后会在这里记录每一步操作</span>
       </p>
     </section>
@@ -521,7 +521,6 @@ watch(
       </div>
     </Transition>
   </Teleport>
-
 </template>
 
 <style scoped>
