@@ -6,7 +6,9 @@ import java.util.regex.Pattern;
 
 public final class DateTextParser {
 
-    private static final Pattern YEAR_PATTERN = Pattern.compile("\\b(\\d{4})\\b");
+    // Use digit lookarounds instead of word boundaries so Chinese date text is
+    // handled consistently across JVM Unicode boundary implementations.
+    private static final Pattern YEAR_PATTERN = Pattern.compile("(?<!\\d)(\\d{4})(?!\\d)");
 
     private DateTextParser() {}
 
