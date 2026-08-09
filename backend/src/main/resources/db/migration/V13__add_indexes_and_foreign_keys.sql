@@ -49,7 +49,7 @@ ALTER TABLE person_accounts
 
 ALTER TABLE person_accounts
     ADD CONSTRAINT fk_person_accounts_user
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE person_accounts
     ADD CONSTRAINT fk_person_accounts_publication
