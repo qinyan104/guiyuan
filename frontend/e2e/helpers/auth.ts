@@ -6,15 +6,6 @@ type AuthResponse = {
   }
 }
 
-type MeResponse = {
-  data?: {
-    data?: {
-      username?: string
-      role?: string
-    }
-  }
-}
-
 type UserListResponse = {
   data?: Array<{ id: number; username: string }>
 }
@@ -62,23 +53,32 @@ export async function ensureTestUser(request: APIRequestContext, username: strin
 }
 
 export async function loginPage(page: Page, username: string, password: string): Promise<string> {
-  const token = await loginViaApi(page.request, username, password)
-  await page.setExtraHTTPHeaders({ Authorization: `Bearer ${token}` })
+  // Start from a real browser session. Injecting an API token bypasses the
+  // in-memory auth store and races the app's refresh-cookie bootstrap.
+  await page.context().clearCookies()
+  await page.goto('/login')
 
-  // The router checks the cached role before the first protected navigation.
-  // Seed it from the authenticated API response so admin routes do not depend
-  // on refresh/bootstrap timing in the browser.
-  const meResponse = await page.request.get('/api/auth/me', {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  const meBody = JSON.parse(await meResponse.text()) as MeResponse
-  await page.addInitScript(({ storedUsername, storedRole }) => {
-    try {
-      if (storedUsername) localStorage.setItem('authUsername', storedUsername)
-      if (storedRole) localStorage.setItem('authRole', storedRole)
-    } catch {}
-  }, { storedUsername: meBody.data?.data?.username ?? username, storedRole: meBody.data?.data?.role ?? '' })
-  return token
+  const form = page.locator('form.auth-form')
+  await form.waitFor()
+  await form.locator('input[type="text"]').fill(username)
+  await form.locator('input[type="password"]').fill(password)
+
+  const loginResponse = page.waitForResponse((response) =>
+    response.url().endsWith('/api/auth/login') && response.request().method() === 'POST',
+  )
+  await form.locator('button[type="submit"]').click()
+
+  const response = await loginResponse
+  if (!response.ok()) {
+    throw new Error(`E2E browser login failed for ${username}: ${response.status()}`)
+  }
+
+  await page.waitForURL('**/dashboard')
+  await page.locator('.spatial-workspace').waitFor()
+
+  // Login navigation consumes the browser response body before Playwright can
+  // read it. Fetch a separate bearer token only for test-data setup/cleanup.
+  return loginViaApi(page.request, username, password)
 }
 
 export function authenticatedRequest(

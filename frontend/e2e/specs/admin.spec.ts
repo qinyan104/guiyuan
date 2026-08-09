@@ -14,8 +14,6 @@ test.describe('Admin User Management', () => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
     authToken = await loginPage(page, ADMIN_USER, ADMIN_PASS)
-    await page.goto('/dashboard')
-    await page.waitForURL('/dashboard')
   })
 
   /** Helper: clean up the test user via API if it exists */

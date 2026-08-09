@@ -50,8 +50,6 @@ test.describe('Workbench / Person Editing', () => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
     authToken = await loginPage(page, TEST_USER, TEST_PASS)
-    await page.goto('/dashboard')
-    await page.waitForURL('/dashboard')
   })
 
   test.beforeAll(async ({ request }) => {
@@ -167,9 +165,10 @@ test.describe('Workbench / Person Editing', () => {
           focusFamilyId: 'f_del',
           people: {
             p_del: { id: 'p_del', name: '待删人物', gender: 'male' },
+            p_keep: { id: 'p_keep', name: '保留人物', gender: 'female' },
           },
           families: {
-            f_del: { id: 'f_del', adults: ['p_del'], children: [] },
+            f_del: { id: 'f_del', adults: ['p_del', 'p_keep'], children: [] },
           },
         },
         settings: DEF_SETTINGS,
@@ -196,8 +195,9 @@ test.describe('Workbench / Person Editing', () => {
       // Confirm the deletion
       await page.locator('.confirm-dialog button[data-role="confirm"]').click()
 
-      // Editor should close and the person card should be removed
-      await expect(page.locator('.ak-overlay')).not.toBeVisible({ timeout: 5000 })
+      // The editor stays open on the next valid selection after deletion.
+      await expect(page.locator('.ak-inp--hero')).toHaveValue('保留人物', { timeout: 5000 })
+      await expect(page.locator('[data-person-id="p_del"]')).not.toBeVisible()
     } finally {
       await authenticatedRequest(page.request, authToken, `/api/publications/${deletePubId}`, { method: 'DELETE' }).catch(() => {})
     }

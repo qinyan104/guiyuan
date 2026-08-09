@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { authenticatedRequest, ensureTestUser, loginPage } from '../helpers/auth'
+import { authenticatedRequest, ensureTestUser, loginPage, loginViaApi } from '../helpers/auth'
 
 const ADMIN_USER = 'root'
 const ADMIN_PASS = '123456'
@@ -18,8 +18,6 @@ test.describe('Profile / Settings', () => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
     await loginPage(page, ADMIN_USER, ADMIN_PASS)
-    await page.goto('/dashboard')
-    await page.waitForURL('/dashboard')
   })
 
   test('should navigate to settings page', async ({ page }) => {
@@ -73,25 +71,10 @@ test.describe('Profile / Settings', () => {
       await expect(passwordSection.locator('.msg.ok')).toContainText('已更新')
       passwordChanged = true
 
-      // Now logout and verify we can login with the new password
-      await page.goto('/login')
-      await page.evaluate(() => localStorage.clear())
-      await page.context().clearCookies()
-
-      // Re-navigate to login (will be redirected since auth cleared)
-      await page.goto('/login')
-      await expect(page.locator('form.auth-form')).toBeVisible()
-
-      // Login with new password
-      const usernameInput = page.locator('form .input-group').filter({ hasText: '账号' }).locator('input')
-      const passwordInput = page.locator('form .input-group').filter({ hasText: '密码' }).locator('input')
-      await usernameInput.fill(PROFILE_USER)
-      await passwordInput.fill(NEW_PASSWORD)
-      await page.locator('button.submit-btn').click()
-
-      // Should redirect to dashboard after login
-      await page.waitForURL(/\/$|\/dashboard/)
-      await expect(page.locator('.spatial-workspace')).toBeVisible()
+      // Verify the newly issued password can authenticate without disturbing
+      // the browser session needed to restore this disposable test account.
+      const refreshedToken = await loginViaApi(page.request, PROFILE_USER, NEW_PASSWORD)
+      expect(refreshedToken).toBeTruthy()
     } finally {
       if (passwordChanged) {
         const restoreResponse = await authenticatedRequest(page.request, authToken, '/api/user/password', {

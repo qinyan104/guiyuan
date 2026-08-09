@@ -10,18 +10,12 @@ const PUB_EDITED_TITLE = 'E2E 测试族谱 - 已编辑'
 
 test.describe('Publication CRUD', () => {
   test.beforeEach(async ({ page }) => {
-    // Dismiss onboarding overlay and authenticate via API in one init script
+    // Dismiss the onboarding overlay.
     await page.addInitScript(() => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
 
-    // Log in via API — cookies (refresh_token, XSRF-TOKEN) are set in browser context
     await loginPage(page, TEST_USER, TEST_PASS)
-
-    // Navigate to app — the router's bootstrapAuthSession picks up the refresh_token cookie
-    await page.goto('/dashboard')
-    // Should land on dashboard (authenticated)
-    await page.waitForURL('/dashboard')
   })
 
   test('should create a new publication and redirect to workbench', async ({ page }) => {
