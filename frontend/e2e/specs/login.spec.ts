@@ -25,7 +25,7 @@ test.describe('Login Flow', () => {
 
     // Should see login form
     await expect(page.locator('form.auth-form')).toBeVisible()
-    await expect(page.getByText('家族认证')).toBeVisible()
+    await expect(page.getByText('欢迎回来')).toBeVisible()
 
     // Fill credentials and submit
     const usernameInput = page.locator('form .input-group').filter({ hasText: '账号' }).locator('input')
@@ -86,7 +86,7 @@ test.describe('Login Flow', () => {
     await page.context().clearCookies()
 
     // Try accessing protected page
-    await page.goto('/publications')
+    await page.goto('/dashboard/publications')
     await page.waitForURL(/\/login/)
     await expect(page.locator('form.auth-form')).toBeVisible()
   })

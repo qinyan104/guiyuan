@@ -1,26 +1,27 @@
 import { test, expect } from '@playwright/test'
+import { authenticatedRequest, loginPage } from '../helpers/auth'
 
 const TEST_USER = process.env.E2E_USERNAME || 'e2e_test'
 const TEST_PASS = process.env.E2E_PASSWORD || 'test1234'
 const PUB_TITLE = 'E2E 搜索测试谱'
 const BLANK_PUB = { people: {}, families: {}, focusFamilyId: '' }
 const DEF_SETTINGS = { paper: 'A3', layoutMode: 'modern', cardWidth: 160, generationGap: 100, siblingGap: 40, partnerGap: 20, fontScale: 1, zoom: 1, showCard: true, showDeath: true, showAge: true, showNote: true, showPhoto: true, paddingX: 40, paddingY: 40 }
+let authToken = ''
 
 test.describe('Search & Share', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
-    await page.request.post('/api/auth/login', {
-      data: { username: TEST_USER, password: TEST_PASS },
-    })
+    authToken = await loginPage(page, TEST_USER, TEST_PASS)
     await page.goto('/')
     await page.waitForURL(/\/$|\/dashboard/)
   })
 
   test('should find publication via global search', async ({ page }) => {
     // Create a publication via API
-    const resp = await page.request.post('/api/publications', {
+    const resp = await authenticatedRequest(page.request, authToken, '/api/publications', {
+      method: 'POST',
       data: { title: PUB_TITLE, subtitle: '搜索测试', publication: { ...BLANK_PUB, title: PUB_TITLE }, settings: DEF_SETTINGS },
     })
     const { id } = (await resp.json()).data
@@ -41,20 +42,21 @@ test.describe('Search & Share', () => {
       // Should find the publication in results
       await expect(page.locator('.result-item-title').filter({ hasText: PUB_TITLE })).toBeVisible()
     } finally {
-      await page.request.delete(`/api/publications/${id}`).catch(() => {})
+      await authenticatedRequest(page.request, authToken, `/api/publications/${id}`, { method: 'DELETE' }).catch(() => {})
     }
   })
 
   test('should create a share link and access shared publication', async ({ page }) => {
     // Create a publication via API for sharing
-    const resp = await page.request.post('/api/publications', {
+    const resp = await authenticatedRequest(page.request, authToken, '/api/publications', {
+      method: 'POST',
       data: { title: 'E2E 分享测试谱', subtitle: '分享测试', publication: { ...BLANK_PUB, title: 'E2E 分享测试谱' }, settings: DEF_SETTINGS },
     })
     const { id } = (await resp.json()).data
 
     try {
       // Navigate to publications list
-      await page.goto('/publications')
+      await page.goto('/dashboard/publications')
       await expect(page.locator('.publication-list-view-root')).toBeVisible()
 
       // Open share dialog for the publication
@@ -88,7 +90,7 @@ test.describe('Search & Share', () => {
 
       await cleanContext.close()
     } finally {
-      await page.request.delete(`/api/publications/${id}`).catch(() => {})
+      await authenticatedRequest(page.request, authToken, `/api/publications/${id}`, { method: 'DELETE' }).catch(() => {})
     }
   })
 })

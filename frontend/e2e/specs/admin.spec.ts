@@ -1,34 +1,32 @@
 import { test, expect } from '@playwright/test'
+import { authenticatedRequest, loginPage, loginViaApi } from '../helpers/auth'
 
 const ADMIN_USER = 'root'
 const ADMIN_PASS = '123456'
 const NEW_USERNAME = 'e2e_admin_test_user'
 const NEW_PASSWORD = 'admin_test_pass'
 const NEW_NICKNAME = '测试协修'
+let authToken = ''
 
 test.describe('Admin User Management', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
-    await page.request.post('/api/auth/login', {
-      data: { username: ADMIN_USER, password: ADMIN_PASS },
-    })
+    authToken = await loginPage(page, ADMIN_USER, ADMIN_PASS)
     await page.goto('/')
     await page.waitForURL(/\/$|\/dashboard/)
   })
 
   /** Helper: clean up the test user via API if it exists */
   async function cleanupTestUser(request: any) {
-    await request.post('/api/auth/login', {
-      data: { username: ADMIN_USER, password: ADMIN_PASS },
-    })
-    const listResp = await request.get('/api/admin/users')
+    const token = await loginViaApi(request, ADMIN_USER, ADMIN_PASS)
+    const listResp = await authenticatedRequest(request, token, '/api/admin/users')
     const listBody = await listResp.json()
     if (listBody.code === 200 && Array.isArray(listBody.data)) {
       const found = listBody.data.find((u: any) => u.username === NEW_USERNAME)
       if (found) {
-        await request.delete(`/api/admin/users/${found.id}`).catch(() => {})
+        await authenticatedRequest(request, token, `/api/admin/users/${found.id}`, { method: 'DELETE' }).catch(() => {})
       }
     }
   }
@@ -88,7 +86,8 @@ test.describe('Admin User Management', () => {
 
   test('should delete a user and verify it is removed', async ({ page }) => {
     // Ensure the test user exists before attempting to delete
-    const createResp = await page.request.post('/api/admin/users', {
+    await authenticatedRequest(page.request, authToken, '/api/admin/users', {
+      method: 'POST',
       data: { username: NEW_USERNAME, password: NEW_PASSWORD, nickname: NEW_NICKNAME, role: 'USER' },
     }).catch(() => null)
 
@@ -104,14 +103,14 @@ test.describe('Admin User Management', () => {
     await userRow.locator('button.icon-btn.danger').click()
 
     // A confirmation dialog should appear
-    await expect(page.locator('.glass-dialog-overlay')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.confirm-overlay')).toBeVisible({ timeout: 5000 })
     await expect(page.getByText('确认删除编委')).toBeVisible()
 
     // Click "确认删除"
-    await page.locator('.glass-dialog button:has-text("确认删除")').click()
+    await page.locator('.confirm-dialog button[data-role="confirm"]').click()
 
     // The dialog should close
-    await expect(page.locator('.glass-dialog-overlay')).not.toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.confirm-overlay')).not.toBeVisible({ timeout: 5000 })
 
     // Verify the user is no longer in the list
     await expect(page.locator('.table-row').filter({ hasText: NEW_USERNAME })).not.toBeVisible({ timeout: 10000 })

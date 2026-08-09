@@ -51,6 +51,10 @@ const routes: RouteRecordRaw[] = [
     meta: { public: true },
   },
   {
+    path: '/publications',
+    redirect: { name: 'publications' },
+  },
+  {
     path: '/privacy',
     name: 'privacy',
     component: InfoDocumentView,

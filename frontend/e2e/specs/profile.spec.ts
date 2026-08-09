@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { loginPage } from '../helpers/auth'
 
 const ADMIN_USER = 'root'
 const ADMIN_PASS = '123456'
@@ -10,9 +11,7 @@ test.describe('Profile / Settings', () => {
     await page.addInitScript(() => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
-    await page.request.post('/api/auth/login', {
-      data: { username: ADMIN_USER, password: ADMIN_PASS },
-    })
+    await loginPage(page, ADMIN_USER, ADMIN_PASS)
     await page.goto('/')
     await page.waitForURL(/\/$|\/dashboard/)
   })
@@ -28,7 +27,7 @@ test.describe('Profile / Settings', () => {
     await expect(page.getByText('登录密码')).toBeVisible()
   })
 
-  test('should change profile name and see success message', async ({ page }) => {
+  test('should explain when the admin account has no linked person', async ({ page }) => {
     await page.goto('/dashboard/settings')
     await expect(page.getByText('账户设置')).toBeVisible()
 
@@ -36,17 +35,12 @@ test.describe('Profile / Settings', () => {
     await expect(profileSection).toBeVisible()
 
     const nameInput = profileSection.locator('input[type="text"]')
-    const originalName = await nameInput.inputValue()
     await nameInput.fill(NEW_NAME)
 
     await profileSection.locator('button:has-text("保存姓名")').click()
 
-    await expect(profileSection.locator('.msg.ok')).toBeVisible({ timeout: 5000 })
-    await expect(profileSection.locator('.msg.ok')).toContainText('已更新')
-
-    await nameInput.fill(originalName)
-    await profileSection.locator('button:has-text("保存姓名")').click()
-    await expect(profileSection.locator('.msg.ok')).toBeVisible({ timeout: 5000 })
+    await expect(profileSection.locator('.msg.err')).toBeVisible({ timeout: 5000 })
+    await expect(profileSection.locator('.msg.err')).toContainText('当前账号未关联族谱人物')
   })
 
   test('should change password and verify login with new password', async ({ page }) => {

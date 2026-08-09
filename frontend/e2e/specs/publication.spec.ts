@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { loginPage } from '../helpers/auth'
 
 const TEST_USER = process.env.E2E_USERNAME || 'e2e_test'
 const TEST_PASS = process.env.E2E_PASSWORD || 'test1234'
@@ -15,9 +16,7 @@ test.describe('Publication CRUD', () => {
     })
 
     // Log in via API — cookies (refresh_token, XSRF-TOKEN) are set in browser context
-    await page.request.post('/api/auth/login', {
-      data: { username: TEST_USER, password: TEST_PASS },
-    })
+    await loginPage(page, TEST_USER, TEST_PASS)
 
     // Navigate to app — the router's bootstrapAuthSession picks up the refresh_token cookie
     await page.goto('/')
@@ -26,7 +25,7 @@ test.describe('Publication CRUD', () => {
   })
 
   test('should create a new publication and redirect to workbench', async ({ page }) => {
-    await page.goto('/publications')
+    await page.goto('/dashboard/publications')
     await expect(page.locator('.publication-list-view-root')).toBeVisible()
 
     // Click "新建宗谱存档" button
@@ -48,7 +47,7 @@ test.describe('Publication CRUD', () => {
 
   test('should show created publication in the list', async ({ page }) => {
     // First, ensure we have a publication to see
-    await page.goto('/publications')
+    await page.goto('/dashboard/publications')
     await expect(page.locator('.publication-list-view-root')).toBeVisible()
 
     // Check if our test publication exists, create it if not
@@ -73,7 +72,7 @@ test.describe('Publication CRUD', () => {
 
       // Navigate back to publications list via sidebar
       await page.locator('button.nav-item').filter({ hasText: '馆藏谱目' }).click()
-      await page.waitForURL('/publications')
+      await page.waitForURL('/dashboard/publications')
     }
 
     // Should see the publication in the list
@@ -82,7 +81,7 @@ test.describe('Publication CRUD', () => {
   })
 
   test('should edit publication metadata', async ({ page }) => {
-    await page.goto('/publications')
+    await page.goto('/dashboard/publications')
     await expect(page.locator('.publication-list-view-root')).toBeVisible()
 
     // Create publication if needed
@@ -94,7 +93,7 @@ test.describe('Publication CRUD', () => {
       await page.locator('button:has-text("建档立案")').click()
       await page.waitForURL(/\/publication\/\d+$/)
       await page.locator('button.nav-item').filter({ hasText: '馆藏谱目' }).click()
-      await page.waitForURL('/publications')
+      await page.waitForURL('/dashboard/publications')
     }
 
     // Click the edit button (pencil icon) on the archive card
@@ -116,7 +115,7 @@ test.describe('Publication CRUD', () => {
   })
 
   test('should open workbench for a publication', async ({ page }) => {
-    await page.goto('/publications')
+    await page.goto('/dashboard/publications')
 
     // Find the publication card and click it
     const pubCard = page.locator('.archive-card').filter({ hasText: PUB_EDITED_TITLE })
@@ -139,7 +138,7 @@ test.describe('Publication CRUD', () => {
   })
 
   test('should delete a publication', async ({ page }) => {
-    await page.goto('/publications')
+    await page.goto('/dashboard/publications')
 
     // Find the publication card
     const pubCard = page.locator('.archive-card').filter({ hasText: PUB_EDITED_TITLE })

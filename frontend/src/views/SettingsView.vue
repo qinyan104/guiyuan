@@ -57,12 +57,14 @@ const roleLabel = computed(() => currentRole.value === 'SUPER_ADMIN' ? '超级�
 
 // ── Name ──
 const nameMsg = ref('')
+const nameError = ref(false)
 const nameLoading = ref(false)
 
 async function handleChangeName() {
   nameMsg.value = ''
+  nameError.value = false
   const nextName = profileNameDraft.value.trim()
-  if (!nextName) { nameMsg.value = '姓名不能为空'; return }
+  if (!nextName) { nameMsg.value = '姓名不能为空'; nameError.value = true; return }
   if (nextName === originalProfileName.value) { nameMsg.value = '姓名未修改'; return }
   nameLoading.value = true
   try {
@@ -70,7 +72,10 @@ async function handleChangeName() {
     originalProfileName.value = nextName
     nameMsg.value = '已更新'
   }
-  catch (err: unknown) { nameMsg.value = getUserErrorMessage(err, '提交失败') }
+  catch (err: unknown) {
+    nameError.value = true
+    nameMsg.value = getUserErrorMessage(err, '提交失败')
+  }
   finally { nameLoading.value = false }
 }
 
@@ -173,7 +178,7 @@ async function handleRestore() {
               {{ nameLoading ? '保存中…' : '保存姓名' }}
             </button>
           </div>
-          <p v-if="nameMsg" class="msg" :class="nameMsg.includes('失败') || nameMsg.includes('不能为空') ? 'err' : 'ok'">{{ nameMsg }}</p>
+          <p v-if="nameMsg" class="msg" :class="nameError ? 'err' : 'ok'">{{ nameMsg }}</p>
         </div>
       </section>
 

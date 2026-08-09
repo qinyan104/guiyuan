@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { authenticatedRequest, loginPage, loginViaApi } from '../helpers/auth'
 
 const TEST_USER = process.env.E2E_USERNAME || 'e2e_test'
 const TEST_PASS = process.env.E2E_PASSWORD || 'test1234'
@@ -24,24 +25,22 @@ const PUB_WITH_PERSON = {
 
 test.describe('Workbench / Person Editing', () => {
   let publicationId: number
+  let authToken = ''
 
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
-    await page.request.post('/api/auth/login', {
-      data: { username: TEST_USER, password: TEST_PASS },
-    })
+    authToken = await loginPage(page, TEST_USER, TEST_PASS)
     await page.goto('/')
     await page.waitForURL(/\/$|\/dashboard/)
   })
 
   test.beforeAll(async ({ request }) => {
     // Create a test publication with a root person
-    await request.post('/api/auth/login', {
-      data: { username: TEST_USER, password: TEST_PASS },
-    })
-    const resp = await request.post('/api/publications', {
+    const token = await loginViaApi(request, TEST_USER, TEST_PASS)
+    const resp = await authenticatedRequest(request, token, '/api/publications', {
+      method: 'POST',
       data: {
         title: PUB_TITLE,
         subtitle: '工作台测试版',
@@ -56,10 +55,8 @@ test.describe('Workbench / Person Editing', () => {
   test.afterAll(async ({ request }) => {
     // Cleanup: delete the test publication
     if (publicationId) {
-      await request.post('/api/auth/login', {
-        data: { username: TEST_USER, password: TEST_PASS },
-      })
-      await request.delete(`/api/publications/${publicationId}`).catch(() => {})
+      const token = await loginViaApi(request, TEST_USER, TEST_PASS)
+      await authenticatedRequest(request, token, `/api/publications/${publicationId}`, { method: 'DELETE' }).catch(() => {})
     }
   })
 
@@ -173,7 +170,8 @@ test.describe('Workbench / Person Editing', () => {
 
   test('should delete a person with confirmation dialog', async ({ page }) => {
     // Create a separate publication for deletion test to avoid side effects
-    const resp = await page.request.post('/api/publications', {
+    const resp = await authenticatedRequest(page.request, authToken, '/api/publications', {
+      method: 'POST',
       data: {
         title: 'E2E 删除测试谱',
         subtitle: '删除测试',
@@ -221,7 +219,7 @@ test.describe('Workbench / Person Editing', () => {
       // Editor should close and the person card should be removed
       await expect(page.locator('.ak-overlay')).not.toBeVisible({ timeout: 5000 })
     } finally {
-      await page.request.delete(`/api/publications/${deletePubId}`).catch(() => {})
+      await authenticatedRequest(page.request, authToken, `/api/publications/${deletePubId}`, { method: 'DELETE' }).catch(() => {})
     }
   })
 })
