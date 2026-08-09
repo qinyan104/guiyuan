@@ -6,6 +6,15 @@ type AuthResponse = {
   }
 }
 
+type MeResponse = {
+  data?: {
+    data?: {
+      username?: string
+      role?: string
+    }
+  }
+}
+
 type UserListResponse = {
   data?: Array<{ id: number; username: string }>
 }
@@ -55,6 +64,20 @@ export async function ensureTestUser(request: APIRequestContext, username: strin
 export async function loginPage(page: Page, username: string, password: string): Promise<string> {
   const token = await loginViaApi(page.request, username, password)
   await page.setExtraHTTPHeaders({ Authorization: `Bearer ${token}` })
+
+  // The router checks the cached role before the first protected navigation.
+  // Seed it from the authenticated API response so admin routes do not depend
+  // on refresh/bootstrap timing in the browser.
+  const meResponse = await page.request.get('/api/auth/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const meBody = JSON.parse(await meResponse.text()) as MeResponse
+  await page.addInitScript(({ storedUsername, storedRole }) => {
+    try {
+      if (storedUsername) localStorage.setItem('authUsername', storedUsername)
+      if (storedRole) localStorage.setItem('authRole', storedRole)
+    } catch {}
+  }, { storedUsername: meBody.data?.data?.username ?? username, storedRole: meBody.data?.data?.role ?? '' })
   return token
 }
 

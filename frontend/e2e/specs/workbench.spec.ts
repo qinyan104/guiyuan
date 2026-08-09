@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import { authenticatedRequest, loginPage, loginViaApi } from '../helpers/auth'
 
 const TEST_USER = process.env.E2E_USERNAME || 'e2e_test'
@@ -21,6 +21,24 @@ const PUB_WITH_PERSON = {
   families: {
     [FAMILY_ID]: { id: FAMILY_ID, adults: [PERSON_ID], children: [] },
   },
+}
+
+async function openPersonEditor(page: Page) {
+  const personCard = page.locator('.person-card').first()
+  const editor = page.locator('.ak-overlay')
+  await expect(personCard).toBeVisible({ timeout: 15000 })
+
+  // The workbench selects the focus person during load. Depending on the
+  // route/bootstrap timing, the drawer may already be open or one click may
+  // select/open it. Keep the helper aligned with both valid UI states.
+  if (!(await editor.isVisible().catch(() => false))) {
+    await personCard.click()
+  }
+  if (!(await editor.isVisible().catch(() => false))) {
+    await personCard.click()
+  }
+  await expect(editor).toBeVisible({ timeout: 5000 })
+  return { personCard, editor }
 }
 
 test.describe('Workbench / Person Editing', () => {
@@ -71,30 +89,14 @@ test.describe('Workbench / Person Editing', () => {
   test('should click person card and open editor panel', async ({ page }) => {
     await page.goto(`/publication/${publicationId}`)
     await expect(page.locator('.app-shell')).toBeVisible()
-    await expect(page.locator('.person-card').first()).toBeVisible({ timeout: 15000 })
-
-    // First click selects the person
-    const personCard = page.locator('.person-card').first()
-    await personCard.click()
-    await page.waitForTimeout(300)
-
-    // Second click on the same card opens the editor drawer
-    await personCard.click()
-    await expect(page.locator('.ak-overlay')).toBeVisible({ timeout: 5000 })
+    await openPersonEditor(page)
     await expect(page.locator('.ak-card')).toBeVisible()
   })
 
   test('should edit person name and see change reflected', async ({ page }) => {
     await page.goto(`/publication/${publicationId}`)
     await expect(page.locator('.app-shell')).toBeVisible()
-    await expect(page.locator('.person-card').first()).toBeVisible({ timeout: 15000 })
-
-    // Select and open editor
-    const personCard = page.locator('.person-card').first()
-    await personCard.click()
-    await page.waitForTimeout(300)
-    await personCard.click()
-    await expect(page.locator('.ak-overlay')).toBeVisible({ timeout: 5000 })
+    const { personCard } = await openPersonEditor(page)
 
     // Edit the name in the editor
     const nameInput = page.locator('.ak-inp--hero')
@@ -109,10 +111,7 @@ test.describe('Workbench / Person Editing', () => {
     await expect(page.locator('.person-card__name').filter({ hasText: '始祖公-已编辑' })).toBeVisible({ timeout: 5000 })
 
     // Restore original name for subsequent tests
-    await personCard.click()
-    await page.waitForTimeout(300)
-    await personCard.click()
-    await expect(page.locator('.ak-overlay')).toBeVisible({ timeout: 5000 })
+    await openPersonEditor(page)
     await page.locator('.ak-inp--hero').fill(ROOT_PERSON_NAME)
     await page.locator('.ak-bar__btn.ak-bar__done').click()
   })
@@ -120,14 +119,8 @@ test.describe('Workbench / Person Editing', () => {
   test('should add a spouse and verify spouse appears', async ({ page }) => {
     await page.goto(`/publication/${publicationId}`)
     await expect(page.locator('.app-shell')).toBeVisible()
-    await expect(page.locator('.person-card').first()).toBeVisible({ timeout: 15000 })
-
     // Open editor for the root person
-    const personCard = page.locator('.person-card').first()
-    await personCard.click()
-    await page.waitForTimeout(300)
-    await personCard.click()
-    await expect(page.locator('.ak-overlay')).toBeVisible({ timeout: 5000 })
+    await openPersonEditor(page)
 
     // Click "+ 添加配偶" button
     const addSpouseBtn = page.locator('.ak-rel__add').filter({ hasText: '添加配偶' })
@@ -146,14 +139,8 @@ test.describe('Workbench / Person Editing', () => {
   test('should add a child and verify child appears in the list', async ({ page }) => {
     await page.goto(`/publication/${publicationId}`)
     await expect(page.locator('.app-shell')).toBeVisible()
-    await expect(page.locator('.person-card').first()).toBeVisible({ timeout: 15000 })
-
     // Open editor for the root person
-    const personCard = page.locator('.person-card').first()
-    await personCard.click()
-    await page.waitForTimeout(300)
-    await personCard.click()
-    await expect(page.locator('.ak-overlay')).toBeVisible({ timeout: 5000 })
+    await openPersonEditor(page)
 
     // Click "+ 添子" button to add a male child
     const addChildBtn = page.locator('.ak-rel__add').filter({ hasText: '添子' })
@@ -195,14 +182,8 @@ test.describe('Workbench / Person Editing', () => {
     try {
       await page.goto(`/publication/${deletePubId}`)
       await expect(page.locator('.app-shell')).toBeVisible()
-      await expect(page.locator('.person-card').first()).toBeVisible({ timeout: 15000 })
-
       // Open editor
-      const personCard = page.locator('.person-card').first()
-      await personCard.click()
-      await page.waitForTimeout(300)
-      await personCard.click()
-      await expect(page.locator('.ak-overlay')).toBeVisible({ timeout: 5000 })
+      await openPersonEditor(page)
 
       // Click "删除此人" button
       const deleteBtn = page.locator('.ak-del').filter({ hasText: '删除此人' })

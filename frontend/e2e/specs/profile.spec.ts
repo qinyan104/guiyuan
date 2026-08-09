@@ -51,9 +51,9 @@ test.describe('Profile / Settings', () => {
     await expect(passwordSection).toBeVisible()
 
     // Fill in password change form
-    await passwordSection.locator('input[placeholder="当前密码"]').fill(ADMIN_PASS)
-    await passwordSection.locator('input[placeholder="新密码"]').fill(NEW_PASSWORD)
-    await passwordSection.locator('input[placeholder="确认新密码"]').fill(NEW_PASSWORD)
+    await passwordSection.locator('input[placeholder="输入当前密码"]').fill(ADMIN_PASS)
+    await passwordSection.locator('input[placeholder="至少 4 个字符"]').fill(NEW_PASSWORD)
+    await passwordSection.locator('input[placeholder="再次输入新密码"]').fill(NEW_PASSWORD)
 
     // Click "更新密码" button
     await passwordSection.locator('button:has-text("更新密码")').click()
@@ -87,9 +87,9 @@ test.describe('Profile / Settings', () => {
     await expect(page.getByText('账户设置')).toBeVisible()
 
     const resetPasswordSection = page.locator('.settings-card').filter({ hasText: '登录密码' })
-    await resetPasswordSection.locator('input[placeholder="当前密码"]').fill(NEW_PASSWORD)
-    await resetPasswordSection.locator('input[placeholder="新密码"]').fill(ADMIN_PASS)
-    await resetPasswordSection.locator('input[placeholder="确认新密码"]').fill(ADMIN_PASS)
+    await resetPasswordSection.locator('input[placeholder="输入当前密码"]').fill(NEW_PASSWORD)
+    await resetPasswordSection.locator('input[placeholder="至少 4 个字符"]').fill(ADMIN_PASS)
+    await resetPasswordSection.locator('input[placeholder="再次输入新密码"]').fill(ADMIN_PASS)
     await resetPasswordSection.locator('button:has-text("更新密码")').click()
 
     // Verify password was reset
@@ -104,9 +104,9 @@ test.describe('Profile / Settings', () => {
     const passwordSection = page.locator('.settings-card').filter({ hasText: '登录密码' })
 
     // Fill mismatched passwords
-    await passwordSection.locator('input[placeholder="当前密码"]').fill(ADMIN_PASS)
-    await passwordSection.locator('input[placeholder="新密码"]').fill('new_pass_1')
-    await passwordSection.locator('input[placeholder="确认新密码"]').fill('new_pass_2')
+    await passwordSection.locator('input[placeholder="输入当前密码"]').fill(ADMIN_PASS)
+    await passwordSection.locator('input[placeholder="至少 4 个字符"]').fill('new_pass_1')
+    await passwordSection.locator('input[placeholder="再次输入新密码"]').fill('new_pass_2')
 
     await passwordSection.locator('button:has-text("更新密码")').click()
 

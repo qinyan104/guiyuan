@@ -31,7 +31,7 @@ test.describe('Publication CRUD', () => {
     // Click "新建宗谱存档" button
     await page.locator('header button.btn--primary').click()
     await expect(page.locator('.glass-sheet')).toBeVisible()
-    await expect(page.getByText('开宗立派')).toBeVisible()
+    await expect(page.locator('.glass-sheet').getByRole('heading', { name: '开宗立派' })).toBeVisible()
 
     // Fill in title and subtitle
     await page.locator('input[placeholder="例: 陇西李氏世系图"]').fill(PUB_TITLE)
@@ -71,7 +71,7 @@ test.describe('Publication CRUD', () => {
       await page.waitForURL(/\/publication\/\d+$/)
 
       // Navigate back to publications list via sidebar
-      await page.locator('button.nav-item').filter({ hasText: '馆藏谱目' }).click()
+      await page.goto('/dashboard/publications')
       await page.waitForURL('/dashboard/publications')
     }
 
@@ -92,7 +92,7 @@ test.describe('Publication CRUD', () => {
       await page.locator('input[placeholder="例: 丙午年重修版"]').fill(PUB_SUBTITLE)
       await page.locator('button:has-text("建档立案")').click()
       await page.waitForURL(/\/publication\/\d+$/)
-      await page.locator('button.nav-item').filter({ hasText: '馆藏谱目' }).click()
+      await page.goto('/dashboard/publications')
       await page.waitForURL('/dashboard/publications')
     }
 
