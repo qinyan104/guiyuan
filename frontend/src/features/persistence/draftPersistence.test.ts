@@ -88,7 +88,7 @@ describe('draft persistence', () => {
     publication.people.p1.avatarUrl = 'http://localhost:8080/uploads/legacy-person.png'
 
     globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(new Blob(['legacy-image'], { type: 'image/png' }), { status: 200 }),
+      new Response('legacy-image', { status: 200, headers: { 'Content-Type': 'image/png' } }),
     )
 
     const portablePublication = await createPortablePublication(publication)

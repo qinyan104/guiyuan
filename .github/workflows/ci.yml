@@ -27,6 +27,8 @@ jobs:
   frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Shanghai
     defaults:
       run:
         working-directory: frontend
@@ -69,7 +71,7 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: maven
-      - run: ./mvnw test -q
+      - run: bash ./mvnw test -q
         env:
           DB_URL: jdbc:mysql://localhost:3306/genealogy?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
           DB_USERNAME: genealogy
@@ -107,7 +109,7 @@ jobs:
       - name: Start backend
         working-directory: backend
         run: |
-          nohup ./mvnw spring-boot:run -q \
+          nohup bash ./mvnw spring-boot:run -q \
             -Dspring-boot.run.arguments="--server.port=8080" \
             > ../backend.log 2>&1 &
         env:

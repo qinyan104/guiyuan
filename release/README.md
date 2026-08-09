@@ -82,6 +82,8 @@ docker compose --env-file release/.env -f release/docker-compose.deploy.yml pull
 docker compose --env-file release/.env -f release/docker-compose.deploy.yml up -d
 ```
 
+GitHub Actions 默认只构建并推送镜像，不会连接生产服务器。启用自动部署前，需要配置仓库变量 `DEPLOY_ENABLED=true`，以及 `DEPLOY_HOST`、`DEPLOY_USER`、`DEPLOY_KEY` secrets；`DEPLOY_PATH` 可选，默认 `/opt/guiyuan`。也可以从 Actions 手动运行 CD，并将 `deploy` 设为 `true`。
+
 ## 4. 访问
 
 部署完成后，浏览器打开：
