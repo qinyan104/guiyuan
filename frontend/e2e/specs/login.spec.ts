@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { ensureTestUser } from '../helpers/auth'
 
 const TEST_USER = process.env.E2E_USERNAME || 'e2e_test'
 const TEST_PASS = process.env.E2E_PASSWORD || 'test1234'
@@ -10,13 +11,9 @@ test.beforeEach(async ({ page }) => {
   })
 })
 
-// Register test user upfront via API (idempotent)
+// Provision the test user through the admin API because public registration is disabled after bootstrap.
 test.beforeAll(async ({ request }) => {
-  await request.post('/api/auth/register', {
-    data: { username: TEST_USER, password: TEST_PASS },
-  }).catch(() => {
-    // ignore "user already exists" errors
-  })
+  await ensureTestUser(request, TEST_USER, TEST_PASS)
 })
 
 test.describe('Login Flow', () => {

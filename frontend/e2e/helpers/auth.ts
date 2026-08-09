@@ -6,6 +6,10 @@ type AuthResponse = {
   }
 }
 
+type UserListResponse = {
+  data?: Array<{ id: number; username: string }>
+}
+
 type ApiOptions = {
   method?: string
   data?: Record<string, unknown>
@@ -22,10 +26,30 @@ export async function loginViaApi(
   })
   const body = JSON.parse(await response.text()) as AuthResponse
   const token = body.data?.token
+  if (response.status() === 404 && username !== 'root') {
+    await ensureTestUser(request, username, password)
+    return loginViaApi(request, username, password)
+  }
   if (!response.ok() || !token) {
     throw new Error(`E2E login failed for ${username}: ${response.status()}`)
   }
   return token
+}
+
+export async function ensureTestUser(request: APIRequestContext, username: string, password: string): Promise<void> {
+  const adminToken = await loginViaApi(request, 'root', '123456')
+  const listResponse = await authenticatedRequest(request, adminToken, '/api/admin/users')
+  const listBody = JSON.parse(await listResponse.text()) as UserListResponse
+  const exists = listBody.data?.some((user) => user.username === username)
+  if (exists) return
+
+  const createResponse = await authenticatedRequest(request, adminToken, '/api/admin/users', {
+    method: 'POST',
+    data: { username, password, nickname: username, role: 'USER' },
+  })
+  if (!createResponse.ok() && createResponse.status() !== 400) {
+    throw new Error(`E2E user provisioning failed for ${username}: ${createResponse.status()}`)
+  }
 }
 
 export async function loginPage(page: Page, username: string, password: string): Promise<string> {
