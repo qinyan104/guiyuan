@@ -19,9 +19,9 @@ test.describe('Publication CRUD', () => {
     await loginPage(page, TEST_USER, TEST_PASS)
 
     // Navigate to app — the router's bootstrapAuthSession picks up the refresh_token cookie
-    await page.goto('/')
+    await page.goto('/dashboard')
     // Should land on dashboard (authenticated)
-    await page.waitForURL(/\/$|\/dashboard/)
+    await page.waitForURL('/dashboard')
   })
 
   test('should create a new publication and redirect to workbench', async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe('Publication CRUD', () => {
     await expect(page.locator('.publication-list-view-root')).toBeVisible()
 
     // Click "新建宗谱存档" button
-    await page.locator('button:has-text("新建宗谱存档")').click()
+    await page.locator('header button.btn--primary').click()
     await expect(page.locator('.glass-sheet')).toBeVisible()
     await expect(page.getByText('开宗立派')).toBeVisible()
 
@@ -64,7 +64,7 @@ test.describe('Publication CRUD', () => {
 
     if (!found) {
       // Create publication
-      await page.locator('button:has-text("新建宗谱存档")').click()
+      await page.locator('header button.btn--primary').click()
       await page.locator('input[placeholder="例: 陇西李氏世系图"]').fill(PUB_TITLE)
       await page.locator('input[placeholder="例: 丙午年重修版"]').fill(PUB_SUBTITLE)
       await page.locator('button:has-text("建档立案")').click()
@@ -87,7 +87,7 @@ test.describe('Publication CRUD', () => {
     // Create publication if needed
     const existingBefore = page.locator('.archive-title').filter({ hasText: PUB_TITLE })
     if (await existingBefore.count() === 0) {
-      await page.locator('button:has-text("新建宗谱存档")').click()
+      await page.locator('header button.btn--primary').click()
       await page.locator('input[placeholder="例: 陇西李氏世系图"]').fill(PUB_TITLE)
       await page.locator('input[placeholder="例: 丙午年重修版"]').fill(PUB_SUBTITLE)
       await page.locator('button:has-text("建档立案")').click()

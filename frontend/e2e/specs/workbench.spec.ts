@@ -32,8 +32,8 @@ test.describe('Workbench / Person Editing', () => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
     authToken = await loginPage(page, TEST_USER, TEST_PASS)
-    await page.goto('/')
-    await page.waitForURL(/\/$|\/dashboard/)
+    await page.goto('/dashboard')
+    await page.waitForURL('/dashboard')
   })
 
   test.beforeAll(async ({ request }) => {

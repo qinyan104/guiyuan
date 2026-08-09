@@ -12,8 +12,8 @@ test.describe('Profile / Settings', () => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
     await loginPage(page, ADMIN_USER, ADMIN_PASS)
-    await page.goto('/')
-    await page.waitForURL(/\/$|\/dashboard/)
+    await page.goto('/dashboard')
+    await page.waitForURL('/dashboard')
   })
 
   test('should navigate to settings page', async ({ page }) => {

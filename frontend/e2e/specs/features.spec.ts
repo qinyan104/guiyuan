@@ -14,8 +14,8 @@ test.describe('Search & Share', () => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
     authToken = await loginPage(page, TEST_USER, TEST_PASS)
-    await page.goto('/')
-    await page.waitForURL(/\/$|\/dashboard/)
+    await page.goto('/dashboard')
+    await page.waitForURL('/dashboard')
   })
 
   test('should find publication via global search', async ({ page }) => {
@@ -28,8 +28,8 @@ test.describe('Search & Share', () => {
 
     try {
       // Navigate to dashboard to access the search bar
-      await page.goto('/')
-      await page.waitForURL(/\/$|\/dashboard/)
+      await page.goto('/dashboard')
+      await page.waitForURL('/dashboard')
 
       // Global search is in the top action bar
       const searchInput = page.locator('.search-input')
