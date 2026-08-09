@@ -57,7 +57,9 @@ export function buildBranchMergePreview(
     for (const family of adultFamilies.get(personId) ?? []) {
       if (includedFamilies.has(family.id)) continue
       includedFamilies.add(family.id)
-      family.adults.forEach((id) => includedPeople.add(id))
+      family.adults.forEach((id) => {
+        includedPeople.add(id)
+      })
       for (const childId of family.children) {
         if (!includedPeople.has(childId)) {
           includedPeople.add(childId)

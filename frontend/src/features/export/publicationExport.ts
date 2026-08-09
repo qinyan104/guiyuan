@@ -383,8 +383,12 @@ function resolveCssVariablesInAttributes(svg: SVGSVGElement) {
 }
 
 function stripPdfUnsupportedFilters(svg: SVGSVGElement) {
-  svg.querySelectorAll('filter').forEach(element => element.remove())
-  svg.querySelectorAll<SVGElement>('[filter]').forEach(element => element.removeAttribute('filter'))
+  svg.querySelectorAll('filter').forEach(element => {
+    element.remove()
+  })
+  svg.querySelectorAll<SVGElement>('[filter]').forEach(element => {
+    element.removeAttribute('filter')
+  })
 }
 
 function scopeInternalIds(svg: SVGSVGElement, suffix: string) {

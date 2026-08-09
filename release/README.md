@@ -53,6 +53,13 @@ git pull
 docker compose --env-file release/.env -f release/docker-compose.yml up --build -d
 ```
 
+发布后请确认所有容器均为 `healthy`，并检查接口：
+
+```bash
+docker compose --env-file release/.env -f release/docker-compose.yml ps
+curl -fsS http://localhost:8080/api/health
+```
+
 停止：
 
 ```bash
@@ -97,6 +104,10 @@ http://localhost:5173
 - `backend-uploads` 卷：上传的照片文件
 
 常规更新不删除数据。只有执行 `down -v` 才会清除数据卷。
+
+生产发布使用带提交 SHA 的镜像标签。部署脚本会在更新失败时恢复到旧镜像；不要在发布后手动删除旧镜像，保留至少一个可回滚版本。
+
+数据库备份需要定期复制到主机以外的受控存储，并至少定期执行一次恢复演练。管理员页面的“下载备份”不能替代异地备份。
 
 ## 6. 技术说明
 

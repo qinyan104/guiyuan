@@ -31,6 +31,7 @@ frontend/dist
 # Env secrets
 .env
 .env.*
+backend/src/main/resources/application.properties
 
 # OS
 .DS_Store

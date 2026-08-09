@@ -10,9 +10,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class BackupService {
+
+    private static final long PROCESS_TIMEOUT_MINUTES = 10;
 
     private final String datasourceUrl;
     private final String datasourceUsername;
@@ -45,6 +48,7 @@ public class BackupService {
                     "-u" + datasourceUsername,
                     "--default-character-set=utf8mb4",
                     "--single-transaction",
+                    "--no-tablespaces",
                     "--routines",
                     "--triggers",
                     dbName
@@ -54,7 +58,7 @@ public class BackupService {
             pb.redirectError(errorFile.toFile());
 
             Process process = pb.start();
-            int exitCode = process.waitFor();
+            int exitCode = waitForProcess(process, "备份");
             if (exitCode != 0) {
                 String errorOutput = Files.readString(errorFile);
                 throw new IOException("数据库备份失败 (exit " + exitCode + "): " + errorOutput);
@@ -135,13 +139,30 @@ public class BackupService {
             try (var stdin = process.getOutputStream()) {
                 sqlStream.transferTo(stdin);
             }
-            int exitCode = process.waitFor();
+            int exitCode = waitForProcess(process, "还原");
             if (exitCode != 0) {
                 String errorOutput = Files.readString(errorFile);
                 throw new IOException("数据库还原失败 (exit " + exitCode + "): " + errorOutput);
             }
         } finally {
             Files.deleteIfExists(errorFile);
+        }
+    }
+
+    private int waitForProcess(Process process, String operation) throws IOException, InterruptedException {
+        try {
+            boolean finished = process.waitFor(PROCESS_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+            if (!finished) {
+                process.destroy();
+                if (!process.waitFor(5, TimeUnit.SECONDS)) {
+                    process.destroyForcibly();
+                }
+                throw new IOException("数据库" + operation + "进程超时");
+            }
+            return process.exitValue();
+        } catch (InterruptedException e) {
+            process.destroyForcibly();
+            throw e;
         }
     }
 }

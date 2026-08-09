@@ -283,22 +283,26 @@ export function paginateBook(doc: BookDocument, supportsGlyph: BookFontSupport =
 
   const visiblePages = pages.filter(hasPrintableBlock)
   const generationPages = new Map<number, number>()
-  visiblePages.forEach((visiblePage) => visiblePage.blocks.forEach((item) => {
-    if (item.block.type === "generationHeading" && !generationPages.has(item.block.generation)) {
-      generationPages.set(item.block.generation, visiblePage.pageNumber)
-    }
-  }))
-  visiblePages.forEach((visiblePage) => visiblePage.blocks.forEach((item) => {
-    if (item.block.type !== "contents") return
-    item.columns.forEach((column) => {
-      if (column.targetGeneration === undefined) return
-      const targetPageNumber = generationPages.get(column.targetGeneration)
-      if (!targetPageNumber) return
-      column.targetPageNumber = targetPageNumber
-      column.text = `${column.text}\u3000···\u3000第${targetPageNumber}页`
-      column.runs = textRuns(column.text, item.fontFamily, supportsGlyph)
+  visiblePages.forEach((visiblePage) => {
+    visiblePage.blocks.forEach((item) => {
+      if (item.block.type === "generationHeading" && !generationPages.has(item.block.generation)) {
+        generationPages.set(item.block.generation, visiblePage.pageNumber)
+      }
     })
-  }))
+  })
+  visiblePages.forEach((visiblePage) => {
+    visiblePage.blocks.forEach((item) => {
+      if (item.block.type !== "contents") return
+      item.columns.forEach((column) => {
+        if (column.targetGeneration === undefined) return
+        const targetPageNumber = generationPages.get(column.targetGeneration)
+        if (!targetPageNumber) return
+        column.targetPageNumber = targetPageNumber
+        column.text = `${column.text}\u3000···\u3000第${targetPageNumber}页`
+        column.runs = textRuns(column.text, item.fontFamily, supportsGlyph)
+      })
+    })
+  })
   let sectionTitle: string | undefined
   visiblePages.forEach((visiblePage) => {
     const section = visiblePage.blocks.find((item) => item.block.type === "preface" || item.block.type === "contents" || item.block.type === "generationHeading")?.block

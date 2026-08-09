@@ -64,7 +64,9 @@ const generationCount = computed(() => {
 
 const generationDistribution = computed(() => {
   const dist = new Map<number, number>()
-  generationMap.value.forEach((g) => dist.set(g, (dist.get(g) || 0) + 1))
+  generationMap.value.forEach((g) => {
+    dist.set(g, (dist.get(g) || 0) + 1)
+  })
   return Array.from(dist.entries()).sort((a, b) => a[0] - b[0])
 })
 const maxGenCount = computed(() => Math.max(1, ...generationDistribution.value.map(([, c]) => c)))

@@ -6,7 +6,9 @@ onMounted(() => {
     (es) => es.forEach((e) => { if (e.isIntersecting) e.target.classList.add('on') }),
     { threshold: 0.1 }
   )
-  document.querySelectorAll('.rv').forEach((el) => ob.observe(el))
+  document.querySelectorAll('.rv').forEach((el) => {
+    ob.observe(el)
+  })
 })
 </script>
 

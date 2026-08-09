@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -36,13 +38,16 @@ public class AdminController {
     private final AuditLogService auditLogService;
     private final BackupService backupService;
     private final ConsistencyService consistencyService;
+    private final long maxRestoreSizeBytes;
 
     public AdminController(UserService userService, AuditLogService auditLogService,
-                           BackupService backupService, ConsistencyService consistencyService) {
+                           BackupService backupService, ConsistencyService consistencyService,
+                           @Value("${app.backup.max-restore-size-bytes:524288000}") long maxRestoreSizeBytes) {
         this.userService = userService;
         this.auditLogService = auditLogService;
         this.backupService = backupService;
         this.consistencyService = consistencyService;
+        this.maxRestoreSizeBytes = maxRestoreSizeBytes;
     }
 
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
@@ -135,13 +140,13 @@ public class AdminController {
         String username = (String) request.getAttribute("currentUsername");
         List<Long> ids = body.get("ids");
         if (ids == null || ids.isEmpty()) {
-            return ApiResponse.error(400, "????????? IDs");
+            return ApiResponse.error(400, "请选择要删除的用户 IDs");
         }
         int deleted = userService.batchDeleteUsers(ids);
         auditLogService.record(username, "ADMIN_BATCH_DELETE_USERS",
-                "???? " + deleted + " ?????? " + ids.size() + " ?",
+                "批量删除用户：成功 " + deleted + " 个，共请求 " + ids.size() + " 个",
                 null, null);
-        return ApiResponse.success("??? " + deleted + " ???",
+        return ApiResponse.success("已删除 " + deleted + " 个用户",
                 Map.of("deleted", deleted, "requested", ids.size()));
     }
 
@@ -166,8 +171,12 @@ public class AdminController {
                     "数据库备份 " + (result.exitCode() == 0 ? "成功" : "失败(exit=" + result.exitCode() + ")"),
                     null, null);
         } catch (InterruptedException e) {
+            auditLogService.record(username, "BACKUP_FAILED", "数据库备份失败：进程被中断", null, null);
             Thread.currentThread().interrupt();
             throw new IOException("备份进程被中断", e);
+        } catch (IOException e) {
+            auditLogService.record(username, "BACKUP_FAILED", "数据库备份失败", null, null);
+            throw e;
         }
     }
 
@@ -187,8 +196,11 @@ public class AdminController {
         if (file.isEmpty()) {
             throw new BadRequestException("请选择要还原的 SQL 文件");
         }
+        if (file.getSize() > maxRestoreSizeBytes) {
+            throw new BadRequestException("备份文件不能超过 " + formatMegabytes(maxRestoreSizeBytes));
+        }
         String filename = file.getOriginalFilename();
-        if (filename == null || !filename.endsWith(".sql")) {
+        if (filename == null || !filename.toLowerCase(Locale.ROOT).endsWith(".sql")) {
             throw new BadRequestException("仅支持 .sql 格式的文件");
         }
 
@@ -198,9 +210,15 @@ public class AdminController {
             auditLogService.record(username, "RESTORE_DB", "从文件 " + filename + " 还原数据库", null, null);
             return ApiResponse.success("数据库已还原", Map.of("filename", filename));
         } catch (Exception e) {
+            auditLogService.record(username, "RESTORE_DB_FAILED", "数据库还原失败：文件 " + filename, null, null);
             logger.error("数据库还原失败", e);
             throw new RuntimeException("数据库还原失败: " + e.getMessage(), e);
         }
+    }
+
+    private String formatMegabytes(long bytes) {
+        long megabytes = Math.max(1, bytes / (1024 * 1024));
+        return megabytes + "MB";
     }
 
 }

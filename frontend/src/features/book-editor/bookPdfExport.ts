@@ -220,10 +220,16 @@ export async function exportBookPdf(doc: BookDocument, pagination: BookPaginatio
   const pdf = await PDFDocument.create()
   const bodyFontFamily = resolveBookFontFamily(doc.layout.fontFamily)
   const fontFamilies = new Set<string>([bodyFontFamily, BOOK_CALLIGRAPHY_FONT])
-  pagination.pages.forEach((page) => page.blocks.forEach((item) => {
+  pagination.pages.forEach((page) => {
+    page.blocks.forEach((item) => {
     fontFamilies.add(item.fontFamily)
-    item.columns.forEach((column) => column.runs.forEach((run) => fontFamilies.add(run.fontFamily)))
-  }))
+      item.columns.forEach((column) => {
+        column.runs.forEach((run) => {
+          fontFamilies.add(run.fontFamily)
+        })
+      })
+    })
+  })
   const fonts = new Map<string, PDFFont>()
   for (const fontFamily of fontFamilies) fonts.set(fontFamily, await embedBookFont(pdf, fontFamily))
   const bodyFont = fonts.get(bodyFontFamily)!

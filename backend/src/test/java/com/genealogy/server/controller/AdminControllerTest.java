@@ -19,13 +19,16 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -35,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = AdminController.class,
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
 @Import(WebConfig.class)
+@TestPropertySource(properties = "app.backup.max-restore-size-bytes=3")
 @WithMockUser
 public class AdminControllerTest {
 
@@ -191,5 +195,19 @@ public class AdminControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.totalIssues").value(0));
+    }
+
+    @Test
+    public void testRestoreRejectsOversizedSqlFile() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "backup.sql", "application/sql", "1234".getBytes());
+
+        mockMvc.perform(multipart("/api/admin/restore")
+                .file(file)
+                .requestAttr("currentUsername", "admin"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+
+        verify(backupService, never()).restoreDatabase(any());
     }
 }

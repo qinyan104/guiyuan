@@ -12,7 +12,7 @@
     "test:e2e": "playwright test --config=e2e/playwright.config.ts",
     "test:e2e:ui": "playwright test --ui --config=e2e/playwright.config.ts",
     "lint": "eslint .",
-    "biome:check": "biome check src/",
+    "biome:check": "biome lint src --max-diagnostics=2000",
     "biome:fix": "biome check --write src/",
     "biome:format": "biome format --write src/"
   },

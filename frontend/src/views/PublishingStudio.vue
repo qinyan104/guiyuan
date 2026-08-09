@@ -495,7 +495,9 @@ function handlePageOverflow(pageIndex: number) {
       }
     }
     // 重新编号
-    layoutPages.value.forEach((p, i) => p.pageNumber = i + 1)
+    layoutPages.value.forEach((p, i) => {
+      p.pageNumber = i + 1
+    })
     sheetTypes.value = layoutPages.value.map(() => "genealogy")
     canvasRef.value?.reloadPreview()
   })

@@ -158,7 +158,9 @@ function ensureVisibleFamilyForPerson(publication: PublicationData, personId: st
 }
 
 function pruneFamilies(publication: PublicationData) {
-  Object.values(publication.families).forEach((family) => normalizeFamilyMembers(publication, family))
+  Object.values(publication.families).forEach((family) => {
+    normalizeFamilyMembers(publication, family)
+  })
 
   Object.values(publication.families)
     .filter((family) => family.adults.length === 0)
@@ -171,7 +173,9 @@ function pruneFamilies(publication: PublicationData) {
       })
     })
 
-  Object.values(publication.families).forEach((family) => normalizeFamilyMembers(publication, family))
+  Object.values(publication.families).forEach((family) => {
+    normalizeFamilyMembers(publication, family)
+  })
 }
 
 function syncSelectionAndFocus(
