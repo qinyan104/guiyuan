@@ -47,7 +47,7 @@ describe('DashboardView', () => {
     ])
   })
 
-  it('renders the latest publication title and access link', async () => {
+  it('frames the latest publication as the next thing to continue', async () => {
     const wrapper = mount(DashboardView, {
       global: {
         stubs: {
@@ -61,7 +61,8 @@ describe('DashboardView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('陈氏宗谱')
-    expect(wrapper.text()).toContain('继续编撰')
+    expect(wrapper.text()).toContain('今天，先把家人的故事往前推进一点。')
+    expect(wrapper.text()).toContain('继续整理')
   })
 
   it('renders publication count stat card', async () => {
