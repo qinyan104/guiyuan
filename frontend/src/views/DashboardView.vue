@@ -1,18 +1,16 @@
-﻿<script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useLexiconStore } from '../stores/lexicon'
-import { listPublications, createPublication, type PublicationSummary } from '../api/publication'
-import { blankPublication, defaultSettings } from '../data/sampleFamily'
+
+import { adminBackupDatabase, adminListUsers, type AdminUser } from '../api/admin'
 import { isAdmin, isSuperAdmin } from '../api/auth'
-import PoeticHeader from '../components/PoeticHeader.vue'
+import { createPublication, listPublications, type PublicationSummary } from '../api/publication'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
-import { useFeedback } from '../composables/useFeedback'
 import UserAvatar from '../components/UserAvatar.vue'
-import { adminListUsers, adminBackupDatabase, type AdminUser } from '../api/admin'
+import { useFeedback } from '../composables/useFeedback'
+import { blankPublication, defaultSettings } from '../data/sampleFamily'
 
 const router = useRouter()
-const { lexicon } = useLexiconStore()
 const feedback = useFeedback()
 
 const pubCount = ref(0)
@@ -93,170 +91,160 @@ async function handleCreateFromDashboard() {
 
 <template>
   <div class="dashboard-view-root">
-    <div class="dashboard-stage">
-      <FeedbackStrip :status-message="feedback.statusMessage.value" :error-message="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
-      <PoeticHeader
-        :eyebrow="lexicon.dashboard.headerEyebrow"
-        :title="lexicon.dashboard.headerTitle"
-        :title-italic="lexicon.dashboard.headerTitleItalic"
-      >
-        <template #extra>
-          <p class="poetic-quote" v-html="lexicon.dashboard.quote.replace(/\\n/g, '<br/>')"></p>
-        </template>
-      </PoeticHeader>
+    <FeedbackStrip :status-message="feedback.statusMessage.value" :error-message="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
 
-      <div v-if="loading" class="loading-state">
-        <div class="spinner"></div>
-        <p>正在读取典藏记录...</p>
+    <header class="dashboard-intro">
+      <div>
+        <h1>今天，先把家人的故事往前推进一点。</h1>
+        <p>从一次补充、一张照片或一个被想起的名字开始，让家谱慢慢完整。</p>
       </div>
+      <button class="create-button" @click="showCreateDialog = true">
+        <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+          <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        </svg>
+        新建一份家谱
+      </button>
+    </header>
 
-      <div v-else-if="pageError" class="error-stage">
-        <div class="error-card">
-          <div class="error-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-          </div>
-          <h2 class="error-title">加载失败</h2>
-          <p class="error-desc">{{ pageError }}</p>
-          <div class="error-actions">
-            <button class="btn btn--primary" @click="loadDashboard">重试</button>
-          </div>
-        </div>
-      </div>
-
-      <div v-else-if="pubCount > 0" class="bento-grid">
-        <!-- Box A: Latest Publication (Hero) -->
-        <div v-if="latestPub" class="bento-card panel-glass card-hero" @click="openPublication(latestPub.id)">
-          <div class="hero-bg-layer"></div>
-          <div class="hero-accent-line"></div>
-          <div class="card-glass-panel">
-            <span class="card-eyebrow">最新修撰</span>
-            <h2 class="hero-pub-title">{{ latestPub.title || '未命名族谱' }}</h2>
-            <p class="hero-pub-subtitle">{{ latestPub.subtitle || '暂无副标题' }}</p>
-            <div class="hero-footer">
-              <span class="hero-date">{{ formatDate(latestPub.updatedAt) }} 更新</span>
-              <button class="btn btn--primary" @click.stop="openPublication(latestPub.id)">
-                继续编撰 
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div v-else class="bento-card panel-glass card-hero empty-hero" @click="router.push({ name: 'publications' })">
-          <div class="hero-bg-layer"></div>
-          <div class="hero-accent-line"></div>
-          <div class="card-glass-panel">
-            <span class="card-eyebrow">起步</span>
-            <h2 class="hero-pub-title">尚未创建族谱</h2>
-            <div class="hero-footer">
-              <button class="btn btn--primary" @click.stop="router.push({ name: 'publications' })">立即创建</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Box B: Total Stats -->
-        <div class="bento-card panel-glass card-stat card-dark" @click="router.push({ name: 'publications' })">
-          <div class="stat-content">
-            <span class="stat-value">{{ pubCount }}</span>
-            <span class="stat-label">馆藏总卷数</span>
-          </div>
-          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
-        </div>
-
-        <!-- Box C: Action (Quick Create) -->
-        <div class="bento-card panel-glass card-action" @click="showCreateDialog = true">
-          <div class="action-shimmer"></div>
-          <div class="action-content">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
-            <span class="action-title">起草新谱</span>
-          </div>
-        </div>
-
-        <!-- Box D: Recent History -->
-        <div class="bento-card panel-glass card-history">
-          <div class="history-header">
-            <span class="card-eyebrow">近期活跃</span>
-            <button class="link-btn" @click="router.push({ name: 'publications' })">查看全部</button>
-          </div>
-        
-          <div class="history-list">
-            <div v-for="pub in otherRecentPubs" :key="pub.id" class="history-item" @click="openPublication(pub.id)">
-              <div class="history-thread"></div>
-              <div class="history-time">{{ formatDate(pub.updatedAt) }}</div>
-              <div class="history-detail">
-                <div class="history-title">{{ pub.title || '未命名' }}</div>
-              </div>
-            </div>
-            <div v-if="otherRecentPubs.length === 0" class="empty-hint">暂无更多记录</div>
-          </div>
-        </div>
-
-        <!-- Box E: Users (If Admin) -->
-        <div v-if="isAdmin()" class="bento-card panel-glass card-users" @click="router.push({ name: 'admin-users' })">
-          <div class="stat-content">
-            <span class="stat-value small">{{ userCount }}</span>
-            <span class="stat-label">编委人数</span>
-          </div>
-          <div class="users-avatars">
-            <UserAvatar
-              v-for="user in visibleUsers"
-              :key="user.id"
-              class="avatar-circle"
-              :src="user.avatarUrl"
-              :name="user.nickname || user.username"
-              :tone="user.role.toLowerCase()"
-              size="sm"
-            />
-            <div v-if="hasMoreUsers" class="avatar-circle more">+</div>
-          </div>
-        </div>
-
-        <!-- Box F: Backup (If SuperAdmin) -->
-        <div v-if="isSuperAdmin()" class="bento-card panel-glass card-backup" @click="handleBackup">
-          <div class="action-content">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-            <span class="action-title">{{ backupLoading ? '正在归档...' : '数据归档' }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Welcome empty state -->
-      <div v-else class="welcome-stage">
-        <div class="welcome-card">
-          <div class="welcome-glow"></div>
-          <div class="welcome-content">
-            <div class="welcome-seal">序</div>
-            <h2 class="welcome-title">欢迎来到数字档案馆</h2>
-            <p class="welcome-desc">创建您的第一个族谱，开启家族编修之旅。</p>
-            <div class="welcome-actions">
-              <button class="btn btn--primary" @click="showCreateDialog = true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                创建第一个族谱
-              </button>
-              <button class="btn btn--secondary" @click="router.push({ name: 'publications' })">
-                浏览示例模板
-              </button>
-              <button class="btn btn--ghost" @click="router.push({ name: 'publications' })">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                导入族谱数据
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div v-if="loading" class="state-stage" role="status">
+      <span class="state-spinner" aria-hidden="true"></span>
+      <p>正在打开你的家谱…</p>
     </div>
 
-    <!-- Create dialog -->
+    <section v-else-if="pageError" class="state-stage state-stage--error" role="alert">
+      <div class="state-symbol" aria-hidden="true">!</div>
+      <h2>暂时没能打开家谱</h2>
+      <p>{{ pageError }}</p>
+      <button class="btn btn--primary" @click="loadDashboard">重新加载</button>
+    </section>
+
+    <template v-else-if="pubCount > 0 && latestPub">
+      <section class="dashboard-grid" aria-label="家谱概览">
+        <article class="continue-record" tabindex="0" @click="openPublication(latestPub.id)" @keydown.enter="openPublication(latestPub.id)">
+          <div class="continue-record__background" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="continue-record__content">
+            <p class="record-label">上次整理</p>
+            <h2>{{ latestPub.title || '未命名族谱' }}</h2>
+            <p class="record-subtitle">{{ latestPub.subtitle || '从这里继续补全家人的故事。' }}</p>
+            <div class="record-footer">
+              <span>{{ formatDate(latestPub.updatedAt) }} 更新</span>
+              <button class="continue-button" @click.stop="openPublication(latestPub.id)">
+                继续整理
+                <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                  <path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <aside class="library-summary">
+          <p>馆藏总卷数</p>
+          <strong>{{ pubCount }}</strong>
+          <span>份家谱正在被认真维护</span>
+          <button class="text-button" @click="router.push({ name: 'publications' })">
+            查看全部 <span aria-hidden="true">→</span>
+          </button>
+        </aside>
+
+        <section class="recent-records">
+          <div class="section-heading">
+            <h2>最近打开</h2>
+            <button class="text-button" @click="router.push({ name: 'publications' })">所有家谱 <span aria-hidden="true">→</span></button>
+          </div>
+          <div v-if="otherRecentPubs.length" class="recent-list">
+            <button v-for="pub in otherRecentPubs" :key="pub.id" class="recent-item" @click="openPublication(pub.id)">
+              <span class="recent-item__date">{{ formatDate(pub.updatedAt) }}</span>
+              <span class="recent-item__title">{{ pub.title || '未命名族谱' }}</span>
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                <path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+          <p v-else class="recent-empty">还没有其他家谱。从这一份开始慢慢留下来。</p>
+        </section>
+
+        <button class="start-record" @click="showCreateDialog = true">
+          <span class="start-record__mark" aria-hidden="true">+</span>
+          <span>
+            <strong>从一个新名字开始</strong>
+            <small>创建一份新的家谱</small>
+          </span>
+        </button>
+      </section>
+
+      <section v-if="isAdmin()" class="admin-space">
+        <div>
+          <h2>管理空间</h2>
+          <p>协作成员与平台维护，在这里保持清楚有序。</p>
+        </div>
+        <div class="admin-space__actions">
+          <button class="admin-action" @click="router.push({ name: 'admin-users' })">
+            <span>
+              <strong>{{ userCount }} 位成员</strong>
+              <small>管理协作权限</small>
+            </span>
+            <div class="avatar-stack" aria-hidden="true">
+              <UserAvatar
+                v-for="user in visibleUsers"
+                :key="user.id"
+                :src="user.avatarUrl"
+                :name="user.nickname || user.username"
+                :tone="user.role.toLowerCase()"
+                size="sm"
+              />
+              <span v-if="hasMoreUsers" class="avatar-more">+</span>
+            </div>
+          </button>
+          <button v-if="isSuperAdmin()" class="admin-action" :disabled="backupLoading" @click="handleBackup">
+            <span>
+              <strong>{{ backupLoading ? '正在备份…' : '数据备份' }}</strong>
+              <small>归档当前平台数据</small>
+            </span>
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+              <path d="M10 3v10m0 0 4-4m-4 4-4-4M4 16h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+      </section>
+    </template>
+
+    <section v-else class="empty-stage">
+      <div class="empty-stage__copy">
+        <h1>从你熟悉的一个名字开始。</h1>
+        <p>不需要一次记全。先写下一个人，等下次和家人聊天时，再把新的故事补进来。</p>
+        <button class="btn btn--primary" @click="showCreateDialog = true">
+          创建第一份家谱
+          <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+      <div class="empty-tree" aria-hidden="true">
+        <span class="empty-tree__line empty-tree__line--one"></span>
+        <span class="empty-tree__line empty-tree__line--two"></span>
+        <span class="empty-tree__node empty-tree__node--one"></span>
+        <span class="empty-tree__node empty-tree__node--two"></span>
+        <span class="empty-tree__node empty-tree__node--three"></span>
+      </div>
+    </section>
+
     <Teleport to="body">
       <Transition name="base-dialog">
-        <div v-if="showCreateDialog" class="dialog-overlay" role="dialog" aria-modal="true" aria-label="创建新族谱" @click.self="showCreateDialog = false" @keydown.escape="showCreateDialog = false">
+        <div v-if="showCreateDialog" class="dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="create-publication-title" @click.self="showCreateDialog = false" @keydown.escape="showCreateDialog = false">
           <div class="dialog-panel" tabindex="-1">
-            <h3>创建新族谱</h3>
-            <p style="color: var(--color-neutral-6); margin: 8px 0 20px;">输入族谱名称后即可开始编撰。</p>
-            <input v-model="newTitle" placeholder="族谱名称..." class="glass-input" @keyup.enter="handleCreateFromDashboard" />
-            <input v-model="newSubtitle" placeholder="副标题（可选）..." class="glass-input" style="margin-top: 12px;" />
-            <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
-              <button class="btn btn--ghost" @click="showCreateDialog = false">取消</button>
-              <button class="btn btn--primary" @click="handleCreateFromDashboard">创建</button>
+            <p class="dialog-context">新家谱</p>
+            <h2 id="create-publication-title">给这份记忆起个名字</h2>
+            <p class="dialog-description">从这里进入工作台，第一位家人可以之后再慢慢补上。</p>
+            <label for="publication-title">族谱名称</label>
+            <input id="publication-title" v-model="newTitle" placeholder="例如：陈氏家族记忆" @keyup.enter="handleCreateFromDashboard" />
+            <label for="publication-subtitle">副标题 <span>可选</span></label>
+            <input id="publication-subtitle" v-model="newSubtitle" placeholder="例如：我们这一支的故事" @keyup.enter="handleCreateFromDashboard" />
+            <div class="dialog-actions">
+              <button class="btn btn--ghost" @click="showCreateDialog = false">暂不创建</button>
+              <button class="btn btn--primary" @click="handleCreateFromDashboard">开始整理</button>
             </div>
           </div>
         </div>
@@ -266,618 +254,267 @@ async function handleCreateFromDashboard() {
 </template>
 
 <style scoped>
-.dashboard-stage {
-  height: 100%;
+.dashboard-view-root {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 26px clamp(20px, 3vw, 42px) 56px;
+}
+
+.dashboard-intro {
   display: flex;
-  flex-direction: column;
+  align-items: end;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 44px;
 }
 
-.dashboard-header {
-  margin-bottom: 2rem;
-  padding: 0 8px;
-}
-
-.header-meta {
-  font-family: monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
-  color: var(--color-neutral-6);
-  margin-bottom: 0.5rem;
-}
-
-.header-title {
-  font-size: 2.2rem;
+.dashboard-intro h1,
+.empty-stage h1,
+.dialog-panel h2,
+.continue-record h2,
+.section-heading h2,
+.admin-space h2 {
+  color: var(--color-neutral-10);
   font-family: var(--font-serif);
   font-weight: 500;
-  color: var(--color-neutral-9);
-  margin: 0;
-  letter-spacing: 0.05em;
 }
 
-.bento-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: minmax(150px, auto);
-  gap: 24px;
+.dashboard-intro h1 {
+  max-width: 16ch;
+  margin-bottom: 14px;
+  font-size: clamp(30px, 3vw, 44px);
+  line-height: 1.26;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
-.bento-card {
-  border-radius: 24px;
-  overflow: hidden;
-  position: relative;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
+.dashboard-intro p {
+  max-width: 45ch;
+  color: var(--color-neutral-7);
+  font-size: var(--text-copy-15);
+  line-height: 1.75;
 }
 
-
-.bento-card:hover {
-  transform: translateY(-4px);
+.create-button,
+.continue-button,
+.text-button,
+.recent-item,
+.start-record,
+.admin-action {
+  font: inherit;
 }
 
-
-/* Grid Spanning */
-.card-hero {
-  grid-column: span 8;
-  grid-row: span 2;
-  border: none;
-}
-.card-stat {
-  grid-column: span 4;
-  grid-row: span 1;
-}
-.card-action {
-  grid-column: span 4;
-  grid-row: span 1;
-}
-.card-history {
-  grid-column: span 6;
-  grid-row: span 2;
-  cursor: default;
-}
-.card-users {
-  grid-column: span 3;
-  grid-row: span 1;
-}
-.card-backup {
-  grid-column: span 3;
-  grid-row: span 1;
-}
-
-/* ── Specific Card Styles ── */
-.card-eyebrow {
-  font-size: 0.7rem;
-  letter-spacing: 0.25em;
-  color: var(--color-accent);
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.card-hero {
-  position: relative;
-}
-.hero-bg-layer {
-  position: absolute;
-  inset: 0;
-  background: var(--color-card-fill);
-  border-radius: inherit;
-}
-
-.card-glass-panel {
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-xl);
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-[data-theme="dark"] .card-glass-panel {
-  background: var(--color-glass-bg);
-  border-color: var(--color-glass-border-highlight);
-}
-
-.hero-accent-line {
-  position: absolute;
-  left: 0;
-  top: 8%;
-  bottom: 8%;
-  width: 4px;
+.create-button,
+.continue-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--color-text-on-accent);
   background: var(--color-accent-gradient);
-  border-radius: 0 4px 4px 0;
-  opacity: 0.8;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-accent);
+  font-size: var(--text-copy-14);
+  font-weight: 500;
+  transition: transform var(--duration-fast) var(--ease-spring-gentle), box-shadow var(--duration-fast) var(--ease-breath);
 }
-[data-theme="dark"] .hero-bg-layer {
+
+.create-button:hover,
+.continue-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--color-accent) 24%, transparent);
+}
+
+.create-button svg,
+.continue-button svg,
+.recent-item svg,
+.btn svg,
+.admin-action > svg {
+  width: 18px;
+  height: 18px;
+}
+
+.state-stage {
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+  padding: 48px;
+  color: var(--color-neutral-7);
+  text-align: center;
+}
+
+.state-spinner {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 14px;
+  border: 2px solid var(--color-neutral-4);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: dash-spin 750ms linear infinite;
+}
+
+.state-stage--error { align-content: center; }
+.state-stage--error h2 { margin: 14px 0 8px; font-family: var(--font-serif); font-weight: 500; }
+.state-stage--error p { max-width: 46ch; margin-bottom: 22px; }
+.state-symbol { display: grid; place-items: center; width: 38px; height: 38px; color: var(--color-error); border: 1px solid var(--color-error); border-radius: 50%; font-family: var(--font-serif); font-size: var(--text-title-20); }
+
+@keyframes dash-spin { to { transform: rotate(360deg); } }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(250px, 0.72fr);
+  grid-template-areas:
+    'continue summary'
+    'recent start';
+  gap: 18px;
+}
+
+.continue-record,
+.library-summary,
+.recent-records,
+.start-record {
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-xl);
+}
+
+.continue-record {
+  position: relative;
+  grid-area: continue;
+  min-height: 360px;
+  overflow: hidden;
+  color: #f9f5ec;
+  background: #171512;
+  cursor: pointer;
+  outline: none;
+  transition: transform var(--duration-normal) var(--ease-spring-gentle), box-shadow var(--duration-normal) var(--ease-breath);
+}
+
+.continue-record:hover,
+.continue-record:focus-visible { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(28, 26, 23, 0.16); }
+
+.continue-record__background { position: absolute; inset: 0; opacity: 0.85; }
+.continue-record__background span { position: absolute; width: 10px; height: 10px; border: 1px solid rgba(249, 245, 236, 0.44); border-radius: 50%; }
+.continue-record__background span::after { content: ''; position: absolute; top: 4px; left: 9px; width: 148px; height: 1px; background: linear-gradient(90deg, rgba(249, 245, 236, 0.4), transparent); transform-origin: left; }
+.continue-record__background span:nth-child(1) { top: 18%; right: 20%; }
+.continue-record__background span:nth-child(2) { top: 44%; right: 43%; }
+.continue-record__background span:nth-child(2)::after { width: 108px; transform: rotate(-32deg); }
+.continue-record__background span:nth-child(3) { bottom: 23%; right: 14%; width: 13px; height: 13px; border-color: rgba(217, 85, 69, 0.9); box-shadow: 0 0 0 6px rgba(217, 85, 69, 0.1); }
+.continue-record__background span:nth-child(3)::after { width: 132px; transform: rotate(171deg); }
+.continue-record__background span:nth-child(4) { bottom: 12%; right: 54%; }
+.continue-record__background span:nth-child(4)::after { width: 105px; transform: rotate(-10deg); }
+
+.continue-record__content { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: inherit; max-width: 61%; padding: clamp(26px, 4vw, 42px); }
+.record-label { margin-bottom: 28px; color: rgba(249, 245, 236, 0.6); font-size: var(--text-label-12); }
+.continue-record h2 { margin-bottom: 10px; color: #f9f5ec; font-size: clamp(28px, 3vw, 42px); line-height: 1.25; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.record-subtitle { color: rgba(249, 245, 236, 0.65); font-size: var(--text-copy-14); line-height: 1.7; }
+.record-footer { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-top: auto; }
+.record-footer > span { color: rgba(249, 245, 236, 0.6); font-size: var(--text-label-12); }
+.continue-button { min-height: 40px; padding: 0 13px; }
+
+.library-summary {
+  display: flex;
+  grid-area: summary;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 360px;
+  padding: 30px;
+  color: var(--color-neutral-9);
   background: var(--color-neutral-2);
 }
 
+.library-summary > p { color: var(--color-neutral-7); font-size: var(--text-label-12); }
+.library-summary strong { margin-top: auto; color: var(--color-neutral-10); font-family: var(--font-serif); font-size: clamp(58px, 7vw, 88px); font-weight: 500; line-height: 0.9; letter-spacing: -0.04em; }
+.library-summary > span { margin-top: 10px; color: var(--color-neutral-7); font-size: var(--text-copy-13); }
 
+.text-button { display: inline-flex; align-items: center; gap: 6px; width: fit-content; margin-top: 25px; padding: 0 0 4px; color: var(--color-neutral-8); border-bottom: 1px solid var(--color-accent); font-size: var(--text-copy-13); font-weight: 500; transition: color var(--duration-fast) var(--ease-breath); }
+.text-button:hover { color: var(--color-neutral-10); }
+.text-button span { color: var(--color-accent); transition: transform var(--duration-fast) var(--ease-spring-gentle); }
+.text-button:hover span { transform: translateX(3px); }
 
+.recent-records { grid-area: recent; min-height: 232px; padding: 26px 28px; background: var(--color-neutral-1); }
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.section-heading h2, .admin-space h2 { font-size: var(--text-title-20); }
+.section-heading .text-button { margin-top: 0; }
+.recent-list { display: grid; margin-top: 16px; }
+.recent-item { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 42px; padding: 7px 0; color: var(--color-neutral-9); border-top: 1px solid var(--color-neutral-4); text-align: left; transition: color var(--duration-fast) var(--ease-breath), padding var(--duration-fast) var(--ease-spring-gentle); }
+.recent-item:hover { padding-left: 5px; color: var(--color-accent-deep); }
+.recent-item__date { color: var(--color-neutral-6); font-size: var(--text-label-12); }
+.recent-item__title { overflow: hidden; font-size: var(--text-copy-14); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.recent-item svg { color: var(--color-neutral-6); }
+.recent-empty { margin-top: 40px; color: var(--color-neutral-7); font-size: var(--text-copy-14); }
 
+.start-record { display: flex; grid-area: start; align-items: center; gap: 15px; min-height: 232px; padding: 28px; color: var(--color-neutral-9); background: color-mix(in srgb, var(--color-accent) 5%, var(--color-neutral-1)); text-align: left; transition: transform var(--duration-fast) var(--ease-spring-gentle), background-color var(--duration-fast) var(--ease-breath); }
+.start-record:hover { transform: translateY(-3px); background: color-mix(in srgb, var(--color-accent) 9%, var(--color-neutral-1)); }
+.start-record__mark { display: grid; flex: 0 0 auto; place-items: center; width: 35px; height: 35px; color: var(--color-accent-deep); border: 1px solid color-mix(in srgb, var(--color-accent) 42%, transparent); border-radius: 50%; font-size: var(--text-title-24); font-weight: 300; }
+.start-record strong, .admin-action strong { display: block; margin-bottom: 5px; color: var(--color-neutral-10); font-family: var(--font-serif); font-size: var(--text-copy-16); font-weight: 500; }
+.start-record small, .admin-action small { color: var(--color-neutral-7); font-size: var(--text-label-12); }
 
+.admin-space { display: flex; align-items: center; justify-content: space-between; gap: 34px; margin-top: 18px; padding: 26px 28px; border-top: 1px solid var(--color-neutral-4); }
+.admin-space p { margin-top: 7px; color: var(--color-neutral-7); font-size: var(--text-copy-13); }
+.admin-space__actions { display: flex; flex: 0 0 auto; gap: 10px; }
+.admin-action { display: flex; align-items: center; justify-content: space-between; gap: 28px; min-width: 210px; padding: 13px 14px; color: var(--color-neutral-9); background: var(--color-neutral-2); border: 1px solid var(--color-neutral-4); border-radius: var(--radius-lg); text-align: left; transition: transform var(--duration-fast) var(--ease-spring-gentle), border-color var(--duration-fast) var(--ease-breath); }
+.admin-action:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--color-neutral-6); }
+.admin-action:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
+.admin-action > svg { color: var(--color-neutral-6); }
+.avatar-stack { display: flex; align-items: center; }
+.avatar-stack :deep(.user-avatar) { margin-left: -6px; border: 2px solid var(--color-neutral-2); }
+.avatar-stack :deep(.user-avatar:first-child) { margin-left: 0; }
+.avatar-more { display: grid; place-items: center; width: 25px; height: 25px; margin-left: -6px; color: var(--color-neutral-7); background: var(--color-neutral-3); border: 2px solid var(--color-neutral-2); border-radius: 50%; font-size: var(--text-caption-10); }
 
+.empty-stage { display: grid; grid-template-columns: minmax(0, 0.86fr) minmax(320px, 0.74fr); align-items: center; gap: clamp(40px, 9vw, 130px); min-height: 530px; padding: 54px clamp(28px, 6vw, 82px); color: var(--color-neutral-9); background: var(--color-neutral-2); border: 1px solid var(--color-neutral-4); border-radius: var(--radius-2xl); }
+.empty-stage__copy { max-width: 440px; }
+.empty-stage h1 { margin-bottom: 20px; font-size: clamp(34px, 4vw, 52px); line-height: 1.22; letter-spacing: -0.02em; }
+.empty-stage p { margin-bottom: 30px; color: var(--color-neutral-7); font-size: var(--text-copy-16); line-height: 1.8; }
+.empty-stage .btn { gap: 8px; min-height: 46px; }
+.empty-tree { position: relative; min-height: 260px; overflow: hidden; background: #171512; border-radius: var(--radius-xl); }
+.empty-tree::before { content: ''; position: absolute; top: 23%; bottom: 22%; left: 50%; width: 1px; background: linear-gradient(rgba(249,245,236,.08), rgba(217,85,69,.88), rgba(249,245,236,.08)); }
+.empty-tree__line { position: absolute; top: 49%; left: 50%; width: 32%; height: 1px; background: rgba(249,245,236,.25); transform-origin: left; }
+.empty-tree__line--one { transform: rotate(-29deg); }
+.empty-tree__line--two { transform: rotate(31deg); }
+.empty-tree__node { position: absolute; width: 13px; height: 13px; border: 1px solid rgba(249,245,236,.66); border-radius: 50%; background: #171512; }
+.empty-tree__node--one { top: 19%; left: calc(50% - 6px); }
+.empty-tree__node--two { bottom: 17%; left: 17%; }
+.empty-tree__node--three { right: 17%; bottom: 17%; border-color: rgba(217,85,69,.9); box-shadow: 0 0 0 7px rgba(217,85,69,.1); }
 
+.dialog-overlay { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: 20px; background: var(--color-overlay); backdrop-filter: blur(7px); }
+.dialog-panel { width: min(100%, 440px); padding: 28px; background: var(--color-neutral-1); border: 1px solid var(--color-neutral-4); border-radius: var(--radius-2xl); box-shadow: 0 28px 70px rgba(0, 0, 0, 0.22); }
+.dialog-context { margin-bottom: 10px; color: var(--color-accent-deep); font-size: var(--text-label-12); font-weight: 500; }
+.dialog-panel h2 { margin-bottom: 9px; font-size: var(--text-title-24); }
+.dialog-description { margin-bottom: 24px; color: var(--color-neutral-7); font-size: var(--text-copy-14); line-height: 1.7; }
+.dialog-panel label { display: flex; justify-content: space-between; margin: 15px 0 7px; color: var(--color-neutral-7); }
+.dialog-panel label span { color: var(--color-neutral-6); font-weight: 400; }
+.dialog-panel input { min-height: 45px; background: var(--color-neutral-2); border-color: var(--color-neutral-4); }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 
-.hero-pub-title {
-  font-family: var(--font-serif);
-  font-size: 3rem;
-  font-weight: 500;
-  color: var(--color-neutral-9);
-  margin: 1rem 0 0.5rem;
-}
+:global([data-theme='dark'] .continue-record),
+:global([data-theme='dark'] .empty-tree) { background: #080807; }
 
-.hero-pub-subtitle {
-  font-size: 1rem;
-  color: var(--color-neutral-6);
-  margin: 0 0 2rem;
-}
-
-.hero-footer {
-  margin-top: auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-
-.hero-date {
-  font-family: monospace;
-  color: var(--color-neutral-6);
-  font-size: 0.85rem;
-  letter-spacing: 0.05em;
-  padding-bottom: 0.5rem;
-}
-
-
-
-/* Stat Box */
-.card-dark {
-  background: var(--card-dark-bg, var(--color-neutral-8));
-  color: var(--card-dark-color, var(--color-card-fill));
-  padding: 2rem;
-  justify-content: space-between;
-  border: none;
-}
-
-[data-theme="dark"] .card-dark {
-  border: 1px solid var(--color-card-stroke);
-}
-.stat-content {
-  display: flex;
-  flex-direction: column;
-}
-.stat-value {
-  font-family: var(--font-serif);
-  font-size: 5rem;
-  line-height: 1;
-  font-weight: 300;
-  background: linear-gradient(135deg, var(--color-warning), var(--color-accent-light));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.card-users .stat-value {
-  background: linear-gradient(135deg, var(--color-neutral-10), var(--color-neutral-8));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: none;
-}
-[data-theme="dark"] .card-users .stat-value {
-  background: linear-gradient(135deg, var(--color-text-on-accent), var(--color-neutral-6));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.stat-value.small {
-  font-size: 3.5rem;
-}
-.stat-label {
-  font-size: 0.85rem;
-  letter-spacing: 0.1em;
-  opacity: 0.6;
-  margin-top: 0.5rem;
-}
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  opacity: 0.1;
-  position: absolute;
-  bottom: -10px;
-  right: -10px;
+@media (max-width: 880px) {
+  .dashboard-grid { grid-template-columns: minmax(0, 1fr) minmax(210px, .62fr); }
+  .continue-record__content { max-width: 70%; }
+  .admin-space { align-items: flex-start; flex-direction: column; }
 }
 
-/* Action Box */
-.card-action {
-  background: var(--color-accent-gradient);
-  color: var(--color-text-on-accent);
-  border: none;
-  box-shadow: var(--shadow-accent);
-  justify-content: center;
-  align-items: center;
-}
-.action-shimmer {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
-  transform: skewX(-20deg) translateX(-150%);
-  animation: shimmer 4s infinite;
-}
-@keyframes shimmer {
-  0% { transform: skewX(-20deg) translateX(-150%); }
-  50%, 100% { transform: skewX(-20deg) translateX(150%); }
-}
-.action-content {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-.action-title {
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  font-size: 1rem;
+@media (max-width: 680px) {
+  .dashboard-view-root { padding: 18px 16px 38px; }
+  .dashboard-intro { align-items: flex-start; flex-direction: column; margin-bottom: 30px; }
+  .dashboard-grid { grid-template-columns: 1fr; grid-template-areas: 'continue' 'summary' 'recent' 'start'; }
+  .continue-record, .library-summary { min-height: 300px; }
+  .continue-record__content { max-width: 76%; padding: 28px; }
+  .library-summary { min-height: 220px; }
+  .library-summary strong { margin-top: 30px; }
+  .recent-records, .start-record { min-height: 200px; }
+  .admin-space__actions { flex-direction: column; width: 100%; }
+  .admin-action { width: 100%; }
+  .empty-stage { grid-template-columns: 1fr; min-height: 0; padding: 36px 26px; }
+  .empty-tree { min-height: 210px; }
 }
 
-/* History Box */
-.card-history {
-  padding: 1.5rem;
-}
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-.link-btn {
-  background: none;
-  border: none;
-  color: var(--color-neutral-6);
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: color 0.2s;
-  padding: 0;
-}
-.link-btn:hover {
-  color: var(--color-neutral-9);
-  text-decoration: underline;
-}
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  position: relative;
-  flex: 1;
-  overflow-y: auto;
-  padding-left: 8px;
-}
-.history-list::before {
-  content: '';
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 17px;
-  width: 1px;
-  background: var(--color-neutral-5);
-  z-index: 0;
-}
-[data-theme="dark"] .history-list::before {
-  background: var(--color-card-stroke);
-}
-
-.history-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 1.2rem;
-  padding: 0.85rem 1rem;
-  border-radius: 8px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
-  z-index: 1;
-}
-.history-thread {
-  position: absolute;
-  left: 7px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 0 4px var(--color-card-fill);
-  transition: transform 0.2s;
-}
-[data-theme="dark"] .history-thread {
-  box-shadow: 0 0 0 4px var(--color-card-fill);
-}
-
-.history-item:hover {
-  background: var(--glass-pill-bg, rgba(0,0,0,0.03));
-  transform: translateX(4px);
-}
-.history-item:hover .history-thread {
-  transform: translateY(-50%) scale(1.5);
-}
-[data-theme="dark"] .history-item:hover {
-  background: var(--color-neutral-3);
-}
-
-.history-time {
-  font-family: monospace;
-  font-weight: 400;
-  color: var(--color-neutral-6);
-  width: 45px;
-  flex-shrink: 0;
-  text-align: right;
-}
-.history-detail {
-  flex: 1;
-  min-width: 0;
-}
-.history-title {
-  font-weight: 500;
-  font-size: 0.95rem;
-  color: var(--color-neutral-9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-
-.empty-hint {
-  text-align: center;
-  color: var(--color-neutral-6);
-  font-size: 0.85rem;
-  padding: 2rem 0;
-}
-
-/* Users Box */
-.card-users {
-  padding: 1.5rem;
-  justify-content: space-between;
-}
-.users-avatars {
-  display: flex;
-  margin-left: 8px;
-}
-.avatar-circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, var(--color-neutral-4), var(--color-card-stroke));
-  margin-left: -8px;
-}
-.avatar-circle.more {
-  background: var(--color-neutral-9);
-  color: var(--color-card-fill);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-
-/* Backup Box */
-.card-backup {
-  background: transparent;
-  border: 1px dashed var(--color-neutral-5);
-  justify-content: center;
-  align-items: center;
-  color: var(--color-neutral-9);
-  box-shadow: none;
-}
-.card-backup:hover {
-  background: rgba(0,0,0,0.02);
-  border-style: solid;
-}
-[data-theme="dark"] .card-backup {
-  border-color: var(--color-card-stroke);
-}
-[data-theme="dark"] .card-backup:hover {
-  background: var(--color-neutral-3);
-}
-
-/* Loading State */
-.loading-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-neutral-6);
-  gap: 1.5rem;
-}
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(0,0,0,0.1);
-  border-top-color: var(--color-accent);
-  border-radius: 50%;
-  animation: spin 1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-[data-theme="dark"] .spinner {
-  border-color: rgba(255,255,255,0.1);
-  border-top-color: var(--color-accent);
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Responsive Grid */
-@media (max-width: 1200px) {
-  .card-history { grid-column: span 12; grid-row: span 2; }
-  .card-users { grid-column: span 6; }
-  .card-backup { grid-column: span 6; }
-}
-
-@media (max-width: 960px) {
-  .card-hero { grid-column: span 12; grid-row: span 2; }
-  .card-stat { grid-column: span 6; }
-  .card-action { grid-column: span 6; }
-}
-
-@media (max-width: 640px) {
-  .bento-grid { display: flex; flex-direction: column; }
-  .card-hero, .card-history { min-height: 280px; }
-  .card-stat, .card-action, .card-users, .card-backup { min-height: 140px; }
-}
-/* ── Error State ── */
-.error-stage {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-}
-.error-card {
-  max-width: 420px;
-  width: 100%;
-  background: var(--color-card-fill);
-  backdrop-filter: blur(40px) saturate(180%);
-  border-radius: 32px;
-  border: 1px solid var(--color-error-ghost);
-  box-shadow: 0 32px 64px rgba(0,0,0,0.08);
-  padding: 48px 40px;
-  text-align: center;
-}
-[data-theme="dark"] .error-card {
-  background: var(--color-panel-bg);
-  border-color: var(--color-error-ghost);
-}
-.error-icon {
-  color: var(--color-error);
-  margin-bottom: 16px;
-  opacity: 0.7;
-}
-.error-title {
-  font-family: var(--font-serif);
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: var(--color-neutral-9);
-  margin: 0 0 8px;
-}
-.error-desc {
-  color: var(--color-neutral-6);
-  font-size: 0.95rem;
-  margin: 0 0 24px;
-  line-height: 1.6;
-}
-.error-actions {
-  display: flex;
-  justify-content: center;
-}
-
-/* ── Welcome Empty State ── */
-.welcome-stage {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-}
-.welcome-card {
-  position: relative;
-  max-width: 520px;
-  width: 100%;
-  background: var(--color-card-fill);
-  backdrop-filter: blur(40px) saturate(180%);
-  border-radius: 32px;
-  border: 1px solid var(--color-neutral-2);
-  box-shadow: 0 32px 64px rgba(0,0,0,0.08);
-  overflow: hidden;
-  text-align: center;
-}
-.welcome-glow {
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle at center, var(--color-accent) 0%, transparent 40%);
-  opacity: 0.06;
-  pointer-events: none;
-}
-.welcome-content {
-  position: relative;
-  padding: 64px 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.welcome-seal {
-  width: 72px;
-  height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-accent-gradient);
-  border-radius: 20px;
-  font-family: var(--font-serif);
-  font-size: 2rem;
-  color: var(--color-text-on-accent);
-  margin-bottom: 24px;
-  box-shadow: var(--shadow-whisper);
-}
-.welcome-title {
-  font-family: var(--font-serif);
-  font-size: 1.8rem;
-  font-weight: 500;
-  color: var(--color-neutral-9);
-  margin: 0 0 12px;
-}
-.welcome-desc {
-  color: var(--color-neutral-6);
-  font-size: 1rem;
-  margin: 0 0 32px;
-  line-height: 1.6;
-}
-.welcome-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  max-width: 320px;
-}
-
-
-/* Create dialog */
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--color-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal);
-  backdrop-filter: blur(4px);
-}
-
-.dialog-panel {
-  background: var(--color-panel-bg);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-2xl);
-  padding: 32px;
-  box-shadow: var(--shadow-whisper);
-  max-width: 420px;
-  width: 90%;
-  outline: none;
-}
-
-.dialog-panel h3 {
-  margin: 0 0 8px;
-  font-family: var(--font-serif);
-  font-size: var(--text-title-20);
-  font-weight: 500;
-  color: var(--color-neutral-10);
+@media (prefers-reduced-motion: reduce) {
+  .state-spinner { animation: none; }
+  .continue-record, .create-button, .continue-button, .start-record, .admin-action, .text-button, .text-button span { transition: none; }
 }
 </style>
-
-
