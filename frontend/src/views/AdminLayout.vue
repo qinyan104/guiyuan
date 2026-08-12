@@ -1,18 +1,16 @@
-﻿<script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-import { useLexiconStore } from '../stores/lexicon'
-import { logout, getUsername, getRole, isAdmin } from '../api/auth'
+import { getRole, getUsername, isAdmin, logout } from '../api/auth'
 import DarkModeToggle from '../components/DarkModeToggle.vue'
-import LexiconSwitcher from '../components/LexiconSwitcher.vue'
 import GlobalSearch from '../components/GlobalSearch.vue'
+import LexiconSwitcher from '../components/LexiconSwitcher.vue'
 import UserAvatar from '../components/UserAvatar.vue'
 
 const router = useRouter()
 const route = useRoute()
 
-const { lexicon } = useLexiconStore()
 const currentUsername = computed(() => getUsername() ?? '')
 const avatarTone = computed(() => (getRole() ?? 'USER').toLowerCase())
 
@@ -20,40 +18,21 @@ interface NavItem {
   key: string
   label: string
   routeName: string
-  icon: string
+  icon: 'home' | 'book' | 'users' | 'log'
   adminOnly?: boolean
 }
 
-const navItems = computed<NavItem[]>(() => [
+const navItems: NavItem[] = [
+  { key: 'dashboard', label: '总览', routeName: 'dashboard', icon: 'home' },
+  { key: 'publications', label: '我的家谱', routeName: 'publications', icon: 'book' },
+  { key: 'users', label: '成员', routeName: 'admin-users', icon: 'users', adminOnly: true },
+  { key: 'logs', label: '变更记录', routeName: 'admin-logs', icon: 'log', adminOnly: true },
+]
 
-  { key: 'dashboard', label: lexicon.dashboard.label, routeName: 'dashboard', icon: 'home' },
-
-  { key: 'publications', label: lexicon.publications.label, routeName: 'publications', icon: 'book' },
-
-  { key: 'users', label: lexicon.users.label, routeName: 'admin-users', icon: 'users', adminOnly: true },
-
-  { key: 'logs', label: lexicon.logs.label, routeName: 'admin-logs', icon: 'log', adminOnly: true },
-
-])
-
-const visibleNavItems = computed(() => navItems.value.filter((item) => !item.adminOnly || isAdmin()))
+const visibleNavItems = computed(() => navItems.filter((item) => !item.adminOnly || isAdmin()))
 const activeRouteName = computed(() => route.name as string)
-
-// 灵魂水印逻辑
-const soulMap = computed<Record<string, string>>(() => ({
-
-  'dashboard': lexicon.dashboard.soul,
-
-  'publications': lexicon.publications.soul,
-
-  'admin-users': lexicon.users.soul,
-
-  'admin-logs': lexicon.logs.soul,
-
-  'settings': lexicon.settings.soul
-
-}))
-const currentSoul = computed(() => soulMap.value[activeRouteName.value] || lexicon.dashboard.soul)
+const userDropdownOpen = ref(false)
+const userDropdownRoot = ref<HTMLElement | null>(null)
 
 function navigateTo(routeName: string) {
   router.push({ name: routeName })
@@ -69,16 +48,12 @@ function goToSettings() {
   router.push({ name: 'settings' })
 }
 
-// User Dropdown State
-const userDropdownOpen = ref(false)
-const userDropdownRoot = ref<HTMLElement | null>(null)
-
 function toggleUserDropdown() {
   userDropdownOpen.value = !userDropdownOpen.value
 }
 
-function onUserClickOutside(e: MouseEvent) {
-  if (userDropdownOpen.value && userDropdownRoot.value && !userDropdownRoot.value.contains(e.target as Node)) {
+function onUserClickOutside(event: MouseEvent) {
+  if (userDropdownOpen.value && userDropdownRoot.value && !userDropdownRoot.value.contains(event.target as Node)) {
     userDropdownOpen.value = false
   }
 }
@@ -93,106 +68,99 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="spatial-workspace">
-    <!-- Ambient Background -->
-    <div class="ambient-bg">
-      <div class="brand-glow-sphere"></div>
-      <div class="brand-glow-sphere secondary"></div>
-    </div>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <button class="app-brand" aria-label="返回归源总览" @click="navigateTo('dashboard')">
+        <span class="app-brand__mark" aria-hidden="true">归</span>
+        <span class="app-brand__copy">
+          <strong>归源</strong>
+          <small>家族数字档案</small>
+        </span>
+      </button>
 
-    <!-- 灵魂水印 -->
-    <transition name="soul-fade" mode="out-in">
-      <div :key="currentSoul" class="page-soul-watermark">
-        {{ currentSoul }}
-      </div>
-    </transition>
-
-    <!-- Floating Island Dock -->
-    <aside class="floating-dock">
-      <div class="dock-header">
-        <div class="logo-mark">
-          <div class="logo-seal">{{ lexicon.logo.seal }}</div>
-          <div class="logo-text-group">
-            <span class="logo-title">{{ lexicon.logo.title }}</span>
-            <span class="logo-subtitle">{{ lexicon.logo.subtitle }}</span>
-          </div>
-        </div>
-      </div>
-
-      <nav class="dock-nav">
+      <nav class="app-navigation" aria-label="归源主导航">
         <button
           v-for="item in visibleNavItems"
           :key="item.key"
-          class="nav-item"
+          class="app-navigation__item"
           :class="{ 'is-active': activeRouteName === item.routeName }"
+          :aria-current="activeRouteName === item.routeName ? 'page' : undefined"
           @click="navigateTo(item.routeName)"
         >
-          <div class="nav-seal-icon">{{ soulMap[item.routeName] || item.label.charAt(0) }}</div>
-          <span class="nav-label">{{ item.label }}</span>
-          <div v-if="activeRouteName === item.routeName" class="nav-active-glow"></div>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+            <template v-if="item.icon === 'home'">
+              <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V10Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+              <path d="M9 21v-7h6v7" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+            </template>
+            <template v-else-if="item.icon === 'book'">
+              <path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H20v18H7.5A2.5 2.5 0 0 0 5 22V4.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+              <path d="M5 4.5V20" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </template>
+            <template v-else-if="item.icon === 'users'">
+              <circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7" />
+              <path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 4.6a3 3 0 0 1 0 5.8M19.5 20a5.5 5.5 0 0 0-3.3-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </template>
+            <template v-else>
+              <path d="M5 3h10l4 4v14H5V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+              <path d="M15 3v5h4M8 12h8M8 16h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </template>
+          </svg>
+          <span>{{ item.label }}</span>
         </button>
       </nav>
 
-      <!-- Sidebar Poetic Footer -->
-      <div class="dock-footer">
-        <p class="dock-poetic-quote">万物逆旅，百代过客</p>
-      </div>
+      <p class="app-sidebar__note">每一次补充，都让家谱更完整。</p>
     </aside>
 
-    <!-- Main Spatial Content Area -->
-    <main class="spatial-content panel-glass">
-      <!-- Top Action Bar -->
-      <header class="top-action-bar">
-        <GlobalSearch />
-        <div class="top-actions-group">
-          <!-- Dark Mode Toggle -->
+    <main class="app-main">
+      <header class="app-topbar">
+        <div class="app-topbar__search"><GlobalSearch /></div>
+        <div class="app-topbar__tools">
           <DarkModeToggle />
           <LexiconSwitcher />
-          
-          <div class="action-divider"></div>
-
-          <!-- User Profile Dropdown -->
+          <span class="topbar-divider" aria-hidden="true"></span>
           <div ref="userDropdownRoot" class="user-dropdown-container">
-            <button class="user-profile-pill" :class="{'is-open': userDropdownOpen}" @click="toggleUserDropdown">
-              <UserAvatar :name="currentUsername || '总编'" :tone="avatarTone" />
-              <span class="username">{{ currentUsername || '总编' }}</span>
-              <svg class="dropdown-chevron" :class="{'rotated': userDropdownOpen}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+            <button class="user-profile-pill" :class="{ 'is-open': userDropdownOpen }" :aria-expanded="userDropdownOpen" @click="toggleUserDropdown">
+              <UserAvatar :name="currentUsername || '我的账户'" :tone="avatarTone" />
+              <span class="username">{{ currentUsername || '我的账户' }}</span>
+              <svg class="dropdown-chevron" :class="{ rotated: userDropdownOpen }" aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
             </button>
 
-            <!-- Dropdown Popover -->
-            <transition name="glass-pop">
+            <Transition name="account-menu">
               <div v-if="userDropdownOpen" class="user-popover">
                 <div class="popover-header">
-                  <span class="popover-title">当前账号</span>
-                  <div class="popover-account">{{ currentUsername || '总编' }}</div>
+                  <span>当前账号</span>
+                  <strong>{{ currentUsername || '我的账户' }}</strong>
                 </div>
                 <div class="popover-menu">
                   <button class="menu-item" @click="goToSettings">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                      <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.7" />
+                      <path d="M16.2 11.4a1.5 1.5 0 0 0 .3 1.65l.04.05a1.8 1.8 0 0 1-2.55 2.55l-.05-.04a1.5 1.5 0 0 0-1.65-.3 1.5 1.5 0 0 0-.9 1.37v.07a1.8 1.8 0 0 1-3.6 0v-.07a1.5 1.5 0 0 0-.9-1.37 1.5 1.5 0 0 0-1.65.3l-.05.04a1.8 1.8 0 0 1-2.55-2.55l.04-.05a1.5 1.5 0 0 0 .3-1.65 1.5 1.5 0 0 0-1.37-.9h-.07a1.8 1.8 0 0 1 0-3.6h.07a1.5 1.5 0 0 0 1.37-.9 1.5 1.5 0 0 0-.3-1.65l-.04-.05a1.8 1.8 0 0 1 2.55-2.55l.05.04a1.5 1.5 0 0 0 1.65.3 1.5 1.5 0 0 0 .9-1.37v-.07a1.8 1.8 0 0 1 3.6 0v.07a1.5 1.5 0 0 0 .9 1.37 1.5 1.5 0 0 0 1.65-.3l.05-.04a1.8 1.8 0 0 1 2.55 2.55l-.04.05a1.5 1.5 0 0 0-.3 1.65 1.5 1.5 0 0 0 1.37.9h.07a1.8 1.8 0 0 1 0 3.6h-.07a1.5 1.5 0 0 0-1.37.9Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
                     账户设置
                   </button>
                   <div class="menu-divider"></div>
                   <button class="menu-item danger" @click="handleLogout">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                      <path d="M8 4H4v12h4M12 6l4 4-4 4M16 10H8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
                     安全退出
                   </button>
                 </div>
               </div>
-            </transition>
+            </Transition>
           </div>
         </div>
       </header>
 
-      <!-- Scrollable Router View -->
-      <div class="scrollable-container">
+      <div class="app-content">
         <router-view v-slot="{ Component }">
-          <component
-            :is="Component"
-            v-if="Component"
-            :key="route.fullPath"
-          />
+          <component :is="Component" v-if="Component" :key="route.fullPath" />
           <div v-else key="route-loading" class="route-loading-state">
-            <div class="spinner"></div>
+            <span class="route-loading-state__spinner" aria-hidden="true"></span>
             <span>Loading page for {{ route.fullPath }}...</span>
           </div>
         </router-view>
@@ -202,533 +170,235 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.spatial-workspace {
-  --glass-bg: var(--color-card-fill);
-  --glass-border-highlight: var(--color-card-stroke);
-  --glass-border-shadow: var(--color-neutral-4);
-  --glass-seal-bg: linear-gradient(135deg, var(--color-neutral-2), var(--color-neutral-1));
-  --glass-pill-bg: var(--color-neutral-3);
-  --glow-opacity: 0.2;
-  
+.app-shell {
   display: flex;
-  height: 100vh;
-  box-sizing: border-box;
-  width: 100vw;
-  background: 
-    linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 28%),
-    linear-gradient(225deg, rgba(255, 255, 255, 0.12), transparent 32%),
-    var(--shell-bg-image, var(--bg-shell, #f5f0e8));
-  position: relative;
-  overflow: hidden;
-  padding: 24px;
-  gap: 24px;
+  width: 100%;
+  min-height: 100vh;
+  color: var(--color-neutral-9);
+  background: var(--color-neutral-1);
 }
 
-[data-theme="dark"] .spatial-workspace,
-[data-theme="dark"] .spatial-workspace {
-  --glass-bg: var(--color-panel-glass-bg);
-  --glass-border-highlight: var(--color-panel-glass-border);
-  --glass-border-shadow: var(--color-panel-glass-border-shadow);
-  --glass-seal-bg: linear-gradient(135deg, var(--color-neutral-3), var(--color-neutral-2));
-  --glass-pill-bg: var(--color-neutral-3);
-  --glow-opacity: 0.04;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.025), transparent 28%),
-    linear-gradient(225deg, rgba(255, 255, 255, 0.018), transparent 32%),
-    var(--bg-shell);
-}
-
-/* ── Ambient Background ── */
-.ambient-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.brand-glow-sphere {
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, var(--color-accent) 0%, transparent 70%);
-  opacity: var(--glow-opacity);
-  filter: blur(80px);
-  top: -150px;
-  left: -100px;
-  animation: drift 15s ease-in-out infinite alternate;
-}
-
-.brand-glow-sphere.secondary {
-  background: radial-gradient(circle, #8b2c26 0%, transparent 70%);
-  top: auto;
-  bottom: -200px;
-  left: auto;
-  right: 10%;
-  animation-delay: -7s;
-}
-
-@keyframes drift {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(40px, 60px) scale(1.1); }
-}
-
-/* ── Floating Island Dock ── */
-.floating-dock {
-  position: relative;
-  z-index: 10;
-  width: 260px;
-  border-radius: 24px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  box-shadow: 
-    0 24px 48px -12px rgba(0,0,0,0.1),
-    inset 0 1px 0 var(--glass-border-highlight),
-    inset 0 -1px 0 var(--glass-border-shadow);
+.app-sidebar {
   display: flex;
+  flex: 0 0 230px;
   flex-direction: column;
-  padding: 20px 12px;
-  flex-shrink: 0;
+  min-height: 100vh;
+  padding: 26px 16px 20px;
+  background: var(--color-neutral-2);
+  border-right: 1px solid var(--color-neutral-4);
 }
 
-.dock-header {
-  margin-bottom: 32px;
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
   padding: 0 8px;
-}
-
-.logo-mark {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo-seal {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--glass-seal-bg);
-  border: 1px solid var(--glass-border-highlight);
-  border-radius: 12px;
-  font-family: var(--font-serif);
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: var(--color-neutral-9);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
-}
-
-.logo-text-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.logo-title {
-  font-weight: 500;
-  font-size: 1.05rem;
-  color: var(--color-neutral-9);
-  letter-spacing: 0.05em;
-  font-family: var(--font-serif);
-}
-
-.logo-subtitle {
-  font-size: 0.65rem;
-  letter-spacing: 0.2em;
-  color: var(--color-neutral-6);
-  font-family: monospace;
-  margin-top: 2px;
-}
-
-.dock-footer {
-  margin-top: auto;
-  padding: 20px 8px 0;
-  border-top: 1px solid var(--glass-border-shadow);
-  display: flex;
-  justify-content: center;
-}
-
-.dock-poetic-quote {
-  font-size: 0.7rem;
-  line-height: 1.6;
-  color: var(--color-neutral-6);
-  opacity: 0.5;
-  letter-spacing: 0.2em;
-  font-family: var(--font-serif);
-  writing-mode: vertical-rl;
-  height: 120px;
-  margin: 0;
-  text-align: center;
-}
-
-.dock-nav {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.nav-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: none;
-  background: transparent;
-  border-radius: 16px;
-  color: var(--color-neutral-7);
-  font-family: var(--font-serif);
-  font-size: 1.05rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
+  color: var(--color-neutral-10);
   text-align: left;
 }
 
-.nav-item:hover {
-  background: var(--color-neutral-3);
-  color: var(--color-neutral-9);
-  transform: translateX(6px);
+.app-brand__mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--color-accent-deep);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 56%, var(--color-neutral-4));
+  border-radius: 9px;
+  font-family: var(--font-serif);
+  font-size: 17px;
 }
 
-.nav-item.is-active {
-  color: #fff;
-  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
-  box-shadow: var(--shadow-whisper);
-  transform: translateX(6px);
+.app-brand__copy {
+  display: grid;
+  gap: 2px;
 }
 
-.nav-seal-icon {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+.app-brand__copy strong {
+  font-family: var(--font-serif);
+  font-size: var(--text-copy-16);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+}
+
+.app-brand__copy small,
+.app-sidebar__note {
+  color: var(--color-neutral-6);
+  font-size: var(--text-caption-10);
+}
+
+.app-navigation {
+  display: grid;
+  gap: 5px;
+  margin-top: 54px;
+}
+
+.app-navigation__item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  border: 1px solid currentColor;
-  border-radius: 6px;
-  opacity: 0.6;
-  transition: all 0.3s ease;
+  gap: 11px;
+  min-height: 43px;
+  padding: 0 11px;
+  color: var(--color-neutral-7);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--text-copy-14);
+  font-weight: 500;
+  text-align: left;
+  transition: background-color var(--duration-fast) var(--ease-breath), color var(--duration-fast) var(--ease-breath), border-color var(--duration-fast) var(--ease-breath);
 }
 
-.nav-item:hover .nav-seal-icon {
-  opacity: 0.9;
+.app-navigation__item svg {
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
 }
 
-.nav-item.is-active .nav-seal-icon {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.6);
-  transform: scale(1.05);
+.app-navigation__item:hover {
+  color: var(--color-neutral-10);
+  background: var(--color-neutral-3);
 }
 
-.nav-label {
-  position: relative;
-  z-index: 2;
-  letter-spacing: 0.15em;
+.app-navigation__item.is-active {
+  color: var(--color-accent-deep);
+  background: color-mix(in srgb, var(--color-accent) 7%, var(--color-neutral-1));
+  border-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-neutral-4));
 }
 
-.nav-active-glow {
-  position: absolute;
-  inset: -2px;
-  background: linear-gradient(135deg, var(--color-accent), #8b2c26);
-  filter: blur(12px);
-  opacity: 0.5;
-  z-index: 0;
+.app-sidebar__note {
+  max-width: 14ch;
+  margin-top: auto;
+  padding: 16px 8px 0;
+  line-height: 1.7;
+  border-top: 1px solid var(--color-neutral-4);
 }
 
-/* ── Main Spatial Content ── */
-.spatial-content {
-  flex: 1;
-  position: relative;
-  z-index: 10;
+.app-main {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-width: 0;
-  border-radius: 24px;
-  overflow: hidden;
+  min-height: 100vh;
 }
 
-/* ── Top Action Bar ── */
-.top-action-bar {
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-popover);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 40px 12px 40px;
-  flex-shrink: 0;
+  gap: 24px;
+  min-height: 78px;
+  padding: 16px clamp(20px, 3vw, 42px);
+  background: color-mix(in srgb, var(--color-neutral-1) 92%, transparent);
+  border-bottom: 1px solid var(--color-neutral-4);
+  backdrop-filter: blur(16px);
 }
-.top-actions-group {
+
+.app-topbar__search {
+  min-width: 0;
+  max-width: 520px;
+  flex: 1;
+}
+
+.app-topbar__tools {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  background: var(--color-neutral-3);
-  padding: 6px;
-  border-radius: 999px;
-  border: 1px solid var(--glass-border-highlight);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-  gap: 8px;
+  gap: 9px;
 }
 
-.action-divider {
+.topbar-divider {
   width: 1px;
-  height: 20px;
-  background: var(--glass-border-shadow);
-  margin: 0 4px;
+  height: 22px;
+  margin: 0 2px;
+  background: var(--color-neutral-4);
 }
 
-/* ── User Dropdown ── */
-.user-dropdown-container {
-  position: relative;
-}
+.user-dropdown-container { position: relative; }
 
 .user-profile-pill {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 14px 4px 4px;
-  border: none;
-  background: transparent;
+  gap: 9px;
+  min-height: 38px;
+  padding: 3px 9px 3px 4px;
+  color: var(--color-neutral-9);
+  border: 1px solid transparent;
   border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color var(--duration-fast) var(--ease-breath), border-color var(--duration-fast) var(--ease-breath);
 }
+
 .user-profile-pill:hover,
 .user-profile-pill.is-open {
   background: var(--color-neutral-2);
-}
-[data-theme="dark"] .user-profile-pill:hover,
-[data-theme="dark"] .user-profile-pill:hover,
-[data-theme="dark"] .user-profile-pill.is-open,
-[data-theme="dark"] .user-profile-pill.is-open {
-  background: var(--color-neutral-3);
+  border-color: var(--color-neutral-4);
 }
 
-.username {
-  font-weight: 500;
-  font-size: 0.85rem;
-  color: var(--color-neutral-9);
-  letter-spacing: 0.05em;
-}
-
-.dropdown-chevron {
-  color: var(--color-neutral-6);
-  transition: transform 0.2s ease;
-}
-.dropdown-chevron.rotated {
-  transform: rotate(180deg);
-}
+.username { max-width: 15ch; overflow: hidden; font-size: var(--text-copy-13); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.dropdown-chevron { width: 16px; height: 16px; color: var(--color-neutral-6); transition: transform var(--duration-fast) var(--ease-spring-gentle); }
+.dropdown-chevron.rotated { transform: rotate(180deg); }
 
 .user-popover {
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% + 10px);
   right: 0;
   width: 220px;
-  border-radius: 20px;
-  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
-  box-shadow: var(--shadow-whisper), var(--shadow-ring);
-  padding: 8px;
-  z-index: 9999;
-  transform-origin: top right;
+  padding: 7px;
+  background: var(--color-neutral-1);
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 18px 42px rgba(28, 26, 23, 0.13);
 }
 
-[data-theme="dark"] .user-popover,
-[data-theme="dark"] .user-popover {
-  background: var(--color-panel-glass-bg);
-  border-color: var(--color-panel-glass-border);
-  box-shadow: var(--shadow-whisper), var(--shadow-ring);
+.popover-header { display: grid; gap: 4px; padding: 11px 12px; }
+.popover-header span { color: var(--color-neutral-6); font-size: var(--text-caption-10); }
+.popover-header strong { color: var(--color-neutral-10); font-size: var(--text-copy-14); font-weight: 500; }
+.popover-menu { display: grid; gap: 3px; }
+.menu-item { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 11px; color: var(--color-neutral-8); border-radius: var(--radius-md); font-size: var(--text-copy-13); font-weight: 500; text-align: left; transition: background-color var(--duration-fast) var(--ease-breath); }
+.menu-item svg { width: 17px; height: 17px; }
+.menu-item:hover { background: var(--color-neutral-3); }
+.menu-item.danger { color: var(--color-error); }
+.menu-item.danger:hover { background: var(--color-error-muted); }
+.menu-divider { height: 1px; margin: 4px 3px; background: var(--color-neutral-4); }
+
+.account-menu-enter-active,
+.account-menu-leave-active { transition: opacity var(--duration-fast) var(--ease-breath), transform var(--duration-fast) var(--ease-spring-gentle); }
+.account-menu-enter-from,
+.account-menu-leave-to { opacity: 0; transform: translateY(-5px); }
+
+.app-content { flex: 1; min-width: 0; }
+.route-loading-state { display: grid; place-items: center; gap: 13px; min-height: 320px; color: var(--color-neutral-7); font-size: var(--text-copy-14); }
+.route-loading-state__spinner { width: 24px; height: 24px; border: 2px solid var(--color-neutral-4); border-top-color: var(--color-accent); border-radius: 50%; animation: route-spin 750ms linear infinite; }
+@keyframes route-spin { to { transform: rotate(360deg); } }
+
+:global([data-theme='dark'] .app-sidebar) { background: var(--color-neutral-2); }
+:global([data-theme='dark'] .app-topbar) { background: color-mix(in srgb, var(--color-neutral-1) 92%, transparent); }
+
+@media (max-width: 820px) {
+  .app-shell { flex-direction: column; }
+  .app-sidebar { flex: 0 0 auto; min-height: 0; padding: 15px 16px 12px; border-right: 0; border-bottom: 1px solid var(--color-neutral-4); }
+  .app-brand { padding: 0 4px; }
+  .app-brand__copy small,
+  .app-sidebar__note { display: none; }
+  .app-navigation { display: flex; gap: 5px; margin-top: 16px; overflow-x: auto; }
+  .app-navigation__item { flex: 0 0 auto; min-height: 38px; }
+  .app-main { min-height: 0; }
 }
 
-.popover-header {
-  padding: 12px 12px 8px;
-  margin-bottom: 4px;
-}
-.popover-title {
-  font-family: monospace;
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  color: var(--color-neutral-6);
-  text-transform: uppercase;
-}
-.popover-account {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--color-neutral-9);
-  margin-top: 4px;
+@media (max-width: 580px) {
+  .app-topbar { flex-wrap: wrap; gap: 12px; min-height: 0; padding: 12px 16px; }
+  .app-topbar__search { flex-basis: 100%; order: 2; max-width: none; }
+  .app-topbar__tools { margin-left: auto; }
+  .username { display: none; }
+  .topbar-divider { display: none; }
+  .app-navigation__item { gap: 7px; padding: 0 9px; font-size: var(--text-label-12); }
 }
 
-.popover-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--color-neutral-9);
-}
-.menu-item:hover {
-  background: rgba(0,0,0,0.04);
-}
-.menu-item.danger {
-  color: var(--color-error);
-}
-.menu-item.danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-}
-
-[data-theme="dark"] .menu-item:hover,
-[data-theme="dark"] .menu-item:hover {
-  background: var(--color-neutral-3);
-}
-[data-theme="dark"] .menu-item.danger:hover,
-[data-theme="dark"] .menu-item.danger:hover {
-  background: var(--color-error-muted);
-}
-
-.menu-divider {
-  height: 1px;
-  background: var(--glass-border-shadow);
-  margin: 4px;
-}
-
-/* ── Scrollable Area ── */
-.scrollable-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 40px;
-  scrollbar-gutter: stable;
-}
-
-.route-loading-state {
-  min-height: 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  color: var(--color-neutral-6);
-}
-
-.scrollable-container::-webkit-scrollbar {
-  width: 8px;
-}
-.scrollable-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollable-container::-webkit-scrollbar-thumb {
-  background: var(--glass-border-shadow);
-  border-radius: 4px;
-}
-.scrollable-container::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent-muted); color: var(--color-accent);
-}
-
-/* Transitions */
-.glass-pop-enter-active,
-.glass-pop-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.glass-pop-enter-from,
-.glass-pop-leave-to {
-  opacity: 0;
-  transform: scale(0.95) translateY(-8px);
-}
-
-/* 灵魂水印动画 */
-.soul-fade-enter-active,
-.soul-fade-leave-active {
-  transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.soul-fade-enter-from {
-  opacity: 0;
-  transform: translateY(-40%) scale(0.8);
-  filter: blur(10px);
-}
-.soul-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-60%) scale(1.1);
-  filter: blur(20px);
-}
-
-.page-soul-watermark {
-  position: fixed;
-  right: 5%;
-  top: 50%;
-  transform: translateY(-50%);
-  font-family: var(--font-serif);
-  font-size: 28vh;
-  font-weight: 500;
-  color: var(--color-neutral-9);
-  opacity: 0.035;
-  pointer-events: none;
-  z-index: 1; /* 提升到 Ambient 背景之上 */
-  user-select: none;
-  writing-mode: vertical-rl;
-  letter-spacing: -0.05em;
-  filter: drop-shadow(0 0 20px rgba(0,0,0,0.05));
-}
-
-@media (max-width: 960px) {
-  .spatial-workspace {
-    flex-direction: column;
-    padding: 16px;
-    gap: 16px;
-  }
-  .floating-dock {
-    width: 100%;
-    flex-direction: row;
-    align-items: center;
-    padding: 12px 20px;
-    border-radius: 20px;
-  }
-  .dock-header {
-    margin: 0;
-    margin-right: 24px;
-  }
-  .logo-text-group {
-    display: none;
-  }
-  .dock-nav {
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-  }
-  .nav-label {
-    display: none;
-  }
-  .nav-item {
-    padding: 10px;
-    border-radius: 12px;
-  }
-  .top-action-bar {
-    padding: 16px 20px 8px 20px;
-  }
-  .scrollable-container {
-    padding: 8px 20px 20px 20px;
-  }
-  .username {
-    display: none;
-  }
-  .user-profile-pill {
-    padding-right: 8px;
-  }
+@media (prefers-reduced-motion: reduce) {
+  .route-loading-state__spinner { animation: none; }
+  .app-navigation__item, .user-profile-pill, .dropdown-chevron, .menu-item { transition: none; }
 }
 </style>
-
