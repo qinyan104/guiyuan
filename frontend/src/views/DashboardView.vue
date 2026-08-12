@@ -439,8 +439,8 @@ async function handleCreateFromDashboard() {
 .section-heading h2, .admin-space h2 { font-size: var(--text-title-20); }
 .section-heading .text-button { margin-top: 0; }
 .recent-list { display: grid; margin-top: 16px; }
-.recent-item { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 42px; padding: 7px 0; color: var(--color-neutral-9); border-top: 1px solid var(--color-neutral-4); text-align: left; transition: color var(--duration-fast) var(--ease-breath), transform var(--duration-fast) var(--ease-spring-gentle); }
-.recent-item:hover { color: var(--color-accent-deep); transform: translateX(5px); }
+.recent-item { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 42px; padding: 7px 0; color: var(--color-neutral-9); border-top: 1px solid var(--color-neutral-4); text-align: left; transition: color var(--duration-fast) var(--ease-breath), padding var(--duration-fast) var(--ease-spring-gentle); }
+.recent-item:hover { padding-left: 5px; color: var(--color-accent-deep); }
 .recent-item__date { color: var(--color-neutral-6); font-size: var(--text-label-12); }
 .recent-item__title { overflow: hidden; font-size: var(--text-copy-14); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .recent-item svg { color: var(--color-neutral-6); }

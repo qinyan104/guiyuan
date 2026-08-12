@@ -391,7 +391,8 @@
   content: '';
   position: absolute;
   inset: 24px 0;
-  background: radial-gradient(circle at 67% 48%, rgba(249, 245, 236, 0.07), transparent 36%);
+  background-image: linear-gradient(rgba(249, 245, 236, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(249, 245, 236, 0.055) 1px, transparent 1px);
+  background-size: 36px 36px;
   mask-image: linear-gradient(to bottom, transparent, black 14%, black 86%, transparent);
 }
 
