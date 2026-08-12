@@ -185,12 +185,13 @@ onBeforeUnmount(() => {
 
     <div class="topbar__intro">
       <div class="topbar__intro-copy">
+        <p class="topbar-eyebrow">宗谱工作台 · {{ roleLabel }}</p>
         <div class="topbar__name-row">
-          <button type="button" class="topbar-title" @click="emit('go-back')">{{ publicationTitle }}</button>
+          <button type="button" class="topbar-title" @click="emit('go-back')">无涯画布</button>
           <span class="sync-dot" :class="`sync-dot--${syncStatus}`" :title="syncStatusLabel"></span>
           <span class="topbar__status-text">{{ syncStatusLabel }}</span>
         </div>
-        <p class="topbar__manuscript">{{ roleLabel }} · {{ draftDescriptor }}</p>
+        <p class="topbar__manuscript">《{{ publicationTitle }}》<span>{{ draftDescriptor }}</span></p>
       </div>
     </div>
 
@@ -357,14 +358,18 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  min-height: 64px;
-  padding: 10px 18px;
+  gap: 16px;
+  padding: 14px 18px;
   background: var(--workbench-header-bg, var(--color-panel-bg));
-  border-bottom: 1px solid var(--workbench-header-border, var(--color-card-stroke));
+  border: 1px solid var(--workbench-header-border, var(--color-card-stroke));
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--workbench-header-shadow, var(--shadow-whisper));
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
   position: sticky;
-  top: 0;
+  top: 12px;
   z-index: 100;
+  margin-bottom: 12px;
 }
 
 /* ── Left: Title + Sync ── */
@@ -377,7 +382,16 @@ onBeforeUnmount(() => {
 .topbar__intro-copy {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+}
+
+.topbar-eyebrow {
+  margin: 0;
+  color: var(--workbench-text-soft, var(--color-neutral-6));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .topbar__name-row {
@@ -389,15 +403,15 @@ onBeforeUnmount(() => {
 .topbar-title {
   display: inline-flex;
   align-items: center;
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: 600;
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 500;
   color: var(--workbench-text-main, var(--color-neutral-10));
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.06em;
   transition: opacity 0.15s;
 }
 
@@ -408,16 +422,22 @@ onBeforeUnmount(() => {
 .topbar__status-text {
   color: var(--workbench-text-soft, var(--color-neutral-6));
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .topbar__manuscript {
   margin: 0;
   display: flex;
   align-items: center;
+  gap: 8px;
   color: var(--workbench-text-sub, var(--color-neutral-8));
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
+}
+
+.topbar__manuscript span {
+  color: var(--workbench-text-soft, var(--color-neutral-6));
+  font-size: 12px;
 }
 
 /* Sync dot */
@@ -427,7 +447,7 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   flex-shrink: 0;
   transition: background 0.3s;
-  box-shadow: none;
+  box-shadow: 0 0 0 4px var(--color-accent-muted);
 }
 
 .sync-dot--saved { background: var(--color-success); }
@@ -456,24 +476,28 @@ onBeforeUnmount(() => {
 .topbar__primary-tools {
   display: inline-flex;
   align-items: stretch;
-  gap: 0;
+  gap: 2px;
+  padding: 4px;
   border: 1px solid var(--workbench-line-soft, var(--color-neutral-4));
-  border-radius: var(--radius-md);
+  border-radius: 999px;
   background: var(--workbench-panel-muted, var(--color-neutral-1));
+  box-shadow:
+    inset 0 1px 0 var(--glass-border-highlight, rgba(255, 255, 255, 0.72)),
+    0 8px 18px rgba(0, 0, 0, 0.04);
 }
 
 .topbar__primary-tools > .btn,
 .topbar__primary-tools > .dropdown > .btn {
   min-height: 34px;
-  padding: 7px 12px;
+  padding: 7px 13px;
   border: 0;
-  border-radius: 0;
+  border-radius: 999px;
   background: transparent;
   color: var(--color-neutral-7);
 }
 
 .topbar__primary-tools > :not(:first-child) {
-  border-left: 1px solid var(--workbench-line-soft, var(--color-neutral-4));
+  border-left: 0;
 }
 
 .topbar__primary-tools > .btn:hover,
