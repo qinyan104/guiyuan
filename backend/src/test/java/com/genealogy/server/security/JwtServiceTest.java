@@ -64,4 +64,18 @@ class JwtServiceTest {
         String token2 = jwtService.generateAccessToken("user2", "USER");
         assertNotEquals(token1, token2);
     }
+
+    @Test
+    void missingSecret_canUseEphemeralKeyForLocalDevelopment() {
+        JwtService localService = new JwtService("", TTL, true);
+
+        String token = localService.generateAccessToken("local-user", "USER");
+
+        assertTrue(localService.isTokenValid(token));
+    }
+
+    @Test
+    void missingSecret_isRejectedWhenEphemeralKeysAreDisabled() {
+        assertThrows(IllegalArgumentException.class, () -> new JwtService("", TTL, false));
+    }
 }
