@@ -36,6 +36,9 @@ server:
 app:
   jwt:
     secret: ${JWT_SECRET:}
+    # Local development only: an unset secret creates a random key for this process.
+    # Production overrides this to false, so JWT_SECRET remains mandatory there.
+    allow-ephemeral-secret: ${JWT_ALLOW_EPHEMERAL_SECRET:true}
     access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:900000}
     refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:2592000000}
   cors:
