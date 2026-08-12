@@ -84,6 +84,25 @@ test.describe('Workbench / Person Editing', () => {
     await expect(page.locator('.person-card').first()).toBeVisible({ timeout: 15000 })
   })
 
+  test('shows the first-use guide once and keeps a dismissal', async ({ page }) => {
+    await page.addInitScript(() => {
+      try { localStorage.removeItem('guiyuan:workbench-onboarding-dismissed') } catch {}
+    })
+
+    await page.goto(`/publication/${publicationId}`)
+
+    const guide = page.getByTestId('workbench-onboarding')
+    await expect(guide).toBeVisible()
+    await expect(guide).toContainText('拖动画布')
+    await expect(guide).toContainText('选择一位族人')
+
+    await guide.getByRole('button', { name: '开始整理' }).click()
+    await expect(guide).not.toBeVisible()
+
+    await page.reload()
+    await expect(guide).not.toBeVisible()
+  })
+
   test('should click person card and open editor panel', async ({ page }) => {
     await page.goto(`/publication/${publicationId}`)
     await expect(page.locator('.app-shell')).toBeVisible()

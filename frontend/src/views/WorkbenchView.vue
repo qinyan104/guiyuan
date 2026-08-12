@@ -6,6 +6,7 @@ import FeedbackStrip from '../components/FeedbackStrip.vue'
 import PersonEditorDrawer from '../components/PersonEditorDrawer.vue'
 import PublicationCanvas from '../components/PublicationCanvas.vue'
 import WorkbenchHeader from '../components/WorkbenchHeader.vue'
+import WorkbenchOnboarding from '../components/WorkbenchOnboarding.vue'
 import WorkbenchPanels from '../components/WorkbenchPanels.vue'
 
 import { usePanelState } from '../composables/usePanelState'
@@ -338,6 +339,8 @@ watch(
           @select-person="handleSelectPerson"
           @hover-person="context.pub.setHoveredPerson"
         />
+
+        <WorkbenchOnboarding />
 
         <PersonEditorDrawer
           v-if="context.pub.selectedPerson.value"
