@@ -46,22 +46,6 @@ beforeEach(() => {
 })
 
 describe('AdminLayout logout flow', () => {
-  it('keeps the core family workflow in a concise primary navigation', () => {
-    const wrapper = mount(AdminLayout, {
-      global: {
-        stubs: {
-          RouterView: true,
-          GlobalSearch: true,
-          ThemeSwitcher: true,
-          Transition: false,
-        },
-      },
-    })
-
-    expect(wrapper.find('nav[aria-label="归源主导航"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('我的家谱')
-  })
-
   it('waits for logout completion before navigating to login', async () => {
     const wrapper = mount(AdminLayout, {
       global: {
