@@ -96,7 +96,6 @@ describe('DashboardView', () => {
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('从你熟悉的一个名字开始')
-    expect(wrapper.text()).toContain('创建第一份家谱')
+    expect(wrapper.text()).toContain('创建第一个族谱')
   })
 })
