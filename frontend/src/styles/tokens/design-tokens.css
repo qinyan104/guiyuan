@@ -20,31 +20,31 @@
 
 :root {
   /* Tier 1 — 表面 */
-  --color-neutral-1: #FAF9F6;   /* 页面底色：生宣纸白 */
-  --color-neutral-2: #F3F1EB;   /* 卡片底色：熟宣棉纸 */
-  --color-neutral-3: #E6E2D8;   /* 悬停表面：熟棉微黄 */
-  --color-neutral-4: #D5CFC2;   /* 强填充 */
+  --color-neutral-1: #F7F7F5;   /* 页面底色 */
+  --color-neutral-2: #FFFFFF;   /* 内容表面 */
+  --color-neutral-3: #F0F1EF;   /* 悬停表面 */
+  --color-neutral-4: #E0E2DF;   /* 强填充 */
 
   /* Tier 2 — 边框 / 图标 / 次要文字 */
-  --color-neutral-5: #B0A99A;   /* 边框（禁止用于文字） */
-  --color-neutral-6: #8C8473;   /* 图标 / 极小字号标签：黛褐 */
-  --color-neutral-7: #6B6252;   /* 次要文字、说明：深黛褐 */
+  --color-neutral-5: #CDD0CD;   /* 边框（禁止用于文字） */
+  --color-neutral-6: #89908C;   /* 图标 / 极小字号标签 */
+  --color-neutral-7: #626A65;   /* 次要文字、说明 */
 
   /* Tier 3 — 正文 / 标题 */
-  --color-neutral-8: #463E32;   /* 正文备选、强调次要文字：松烟黑 */
-  --color-neutral-9: #1C1A17;   /* 默认正文色：玄青墨黑 */
-  --color-neutral-10: #0E0D0B;  /* 标题、最强强调：漆黑 */
+  --color-neutral-8: #3F4742;   /* 正文备选、强调次要文字 */
+  --color-neutral-9: #202622;   /* 默认正文色 */
+  --color-neutral-10: #111512;  /* 标题、最强强调 */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      强调色 — 朱砂 (cinnabar) #C63C2E
      ≤5% 表面覆盖。仅用于：主CTA、聚焦环、品牌标记、引用竖线、链接下划线
      ═══════════════════════════════════════════════════════════════════════════ */
 
-  --color-accent: #C63C2E;
-  --color-accent-light: #E85D4B;   /* 暗色模式下提亮 */
-  --color-accent-deep: #8E251C;    /* 朱砂渐变深端 — 按钮/印章渐变起点 */
-  --color-accent-muted: rgba(198, 60, 46, 0.08);  /* 淡色强调背景 */
-  --color-accent-gradient: linear-gradient(145deg, var(--color-accent-deep), var(--color-accent));
+  --color-accent: #D54837;
+  --color-accent-light: #EA6555;   /* 暗色模式下提亮 */
+  --color-accent-deep: #A92F24;
+  --color-accent-muted: rgba(213, 72, 55, 0.1);  /* 淡色强调背景 */
+  --color-accent-gradient: var(--color-accent);
 
   /* ═══════════════════════════════════════════════════════════════════════════
      语义色 — 传统国色与和色
@@ -81,7 +81,7 @@
 
   /* 卡片系统 */
   --color-card-fill: var(--color-neutral-2);
-  --color-card-stroke: rgba(28, 27, 24, 0.05);     /* 极其细腻的卡片边框 */
+  --color-card-stroke: rgba(32, 38, 34, 0.1);      /* 低对比卡片边框 */
   --color-card-hover-fill: var(--color-neutral-1);
   --color-card-selected-stroke: var(--color-accent);
 
@@ -93,7 +93,7 @@
   --color-minimap-node-selected: rgba(198, 60, 46, 0.75);
 
   /* 面板 & 对话框 */
-  --color-panel-bg: rgba(250, 249, 246, 0.96);
+  --color-panel-bg: #FFFFFF;
   --color-overlay: rgba(14, 13, 11, 0.35);
 
   /* 玻璃/琉璃材质 (Glassmorphism Tokens) */
@@ -171,9 +171,9 @@
      阴影 — 只用 ring 或 whisper，禁止硬阴影
      ═══════════════════════════════════════════════════════════════════════════ */
 
-  --shadow-whisper: 0 4px 24px rgba(28, 26, 23, 0.04);
-  --shadow-ring: 0 0 0 1px rgba(28, 27, 24, 0.05);
-  --shadow-accent: 0 12px 32px rgba(198, 60, 46, 0.15);  /* 朱砂着色阴影 — CTA/印章 */
+  --shadow-whisper: 0 12px 30px rgba(17, 21, 18, 0.06);
+  --shadow-ring: 0 0 0 1px rgba(32, 38, 34, 0.1);
+  --shadow-accent: 0 8px 20px rgba(213, 72, 55, 0.18);
 
   /* ═══════════════════════════════════════════════════════════════════════════
      动效 (Spring Curves & Tactile Micro-motion)

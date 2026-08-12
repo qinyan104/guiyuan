@@ -404,24 +404,20 @@ watch(
 
 <style scoped>
 .app-shell {
-  --workbench-shell-bg:
-    radial-gradient(circle at top, rgba(196, 58, 49, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(251, 249, 244, 0.98), rgba(244, 240, 232, 0.96));
-  --workbench-header-bg: rgba(252, 250, 246, 0.88);
-  --workbench-header-border: rgba(120, 118, 112, 0.18);
-  --workbench-header-shadow:
-    0 18px 40px rgba(72, 49, 25, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
-  --workbench-panel-bg: rgba(252, 249, 243, 0.82);
-  --workbench-panel-strong: rgba(255, 255, 255, 0.9);
-  --workbench-panel-muted: rgba(246, 241, 232, 0.88);
-  --workbench-line-soft: rgba(120, 118, 112, 0.16);
+  --workbench-shell-bg: var(--color-neutral-1);
+  --workbench-header-bg: var(--color-neutral-2);
+  --workbench-header-border: var(--color-card-stroke);
+  --workbench-header-shadow: none;
+  --workbench-panel-bg: var(--color-neutral-2);
+  --workbench-panel-strong: var(--color-neutral-2);
+  --workbench-panel-muted: var(--color-neutral-1);
+  --workbench-line-soft: var(--color-card-stroke);
   --workbench-text-main: var(--color-neutral-10);
   --workbench-text-sub: var(--color-neutral-8);
   --workbench-text-soft: var(--color-neutral-6);
-  --workbench-accent-strong: #6d3128;
-  --workbench-accent-bg: linear-gradient(135deg, #7f342b, #c43a31);
-  --workbench-accent-text: #fff8f4;
+  --workbench-accent-strong: var(--color-accent);
+  --workbench-accent-bg: var(--color-accent);
+  --workbench-accent-text: #fff;
   --bg-panel: var(--workbench-panel-bg);
   --bg-panel-strong: var(--workbench-panel-strong);
   --bg-paper: rgba(255, 255, 255, 0.68);
@@ -432,24 +428,18 @@ watch(
   --accent-earth: var(--workbench-accent-strong);
   --accent-btn-bg: var(--workbench-accent-bg);
   --accent-btn-color: var(--workbench-accent-text);
-  --glass-border-highlight: rgba(255, 255, 255, 0.78);
-  --glass-border-shadow: rgba(82, 57, 28, 0.08);
+  --glass-border-highlight: transparent;
+  --glass-border-shadow: transparent;
   min-width: 0;
   min-height: 100vh;
-  padding: 12px 12px 24px;
+  padding: 0;
   background: var(--workbench-shell-bg);
   color: var(--workbench-text-main);
   position: relative;
 }
 
 .app-shell::before {
-  content: '';
-  position: absolute;
-  inset: 12px;
-  border-radius: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  pointer-events: none;
-  opacity: 0.7;
+  display: none;
 }
 
 .workspace {
@@ -459,43 +449,17 @@ watch(
 
 .editor-workspace {
   position: relative;
-  min-height: calc(100vh - 140px);
-  border-radius: 32px;
+  min-height: 100vh;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 253, 249, 0.86), rgba(247, 242, 233, 0.94)),
-    var(--workspace-bg);
-  border: 1px solid rgba(111, 87, 57, 0.12);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.68),
-    0 24px 48px rgba(72, 49, 25, 0.08),
-    0 2px 10px rgba(72, 49, 25, 0.04);
+  background: var(--workspace-bg, var(--color-canvas-bg));
 }
 
 .editor-workspace::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(196, 58, 49, 0.08), transparent 28%),
-    radial-gradient(circle at 82% 8%, rgba(168, 122, 61, 0.08), transparent 22%),
-    var(--workspace-glow,
-      radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.3), transparent 38%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0))
-    );
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 .editor-workspace::after {
-  content: '';
-  position: absolute;
-  inset: 12px;
-  border-radius: 22px;
-  border: 1px solid rgba(120, 118, 112, 0.08);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 22%);
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 [data-theme="dark"] .app-shell {

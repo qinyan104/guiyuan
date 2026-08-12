@@ -211,16 +211,16 @@ watch([() => props.person.birth, () => props.person.death], ([b, d]) => {
 </template>
 
 <style scoped>
-.ak-overlay { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:center; justify-content:center; background:rgba(20,19,18,0.22); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
-.ak-card { width:860px; max-height:88vh; background:rgba(249,248,245,0.95); backdrop-filter:blur(32px); -webkit-backdrop-filter:blur(32px); border-radius:var(--radius-xl); border:1px solid rgba(255,255,255,.45); box-shadow:0 24px 64px rgba(20,19,18,.12), inset 0 1px 0 rgba(255,255,255,.66); display:flex; flex-direction:column; overflow:hidden; }
-.ak-bar { display:flex; align-items:center; padding:16px 22px 10px; flex-shrink:0; border-bottom:1px solid var(--color-card-stroke); background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0)); }
+.ak-overlay { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:stretch; justify-content:flex-end; background:rgba(17,21,18,0.22); }
+.ak-card { width:min(760px,100vw); height:100dvh; max-height:none; background:var(--color-neutral-2); border-left:1px solid var(--color-card-stroke); box-shadow:-16px 0 40px rgba(17,21,18,.1); display:flex; flex-direction:column; overflow:hidden; }
+.ak-bar { display:flex; align-items:center; padding:16px 20px; flex-shrink:0; border-bottom:1px solid var(--color-card-stroke); background:var(--color-neutral-2); }
 .ak-bar__btn { font-size:15px; color:var(--color-accent); border:none; background:none; cursor:pointer; font-family:var(--font-sans); padding:0; font-weight:500; min-width:44px; text-align:left; }
 .ak-bar__btn:active { opacity:.3; }
 .ak-bar__done { text-align:right; font-weight:600; }
 .ak-bar__title { flex:1; text-align:center; font-size:16px; font-weight:600; color:var(--color-neutral-10); }
 .ak-hbody { display:flex; gap:0; overflow:hidden; flex:1; min-height:0; }
-.ak-left { width:220px; flex-shrink:0; padding:24px 20px 22px; display:flex; flex-direction:column; align-items:center; gap:14px; border-right:1px solid var(--color-card-stroke); overflow-y:auto; background:linear-gradient(180deg, rgba(255,255,255,.3), rgba(255,255,255,0)); }
-.ak-right { flex:1; padding:24px 24px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; min-width:0; }
+.ak-left { width:196px; flex-shrink:0; padding:22px 16px; display:flex; flex-direction:column; align-items:center; gap:14px; border-right:1px solid var(--color-card-stroke); overflow-y:auto; background:var(--color-neutral-1); }
+.ak-right { flex:1; padding:22px 24px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; min-width:0; }
 .ak-left::-webkit-scrollbar, .ak-right::-webkit-scrollbar { width:3px; }
 .ak-left::-webkit-scrollbar-thumb, .ak-right::-webkit-scrollbar-thumb { background:color-mix(in srgb, var(--color-neutral-7) 18%, transparent); border-radius:3px; }
 .ak-av { position:relative; width:96px; height:96px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--color-neutral-2); border:1px solid var(--color-card-stroke); border-radius:var(--radius-lg); flex-shrink:0; transition:background .15s, border-color .15s; }
@@ -229,7 +229,7 @@ watch([() => props.person.birth, () => props.person.death], ([b, d]) => {
 .ak-av__inp { position:absolute; inset:0; opacity:0; cursor:pointer; }
 .ak-identity { width:100%; display:flex; flex-direction:column; align-items:center; gap:2px; }
 .ak-context { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:8px; }
-.ak-context__chip { display:inline-flex; align-items:center; padding:4px 10px; border-radius:var(--radius-full); background:rgba(255,255,255,.86); border:1px solid var(--color-card-stroke); color:var(--color-neutral-8); font-size:11px; font-weight:600; }
+.ak-context__chip { display:inline-flex; align-items:center; padding:4px 8px; border-radius:var(--radius-sm); background:var(--color-neutral-2); border:1px solid var(--color-card-stroke); color:var(--color-neutral-8); font-size:11px; font-weight:600; }
 .ak-context__chip--accent { background:var(--color-accent-muted); border-color:color-mix(in srgb, var(--color-error) 12%, transparent); color:var(--color-accent); }
 .ak-context__hint { margin:8px 0 0; color:var(--color-neutral-6); font-size:12px; line-height:1.6; text-align:center; }
 .ak-dlist { width:100%; display:flex; flex-direction:column; gap:1px; background:var(--color-card-stroke); border-radius:var(--radius-md); overflow:hidden; }
@@ -248,7 +248,8 @@ watch([() => props.person.birth, () => props.person.death], ([b, d]) => {
 .ak-sug { display:inline-flex; align-items:center; gap:3px; margin-top:4px; padding:2px 8px; border-radius:var(--radius-sm); border:none; background:color-mix(in srgb, var(--color-accent) 6%, transparent); color:var(--color-accent); font-size:11px; font-weight:500; cursor:pointer; font-family:inherit; width:fit-content; }
 .ak-sug:hover { background:color-mix(in srgb, var(--color-accent) 12%, transparent); }
 .ak-row { display:flex; gap:12px; }
-.ak-grp { background:var(--color-neutral-1); border-radius:var(--radius-lg); padding:16px; border:1px solid var(--color-card-stroke); }
+.ak-grp { background:transparent; padding:0 0 18px; border-bottom:1px solid var(--color-card-stroke); }
+.ak-grp:last-of-type { border-bottom:0; }
 .ak-grp__h { font-size:11px; font-weight:600; color:var(--color-neutral-9); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--color-card-stroke); }
 .ak-sep { height:1px; background:var(--color-card-stroke); margin:8px 0; }
 .ak-rel__row { display:flex; align-items:flex-start; gap:12px; padding:10px 0; }

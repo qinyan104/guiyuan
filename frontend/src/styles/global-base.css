@@ -81,8 +81,8 @@ ul, ol {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-serif);
-  font-weight: 500;   /* CJK 禁止 700 bold */
+  font-family: var(--font-sans);
+  font-weight: 600;
   color: var(--color-neutral-10);
   line-height: var(--leading-title);
 }
@@ -217,15 +217,14 @@ input[type="radio"] {
 .card {
   background: var(--color-card-fill);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-whisper);
   border: 1px solid var(--color-card-stroke);
-  transition: box-shadow var(--duration-normal) var(--ease-spring-gentle),
-              transform var(--duration-normal) var(--ease-spring-gentle);
+  transition: border-color var(--duration-fast) var(--ease-breath),
+              background var(--duration-fast) var(--ease-breath);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-whisper), var(--shadow-ring);
-  transform: translateY(-4px);
+  background: var(--color-card-hover-fill);
+  border-color: var(--color-neutral-5);
 }
 
 /* 按钮基础变体 */
@@ -250,14 +249,12 @@ input[type="radio"] {
 }
 
 .btn--primary {
-  background: var(--color-accent-gradient);
+  background: var(--color-accent);
   color: var(--color-text-on-accent);
-  box-shadow: var(--shadow-accent);
 }
 
 .btn--primary:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 8px 24px rgba(198, 60, 46, 0.22);
+  background: var(--color-accent-deep);
 }
 
 .btn--secondary {
@@ -288,7 +285,6 @@ input[type="radio"] {
 
 .btn--danger:hover {
   filter: brightness(1.08);
-  box-shadow: 0 8px 20px rgba(181, 61, 88, 0.18);
 }
 
 .btn--warning {
@@ -298,7 +294,6 @@ input[type="radio"] {
 
 .btn--warning:hover {
   filter: brightness(1.08);
-  box-shadow: 0 8px 20px rgba(180, 138, 68, 0.18);
 }
 
 .btn--success {
@@ -308,7 +303,6 @@ input[type="radio"] {
 
 .btn--success:hover {
   filter: brightness(1.08);
-  box-shadow: 0 8px 20px rgba(61, 127, 94, 0.18);
 }
 
 .btn--sm {
