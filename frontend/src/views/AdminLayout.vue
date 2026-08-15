@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -394,9 +394,9 @@ onBeforeUnmount(() => {
 }
 
 .nav-item.is-active {
-  color: #fff;
-  background: linear-gradient(135deg, #8b2c26, var(--color-accent));
-  box-shadow: var(--shadow-whisper);
+  color: var(--color-text-on-accent, #fff);
+  background: var(--color-accent-gradient);
+  box-shadow: var(--shadow-accent);
   transform: translateX(6px);
 }
 
@@ -434,9 +434,9 @@ onBeforeUnmount(() => {
 .nav-active-glow {
   position: absolute;
   inset: -2px;
-  background: linear-gradient(135deg, var(--color-accent), #8b2c26);
+  background: var(--color-accent-gradient);
   filter: blur(12px);
-  opacity: 0.5;
+  opacity: 0.35;
   z-index: 0;
 }
 
