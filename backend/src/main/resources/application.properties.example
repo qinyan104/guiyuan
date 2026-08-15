@@ -1,9 +1,10 @@
 spring.application.name=genealogy-server
 server.port=8080
+spring.config.import=optional:file:.env.local[.properties],optional:file:backend/.env.local[.properties]
 
 # MySQL Database Configuration
 # Set DB_USERNAME, DB_PASSWORD, and JWT_SECRET environment variables.
-# For local development, copy backend/.env.example to backend/.env.local and load those values in your shell or IDE.
+# For local development, copy backend/.env.example to backend/.env.local. Spring Boot imports it automatically.
 spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/genealogy?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}
 spring.datasource.username=${DB_USERNAME:root}
 spring.datasource.password=${DB_PASSWORD:}

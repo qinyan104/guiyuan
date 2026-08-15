@@ -85,7 +85,7 @@ cd backend
 cp .env.example .env.local
 ```
 
-编辑 `backend/.env.local`，至少确认以下变量。`.env.local` 不会被 Spring Boot 自动读取，启动前需要将它加载到当前终端进程：
+编辑 `backend/.env.local`，至少确认以下变量。后端本地启动会自动导入该文件；也可以继续用系统环境变量覆盖这些值：
 
 ```text
 DB_URL=jdbc:mysql://localhost:3306/genealogy?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
@@ -95,25 +95,7 @@ JWT_SECRET=replace-with-local-development-secret
 APP_CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-PowerShell：
-
-```powershell
-Get-Content .env.local | ForEach-Object {
-  if ($_ -match '^\s*([^#=\s]+)\s*=(.*)$') {
-    [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
-  }
-}
-```
-
-Bash：
-
-```bash
-set -a
-. ./.env.local
-set +a
-```
-
-> 后端配置会从环境变量读取数据库和 JWT 设置。生产环境必须设置足够强的 `JWT_SECRET`。
+> 后端会自动读取 `backend/.env.local`。生产环境仍必须通过环境变量或 `release/.env` 设置足够强的 `JWT_SECRET`，不要使用示例占位值。
 
 ### 3. 启动后端
 

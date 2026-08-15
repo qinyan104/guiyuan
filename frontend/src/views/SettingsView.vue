@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { useFeedback } from '../composables/useFeedback'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import { ref, computed, onMounted } from 'vue'
@@ -8,6 +8,7 @@ import { changePassword, uploadAvatar, getMyProfile, updateMyProfileName } from 
 import { downloadBackup, adminRestoreDatabase } from '../api/admin'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import UserAvatar from '../components/UserAvatar.vue'
+import ThemeSelector from '../components/ThemeSelector.vue'
 
 const feedback = useFeedback()
 
@@ -215,6 +216,17 @@ async function handleRestore() {
         <p v-if="passwordError" class="msg err">{{ passwordError }}</p>
         <p v-if="passwordMsg" class="msg ok">{{ passwordMsg }}</p>
       </section>
+
+      <section class="settings-card theme-section">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">Appearance</span>
+            <h2>外观与背景主题</h2>
+          </div>
+        </div>
+        <p class="theme-section__desc">自由选择符合您偏好的界面背景色与色彩风格，改动即刻全局生效。</p>
+        <ThemeSelector />
+      </section>
     </div>
 
     <section v-if="isSuperAdmin()" class="admin-panel">
@@ -307,6 +319,17 @@ async function handleRestore() {
   width: 100%;
   grid-template-columns: minmax(420px, 1.15fr) minmax(340px, 0.85fr);
   gap: 16px;
+}
+
+.theme-section {
+  grid-column: 1 / -1;
+}
+
+.theme-section__desc {
+  font-size: var(--text-copy-13);
+  color: var(--color-neutral-7);
+  margin-top: -4px;
+  margin-bottom: 16px;
 }
 
 .profile-card {
