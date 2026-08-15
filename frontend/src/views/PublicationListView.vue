@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -249,12 +249,26 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
             <div class="archive-grid">
               <article v-for="pub in publications" :key="pub.id" class="panel-glass archive-card" @click="openPublication(pub.id)">
                 <div class="archive-body">
-                  <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
-                  <p v-if="pub.subtitle" class="archive-subtitle">{{ pub.subtitle }}</p>
-                  <div class="archive-tags" v-if="pub.info?.hallName || pub.info?.ancestralOrigin">
-                    <span v-if="pub.info?.hallName" class="meta-tag">{{ pub.info.hallName }}</span>
-                    <span v-if="pub.info?.ancestralOrigin" class="meta-tag">{{ pub.info.ancestralOrigin }}</span>
+                  <div class="archive-title-row">
+                    <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
+                    <span class="archive-revision">v{{ pub.revision }}</span>
                   </div>
+                  <p v-if="pub.subtitle" class="archive-subtitle">{{ pub.subtitle }}</p>
+
+                  <!-- Location & Hall Info -->
+                  <div class="archive-tags" v-if="pub.info?.ancestralOrigin || pub.info?.hallName">
+                    <span v-if="pub.info?.ancestralOrigin" class="meta-tag origin-tag">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                      {{ pub.info.ancestralOrigin }}
+                    </span>
+                    <span v-if="pub.info?.hallName" class="meta-tag hall-tag">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11"/></svg>
+                      {{ pub.info.hallName }}
+                    </span>
+                  </div>
+
+                  <!-- Description Text -->
+                  <p v-if="pub.info?.description" class="archive-desc">{{ pub.info.description }}</p>
                 </div>
 
                 <div class="archive-foot">
@@ -525,45 +539,95 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 .archive-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  gap: 22px;
 }
 .archive-card {
   display: flex;
   flex-direction: column;
-  padding: 24px;
-  border-left: 3px solid var(--color-accent);
-  height: 175px;
+  padding: 20px 22px;
+  min-height: 185px;
+  height: auto;
   box-sizing: border-box;
+  justify-content: space-between;
+  border-left: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.08));
 }
 .archive-body {
   flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+.archive-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
 }
 .archive-title {
   font-family: var(--font-serif);
-  font-size: var(--text-title-20);
-  font-weight: 400;
+  font-size: var(--text-title-20, 20px);
+  font-weight: 500;
   color: var(--color-neutral-10);
-  margin: 0 0 4px;
+  margin: 0;
   line-height: 1.3;
+}
+.archive-revision {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--color-neutral-5);
+  background: var(--color-neutral-3, rgba(0, 0, 0, 0.04));
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 .archive-subtitle {
   font-size: var(--text-copy-13);
   color: var(--color-neutral-6);
-  margin: 0 0 12px;
+  margin: 0 0 10px;
 }
 .archive-tags {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+}
+.meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--color-neutral-3, rgba(0, 0, 0, 0.04));
+  color: var(--color-neutral-7);
+  border: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.06));
+}
+.meta-tag.origin-tag {
+  color: var(--color-info, #0ea5e9);
+  background: var(--color-info-muted, rgba(14, 165, 233, 0.08));
+}
+.meta-tag.hall-tag {
+  color: var(--color-accent, #2563eb);
+  background: var(--color-accent-muted, rgba(37, 99, 235, 0.08));
+}
+.archive-desc {
+  font-size: 12px;
+  color: var(--color-neutral-6);
+  margin: 4px 0 0;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .archive-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.06));
 }
 .archive-date {
   font-size: var(--text-label-12);
