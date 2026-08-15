@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -181,6 +181,25 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
     cloningSampleId.value = null
   }
 }
+
+function getSurnameSeal(title: string): string {
+  if (!title) return '谱'
+  const match = title.match(/^([\u4e00-\u9fa5]{1,4})[氏族谱图卷表录]/)
+  if (match && match[1]) {
+    return match[1].charAt(0)
+  }
+  const clean = title.replace(/[^\u4e00-\u9fa5]/g, '')
+  return clean.charAt(0) || '谱'
+}
+
+function getAccessRoleLabel(role?: string): string {
+  switch (role) {
+    case 'OWNER': return '所有者'
+    case 'EDITOR': return '编委'
+    case 'VIEWER': return '查阅'
+    default: return '档案'
+  }
+}
 </script>
 
 <template>
@@ -209,7 +228,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
       <div v-else>
         <div class="publication-grid">
-          <!-- Template Section (Built-in) - Moved outside of the empty-state conditional for better discovery -->
+          <!-- Template Section (Built-in) -->
           <section class="gallery-section">
             <div class="section-eyebrow">
               <span class="dot-ember"></span> 经典王朝世系模板
@@ -217,12 +236,15 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
             <div class="template-grid">
               <div v-for="sample in builtinSamples" :key="sample.id" class="panel-glass template-card" @click="handleViewSample(sample)">
                 <div class="template-bg"></div>
+                <div class="template-header-seal">
+                  <span>{{ getSurnameSeal(sample.publication.title) }}</span>
+                </div>
                 <div class="template-content">
                   <h3 class="template-title">{{ sample.publication.title }}</h3>
                   <p class="template-subtitle">{{ sample.publication.subtitle }}</p>
                 </div>
                 <div class="template-action" v-if="cloningSampleId !== sample.id">
-                  打开此谱 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  开卷拓印 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </div>
                 <div class="template-action cloning" v-else>
                   拓印中...
@@ -248,23 +270,50 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
             <div class="archive-grid">
               <article v-for="pub in publications" :key="pub.id" class="panel-glass archive-card" @click="openPublication(pub.id)">
-                <div class="archive-body">
-                  <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
-                  <p v-if="pub.subtitle" class="archive-subtitle">{{ pub.subtitle }}</p>
-                  <div class="archive-tags" v-if="pub.info?.hallName || pub.info?.ancestralOrigin">
-                    <span v-if="pub.info?.hallName" class="meta-tag">{{ pub.info.hallName }}</span>
-                    <span v-if="pub.info?.ancestralOrigin" class="meta-tag">{{ pub.info.ancestralOrigin }}</span>
+                <!-- Book Header Banner with Seal Crest & Role Badge -->
+                <div class="archive-header-banner">
+                  <div class="spine-decor"></div>
+                  <div class="surname-seal" title="典藏金石印章">
+                    <span>{{ getSurnameSeal(pub.title) }}</span>
+                  </div>
+                  <div class="role-badge" :class="pub.accessRole ? pub.accessRole.toLowerCase() : 'owner'">
+                    {{ getAccessRoleLabel(pub.accessRole) }}
                   </div>
                 </div>
 
+                <div class="archive-body">
+                  <div class="title-row">
+                    <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
+                    <span class="revision-chip">v{{ pub.revision }}</span>
+                  </div>
+                  <p v-if="pub.subtitle" class="archive-subtitle">{{ pub.subtitle }}</p>
+
+                  <!-- Meta Tags: Hall name & Ancestral Origin -->
+                  <div class="archive-tags" v-if="pub.info?.hallName || pub.info?.ancestralOrigin">
+                    <span v-if="pub.info?.hallName" class="meta-tag hall-tag">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11" /></svg>
+                      {{ pub.info.hallName }}
+                    </span>
+                    <span v-if="pub.info?.ancestralOrigin" class="meta-tag origin-tag">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                      {{ pub.info.ancestralOrigin }}
+                    </span>
+                  </div>
+
+                  <p v-if="pub.info?.description" class="archive-desc">{{ pub.info.description }}</p>
+                </div>
+
                 <div class="archive-foot">
-                  <span class="archive-date">{{ formatDate(pub.updatedAt) }}</span>
+                  <div class="archive-date-info">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>{{ formatDate(pub.updatedAt) }}</span>
+                  </div>
                   <div class="archive-actions">
                     <button class="action-btn" title="编辑属性" @click.stop="openEditDialog(pub)">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                     </button>
                     <button class="action-btn" title="协作者管理" @click.stop="openCollabDialog(pub.id)">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 1 0 7.75" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                     </button>
                     <button class="action-btn" title="分享链接" @click.stop="openShareDialog(pub.id)">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
@@ -402,41 +451,6 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   flex-direction: column;
 }
 
-/* ── Header ── */
-.gallery-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 2.5rem;
-  padding: 0 8px;
-}
-.header-meta {
-  font-family: monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
-  color: var(--color-neutral-6);
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-}
-.header-title {
-  font-size: 2.5rem;
-  font-family: var(--font-serif);
-  font-weight: 500;
-  color: var(--color-neutral-9);
-  margin: 0 0 0.5rem;
-  letter-spacing: 0.05em;
-}
-.header-desc {
-  font-size: 0.95rem;
-  color: var(--color-neutral-6);
-  margin: 0;
-}
-.header-right {
-  margin-bottom: 0.5rem;
-}
-
-
-
 /* ── Sections ── */
 .gallery-section {
   margin-bottom: 3rem;
@@ -445,60 +459,87 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  letter-spacing: 0.15em;
+  font-size: var(--text-label-12, 12px);
+  font-weight: 600;
+  letter-spacing: 0.12em;
   color: var(--color-neutral-6);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   text-transform: uppercase;
 }
 .dot-ember { width: 6px; height: 6px; border-radius: 50%; background: var(--color-accent); }
 .dot-ink { width: 6px; height: 6px; border-radius: 50%; background: var(--color-info); }
 
-/* ── Glass Cards ── */
+/* ── Glass Cards Base ── */
 .panel-glass {
-  border-radius: 20px;
+  border-radius: var(--radius-2xl, 20px);
   overflow: hidden;
   position: relative;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  background: var(--color-panel-glass-bg, var(--color-panel-bg));
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: var(--shadow-whisper);
+  transition: transform var(--duration-fast, 150ms) var(--ease-breath),
+              box-shadow var(--duration-fast, 150ms) var(--ease-breath),
+              border-color var(--duration-fast, 150ms) var(--ease-breath);
   cursor: pointer;
 }
 .panel-glass:hover {
-  transform: translateY(-4px);
+  transform: translateY(-4px) scale(1.012);
+  box-shadow: var(--shadow-whisper), var(--shadow-accent);
+  border-color: var(--color-accent);
 }
 
 /* ── Template Grid ── */
 .template-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: 20px;
 }
 .template-card {
-  padding: 1.5rem;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  height: 140px;
+  height: 155px;
   justify-content: space-between;
+  position: relative;
 }
 .template-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  background: radial-gradient(circle at top right, var(--color-accent-muted, rgba(37, 99, 235, 0.08)), transparent 60%);
   pointer-events: none;
+}
+.template-header-seal {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-gradient);
+  color: var(--color-text-on-accent, #ffffff);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-whisper);
+  opacity: 0.85;
 }
 .template-content {
   position: relative;
   z-index: 1;
+  padding-right: 40px;
 }
 .template-title {
   font-family: var(--font-serif);
-  font-size: 1.3rem;
-  margin: 0 0 0.25rem;
+  font-size: var(--text-title-18, 18px);
+  margin: 0 0 4px;
   color: var(--color-neutral-9);
-  font-weight: 500;
+  font-weight: 600;
 }
 .template-subtitle {
-  font-size: 0.8rem;
+  font-size: var(--text-copy-13, 13px);
   color: var(--color-neutral-6);
   margin: 0;
 }
@@ -509,74 +550,198 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: var(--text-label-12, 12px);
+  font-weight: 600;
   color: var(--color-accent);
-  opacity: 0;
-  transform: translateX(-10px);
-  transition: all 0.3s ease;
-}
-.template-card:hover .template-action {
-  opacity: 1;
-  transform: translateX(0);
+  transition: all var(--duration-fast) var(--ease-breath);
 }
 
 /* ── Archive Grid ── */
 .archive-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  gap: 22px;
 }
 .archive-card {
   display: flex;
   flex-direction: column;
-  padding: 24px;
-  border-left: 3px solid var(--color-accent);
-  height: 175px;
+  padding: 0;
+  min-height: 200px;
   box-sizing: border-box;
 }
-.archive-body {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-.archive-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-title-20);
-  font-weight: 400;
-  color: var(--color-neutral-10);
-  margin: 0 0 4px;
-  line-height: 1.3;
-}
-.archive-subtitle {
-  font-size: var(--text-copy-13);
-  color: var(--color-neutral-6);
-  margin: 0 0 12px;
-}
-.archive-tags {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
 
-.archive-foot {
+/* Card Banner */
+.archive-header-banner {
+  height: 46px;
+  background: linear-gradient(90deg, var(--color-accent-muted, rgba(37, 99, 235, 0.08)), transparent);
+  border-bottom: 1px solid var(--color-card-stroke);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0 16px;
+  position: relative;
 }
-.archive-date {
-  font-size: var(--text-label-12);
+
+.spine-decor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-accent-gradient);
+}
+
+.surname-seal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-gradient);
+  color: var(--color-text-on-accent, #ffffff);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  margin-left: 4px;
+}
+
+.role-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-7);
+}
+
+.role-badge.owner {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+}
+
+.role-badge.editor {
+  background: var(--color-info-muted);
+  color: var(--color-info);
+}
+
+/* Card Body */
+.archive-body {
+  flex: 1;
+  padding: 14px 18px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.archive-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-title-18, 18px);
+  font-weight: 600;
+  color: var(--color-neutral-10);
+  margin: 0;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.revision-chip {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 500;
+  color: var(--color-neutral-6);
+  background: var(--color-neutral-3);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.archive-subtitle {
+  font-size: var(--text-copy-13, 13px);
+  color: var(--color-neutral-6);
+  margin: 0 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archive-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--color-neutral-3);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--color-neutral-7);
+}
+
+.meta-tag.hall-tag {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+}
+
+.meta-tag.origin-tag {
+  background: var(--color-info-muted);
+  color: var(--color-info);
+}
+
+.archive-desc {
+  font-size: 12px;
+  color: var(--color-neutral-6);
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Card Foot */
+.archive-foot {
+  padding: 10px 16px;
+  border-top: 1px solid var(--color-card-stroke);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.015);
+}
+
+.archive-date-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
   color: var(--color-neutral-6);
 }
+
 .archive-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
+
 /* ── Action buttons ── */
 .action-btn {
-  width: 32px; height: 32px;
+  width: 30px;
+  height: 30px;
   border: 1px solid var(--color-neutral-4);
   background: var(--color-neutral-2);
   color: var(--color-neutral-6);
@@ -593,9 +758,10 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   width: 14px; height: 14px;
 }
 .action-btn:hover {
-  background: var(--color-neutral-9);
-  color: var(--color-neutral-1);
-  border-color: var(--color-neutral-9);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent, #fff);
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
 }
 .action-btn--danger:hover {
   background: var(--color-error);
@@ -603,23 +769,11 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   border-color: var(--color-error);
 }
 
-.meta-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--text-label-12);
-  font-weight: 500;
-  background: var(--color-neutral-2);
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  color: var(--color-neutral-7);
-}
-
 /* ── Delete Confirm ── */
 .delete-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--color-panel-glass-bg, rgba(255, 255, 255, 0.96));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -628,10 +782,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   justify-content: center;
   gap: 20px;
   z-index: 10;
-  border-radius: 24px;
-}
-[data-theme="dark"] .delete-overlay {
-  background: var(--color-panel-bg);
+  border-radius: var(--radius-2xl, 20px);
 }
 .delete-overlay p {
   font-size: var(--text-copy-14);
@@ -645,15 +796,6 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 .delete-btns {
   display: flex;
   gap: 12px;
-}
-
-.empty-gallery {
-  padding: 4rem 2rem;
-  text-align: center;
-  color: var(--color-neutral-6);
-  font-size: 0.9rem;
-  border: 1px dashed var(--border-color, rgba(0,0,0,0.2));
-  border-radius: 20px;
 }
 
 /* ── Empty State ── */
@@ -693,13 +835,11 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   margin: 0 0 24px;
 }
 
-
-
 /* ── Glass Modals ── */
 .glass-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--color-overlay, rgba(15, 23, 42, 0.35));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -707,10 +847,6 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   justify-content: center;
   z-index: var(--z-modal);
   padding: 24px;
-}
-[data-theme="dark"] .glass-modal-overlay,
-[data-theme="dark"] .glass-modal-overlay {
-  background: var(--color-overlay);
 }
 
 .glass-sheet {
@@ -731,10 +867,6 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   overflow-y: auto;
   max-height: 65vh;
 }
-[data-theme="dark"] .glass-sheet {
-  background: var(--color-panel-bg);
-  border-color: var(--color-card-stroke);
-}
 
 .sheet-header {
   display: flex;
@@ -745,7 +877,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 .sheet-title {
   font-family: var(--font-serif);
   font-size: var(--text-title-24);
-  font-weight: 400;
+  font-weight: 500;
   color: var(--color-neutral-10);
   margin: 0;
 }
@@ -823,11 +955,6 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   border-radius: 50%;
   animation: spin 1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
-[data-theme="dark"] .spinner,
-[data-theme="dark"] .spinner {
-  border-color: rgba(255,255,255,0.1);
-  border-top-color: var(--color-accent);
-}
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -844,8 +971,6 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
 @media (max-width: 768px) {
   .archive-card { flex-direction: column; }
-  .archive-visual { width: 100%; height: 80px; flex-direction: row; padding: 1rem 1.5rem; border-right: none; border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.1)); }
-  .visual-meta { writing-mode: horizontal-tb; transform: none; }
   .grid-form { grid-template-columns: 1fr; }
   .glass-input-group.full { grid-column: 1 / 2; }
 }
