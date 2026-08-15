@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 /**
  * FeedbackStrip — 统一反馈条组件
  *
@@ -82,9 +82,10 @@ function dismiss() {
   margin-bottom: 16px;
   font-size: var(--text-copy-14);
   line-height: 1.4;
-  background: var(--color-success-bg, #ecfdf5);
-  color: var(--color-success-text, #065f46);
-  border: 1px solid var(--color-success-border, #a7f3d0);
+  background: var(--color-success-muted, rgba(61, 127, 94, 0.1));
+  color: var(--color-success);
+  border: 1px solid var(--color-success-muted);
+  box-shadow: var(--shadow-whisper);
 }
 
 .feedback-strip strong {
@@ -98,7 +99,7 @@ function dismiss() {
 
 .feedback-strip button {
   flex-shrink: 0;
-  padding: 2px 10px;
+  padding: 3px 10px;
   border: 1px solid var(--color-neutral-4);
   border-radius: var(--radius-sm);
   background: var(--color-neutral-2);
@@ -106,7 +107,7 @@ function dismiss() {
   font-size: var(--text-label-12);
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--duration-fast);
+  transition: all var(--duration-fast) var(--ease-breath);
 }
 
 .feedback-strip button:hover {
@@ -115,20 +116,20 @@ function dismiss() {
 }
 
 .feedback-strip--error {
-  background: var(--color-error-bg, #fef2f2);
-  color: var(--color-error-text, #991b1b);
-  border-color: var(--color-error-border, #fecaca);
+  background: var(--color-error-muted, rgba(181, 61, 88, 0.1));
+  color: var(--color-error);
+  border-color: var(--color-error-muted);
 }
 
 .feedback-strip--warning {
-  background: var(--color-warning-bg, #fffbeb);
-  color: var(--color-warning-text, #92400e);
-  border-color: var(--color-warning-border, #fde68a);
+  background: var(--color-warning-muted, rgba(180, 138, 68, 0.1));
+  color: var(--color-warning);
+  border-color: var(--color-warning-muted);
 }
 
 .feedback-strip--info {
-  background: var(--color-info-bg, #eff6ff);
-  color: var(--color-info-text, #1e40af);
-  border-color: var(--color-info-border, #bfdbfe);
+  background: var(--color-info-muted, rgba(46, 92, 138, 0.1));
+  color: var(--color-info);
+  border-color: var(--color-info-muted);
 }
 </style>

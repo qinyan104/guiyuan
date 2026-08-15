@@ -31,40 +31,41 @@ const initial = computed(() => (props.name.trim() || '总').charAt(0).toUpperCas
   overflow: hidden;
   flex-shrink: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, #787670, #5c5a55);
-  color: var(--color-text-on-accent);
+  background: var(--color-neutral-6, #8C8473);
+  color: var(--color-text-on-accent, #ffffff);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 .user-avatar.sm {
   width: 28px;
   height: 28px;
-  font-size: 0.8rem;
-  font-weight: 800;
+  font-size: var(--text-label-12, 12px);
+  font-weight: 700;
 }
 
 .user-avatar.md {
   width: 42px;
   height: 42px;
-  font-size: var(--text-title-18);
-  font-weight: 500;
+  font-size: var(--text-copy-16, 16px);
+  font-weight: 600;
 }
 
 .user-avatar.lg {
   width: 112px;
   height: 112px;
-  font-size: 34px;
+  font-size: var(--text-display-36, 36px);
   font-weight: 700;
 }
 
 .user-avatar.super_admin {
-  background: linear-gradient(135deg, #c43a31, #a8322b);
-  box-shadow: 0 2px 8px rgba(196, 58, 49, 0.3);
+  background: var(--color-accent-gradient);
+  box-shadow: var(--shadow-accent);
 }
 
 .user-avatar.admin {
-  background: linear-gradient(135deg, #3d6896, #2d5178);
-  box-shadow: 0 2px 8px rgba(61, 104, 150, 0.25);
+  background: linear-gradient(135deg, var(--color-info), var(--color-male));
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
 }
 
 .user-avatar img {

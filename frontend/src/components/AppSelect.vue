@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 
 export interface AppSelectOption {
@@ -218,25 +218,27 @@ onUnmounted(() => {
   gap: 6px;
   width: 100%;
   padding: 7px 12px;
-  border: 1px solid var(--line-soft, rgba(117, 90, 57, 0.16));
-  border-radius: var(--control-radius, 8px);
-  background: var(--bg-paper, #fff9ef);
-  color: var(--text-main, #241a10);
+  border: 1px solid var(--color-neutral-4, rgba(0, 0, 0, 0.12));
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-neutral-2, #FAF9F6);
+  color: var(--color-neutral-9, #1C1A17);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: var(--text-copy-14, 14px);
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  transition: border-color var(--duration-fast, 150ms) var(--ease-breath),
+              box-shadow var(--duration-fast, 150ms) var(--ease-breath),
+              background var(--duration-fast, 150ms) var(--ease-breath);
   text-align: left;
   white-space: nowrap;
   user-select: none;
 }
 .app-select__trigger:hover {
-  border-color: var(--accent-signal, #a96e35);
+  border-color: var(--color-accent);
 }
 .app-select.open .app-select__trigger,
 .app-select__trigger:focus-visible {
-  border-color: var(--accent-signal, #a96e35);
-  box-shadow: var(--shadow-ring);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-muted);
 }
 
 .app-select__value {
@@ -246,13 +248,13 @@ onUnmounted(() => {
   text-overflow: ellipsis;
 }
 .app-select__value.placeholder {
-  color: var(--text-soft, #8a6845);
+  color: var(--color-neutral-6, #8C8473);
   font-weight: 400;
 }
 
 .app-select__arrow {
   flex-shrink: 0;
-  transition: transform 0.2s ease;
+  transition: transform var(--duration-fast, 150ms) var(--ease-breath);
 }
 .app-select.open .app-select__arrow {
   transform: rotate(180deg);
@@ -260,7 +262,7 @@ onUnmounted(() => {
 
 /* ---------- disabled ---------- */
 .app-select.disabled .app-select__trigger {
-  opacity: 0.52;
+  opacity: var(--opacity-disabled, 0.45);
   cursor: not-allowed;
 }
 
@@ -269,29 +271,29 @@ onUnmounted(() => {
 /* compact — for toolbars */
 .app-select.compact .app-select__trigger {
   padding: 4px 10px;
-  font-size: 0.78rem;
+  font-size: var(--text-label-12, 12px);
 }
 
 /* inline — for table/card role selects */
 .app-select.inline .app-select__trigger {
   padding: 3px 6px;
-  font-size: 0.8rem;
+  font-size: var(--text-copy-13, 13px);
   border-color: transparent;
   background: transparent;
 }
 .app-select.inline .app-select__trigger:hover {
-  border-color: var(--line-soft, rgba(117, 90, 57, 0.16));
-  background: var(--bg-paper, #fff9ef);
+  border-color: var(--color-neutral-4);
+  background: var(--color-neutral-2);
 }
 .app-select.inline.open .app-select__trigger {
-  border-color: var(--accent-signal, #a96e35);
-  background: var(--bg-paper, #fff9ef);
+  border-color: var(--color-accent);
+  background: var(--color-neutral-2);
 }
 
 /* privacy — for privacy grid */
 .app-select.privacy .app-select__trigger {
   padding: 4px 8px;
-  font-size: 0.78rem;
+  font-size: var(--text-label-12, 12px);
   min-width: 90px;
 }
 </style>
@@ -300,12 +302,13 @@ onUnmounted(() => {
 <style>
 /* ---------- dropdown panel (teleported to body) ---------- */
 .app-select__dropdown {
-  /* Keep teleported menus above dialogs and drawers that contain selects. */
   z-index: calc(var(--z-modal, 2000) + 1);
   overflow-y: auto;
-  background: var(--bg-panel-strong, #fffcf0);
-  border: 1px solid var(--line-soft, rgba(117, 90, 57, 0.18));
-  border-radius: var(--control-radius, 8px);
+  background: var(--color-panel-bg, rgba(250, 249, 246, 0.96));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-md, 8px);
   box-shadow: var(--shadow-whisper);
   padding: 4px;
 }
@@ -316,7 +319,7 @@ onUnmounted(() => {
   background: transparent;
 }
 .app-select__dropdown::-webkit-scrollbar-thumb {
-  background: rgba(117, 90, 57, 0.18);
+  background: var(--color-neutral-4, rgba(0, 0, 0, 0.15));
   border-radius: 3px;
 }
 
@@ -326,11 +329,11 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 4px);
   cursor: pointer;
-  color: var(--text-main, #241a10);
-  font-size: 0.85rem;
-  transition: background 0.1s;
+  color: var(--color-neutral-9);
+  font-size: var(--text-copy-13, 13px);
+  transition: background var(--duration-fast, 150ms) var(--ease-breath);
   white-space: nowrap;
   user-select: none;
 }
@@ -345,7 +348,7 @@ onUnmounted(() => {
 }
 .app-select__option:hover,
 .app-select__option.highlighted {
-  background: rgba(169, 110, 53, 0.10);
+  background: var(--color-accent-muted, rgba(37, 99, 235, 0.08));
 }
 .app-select__option:hover::after,
 .app-select__option.highlighted::after {
@@ -353,45 +356,39 @@ onUnmounted(() => {
   background: currentColor;
 }
 .app-select__option.selected {
-  font-weight: 500;
-  color: var(--accent-signal, #a96e35);
+  font-weight: 600;
+  color: var(--color-accent);
 }
 .app-select__option.selected::after {
   opacity: 1;
-  background: var(--accent-signal, #a96e35);
-  box-shadow: inset 0 0 0 1.5px var(--bg-panel-strong, #fffcf0);
+  background: var(--color-accent);
+  box-shadow: inset 0 0 0 1.5px var(--color-panel-bg);
 }
 .app-select__option.disabled {
-  opacity: 0.4;
+  opacity: var(--opacity-disabled, 0.45);
   cursor: not-allowed;
 }
 
 /* variant option density */
-.app-select__dropdown.compact .app-select__option {
-  padding: 5px 10px;
-  font-size: 0.78rem;
-}
+.app-select__dropdown.compact .app-select__option,
 .app-select__dropdown.privacy .app-select__option {
   padding: 5px 10px;
-  font-size: 0.78rem;
+  font-size: var(--text-label-12, 12px);
 }
 
 /* ---------- transition ---------- */
-.app-select-drop-enter-active {
-  transition: opacity 0.12s ease-out, transform 0.12s ease-out;
-}
+.app-select-drop-enter-active,
 .app-select-drop-leave-active {
-  transition: opacity 0.08s ease-in, transform 0.08s ease-in;
+  transition: opacity var(--duration-fast, 150ms) var(--ease-breath), transform var(--duration-fast, 150ms) var(--ease-breath);
 }
 .app-select-drop-enter-from,
 .app-select-drop-leave-to {
   opacity: 0;
 }
 .app-select-drop-enter-from {
-  transform: translateY(-4px);
+  transform: translateY(-4px) scale(0.98);
 }
 .app-select-drop-leave-to {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(0.98);
 }
 </style>
-

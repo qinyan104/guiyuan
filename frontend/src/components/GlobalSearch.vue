@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchApi, type PublicationHit, type PersonHit, type SearchResult } from '../api/search'
@@ -90,12 +90,22 @@ function navigateToPerson(hit: PersonHit) {
 
 const hasResults = computed(() => results.value.publications.length > 0 || results.value.persons.length > 0)
 
+function onGlobalKeydown(e: KeyboardEvent) {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault()
+    inputRef.value?.focus()
+    isOpen.value = true
+  }
+}
+
 onMounted(() => {
   document.addEventListener('click', onDocumentClick, { capture: true })
+  document.addEventListener('keydown', onGlobalKeydown)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocumentClick, { capture: true })
+  document.removeEventListener('keydown', onGlobalKeydown)
   if (debounceTimer) clearTimeout(debounceTimer)
 })
 </script>
@@ -112,12 +122,13 @@ onBeforeUnmount(() => {
         v-model="query"
         type="text"
         class="search-input"
-        placeholder="输入关键词搜索族谱与人物..."
+        placeholder="搜索族谱与人物..."
         @focus="onFocus"
         @blur="onBlur"
         @keydown="onKeydown"
       />
       <div v-if="isLoading" class="search-spinner"></div>
+      <kbd v-else class="search-kbd">⌘K</kbd>
     </div>
 
     <transition name="glass-pop">
@@ -227,7 +238,19 @@ onBeforeUnmount(() => {
 .search-input::placeholder {
   color: var(--text-soft, var(--color-neutral-5));
   font-weight: 400;
-  letter-spacing: 0.02em;
+}
+
+.search-kbd {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-neutral-6, #8C8473);
+  background: var(--color-neutral-3, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--color-neutral-4, rgba(0, 0, 0, 0.1));
+  border-radius: var(--radius-sm, 4px);
+  padding: 2px 6px;
+  user-select: none;
+  pointer-events: none;
+  font-weight: 600;
 }
 
 /* Spinner for loading state */

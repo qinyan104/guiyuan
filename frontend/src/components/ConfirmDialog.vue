@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 /**
  * ConfirmDialog — 统一确认弹窗组件
  *
@@ -112,7 +112,8 @@ watch(() => props.modelValue, (v) => {
   inset: 0;
   z-index: var(--z-critical);
   background: var(--color-overlay);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,7 +123,9 @@ watch(() => props.modelValue, (v) => {
 .confirm-dialog {
   width: 100%;
   max-width: 400px;
-  background: var(--color-panel-bg);
+  background: var(--color-panel-glass-bg, var(--color-panel-bg));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--color-card-stroke);
   border-radius: var(--radius-2xl);
   padding: 32px;
@@ -139,23 +142,26 @@ watch(() => props.modelValue, (v) => {
   height: 56px;
   border-radius: 50%;
   margin: 0 auto 16px;
+  position: relative;
 }
 
 .confirm-icon--danger {
   background: var(--color-error-muted);
   color: var(--color-error);
+  box-shadow: 0 0 0 4px var(--color-error-muted);
 }
 
 .confirm-icon--warning {
   background: var(--color-warning-muted);
   color: var(--color-warning);
+  box-shadow: 0 0 0 4px var(--color-warning-muted);
 }
 
 .confirm-title {
   margin: 0 0 12px;
   font-family: var(--font-serif);
   font-size: var(--text-title-20);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-neutral-10);
   text-align: center;
 }
@@ -200,12 +206,12 @@ watch(() => props.modelValue, (v) => {
 
 /* ── Transition ── */
 .confirm-dialog-enter-active {
-  transition: opacity var(--duration-panel) var(--ease-breath);
+  transition: opacity var(--duration-normal) var(--ease-spring-gentle);
 }
 
 .confirm-dialog-enter-active .confirm-dialog {
-  transition: transform var(--duration-panel) var(--ease-breath),
-              opacity var(--duration-panel) var(--ease-breath);
+  transition: transform var(--duration-normal) var(--ease-spring-gentle),
+              opacity var(--duration-normal) var(--ease-spring-gentle);
 }
 
 .confirm-dialog-leave-active {
@@ -218,7 +224,7 @@ watch(() => props.modelValue, (v) => {
 }
 
 .confirm-dialog-enter-from { opacity: 0; }
-.confirm-dialog-enter-from .confirm-dialog { opacity: 0; transform: translateY(12px) scale(0.96); }
+.confirm-dialog-enter-from .confirm-dialog { opacity: 0; transform: translateY(16px) scale(0.94); }
 .confirm-dialog-leave-to { opacity: 0; }
 .confirm-dialog-leave-to .confirm-dialog { opacity: 0; transform: translateY(8px) scale(0.98); }
 
