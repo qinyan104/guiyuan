@@ -200,6 +200,17 @@ function getAccessRoleLabel(role?: string): string {
     default: return '档案'
   }
 }
+
+function getPublicationMeshGradient(id: number): string {
+  const gradients = [
+    'radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.28) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.2) 0px, transparent 50%), radial-gradient(at 50% 50%, rgba(147, 51, 234, 0.15) 0px, transparent 50%)',
+    'radial-gradient(at 0% 0%, rgba(244, 63, 94, 0.26) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(251, 146, 60, 0.2) 0px, transparent 50%), radial-gradient(at 50% 50%, rgba(225, 29, 72, 0.14) 0px, transparent 50%)',
+    'radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.28) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.2) 0px, transparent 50%), radial-gradient(at 50% 50%, rgba(59, 130, 246, 0.15) 0px, transparent 50%)',
+    'radial-gradient(at 0% 0%, rgba(217, 119, 6, 0.26) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(234, 179, 8, 0.2) 0px, transparent 50%), radial-gradient(at 50% 50%, rgba(194, 65, 12, 0.15) 0px, transparent 50%)',
+    'radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.28) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.2) 0px, transparent 50%), radial-gradient(at 50% 50%, rgba(99, 102, 241, 0.15) 0px, transparent 50%)',
+  ]
+  return gradients[id % gradients.length]
+}
 </script>
 
 <template>
@@ -234,20 +245,30 @@ function getAccessRoleLabel(role?: string): string {
               <span class="dot-ember"></span> 经典王朝世系模板
             </div>
             <div class="template-grid">
-              <div v-for="sample in builtinSamples" :key="sample.id" class="panel-glass template-card" @click="handleViewSample(sample)">
-                <div class="template-bg"></div>
-                <div class="template-header-seal">
-                  <span>{{ getSurnameSeal(sample.publication.title) }}</span>
+              <div v-for="(sample, idx) in builtinSamples" :key="sample.id" class="apple-glass-card template-apple-card" @click="handleViewSample(sample)">
+                <div class="apple-card-cover" :style="{ background: getPublicationMeshGradient(idx + 1) }">
+                  <div class="cover-glow-ring"></div>
+                  <div class="apple-cover-top">
+                    <div class="apple-avatar-chip">
+                      <span>{{ getSurnameSeal(sample.publication.title) }}</span>
+                    </div>
+                    <span class="apple-pill version-pill">TEMPLATE</span>
+                  </div>
                 </div>
-                <div class="template-content">
-                  <h3 class="template-title">{{ sample.publication.title }}</h3>
-                  <p class="template-subtitle">{{ sample.publication.subtitle }}</p>
+
+                <div class="apple-card-body">
+                  <h3 class="apple-card-title">{{ sample.publication.title }}</h3>
+                  <p class="apple-card-subtitle">{{ sample.publication.subtitle }}</p>
                 </div>
-                <div class="template-action" v-if="cloningSampleId !== sample.id">
-                  开卷拓印 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </div>
-                <div class="template-action cloning" v-else>
-                  拓印中...
+
+                <div class="apple-card-footer">
+                  <div class="template-action" v-if="cloningSampleId !== sample.id">
+                    <span>开卷拓印</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </div>
+                  <div class="template-action cloning" v-else>
+                    拓印中...
+                  </div>
                 </div>
               </div>
             </div>
@@ -269,77 +290,60 @@ function getAccessRoleLabel(role?: string): string {
             </div>
 
             <div class="archive-grid">
-              <article v-for="pub in publications" :key="pub.id" class="panel-glass archive-card modern-linear-card" @click="openPublication(pub.id)">
-                <!-- Mini Tree Network Cover Canvas Banner -->
-                <div class="card-cover-wrapper">
-                  <svg class="tree-grid-pattern" width="100%" height="100%" viewBox="0 0 320 90" preserveAspectRatio="none" fill="none">
-                    <defs>
-                      <pattern :id="`grid-dots-${pub.id}`" width="16" height="16" patternUnits="userSpaceOnUse">
-                        <circle cx="2" cy="2" r="1" fill="var(--color-neutral-6)" opacity="0.35" />
-                      </pattern>
-                      <linearGradient :id="`cover-glow-${pub.id}`" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="var(--color-accent)" stop-opacity="0.18" />
-                        <stop offset="100%" stop-color="var(--color-info)" stop-opacity="0.03" />
-                      </linearGradient>
-                    </defs>
-                    <rect width="100%" height="100%" :fill="`url(#cover-glow-${pub.id})`" />
-                    <rect width="100%" height="100%" :fill="`url(#grid-dots-${pub.id})`" />
-                    <!-- Animated Topology Line Connections -->
-                    <path d="M 30 65 L 85 35 L 145 55 L 205 25 L 270 48" stroke="var(--color-accent)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.55" />
-                    <circle cx="30" cy="65" r="3" fill="var(--color-accent)" />
-                    <circle cx="85" cy="35" r="4" fill="var(--color-accent)" />
-                    <circle cx="145" cy="55" r="3" fill="var(--color-info)" />
-                    <circle cx="205" cy="25" r="4" fill="var(--color-accent)" />
-                    <circle cx="270" cy="48" r="3" fill="var(--color-info)" />
-                  </svg>
-
-                  <!-- Top Badge Row -->
-                  <div class="cover-badge-row">
-                    <span class="modern-badge role-badge" :class="pub.accessRole ? pub.accessRole.toLowerCase() : 'owner'">
-                      {{ getAccessRoleLabel(pub.accessRole) }}
-                    </span>
-                    <span class="modern-badge rev-badge">REV.{{ pub.revision }}</span>
+              <article v-for="pub in publications" :key="pub.id" class="apple-glass-card" @click="openPublication(pub.id)">
+                <!-- Fluid Mesh Gradient Cover Header -->
+                <div class="apple-card-cover" :style="{ background: getPublicationMeshGradient(pub.id) }">
+                  <div class="cover-glow-ring"></div>
+                  <div class="apple-cover-top">
+                    <div class="apple-avatar-chip">
+                      <span>{{ getSurnameSeal(pub.title) }}</span>
+                    </div>
+                    <div class="apple-badges">
+                      <span class="apple-pill role-pill" :class="pub.accessRole ? pub.accessRole.toLowerCase() : 'owner'">
+                        {{ getAccessRoleLabel(pub.accessRole) }}
+                      </span>
+                      <span class="apple-pill version-pill">v{{ pub.revision }}</span>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Card Content Body -->
-                <div class="card-content-body">
-                  <div class="card-title-group">
-                    <h3 class="card-main-title">{{ pub.title || '未命名宗谱' }}</h3>
-                    <p v-if="pub.subtitle" class="card-sub-title">{{ pub.subtitle }}</p>
+                <div class="apple-card-body">
+                  <h3 class="apple-card-title">{{ pub.title || '未命名宗谱' }}</h3>
+                  <p v-if="pub.subtitle" class="apple-card-subtitle">{{ pub.subtitle }}</p>
+
+                  <!-- Meta Badges -->
+                  <div v-if="pub.info?.hallName || pub.info?.ancestralOrigin" class="apple-meta-pills">
+                    <span v-if="pub.info?.hallName" class="meta-glass-pill">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11"/></svg>
+                      {{ pub.info.hallName }}
+                    </span>
+                    <span v-if="pub.info?.ancestralOrigin" class="meta-glass-pill">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                      {{ pub.info.ancestralOrigin }}
+                    </span>
                   </div>
 
-                  <!-- Metadata Badges Row -->
-                  <div class="card-meta-row" v-if="pub.info?.hallName || pub.info?.ancestralOrigin">
-                    <span v-if="pub.info?.hallName" class="modern-pill pill-hall">
-                      <span class="pill-dot"></span> {{ pub.info.hallName }}
-                    </span>
-                    <span v-if="pub.info?.ancestralOrigin" class="modern-pill pill-origin">
-                      <span class="pill-dot"></span> {{ pub.info.ancestralOrigin }}
-                    </span>
-                  </div>
-
-                  <p v-if="pub.info?.description" class="card-desc">{{ pub.info.description }}</p>
+                  <p v-if="pub.info?.description" class="apple-card-desc">{{ pub.info.description }}</p>
                 </div>
 
-                <!-- Card Footer Bar -->
-                <div class="card-footer-bar">
-                  <div class="card-timestamp">
+                <!-- Apple Card Footer -->
+                <div class="apple-card-footer">
+                  <div class="footer-time">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span>{{ formatDate(pub.updatedAt) }}</span>
                   </div>
-
-                  <div class="card-action-bar">
-                    <button class="action-btn" title="编辑属性" @click.stop="openEditDialog(pub)">
+                  <div class="apple-actions-group">
+                    <button class="apple-action-btn action-btn" title="编辑属性" @click.stop="openEditDialog(pub)">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                     </button>
-                    <button class="action-btn" title="协作者管理" @click.stop="openCollabDialog(pub.id)">
+                    <button class="apple-action-btn action-btn" title="协作者管理" @click.stop="openCollabDialog(pub.id)">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 1 0 7.75" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                     </button>
-                    <button class="action-btn" title="分享链接" @click.stop="openShareDialog(pub.id)">
+                    <button class="apple-action-btn action-btn" title="分享链接" @click.stop="openShareDialog(pub.id)">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                     </button>
-                    <button class="action-btn action-btn--danger" title="删除档案" @click.stop="deleteConfirmId = pub.id">
+                    <button class="apple-action-btn action-btn action-btn--danger apple-action-btn--danger" title="删除档案" @click.stop="deleteConfirmId = pub.id">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                     </button>
                   </div>
@@ -581,154 +585,166 @@ function getAccessRoleLabel(role?: string): string {
 .archive-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+  gap: 26px;
 }
 
-/* Modern Linear/Vercel Style Card */
-.archive-card.modern-linear-card {
+/* ── Apple/macOS Fluid Glassmorphism Card ── */
+.apple-glass-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  padding: 0;
-  border-radius: var(--radius-2xl, 20px);
-  min-height: 250px;
-  background: var(--color-card-fill, var(--color-neutral-2));
-  border: 1px solid var(--color-card-stroke);
-  box-shadow: var(--shadow-whisper);
+  border-radius: var(--radius-2xl, 24px);
+  min-height: 255px;
+  background: var(--color-glass-bg, rgba(255, 255, 255, 0.72));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--color-glass-border-highlight, rgba(255, 255, 255, 0.8));
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transition: transform var(--duration-fast, 150ms) var(--ease-spring-gentle, cubic-bezier(0.34, 1.56, 0.64, 1)),
               box-shadow var(--duration-fast, 150ms) var(--ease-breath),
               border-color var(--duration-fast, 150ms) var(--ease-breath);
-  position: relative;
   overflow: hidden;
+  cursor: pointer;
   box-sizing: border-box;
 }
 
-.archive-card.modern-linear-card:hover {
-  transform: translateY(-6px) scale(1.015);
-  border-color: var(--color-accent);
-  box-shadow: 0 16px 36px -8px rgba(37, 99, 235, 0.18), var(--shadow-whisper);
+.apple-glass-card:hover {
+  transform: translateY(-8px) scale(1.018);
+  border-color: var(--color-accent-light, #60A5FA);
+  box-shadow: 0 24px 48px -12px rgba(37, 99, 235, 0.22),
+              0 0 0 1px var(--color-accent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
-/* Mini Tree Network Cover Canvas */
-.card-cover-wrapper {
-  height: 90px;
+/* Fluid Mesh Cover Banner */
+.apple-card-cover {
+  height: 96px;
   position: relative;
-  border-bottom: 1px solid var(--color-card-stroke);
+  border-bottom: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.06));
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   overflow: hidden;
 }
 
-.tree-grid-pattern {
+.cover-glow-ring {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  inset: -50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 70%);
+  pointer-events: none;
 }
 
-.cover-badge-row {
-  position: absolute;
-  top: 12px;
-  left: 14px;
-  right: 14px;
+.apple-cover-top {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  z-index: 2;
+  width: 100%;
 }
 
-.modern-badge {
-  font-size: 10px;
-  font-family: var(--font-mono, monospace);
+.apple-avatar-chip {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 3px 8px;
-  border-radius: 999px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.modern-badge.role-badge {
-  background: var(--color-accent-muted, rgba(37, 99, 235, 0.12));
   color: var(--color-accent);
-  border: 1px solid var(--color-accent-muted);
 }
 
-.modern-badge.role-badge.editor {
-  background: var(--color-info-muted, rgba(14, 165, 233, 0.12));
-  color: var(--color-info);
-  border-color: var(--color-info-muted);
+.apple-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.modern-badge.rev-badge {
-  background: var(--color-neutral-3, rgba(0, 0, 0, 0.06));
-  color: var(--color-neutral-7);
-  border: 1px solid var(--color-card-stroke);
+.apple-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--color-neutral-8);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-/* Card Content Body */
-.card-content-body {
+.apple-pill.role-pill.owner {
+  background: var(--color-accent);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.apple-pill.role-pill.editor {
+  background: var(--color-info);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+/* Card Body */
+.apple-card-body {
   flex: 1;
-  padding: 16px 18px 12px;
+  padding: 16px 20px 12px;
   display: flex;
   flex-direction: column;
 }
 
-.card-title-group {
-  margin-bottom: 8px;
-}
-
-.card-main-title {
+.apple-card-title {
   font-family: var(--font-sans);
-  font-size: var(--text-title-18, 18px);
+  font-size: 19px;
   font-weight: 700;
   color: var(--color-neutral-10);
   margin: 0 0 2px;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.card-sub-title {
-  font-size: var(--text-copy-13, 13px);
+.apple-card-subtitle {
+  font-size: 13px;
   color: var(--color-neutral-6);
-  margin: 0;
+  margin: 0 0 10px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.card-meta-row {
+.apple-meta-pills {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
-.modern-pill {
+.meta-glass-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font-size: 11px;
   font-weight: 600;
-  padding: 3px 9px;
-  border-radius: var(--radius-sm, 6px);
-  background: var(--color-neutral-3);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-neutral-3, rgba(0, 0, 0, 0.04));
   color: var(--color-neutral-8);
   border: 1px solid var(--color-card-stroke);
 }
 
-.pill-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--color-accent);
-}
-
-.pill-origin .pill-dot {
-  background: var(--color-info);
-}
-
-.card-desc {
+.apple-card-desc {
   font-size: 12px;
   color: var(--color-neutral-6);
   margin: 0;
@@ -739,59 +755,60 @@ function getAccessRoleLabel(role?: string): string {
   overflow: hidden;
 }
 
-/* Card Footer Bar */
-.card-footer-bar {
-  padding: 10px 16px;
+/* Apple Footer */
+.apple-card-footer {
+  padding: 12px 18px;
   border-top: 1px solid var(--color-card-stroke);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--color-neutral-1, rgba(0, 0, 0, 0.015));
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-.card-timestamp {
+.footer-time {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-size: 11px;
   font-family: var(--font-mono, monospace);
   color: var(--color-neutral-6);
 }
 
-.card-action-bar {
+.apple-actions-group {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.action-btn {
-  width: 30px;
-  height: 30px;
-  border: 1px solid var(--color-neutral-4);
-  background: var(--color-neutral-2);
+.apple-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--color-card-stroke);
+  background: rgba(255, 255, 255, 0.8);
   color: var(--color-neutral-7);
-  border-radius: var(--radius-md, 8px);
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   transition: all var(--duration-fast, 150ms) var(--ease-breath);
-  flex-shrink: 0;
 }
 
-.action-btn:hover {
+.apple-action-btn:hover {
   background: var(--color-accent);
-  color: var(--color-text-on-accent, #ffffff);
+  color: #ffffff;
   border-color: var(--color-accent);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
 }
 
-.action-btn--danger:hover {
+.apple-action-btn--danger:hover {
   background: var(--color-error);
   color: #ffffff;
   border-color: var(--color-error);
-  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+  box-shadow: 0 6px 16px rgba(225, 29, 72, 0.35);
 }
 .action-btn--danger:hover {
   background: var(--color-error);
