@@ -545,17 +545,18 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   display: flex;
   flex-direction: column;
   padding: 20px 22px;
-  min-height: 185px;
-  height: auto;
+  height: 205px;
   box-sizing: border-box;
   justify-content: space-between;
   border-left: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.08));
+  overflow: hidden;
 }
 .archive-body {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  margin-bottom: 12px;
+  overflow: hidden;
 }
 .archive-title-row {
   display: flex;
@@ -563,6 +564,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 2px;
+  min-width: 0;
 }
 .archive-title {
   font-family: var(--font-serif);
@@ -571,6 +573,11 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   color: var(--color-neutral-10);
   margin: 0;
   line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 .archive-revision {
   font-size: 11px;
@@ -579,17 +586,22 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   background: var(--color-neutral-3, rgba(0, 0, 0, 0.04));
   padding: 1px 6px;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 .archive-subtitle {
   font-size: var(--text-copy-13);
   color: var(--color-neutral-6);
-  margin: 0 0 10px;
+  margin: 0 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .archive-tags {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
+  flex-wrap: nowrap;
+  margin-bottom: 6px;
+  overflow: hidden;
 }
 .meta-tag {
   display: inline-flex;
@@ -602,6 +614,10 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   background: var(--color-neutral-3, rgba(0, 0, 0, 0.04));
   color: var(--color-neutral-7);
   border: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.06));
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .meta-tag.origin-tag {
   color: var(--color-info, #0ea5e9);
@@ -614,12 +630,13 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 .archive-desc {
   font-size: 12px;
   color: var(--color-neutral-6);
-  margin: 4px 0 0;
-  line-height: 1.45;
+  margin: 2px 0 0;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .archive-foot {
