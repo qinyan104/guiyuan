@@ -269,57 +269,78 @@ function getAccessRoleLabel(role?: string): string {
             </div>
 
             <div class="archive-grid">
-              <article v-for="pub in publications" :key="pub.id" class="panel-glass archive-card" @click="openPublication(pub.id)">
-                <!-- Book Header Banner with Seal Crest & Role Badge -->
-                <div class="archive-header-banner">
-                  <div class="spine-decor"></div>
-                  <div class="surname-seal" title="典藏金石印章">
-                    <span>{{ getSurnameSeal(pub.title) }}</span>
-                  </div>
-                  <div class="role-badge" :class="pub.accessRole ? pub.accessRole.toLowerCase() : 'owner'">
-                    {{ getAccessRoleLabel(pub.accessRole) }}
+              <article v-for="pub in publications" :key="pub.id" class="panel-glass archive-card modern-linear-card" @click="openPublication(pub.id)">
+                <!-- Mini Tree Network Cover Canvas Banner -->
+                <div class="card-cover-wrapper">
+                  <svg class="tree-grid-pattern" width="100%" height="100%" viewBox="0 0 320 90" preserveAspectRatio="none" fill="none">
+                    <defs>
+                      <pattern :id="`grid-dots-${pub.id}`" width="16" height="16" patternUnits="userSpaceOnUse">
+                        <circle cx="2" cy="2" r="1" fill="var(--color-neutral-6)" opacity="0.35" />
+                      </pattern>
+                      <linearGradient :id="`cover-glow-${pub.id}`" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="var(--color-accent)" stop-opacity="0.18" />
+                        <stop offset="100%" stop-color="var(--color-info)" stop-opacity="0.03" />
+                      </linearGradient>
+                    </defs>
+                    <rect width="100%" height="100%" :fill="`url(#cover-glow-${pub.id})`" />
+                    <rect width="100%" height="100%" :fill="`url(#grid-dots-${pub.id})`" />
+                    <!-- Animated Topology Line Connections -->
+                    <path d="M 30 65 L 85 35 L 145 55 L 205 25 L 270 48" stroke="var(--color-accent)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.55" />
+                    <circle cx="30" cy="65" r="3" fill="var(--color-accent)" />
+                    <circle cx="85" cy="35" r="4" fill="var(--color-accent)" />
+                    <circle cx="145" cy="55" r="3" fill="var(--color-info)" />
+                    <circle cx="205" cy="25" r="4" fill="var(--color-accent)" />
+                    <circle cx="270" cy="48" r="3" fill="var(--color-info)" />
+                  </svg>
+
+                  <!-- Top Badge Row -->
+                  <div class="cover-badge-row">
+                    <span class="modern-badge role-badge" :class="pub.accessRole ? pub.accessRole.toLowerCase() : 'owner'">
+                      {{ getAccessRoleLabel(pub.accessRole) }}
+                    </span>
+                    <span class="modern-badge rev-badge">REV.{{ pub.revision }}</span>
                   </div>
                 </div>
 
-                <div class="archive-body">
-                  <div class="title-row">
-                    <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
-                    <span class="revision-chip">v{{ pub.revision }}</span>
+                <!-- Card Content Body -->
+                <div class="card-content-body">
+                  <div class="card-title-group">
+                    <h3 class="card-main-title">{{ pub.title || '未命名宗谱' }}</h3>
+                    <p v-if="pub.subtitle" class="card-sub-title">{{ pub.subtitle }}</p>
                   </div>
-                  <p v-if="pub.subtitle" class="archive-subtitle">{{ pub.subtitle }}</p>
 
-                  <!-- Meta Tags: Hall name & Ancestral Origin -->
-                  <div class="archive-tags" v-if="pub.info?.hallName || pub.info?.ancestralOrigin">
-                    <span v-if="pub.info?.hallName" class="meta-tag hall-tag">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11" /></svg>
-                      {{ pub.info.hallName }}
+                  <!-- Metadata Badges Row -->
+                  <div class="card-meta-row" v-if="pub.info?.hallName || pub.info?.ancestralOrigin">
+                    <span v-if="pub.info?.hallName" class="modern-pill pill-hall">
+                      <span class="pill-dot"></span> {{ pub.info.hallName }}
                     </span>
-                    <span v-if="pub.info?.ancestralOrigin" class="meta-tag origin-tag">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
-                      {{ pub.info.ancestralOrigin }}
+                    <span v-if="pub.info?.ancestralOrigin" class="modern-pill pill-origin">
+                      <span class="pill-dot"></span> {{ pub.info.ancestralOrigin }}
                     </span>
                   </div>
 
-                  <p v-if="pub.info?.description" class="archive-desc">{{ pub.info.description }}</p>
+                  <p v-if="pub.info?.description" class="card-desc">{{ pub.info.description }}</p>
                 </div>
 
-                <div class="archive-foot">
-                  <div class="archive-date-info">
+                <!-- Card Footer Bar -->
+                <div class="card-footer-bar">
+                  <div class="card-timestamp">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span>{{ formatDate(pub.updatedAt) }}</span>
                   </div>
-                  <div class="archive-actions">
+
+                  <div class="card-action-bar">
                     <button class="action-btn" title="编辑属性" @click.stop="openEditDialog(pub)">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                     </button>
                     <button class="action-btn" title="协作者管理" @click.stop="openCollabDialog(pub.id)">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 1 0 7.75" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 1 0 7.75" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                     </button>
                     <button class="action-btn" title="分享链接" @click.stop="openShareDialog(pub.id)">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                     </button>
                     <button class="action-btn action-btn--danger" title="删除档案" @click.stop="deleteConfirmId = pub.id">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                     </button>
                   </div>
                 </div>
@@ -560,208 +581,217 @@ function getAccessRoleLabel(role?: string): string {
 .archive-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 22px;
+  gap: 24px;
 }
-.archive-card {
+
+/* Modern Linear/Vercel Style Card */
+.archive-card.modern-linear-card {
   display: flex;
   flex-direction: column;
   padding: 0;
-  min-height: 200px;
+  border-radius: var(--radius-2xl, 20px);
+  min-height: 250px;
+  background: var(--color-card-fill, var(--color-neutral-2));
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: var(--shadow-whisper);
+  transition: transform var(--duration-fast, 150ms) var(--ease-spring-gentle, cubic-bezier(0.34, 1.56, 0.64, 1)),
+              box-shadow var(--duration-fast, 150ms) var(--ease-breath),
+              border-color var(--duration-fast, 150ms) var(--ease-breath);
+  position: relative;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
-/* Card Banner */
-.archive-header-banner {
-  height: 46px;
-  background: linear-gradient(90deg, var(--color-accent-muted, rgba(37, 99, 235, 0.08)), transparent);
+.archive-card.modern-linear-card:hover {
+  transform: translateY(-6px) scale(1.015);
+  border-color: var(--color-accent);
+  box-shadow: 0 16px 36px -8px rgba(37, 99, 235, 0.18), var(--shadow-whisper);
+}
+
+/* Mini Tree Network Cover Canvas */
+.card-cover-wrapper {
+  height: 90px;
+  position: relative;
   border-bottom: 1px solid var(--color-card-stroke);
+  overflow: hidden;
+}
+
+.tree-grid-pattern {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cover-badge-row {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  right: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  position: relative;
+  z-index: 2;
 }
 
-.spine-decor {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--color-accent-gradient);
-}
-
-.surname-seal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background: var(--color-accent-gradient);
-  color: var(--color-text-on-accent, #ffffff);
-  font-family: var(--font-serif);
-  font-size: 14px;
+.modern-badge {
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
   font-weight: 700;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  margin-left: 4px;
-}
-
-.role-badge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
   border-radius: 999px;
-  background: var(--color-neutral-3);
-  color: var(--color-neutral-7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-.role-badge.owner {
-  background: var(--color-accent-muted);
+.modern-badge.role-badge {
+  background: var(--color-accent-muted, rgba(37, 99, 235, 0.12));
   color: var(--color-accent);
+  border: 1px solid var(--color-accent-muted);
 }
 
-.role-badge.editor {
-  background: var(--color-info-muted);
+.modern-badge.role-badge.editor {
+  background: var(--color-info-muted, rgba(14, 165, 233, 0.12));
   color: var(--color-info);
+  border-color: var(--color-info-muted);
 }
 
-/* Card Body */
-.archive-body {
+.modern-badge.rev-badge {
+  background: var(--color-neutral-3, rgba(0, 0, 0, 0.06));
+  color: var(--color-neutral-7);
+  border: 1px solid var(--color-card-stroke);
+}
+
+/* Card Content Body */
+.card-content-body {
   flex: 1;
-  padding: 14px 18px 10px;
+  padding: 16px 18px 12px;
   display: flex;
   flex-direction: column;
 }
 
-.title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 2px;
-}
-
-.archive-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-title-18, 18px);
-  font-weight: 600;
-  color: var(--color-neutral-10);
-  margin: 0;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.revision-chip {
-  font-size: 11px;
-  font-family: var(--font-mono, monospace);
-  font-weight: 500;
-  color: var(--color-neutral-6);
-  background: var(--color-neutral-3);
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-}
-
-.archive-subtitle {
-  font-size: var(--text-copy-13, 13px);
-  color: var(--color-neutral-6);
-  margin: 0 0 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.archive-tags {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+.card-title-group {
   margin-bottom: 8px;
 }
 
-.meta-tag {
+.card-main-title {
+  font-family: var(--font-sans);
+  font-size: var(--text-title-18, 18px);
+  font-weight: 700;
+  color: var(--color-neutral-10);
+  margin: 0 0 2px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-sub-title {
+  font-size: var(--text-copy-13, 13px);
+  color: var(--color-neutral-6);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-meta-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.modern-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: var(--radius-sm, 6px);
   background: var(--color-neutral-3);
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  color: var(--color-neutral-7);
+  color: var(--color-neutral-8);
+  border: 1px solid var(--color-card-stroke);
 }
 
-.meta-tag.hall-tag {
-  background: var(--color-accent-muted);
-  color: var(--color-accent);
+.pill-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-accent);
 }
 
-.meta-tag.origin-tag {
-  background: var(--color-info-muted);
-  color: var(--color-info);
+.pill-origin .pill-dot {
+  background: var(--color-info);
 }
 
-.archive-desc {
+.card-desc {
   font-size: 12px;
   color: var(--color-neutral-6);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* Card Foot */
-.archive-foot {
+/* Card Footer Bar */
+.card-footer-bar {
   padding: 10px 16px;
   border-top: 1px solid var(--color-card-stroke);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--color-neutral-1, rgba(0, 0, 0, 0.015));
 }
 
-.archive-date-info {
+.card-timestamp {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 11px;
+  font-family: var(--font-mono, monospace);
   color: var(--color-neutral-6);
 }
 
-.archive-actions {
+.card-action-bar {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-/* ── Action buttons ── */
 .action-btn {
   width: 30px;
   height: 30px;
   border: 1px solid var(--color-neutral-4);
   background: var(--color-neutral-2);
-  color: var(--color-neutral-6);
-  border-radius: var(--radius-md);
+  color: var(--color-neutral-7);
+  border-radius: var(--radius-md, 8px);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--duration-fast) var(--ease-breath);
+  transition: all var(--duration-fast, 150ms) var(--ease-breath);
   flex-shrink: 0;
-  box-sizing: border-box;
 }
-.action-btn svg {
-  width: 14px; height: 14px;
-}
+
 .action-btn:hover {
   background: var(--color-accent);
-  color: var(--color-text-on-accent, #fff);
+  color: var(--color-text-on-accent, #ffffff);
   border-color: var(--color-accent);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.action-btn--danger:hover {
+  background: var(--color-error);
+  color: #ffffff;
+  border-color: var(--color-error);
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
 }
 .action-btn--danger:hover {
   background: var(--color-error);
