@@ -1,4 +1,4 @@
-﻿/*
+/*
  * 归源 · 全局样式（最小集）
  *
  * 仅保留：字体导入、token 兼容桥接、全局 reset、减弱动效。
@@ -61,6 +61,36 @@ textarea {
 
 #app {
   min-height: 100vh;
+  --scrim-bg: var(--color-overlay);
+  --editor-panel-bg: var(--color-panel-bg);
+  --btn-primary-bg: var(--color-accent);
+  --btn-primary-color: var(--color-text-on-accent);
+  --btn-secondary-bg: var(--color-neutral-3);
+  --btn-secondary-color: var(--color-neutral-9);
+  --btn-secondary-border: var(--color-neutral-5);
+  --feedback-bg: var(--color-neutral-2);
+  --feedback-border: var(--color-success-muted);
+  --feedback-color: var(--color-neutral-9);
+  --feedback-error-bg: var(--color-neutral-2);
+  --feedback-error-border: var(--color-error-muted);
+  --feedback-error-color: var(--color-error);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+#app {
+  min-height: 100vh;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -78,4 +108,42 @@ textarea {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   系统级按钮微压感触感与路由 View Transition 动效
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+button,
+.btn,
+.action-btn,
+.action-icon-btn,
+.apple-action-btn {
+  transition: transform var(--duration-fast, 150ms) var(--ease-breath, cubic-bezier(0.16, 1, 0.3, 1)),
+              box-shadow var(--duration-fast, 150ms) var(--ease-breath, cubic-bezier(0.16, 1, 0.3, 1)),
+              background-color var(--duration-fast, 150ms) var(--ease-breath, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+button:active,
+.btn:active,
+.action-btn:active,
+.action-icon-btn:active,
+.apple-action-btn:active {
+  transform: scale(0.96) translateY(1px) !important;
+}
+
+/* 页面切换 Fade 淡入淡出过渡 */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 220ms ease, transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px) scale(0.995);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.998);
 }

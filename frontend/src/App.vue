@@ -1,8 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { bootstrapAuthSession } from './api/authSession'
 import { getAccessToken } from './api/tokenStore'
+import CommandKPalette from './components/CommandKPalette.vue'
 import BaseDialog from './components/BaseDialog.vue'
 import ToastHost from './components/ToastHost.vue'
 
@@ -42,8 +43,14 @@ onMounted(async () => {
     <span class="app-loading-text">正在恢复登录状态...</span>
   </div>
 
-  <router-view v-else />
+  <router-view v-else v-slot="{ Component }">
+    <transition name="page-fade" mode="out-in">
+      <component :is="Component" />
+    </transition>
+  </router-view>
+
   <ToastHost />
+  <CommandKPalette />
 
   <!-- 并发冲突弹窗 -->
   <BaseDialog :visible="!!conflictMessage" title="数据版本冲突" z-index="var(--z-critical)" @update:visible="conflictMessage = null">
@@ -85,6 +92,4 @@ onMounted(async () => {
 @keyframes app-spin {
   to { transform: rotate(360deg); }
 }
-
-
 </style>
