@@ -337,11 +337,11 @@
   --color-neutral-9: #E3E1DB;   /* 默认正文色：象牙灰白 */
   --color-neutral-10: #F3F2EE;  /* 标题、最强强调 */
 
-  /* 强调色 — 冰霜月华（冷月银霜清辉） */
-  --color-accent: #C8D6E5;
-  --color-accent-deep: #7C91A6;
-  --color-accent-light: #E2ECF7;
-  --color-accent-muted: rgba(200, 214, 229, 0.14);
+  /* 强调色 — 星夜霁蓝（玄墨星空深邃蔚蓝） */
+  --color-accent: #437EEB;
+  --color-accent-deep: #254F9E;
+  --color-accent-light: #6A9BF7;
+  --color-accent-muted: rgba(67, 126, 235, 0.16);
   --color-accent-gradient: linear-gradient(145deg, var(--color-accent-deep), var(--color-accent));
 
   /* 语义色 — 各提亮约 15% */
@@ -365,7 +365,7 @@
   --color-deceased: #807E7A;
 
   --color-tree-line: rgba(128, 126, 122, 0.5);
-  --color-tree-line-selected: #C8D6E5;
+  --color-tree-line-selected: #437EEB;
 
   --color-card-fill: var(--color-neutral-2);
   --color-card-stroke: rgba(255, 255, 255, 0.04);
@@ -376,7 +376,7 @@
   --color-canvas-grid: rgba(84, 82, 79, 0.15);
   --color-minimap-bg: rgba(12, 12, 11, 0.9);
   --color-minimap-node: rgba(128, 126, 122, 0.4);
-  --color-minimap-node-selected: rgba(200, 214, 229, 0.85);
+  --color-minimap-node-selected: rgba(67, 126, 235, 0.88);
 
   --color-panel-bg: rgba(22, 21, 19, 0.96);
   --color-overlay: rgba(0, 0, 0, 0.5);
@@ -401,13 +401,13 @@
 
   /* 落地页暗色覆写 — 纯灰三段，降朱砂光强度避免暗底过亮 */
   --bg-landing-gradient: linear-gradient(180deg, #0C0C0B 0%, #151413 48%, #1C1B1A 100%);
-  --bg-landing-glow: rgba(200, 214, 229, 0.08);
+  --bg-landing-glow: rgba(67, 126, 235, 0.08);
   --bg-landing-vignette: rgba(0, 0, 0, 0.24);
   --bg-landing-grid: rgba(255, 255, 255, 0.015);
 
   --shadow-whisper: 0 4px 24px rgba(0, 0, 0, 0.25);
   --shadow-ring: 0 0 0 1px rgba(255, 255, 255, 0.06);
-  --shadow-accent: 0 12px 32px rgba(180, 205, 230, 0.16);  /* 冰霜月华清冷阴影 */
+  --shadow-accent: 0 12px 32px rgba(45, 95, 190, 0.22);  /* 星夜霁蓝深邃阴影 */
 
   color-scheme: dark;
 }

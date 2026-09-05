@@ -52,11 +52,11 @@ export const THEME_PRESETS: ThemeOption[] = [
   },
   {
     id: 'dark',
-    name: '玄墨 · 月魄',
-    desc: '深墨底色与冰霜月华，清冷出尘夜读护眼',
+    name: '玄墨 · 霁蓝',
+    desc: '深墨底色与星夜霁蓝，清邃静谧夜读护眼',
     bgPreview: '#0C0C0B',
     cardPreview: '#161513',
-    accentColor: '#C8D6E5',
+    accentColor: '#437EEB',
     textColor: '#E3E1DB',
   },
 ]
