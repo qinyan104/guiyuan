@@ -126,6 +126,33 @@ small, .text-small {
   border-radius: var(--radius-sm);
 }
 
+button:focus-visible,
+.btn:focus-visible,
+.action-btn:focus-visible,
+.action-icon-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+.card:focus-visible,
+.panel-glass:focus-visible,
+.archive-card:focus-visible,
+.template-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--color-accent-muted);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    滚动条
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -257,7 +284,7 @@ input[type="radio"] {
 
 .btn--primary:hover {
   filter: brightness(1.08);
-  box-shadow: 0 8px 24px rgba(198, 60, 46, 0.22);
+  box-shadow: 0 8px 24px var(--color-accent-muted);
 }
 
 .btn--secondary {

@@ -218,10 +218,10 @@ onUnmounted(() => {
   gap: 6px;
   width: 100%;
   padding: 7px 12px;
-  border: 1px solid var(--color-neutral-4, rgba(0, 0, 0, 0.12));
-  border-radius: var(--radius-md, 8px);
-  background: var(--color-neutral-2, #FAF9F6);
-  color: var(--color-neutral-9, #1C1A17);
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-2);
+  color: var(--color-neutral-9);
   font: inherit;
   font-size: var(--text-copy-14, 14px);
   cursor: pointer;
@@ -248,7 +248,7 @@ onUnmounted(() => {
   text-overflow: ellipsis;
 }
 .app-select__value.placeholder {
-  color: var(--color-neutral-6, #8C8473);
+  color: var(--color-neutral-6);
   font-weight: 400;
 }
 
@@ -304,11 +304,11 @@ onUnmounted(() => {
 .app-select__dropdown {
   z-index: calc(var(--z-modal, 2000) + 1);
   overflow-y: auto;
-  background: var(--color-panel-bg, rgba(250, 249, 246, 0.96));
+  background: var(--color-panel-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.08));
-  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-whisper);
   padding: 4px;
 }
@@ -319,7 +319,7 @@ onUnmounted(() => {
   background: transparent;
 }
 .app-select__dropdown::-webkit-scrollbar-thumb {
-  background: var(--color-neutral-4, rgba(0, 0, 0, 0.15));
+  background: var(--color-neutral-4);
   border-radius: 3px;
 }
 
@@ -348,7 +348,7 @@ onUnmounted(() => {
 }
 .app-select__option:hover,
 .app-select__option.highlighted {
-  background: var(--color-accent-muted, rgba(37, 99, 235, 0.08));
+  background: var(--color-accent-muted);
 }
 .app-select__option:hover::after,
 .app-select__option.highlighted::after {

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * 归源 · 旧变量兼容桥接 (Compat Bridge)
  *
  * 将旧的 CSS 自定义属性映射到新的 Yohaku 设计 token。
@@ -59,7 +59,7 @@
   --card-dark-color: var(--color-neutral-1);
 
   /* ── 树连线 ── */
-  --tree-line-color: #000;
+  --tree-line-color: var(--color-tree-line, var(--color-neutral-5));
 
   /* ── 画布 ── */
   --canvas-grid-color: var(--color-canvas-grid);
@@ -74,7 +74,7 @@
 
   /* ── 按钮 ── */
   --btn-primary-bg: var(--color-accent);
-  --btn-primary-color: #fff;
+  --btn-primary-color: var(--color-text-on-accent, #fff);
   --btn-primary-hover-bg: var(--color-accent-light);
   --btn-secondary-bg: var(--color-neutral-2);
   --btn-secondary-color: var(--color-neutral-9);
@@ -83,8 +83,8 @@
   /* ── 危险/错误 ── */
   --danger-title: var(--color-error);
   --danger-text: var(--color-error);
-  --danger-bg: rgba(196, 58, 49, 0.08);
-  --danger-border: rgba(196, 58, 49, 0.18);
+  --danger-bg: var(--color-error-muted);
+  --danger-border: var(--color-error-muted);
   --danger-btn-color: var(--color-error);
 
   /* ── 任务状态色 ── */
@@ -122,7 +122,7 @@
 
   /* ── 按钮变体 ── */
   --accent-btn-bg: var(--color-accent);
-  --accent-btn-color: #fff;
+  --accent-btn-color: var(--color-text-on-accent, #fff);
 
   /* ── 状态色 ── */
   --status-success-bg: rgba(94, 159, 126, 0.12);
@@ -162,14 +162,14 @@
   --line-soft: var(--color-card-stroke);
   --border-color: var(--color-card-stroke);
   --divider: var(--color-card-stroke);
-  --tree-line-color: #fff;
+  --tree-line-color: var(--color-tree-line);
 
   --surface: var(--color-neutral-2);
   --surface-alt: var(--color-neutral-3);
 
   --card-panel-stroke: var(--color-card-stroke);
-  --card-name-fill: #fff;
-  --card-compact-name-fill: #fff;
+  --card-name-fill: var(--color-neutral-10);
+  --card-compact-name-fill: var(--color-neutral-10);
   --card-status-fill: var(--color-neutral-8);
   --card-detail-fill: var(--color-neutral-9);
   --card-inner-stroke: var(--color-card-stroke);

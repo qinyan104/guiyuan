@@ -215,7 +215,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
               <span class="dot-ember"></span> 经典王朝世系模板
             </div>
             <div class="template-grid">
-              <div v-for="sample in builtinSamples" :key="sample.id" class="panel-glass template-card" @click="handleViewSample(sample)">
+              <div v-for="sample in builtinSamples" :key="sample.id" class="panel-glass template-card" tabindex="0" role="button" :aria-label="'模板：' + sample.publication.title" @click="handleViewSample(sample)" @keydown.enter.self="handleViewSample(sample)" @keydown.space.self.prevent="handleViewSample(sample)">
                 <div class="template-bg"></div>
                 <div class="template-content">
                   <h3 class="template-title">{{ sample.publication.title }}</h3>
@@ -247,7 +247,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
             </div>
 
             <div class="archive-grid">
-              <article v-for="pub in publications" :key="pub.id" class="panel-glass archive-card" @click="openPublication(pub.id)">
+              <article v-for="pub in publications" :key="pub.id" class="panel-glass archive-card" tabindex="0" role="button" :aria-label="'宗谱：' + (pub.title || '未命名宗谱')" @click="openPublication(pub.id)" @keydown.enter.self="openPublication(pub.id)" @keydown.space.self.prevent="openPublication(pub.id)">
                 <div class="archive-body">
                   <div class="archive-title-row">
                     <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
@@ -480,6 +480,11 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 .panel-glass:hover {
   transform: translateY(-4px);
 }
+.panel-glass:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--color-accent-muted);
+}
 
 /* ── Template Grid ── */
 .template-grid {
@@ -620,12 +625,12 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   white-space: nowrap;
 }
 .meta-tag.origin-tag {
-  color: var(--color-info, #0ea5e9);
-  background: var(--color-info-muted, rgba(14, 165, 233, 0.08));
+  color: var(--color-info);
+  background: var(--color-info-muted);
 }
 .meta-tag.hall-tag {
-  color: var(--color-accent, #2563eb);
-  background: var(--color-accent-muted, rgba(37, 99, 235, 0.08));
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
 }
 .archive-desc {
   font-size: 12px;
@@ -678,10 +683,20 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   color: var(--color-neutral-1);
   border-color: var(--color-neutral-9);
 }
+.action-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
 .action-btn--danger:hover {
   background: var(--color-error);
-  color: #fff;
+  color: var(--color-text-on-accent, #fff);
   border-color: var(--color-error);
+}
+.action-btn--danger:focus-visible {
+  outline: 2px solid var(--color-error);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--color-error-muted);
 }
 
 .meta-tag {

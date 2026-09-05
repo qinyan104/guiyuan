@@ -531,6 +531,12 @@ input:disabled {
   color: var(--color-neutral-10);
 }
 
+.btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
 .btn:disabled {
   cursor: not-allowed;
   opacity: 0.5;
@@ -551,7 +557,7 @@ input:disabled {
 .btn--danger {
   background: var(--color-error);
   border-color: var(--color-error);
-  color: #fff;
+  color: var(--color-text-on-accent, #fff);
 }
 
 .admin-panel {

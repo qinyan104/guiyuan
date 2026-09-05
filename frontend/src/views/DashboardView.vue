@@ -367,10 +367,10 @@ async function handleCreateFromDashboard() {
 .card-glass-panel {
   position: relative;
   z-index: 1;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--color-glass-bg);
   backdrop-filter: blur(12px) saturate(120%);
   -webkit-backdrop-filter: blur(12px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--color-glass-border-highlight);
   border-radius: var(--radius-xl);
   padding: 2rem;
   display: flex;

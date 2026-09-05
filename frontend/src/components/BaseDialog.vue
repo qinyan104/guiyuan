@@ -149,6 +149,11 @@ watch(() => props.visible, (v) => {
   color: var(--color-neutral-9);
 }
 
+.base-dialog__close:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 .base-dialog__body {
   padding: 16px 24px 24px;
 }

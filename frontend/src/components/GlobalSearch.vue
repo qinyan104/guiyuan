@@ -212,9 +212,9 @@ onBeforeUnmount(() => {
 }
 
 .search-input-wrapper:focus-within {
-  border-color: var(--accent-signal, var(--color-accent));
-  box-shadow: var(--shadow-ring);
-  background: var(--glass-bg, var(--color-neutral-1));
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+  background: var(--color-neutral-1);
 }
 
 .search-icon {
@@ -243,13 +243,13 @@ onBeforeUnmount(() => {
 .search-kbd {
   font-size: 11px;
   font-family: var(--font-mono);
-  color: var(--color-neutral-6, #8C8473);
-  background: var(--color-neutral-3, rgba(0, 0, 0, 0.05));
-  border: 1px solid var(--color-neutral-4, rgba(0, 0, 0, 0.1));
-  border-radius: var(--radius-sm, 4px);
+  color: var(--color-neutral-6);
+  background: var(--color-neutral-3);
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-sm);
   padding: 2px 6px;
   user-select: none;
-  pointer-events: none;
+  cursor: pointer;
   font-weight: 600;
 }
 
@@ -257,8 +257,8 @@ onBeforeUnmount(() => {
 .search-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid var(--glass-border-shadow, var(--color-neutral-2));
-  border-top-color: var(--accent-signal, var(--color-accent));
+  border: 2px solid var(--color-neutral-4);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
   flex-shrink: 0;

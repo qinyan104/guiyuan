@@ -30,7 +30,7 @@
   --minimap-bg: var(--color-minimap-bg);
   --minimap-node: var(--color-minimap-node);
   --minimap-node-selected: var(--color-minimap-node-selected);
-  --tree-line-color: #000;
+  --tree-line-color: var(--color-tree-line, var(--color-neutral-5));
   --scrim-bg: var(--color-overlay);
   --editor-panel-bg: var(--color-panel-bg);
   --btn-primary-bg: var(--color-accent);
@@ -76,22 +76,6 @@ textarea {
   --feedback-error-color: var(--color-error);
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-}
-
-textarea {
-  resize: vertical;
-}
-
-#app {
-  min-height: 100vh;
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    减弱动效
