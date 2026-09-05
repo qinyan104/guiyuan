@@ -72,6 +72,12 @@ function updatePersonGender(genderVal: string) {
   emit("update-person-gender", genderVal as Gender)
 }
 
+function handleUploadAvatarClick(e: MouseEvent) {
+  const container = (e.currentTarget as HTMLElement)?.closest('.ped-avatar-container')
+  const fileInput = container?.querySelector<HTMLInputElement>('.ped-avatar-file-input')
+  fileInput?.click()
+}
+
 async function handleUploadAvatar(event: Event) {
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
@@ -199,14 +205,10 @@ onBeforeUnmount(() => {
     <Transition name="ped-fade">
       <div v-if="open" class="ped-overlay" @click.self="$emit('close')">
         <article class="ped-card" role="dialog" aria-label="编辑人物" @click.stop>
-          <!-- Elegant Classical Header -->
+          <!-- Clean Header -->
           <header class="ped-header">
             <div class="ped-header-left">
-              <span class="ped-seal">人</span>
-              <div class="ped-header-meta">
-                <h3 class="ped-header-title">人物谱帙</h3>
-                <span class="ped-header-sub">厘正世系 · 勘录行状</span>
-              </div>
+              <h3 class="ped-header-title">编辑人物</h3>
             </div>
 
             <div class="ped-header-right">
@@ -220,14 +222,19 @@ onBeforeUnmount(() => {
           <div class="ped-body">
             <!-- Left Side: Avatar, Name, Context Tags & Details -->
             <div class="ped-sidebar">
-              <label class="ped-avatar-wrap" title="点击上传/更换人物照片">
-                <img v-if="person.avatarUrl" :src="person.avatarUrl" class="ped-avatar-img" />
-                <div v-else class="ped-avatar-placeholder">
-                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="4" stroke="currentColor" stroke-width="1.3" /><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
-                  <span class="ped-avatar-tip">传图存照</span>
-                </div>
-                <input type="file" accept="image/*" class="ped-avatar-file-input" @change="handleUploadAvatar" />
-              </label>
+              <div class="ped-avatar-container">
+                <label :class="['ped-avatar-wrap', { 'has-avatar': Boolean(person.avatarUrl) }]" title="点击上传/更换人物照片">
+                  <img v-if="person.avatarUrl" :src="person.avatarUrl" class="ped-avatar-img" />
+                  <div v-else class="ped-avatar-placeholder">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="9" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                    <span class="ped-avatar-tip">上传照片</span>
+                  </div>
+                  <input type="file" accept="image/*" class="ped-avatar-file-input" @change="handleUploadAvatar" />
+                </label>
+                <button v-if="person.avatarUrl" type="button" class="ped-change-photo-btn" @click="handleUploadAvatarClick">
+                  更换照片
+                </button>
+              </div>
 
               <div class="ped-identity-wrap">
                 <input
@@ -319,7 +326,6 @@ onBeforeUnmount(() => {
                         <span class="ped-person-avatar-circle">{{ spouse.name.charAt(0) }}</span>
                         <span class="ped-person-name">{{ spouse.name }}</span>
                       </button>
-                      <button v-if="canSwapAdults" class="ped-aux-btn" @click="$emit('swap-partners')">调整顺位</button>
                       <button class="ped-aux-btn ped-aux-btn--danger" @click="$emit('remove-spouse')">解除关联</button>
                     </template>
                     <button v-else-if="canAddSpouse" class="ped-add-btn" @click="$emit('add-spouse')">+ 添加配偶</button>
@@ -487,41 +493,12 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-.ped-seal {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  border: 1.5px solid var(--color-accent);
-  color: var(--color-accent);
-  background: var(--color-accent-muted, rgba(184, 51, 42, 0.08));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-serif);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.ped-header-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
 .ped-header-title {
-  font-family: var(--font-serif);
   font-size: 16px;
   font-weight: 600;
   color: var(--color-neutral-10);
   margin: 0;
   line-height: 1.3;
-}
-
-.ped-header-sub {
-  font-size: 11.5px;
-  color: var(--color-neutral-6);
-  font-family: var(--font-serif);
 }
 
 .ped-close-btn {
@@ -566,31 +543,66 @@ onBeforeUnmount(() => {
   background: var(--color-neutral-1, rgba(0, 0, 0, 0.01));
 }
 
+.ped-avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
 .ped-avatar-wrap {
   position: relative;
-  width: 100px;
-  height: 100px;
-  border-radius: var(--radius-lg, 14px);
-  border: 1.5px dashed var(--color-card-stroke);
-  background: var(--color-neutral-2);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  overflow: hidden;
   flex-shrink: 0;
   transition: all var(--duration-fast, 150ms) var(--ease-breath);
 }
 
-.ped-avatar-wrap:hover {
+.ped-avatar-wrap:not(.has-avatar) {
+  width: 90px;
+  height: 90px;
+  border-radius: 8px;
+  border: 1px dashed var(--color-neutral-4);
+  background: var(--color-neutral-2);
+}
+
+.ped-avatar-wrap:not(.has-avatar):hover {
   border-color: var(--color-accent);
   background: var(--color-accent-muted);
 }
 
+.ped-avatar-wrap.has-avatar {
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: 140px;
+  max-height: 140px;
+}
+
 .ped-avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 140px;
+  max-height: 140px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: none;
+  display: block;
+}
+
+.ped-change-photo-btn {
+  font-size: 11px;
+  color: var(--color-neutral-6);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.ped-change-photo-btn:hover {
+  color: var(--color-accent);
+  background: var(--color-neutral-2);
 }
 
 .ped-avatar-placeholder {
@@ -602,8 +614,7 @@ onBeforeUnmount(() => {
 }
 
 .ped-avatar-tip {
-  font-size: 10.5px;
-  font-family: var(--font-serif);
+  font-size: 11px;
   color: var(--color-neutral-6);
 }
 
@@ -920,13 +931,7 @@ onBeforeUnmount(() => {
   cursor: grabbing;
 }
 
-.ped-person-chip.is-male {
-  border-left: 3px solid #2563eb;
-}
 
-.ped-person-chip.is-female {
-  border-left: 3px solid #db2777;
-}
 
 .ped-person-avatar-circle {
   display: flex;
