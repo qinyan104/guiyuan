@@ -2,8 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePublicationState } from '../composables/usePublicationState'
-import { useUiStore } from '../stores/ui'
-import type { ThemeId } from '../stores/ui'
+import { useUiStore, THEME_PRESETS } from '../stores/ui'
 
 const router = useRouter()
 
@@ -33,13 +32,6 @@ interface CommandItem {
   category: 'action' | 'publication' | 'theme' | 'tool'
   icon: string
   action: () => void
-}
-
-const themeNames: Record<ThemeId, string> = {
-  paper: '经典宣纸 (Classic Paper)',
-  slate: '现代极简 (Slate Minimal)',
-  snow: '纯净雪白 (Pure White)',
-  dark: '玄墨夜景 (Deep Dark)',
 }
 
 const staticCommands = computed<CommandItem[]>(() => [
@@ -76,10 +68,10 @@ const staticCommands = computed<CommandItem[]>(() => [
       isOpen.value = false
     },
   },
-  ...((['slate', 'snow', 'dark', 'paper'] as ThemeId[]).map((themeId) => ({
+  ...(THEME_PRESETS.map(({ id: themeId, name }) => ({
     id: `theme-${themeId}`,
-    title: `切换为：${themeNames[themeId]}`,
-    subtitle: uiStore?.theme === themeId ? '当前正在使用' : '一键转换全站色彩风骨',
+    title: `切换为：${name}`,
+    subtitle: uiStore?.currentTheme === themeId ? '当前正在使用' : '切换界面配色',
     category: 'theme' as const,
     icon: 'palette',
     action: () => {

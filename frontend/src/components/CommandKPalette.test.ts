@@ -1,6 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import CommandKPalette from './CommandKPalette.vue'
+import { THEME_PRESETS } from '../stores/ui'
+
+enableAutoUnmount(afterEach)
+const mockSetTheme = vi.fn()
 
 const mockPush = vi.fn()
 vi.mock('vue-router', () => ({
@@ -13,10 +17,11 @@ vi.mock('vue-router', () => ({
   }),
 }))
 
-vi.mock('../stores/ui', () => ({
+vi.mock('../stores/ui', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../stores/ui')>(),
   useUiStore: () => ({
-    theme: 'slate',
-    setTheme: vi.fn(),
+    currentTheme: 'slate',
+    setTheme: mockSetTheme,
   }),
 }))
 
@@ -40,11 +45,24 @@ vi.mock('../composables/usePublicationState', () => ({
 describe('CommandKPalette', () => {
   beforeEach(() => {
     mockPush.mockReset()
+    mockSetTheme.mockReset()
   })
 
   function mountComponent() {
     return mount(CommandKPalette, { attachTo: document.body })
   }
+
+  it.each(THEME_PRESETS)('switches $id using the shared theme preset', async ({ id, name }) => {
+    mountComponent()
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
+    await flushPromises()
+    const item = [...document.querySelectorAll<HTMLElement>('.command-item')]
+      .find(element => element.textContent?.includes(`切换为：${name}`))
+    expect(item).toBeDefined()
+    item!.click()
+    await flushPromises()
+    expect(mockSetTheme).toHaveBeenCalledWith(id)
+  })
 
   it('opens palette when Ctrl+K is pressed', async () => {
     mountComponent()

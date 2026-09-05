@@ -16,6 +16,7 @@ function selectTheme(themeId: ThemeMode) {
       type="button"
       class="theme-card"
       :class="{ 'is-active': uiStore.currentTheme === preset.id }"
+      :aria-pressed="uiStore.currentTheme === preset.id"
       @click="selectTheme(preset.id)"
     >
       <div
@@ -46,7 +47,7 @@ function selectTheme(themeId: ThemeMode) {
 <style scoped>
 .theme-selector-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 16px;
   width: 100%;
 }
@@ -77,6 +78,11 @@ function selectTheme(themeId: ThemeMode) {
 .theme-card.is-active {
   border-color: var(--color-accent, #C63C2E);
   box-shadow: 0 0 0 2px var(--color-accent-muted, rgba(198, 60, 46, 0.15)), var(--shadow-whisper);
+}
+
+.theme-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
 }
 
 .theme-card__preview {

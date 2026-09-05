@@ -31,9 +31,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="dropdownRoot" class="theme-toggle-container">
+  <div ref="dropdownRoot" class="theme-toggle-container" @keydown.esc="isOpen = false">
     <button
       class="dark-toggle"
+      type="button"
+      aria-label="切换界面主题"
+      :aria-expanded="isOpen"
       :title="'界面主题: ' + uiStore.THEME_PRESETS.find(p => p.id === uiStore.currentTheme)?.name"
       @click="toggleMenu"
     >
@@ -91,6 +94,8 @@ onBeforeUnmount(() => {
             v-for="preset in uiStore.THEME_PRESETS"
             :key="preset.id"
             class="theme-popover-item"
+            type="button"
+            :aria-pressed="uiStore.currentTheme === preset.id"
             :class="{ 'is-active': uiStore.currentTheme === preset.id }"
             @click="selectTheme(preset.id)"
           >

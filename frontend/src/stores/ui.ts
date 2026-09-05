@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watchEffect } from 'vue'
 
-export type ThemeMode = 'paper' | 'slate' | 'pure' | 'dark'
+export type ThemeMode = 'paper' | 'slate' | 'pure' | 'pine' | 'dark'
 
 export interface ThemeOption {
   id: ThemeMode
@@ -25,26 +25,35 @@ export const THEME_PRESETS: ThemeOption[] = [
   },
   {
     id: 'slate',
-    name: '现代极简',
-    desc: '清爽偏冷 Slate 灰，皇家蓝点缀',
-    bgPreview: '#F8FAFC',
+    name: '素白 · 黛蓝',
+    desc: '冷白与黛蓝，清晰沉静的档案工作台',
+    bgPreview: '#F5F7FA',
     cardPreview: '#FFFFFF',
-    accentColor: '#2563EB',
-    textColor: '#0F172A',
+    accentColor: '#405E85',
+    textColor: '#252D3A',
   },
   {
     id: 'pure',
-    name: '纯净雪白',
-    desc: '通透高对比纯白，极致明亮',
-    bgPreview: '#FFFFFF',
-    cardPreview: '#FAFAFA',
-    accentColor: '#C63C2E',
-    textColor: '#18181B',
+    name: '纸白 · 朱砂',
+    desc: '清透纸白与沉稳朱砂，轻盈的日常编修',
+    bgPreview: '#F7F8FA',
+    cardPreview: '#FFFFFF',
+    accentColor: '#B54335',
+    textColor: '#25282B',
+  },
+  {
+    id: 'pine',
+    name: '宣白 · 松绿',
+    desc: '柔和宣白与松绿，安静整理家族记忆',
+    bgPreview: '#F6F7F3',
+    cardPreview: '#FFFFFF',
+    accentColor: '#356451',
+    textColor: '#26332D',
   },
   {
     id: 'dark',
     name: '玄墨夜景',
-    desc: '深色沉浸夜间模式，护眼象牙白',
+    desc: '深墨底色与象牙白字，适合暗光环境',
     bgPreview: '#0C0C0B',
     cardPreview: '#161513',
     accentColor: '#D95545',
@@ -59,9 +68,8 @@ const DARK_CLASS = 'dark'
 function loadPreference(): ThemeMode {
   try {
     const themeStored = localStorage.getItem(THEME_STORAGE_KEY)
-    if (themeStored && ['paper', 'slate', 'pure', 'dark'].includes(themeStored)) {
-      return themeStored as ThemeMode
-    }
+    const preset = THEME_PRESETS.find(({ id }) => id === themeStored)
+    if (preset) return preset.id
     const oldDarkStored = localStorage.getItem(OLD_DARK_STORAGE_KEY)
     if (oldDarkStored !== null) {
       return oldDarkStored === 'true' ? 'dark' : 'paper'

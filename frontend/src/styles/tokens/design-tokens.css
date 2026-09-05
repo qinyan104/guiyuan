@@ -224,120 +224,103 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   现代极简 — Slate 蓝灰偏冷高质感底色
+   清透浅色 — 纸白朱砂 / 素白黛蓝 / 宣白松绿
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 三套清透浅色主题共用表面规则，保留 pure / slate ID 兼容已保存偏好。 */
+[data-theme="pure"] {
+  --color-neutral-1: #F7F8FA;
+  --color-neutral-2: #FFFFFF;
+  --color-neutral-3: #EFF1F3;
+  --color-neutral-4: #E3E6E8;
+  --color-neutral-5: #BAC0C5;
+  --color-neutral-6: #626970;
+  --color-neutral-7: #565D64;
+  --color-neutral-8: #3B4249;
+  --color-neutral-9: #25282B;
+  --color-neutral-10: #191D21;
+  --color-accent: #B54335;
+  --color-accent-light: #9D382C;
+  --color-accent-deep: #873025;
+  --color-accent-muted: #F8ECE9;
+}
 
 [data-theme="slate"] {
-  --color-neutral-1: #F8FAFC;   /* 页面底色：清爽 Slate-50 */
-  --color-neutral-2: #FFFFFF;   /* 卡片底色：纯白 */
-  --color-neutral-3: #F1F5F9;   /* 悬停表面：Slate-100 */
-  --color-neutral-4: #E2E8F0;   /* 强填充：Slate-200 */
-  --color-neutral-5: #CBD5E1;   /* 边框：Slate-300 */
-  --color-neutral-6: #94A3B8;   /* 图标：Slate-400 */
-  --color-neutral-7: #64748B;   /* 次要文字：Slate-500 */
-  --color-neutral-8: #334155;   /* 正文备选：Slate-700 */
-  --color-neutral-9: #0F172A;   /* 默认正文色：Slate-900 */
-  --color-neutral-10: #020617;  /* 标题：Slate-950 */
-
-  --color-accent: #2563EB;
-  --color-accent-light: #60A5FA;
-  --color-accent-deep: #1D4ED8;
-  --color-accent-muted: rgba(37, 99, 235, 0.08);
-  --color-accent-gradient: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
-
-  --color-male: #2563EB;
-  --color-male-muted: rgba(37, 99, 235, 0.08);
-  --color-female: #EC4899;
-  --color-female-muted: rgba(236, 72, 153, 0.08);
-  --color-alive: #10B981;
-  --color-deceased: #94A3B8;
-
-  --color-card-fill: var(--color-neutral-2);
-  --color-card-stroke: rgba(15, 23, 42, 0.07);
-  --color-card-hover-fill: var(--color-neutral-2);
-  --color-card-selected-stroke: var(--color-accent);
-
-  --color-canvas-bg: #F8FAFC;
-  --color-canvas-grid: rgba(148, 163, 184, 0.22);
-  --color-minimap-bg: rgba(255, 255, 255, 0.95);
-  --color-minimap-node: rgba(100, 116, 139, 0.4);
-  --color-minimap-node-selected: rgba(37, 99, 235, 0.85);
-
-  --color-panel-bg: rgba(255, 255, 255, 0.96);
-  --color-overlay: rgba(15, 23, 42, 0.35);
-
-  --color-glass-bg: rgba(255, 255, 255, 0.76);
-  --color-glass-border-highlight: rgba(255, 255, 255, 0.95);
-  --color-glass-border-shadow: rgba(203, 213, 225, 0.3);
-  --color-panel-glass-bg: rgba(248, 250, 252, 0.88);
-  --color-panel-glass-border: rgba(226, 232, 240, 0.85);
-
-  --bg-landing-gradient: radial-gradient(120% 60% at 50% 0%, rgba(37, 99, 235, 0.05) 0%, transparent 80%),
-                         linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
-  --bg-landing-glow: rgba(37, 99, 235, 0.09);
-  --bg-landing-vignette: rgba(15, 23, 42, 0.02);
-  --bg-landing-grid: rgba(15, 23, 42, 0.025);
-
-  --shadow-whisper: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
-  --shadow-ring: 0 0 0 1px rgba(15, 23, 42, 0.08);
-  --shadow-accent: 0 10px 24px -4px rgba(37, 99, 235, 0.28);
-
-  color-scheme: light;
+  --color-neutral-1: #F5F7FA;
+  --color-neutral-2: #FFFFFF;
+  --color-neutral-3: #EDF1F6;
+  --color-neutral-4: #DDE3EB;
+  --color-neutral-5: #B7C2D0;
+  --color-neutral-6: #606D7E;
+  --color-neutral-7: #526174;
+  --color-neutral-8: #3C4B60;
+  --color-neutral-9: #252D3A;
+  --color-neutral-10: #192231;
+  --color-accent: #405E85;
+  --color-accent-light: #344F72;
+  --color-accent-deep: #293F5C;
+  --color-accent-muted: #EAF0F7;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   纯净雪白 — Pure White 高对比度极简白底
-   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="pine"] {
+  --color-neutral-1: #F6F7F3;
+  --color-neutral-2: #FFFFFF;
+  --color-neutral-3: #EDF1EB;
+  --color-neutral-4: #DEE5DC;
+  --color-neutral-5: #B8C4B7;
+  --color-neutral-6: #616E62;
+  --color-neutral-7: #536254;
+  --color-neutral-8: #3E5144;
+  --color-neutral-9: #26332D;
+  --color-neutral-10: #1B2821;
+  --color-accent: #356451;
+  --color-accent-light: #2B5443;
+  --color-accent-deep: #224536;
+  --color-accent-muted: #EAF2EC;
+}
 
-[data-theme="pure"] {
-  --color-neutral-1: #FFFFFF;   /* 页面底色：纯白 */
-  --color-neutral-2: #FAFAFA;   /* 卡片底色：Zinc-50 */
-  --color-neutral-3: #F4F4F5;   /* 悬停表面：Zinc-100 */
-  --color-neutral-4: #E4E4E7;   /* 强填充：Zinc-200 */
-  --color-neutral-5: #D4D4D8;   /* 边框：Zinc-300 */
-  --color-neutral-6: #A1A1AA;   /* 图标：Zinc-400 */
-  --color-neutral-7: #71717A;   /* 次要文字：Zinc-500 */
-  --color-neutral-8: #3F3F46;   /* 正文备选：Zinc-700 */
-  --color-neutral-9: #18181B;   /* 默认正文色：Zinc-900 */
-  --color-neutral-10: #09090B;  /* 标题：Zinc-950 */
-
-  --color-accent: #C63C2E;
-  --color-accent-light: #E85D4B;
-  --color-accent-deep: #8E251C;
-  --color-accent-muted: rgba(198, 60, 46, 0.08);
-  --color-accent-gradient: linear-gradient(145deg, var(--color-accent-deep), var(--color-accent));
-
+[data-theme="pure"],
+[data-theme="slate"],
+[data-theme="pine"] {
+  --color-accent-gradient: linear-gradient(var(--color-accent), var(--color-accent));
   --color-card-fill: var(--color-neutral-2);
-  --color-card-stroke: rgba(24, 24, 27, 0.07);
+  --color-card-stroke: var(--color-neutral-4);
   --color-card-hover-fill: var(--color-neutral-3);
-  --color-card-selected-stroke: var(--color-accent);
-
+  --color-tree-line: var(--color-neutral-5);
+  --color-tree-line-selected: var(--color-accent);
+  --color-deceased: var(--color-neutral-6);
   --color-canvas-bg: var(--color-neutral-1);
-  --color-canvas-grid: rgba(212, 212, 216, 0.35);
-  --color-minimap-bg: rgba(255, 255, 255, 0.98);
-  --color-minimap-node: rgba(113, 113, 122, 0.4);
-  --color-minimap-node-selected: rgba(198, 60, 46, 0.75);
-
-  --color-panel-bg: rgba(255, 255, 255, 0.98);
-  --color-overlay: rgba(24, 24, 27, 0.3);
-
-  --color-glass-bg: rgba(255, 255, 255, 0.85);
-  --color-glass-border-highlight: rgba(255, 255, 255, 0.9);
-  --color-glass-border-shadow: rgba(212, 212, 216, 0.2);
-  --color-panel-glass-bg: rgba(255, 255, 255, 0.95);
-
-  --bg-landing-gradient: linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 50%, #F4F4F5 100%);
-  --bg-landing-glow: rgba(198, 60, 46, 0.05);
-  --bg-landing-vignette: rgba(24, 24, 27, 0.03);
-  --bg-landing-grid: rgba(24, 24, 27, 0.02);
-
+  --color-canvas-grid: var(--color-neutral-4);
+  --color-minimap-bg: var(--color-neutral-2);
+  --color-minimap-node: var(--color-neutral-5);
+  --color-minimap-node-selected: var(--color-accent);
+  --color-panel-bg: var(--color-neutral-2);
+  --color-overlay: rgba(25, 29, 33, 0.35);
+  --color-glass-bg: var(--color-neutral-2);
+  --color-glass-border-highlight: var(--color-neutral-2);
+  --color-glass-border-shadow: var(--color-neutral-4);
+  --color-glass-inset-shadow: transparent;
+  --color-glass-shadow-deep: rgba(25, 29, 33, 0.06);
+  --color-glass-shadow-soft: rgba(25, 29, 33, 0.03);
+  --color-panel-glass-bg: var(--color-neutral-2);
+  --color-panel-glass-border: var(--color-neutral-4);
+  --color-panel-glass-border-shadow: var(--color-neutral-4);
+  --color-panel-glass-inset-shadow: transparent;
+  --color-panel-glass-shadow-deep: rgba(25, 29, 33, 0.08);
+  --color-panel-glass-shadow-soft: rgba(25, 29, 33, 0.03);
+  --color-glass-dark-bg: var(--color-neutral-9);
+  --color-glass-overlay: var(--color-overlay);
+  --bg-landing-gradient: linear-gradient(var(--color-neutral-1), var(--color-neutral-1));
+  --bg-landing-glow: transparent;
+  --bg-landing-vignette: transparent;
+  --bg-landing-grid: transparent;
+  --shadow-whisper: 0 4px 20px rgba(25, 29, 33, 0.05);
+  --shadow-ring: 0 0 0 1px var(--color-neutral-4);
+  --shadow-accent: 0 4px 12px rgba(25, 29, 33, 0.08);
   color-scheme: light;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   暗色模式 — 玄墨夜景，中性色反转并微调对比度
-   强调色提亮但保留朱砂厚度
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* 玄墨夜景 */
 
 [data-theme="dark"] {
   /* 中性色反转 */

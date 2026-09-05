@@ -45,7 +45,10 @@ onMounted(async () => {
 
   <router-view v-else v-slot="{ Component }">
     <transition name="page-fade" mode="out-in">
-      <component :is="Component" />
+      <!-- 路由页可能有多个根节点；过渡必须作用于单元素，且同一布局内切换不重建共享状态。 -->
+      <div :key="route.matched[0]?.path">
+        <component :is="Component" />
+      </div>
     </transition>
   </router-view>
 
