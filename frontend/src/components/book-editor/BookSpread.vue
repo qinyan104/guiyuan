@@ -274,7 +274,7 @@ function nextSpread() {
         type="button"
         class="nav-btn"
         :disabled="currentPageIndex <= 0"
-        title="上一翻（前一页）"
+        title="翻向上一双页 (PageUp / →)"
         @click.stop="prevSpread"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -291,7 +291,7 @@ function nextSpread() {
         type="button"
         class="nav-btn"
         :disabled="currentPageIndex >= pages.length - 1"
-        title="下一翻（后一页）"
+        title="翻向下一双页 (PageDown / ←)"
         @click.stop="nextSpread"
       >
         <span>下一翻</span>

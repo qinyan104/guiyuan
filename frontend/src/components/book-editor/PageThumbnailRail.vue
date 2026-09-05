@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { nextTick, ref, watch } from "vue"
 import type { BookPageLayout } from "../../types/bookDocument"
 
-defineProps<{
+const props = defineProps<{
   pages: BookPageLayout[]
   currentPage: number
 }>()
@@ -9,6 +10,17 @@ defineProps<{
 const emit = defineEmits<{
   select: [pageIndex: number]
 }>()
+
+const railRef = ref<HTMLElement | null>(null)
+const isCollapsed = ref(false)
+
+watch(() => props.currentPage, async () => {
+  await nextTick()
+  const el = railRef.value?.querySelector(".thumb.active, .thumb-mini.active") as HTMLElement | null
+  if (el) {
+    el.scrollIntoView({ block: "nearest", behavior: "smooth" })
+  }
+})
 
 function isCover(page: BookPageLayout) {
   return page.blocks.some((item) => item.block.type === "cover")
@@ -21,12 +33,40 @@ function sideLabel(index: number) {
 </script>
 
 <template>
-  <aside class="thumb-rail">
+  <aside ref="railRef" :class="['thumb-rail', { 'is-collapsed': isCollapsed }]">
     <div class="rail-head">
-      <span>页册总览</span>
-      <strong>{{ pages.length }}</strong>
+      <template v-if="!isCollapsed">
+        <span>页册总览</span>
+        <div class="head-right">
+          <strong>{{ pages.length }}</strong>
+          <button
+            type="button"
+            class="collapse-btn"
+            title="收起缩略图侧栏"
+            @click="isCollapsed = true"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+        </div>
+      </template>
+      <template v-else>
+        <button
+          type="button"
+          class="collapse-btn expand-btn"
+          title="展开页册总览"
+          @click="isCollapsed = false"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </template>
     </div>
-    <div class="thumb-list">
+
+    <!-- Expanded View -->
+    <div v-if="!isCollapsed" class="thumb-list">
       <button
         v-for="(page, index) in pages"
         :key="page.pageNumber"
@@ -38,6 +78,20 @@ function sideLabel(index: number) {
           <span>{{ page.pageNumber }}</span>
         </div>
         <small>{{ sideLabel(index) }} · 第 {{ page.pageNumber }} 页</small>
+      </button>
+    </div>
+
+    <!-- Collapsed View (Mini Pills) -->
+    <div v-else class="mini-list">
+      <button
+        v-for="(page, index) in pages"
+        :key="page.pageNumber"
+        :class="['thumb-mini', { active: index === currentPage, cover: isCover(page) }]"
+        type="button"
+        :title="`${sideLabel(index)} · 第 ${page.pageNumber} 页`"
+        @click="emit('select', index)"
+      >
+        {{ isCover(page) ? '封' : page.pageNumber }}
       </button>
     </div>
   </aside>
@@ -52,6 +106,13 @@ function sideLabel(index: number) {
   background: var(--bg-paper-raised, #faf6ef);
   box-sizing: border-box;
   flex-shrink: 0;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), padding 0.2s ease;
+}
+
+.thumb-rail.is-collapsed {
+  width: 44px;
+  padding: 10px 4px 16px;
+  overflow-x: hidden;
 }
 
 .rail-head {
@@ -65,6 +126,45 @@ function sideLabel(index: number) {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+.is-collapsed .rail-head {
+  justify-content: center;
+  padding: 0;
+}
+
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.collapse-btn {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-sub, #6b5e52);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.collapse-btn:hover {
+  background: var(--fill-subtle, rgba(0, 0, 0, 0.06));
+  color: var(--text-main, #241a10);
+}
+
+.expand-btn {
+  width: 26px;
+  height: 26px;
+  background: var(--fill-subtle, rgba(0, 0, 0, 0.04));
+}
+
+.expand-btn:hover {
+  background: var(--fill-subtle, rgba(0, 0, 0, 0.08));
 }
 
 .rail-head strong {
@@ -83,6 +183,52 @@ function sideLabel(index: number) {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.mini-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.thumb-mini {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(28, 24, 20, 0.14);
+  border-radius: 6px;
+  background: var(--bg-paper, #ffffff);
+  color: var(--text-sub, #6b5e52);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.thumb-mini:hover {
+  border-color: var(--line-medium, rgba(122, 95, 65, 0.3));
+  color: var(--text-main, #241a10);
+}
+
+.thumb-mini.active {
+  border-color: var(--color-accent, #a93426);
+  background: rgba(169, 52, 38, 0.08);
+  color: var(--color-accent, #a93426);
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(169, 52, 38, 0.15);
+}
+
+.thumb-mini.cover {
+  background: #213943;
+  color: #fff;
+  border-color: #17272e;
+}
+
+.thumb-mini.cover.active {
+  box-shadow: 0 0 0 2px #a93426;
 }
 
 .thumb {
@@ -108,7 +254,7 @@ function sideLabel(index: number) {
 
 .thumb.active {
   background: var(--bg-paper, #ffffff);
-  border-color: var(--color-accent, #724f2e);
+  border-color: var(--color-accent, #a93426);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
@@ -187,12 +333,12 @@ function sideLabel(index: number) {
 }
 
 .thumb.active .paper {
-  border-color: var(--color-accent, #724f2e);
-  box-shadow: 0 0 0 2px rgba(114, 79, 46, 0.16), 0 6px 14px rgba(46, 37, 26, 0.12);
+  border-color: var(--color-accent, #a93426);
+  box-shadow: 0 0 0 2px rgba(169, 52, 38, 0.16), 0 6px 14px rgba(46, 37, 26, 0.12);
 }
 
 .thumb.active small {
-  color: var(--color-accent, #724f2e);
+  color: var(--color-accent, #a93426);
   font-weight: 600;
 }
 

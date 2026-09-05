@@ -54,6 +54,20 @@ const pagination = computed(() => paginationState.value.pagination)
 const layoutError = computed(() => paginationState.value.error)
 const pages = computed(() => pagination.value?.pages ?? [])
 const selectedBlock = computed(() => selectedBlockIndex.value === null ? null : document.value?.blocks[selectedBlockIndex.value] ?? null)
+const prevPersonIndex = computed(() => {
+  if (!document.value || selectedBlockIndex.value === null) return null
+  for (let i = selectedBlockIndex.value - 1; i >= 0; i--) {
+    if (document.value.blocks[i]?.type === "person") return i
+  }
+  return null
+})
+const nextPersonIndex = computed(() => {
+  if (!document.value || selectedBlockIndex.value === null) return null
+  for (let i = selectedBlockIndex.value + 1; i < document.value.blocks.length; i++) {
+    if (document.value.blocks[i]?.type === "person") return i
+  }
+  return null
+})
 const canInsertPageBreak = computed(() => {
   const blocks = document.value?.blocks
   const index = selectedBlockIndex.value
@@ -77,6 +91,10 @@ watch(() => document.value?.layout.fontFamily, async (fontFamily) => {
 watch(selectedBlockIndex, (index) => {
   if (index !== null) {
     layoutOpen.value = true
+    const nextIndex = pages.value.findIndex((page) => page.blocks.some((item) => item.blockIndex === index))
+    if (nextIndex >= 0) {
+      currentPageIndex.value = nextIndex
+    }
   }
 })
 
@@ -91,8 +109,62 @@ watch(pages, (next) => {
   if (currentPageIndex.value >= next.length) currentPageIndex.value = Math.max(0, next.length - 1)
 })
 
+function prevSpread() {
+  const isCover = currentPageIndex.value === 0
+  const step = viewMode.value === "spread" && !isCover ? 2 : 1
+  currentPageIndex.value = Math.max(0, currentPageIndex.value - step)
+}
+
+function nextSpread() {
+  const isCover = currentPageIndex.value === 0
+  const step = viewMode.value === "spread" && !isCover ? 2 : 1
+  currentPageIndex.value = Math.min(pages.value.length - 1, currentPageIndex.value + step)
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if ((event.ctrlKey || event.metaKey) && (event.key === "s" || event.key === "S")) {
+    event.preventDefault()
+    if (document.value && !saving.value) {
+      save()
+    }
+    return
+  }
+
+  const target = event.target as HTMLElement | null
+  if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable || target.tagName === "SELECT")) {
+    return
+  }
+
+  if (event.key === "Escape") {
+    if (layoutOpen.value) {
+      layoutOpen.value = false
+    } else if (selectedBlockIndex.value !== null) {
+      selectedBlockIndex.value = null
+    }
+    return
+  }
+
+  if (event.key === "ArrowLeft" || event.key === "PageDown") {
+    event.preventDefault()
+    nextSpread()
+  } else if (event.key === "ArrowRight" || event.key === "PageUp") {
+    event.preventDefault()
+    prevSpread()
+  } else if ((event.ctrlKey || event.metaKey) && (event.key === "=" || event.key === "+")) {
+    event.preventDefault()
+    updateZoom(0.1)
+  } else if ((event.ctrlKey || event.metaKey) && event.key === "-") {
+    event.preventDefault()
+    updateZoom(-0.1)
+  } else if ((event.ctrlKey || event.metaKey) && event.key === "0") {
+    event.preventDefault()
+    zoom.value = 1
+  }
+}
+
 onMounted(async () => {
   window.addEventListener("beforeunload", protectBrowserLeave)
+  window.addEventListener("keydown", handleKeydown)
   loading.value = true
   error.value = ""
   try {
@@ -110,7 +182,10 @@ onMounted(async () => {
   }
 })
 
-onBeforeUnmount(() => window.removeEventListener("beforeunload", protectBrowserLeave))
+onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", protectBrowserLeave)
+  window.removeEventListener("keydown", handleKeydown)
+})
 onBeforeRouteLeave(() => !hasUnsavedChanges.value || confirm("书稿有未保存修改，确定离开吗？"))
 
 function protectBrowserLeave(event: BeforeUnloadEvent) {
@@ -313,6 +388,9 @@ async function exportPdf() {
       <BookLayoutPanel
         v-if="layoutOpen && document"
         :layout="layout"
+        :blocks="document.blocks"
+        :prevPersonIndex="prevPersonIndex"
+        :nextPersonIndex="nextPersonIndex"
         :canInsertPageBreak="canInsertPageBreak"
         :canDeletePageBreak="canDeletePageBreak"
         :selectedBlock="selectedBlock"
@@ -321,6 +399,7 @@ async function exportPdf() {
         @insertPageBreak="insertPageBreak"
         @deletePageBreak="deletePageBreak"
         @updateBlock="updateBlock"
+        @selectBlock="selectedBlockIndex = $event"
         @close="layoutOpen = false"
       />
     </div>

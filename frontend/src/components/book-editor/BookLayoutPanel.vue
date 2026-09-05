@@ -9,6 +9,9 @@ const props = defineProps<{
   canDeletePageBreak: boolean
   selectedBlock?: BookBlock | null
   selectedBlockIndex?: number | null
+  blocks?: BookBlock[]
+  prevPersonIndex?: number | null
+  nextPersonIndex?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -16,10 +19,12 @@ const emit = defineEmits<{
   insertPageBreak: []
   deletePageBreak: []
   updateBlock: [blockIndex: number, field: "text" | "note" | "title" | "subtitle", text: string]
+  selectBlock: [blockIndex: number | null]
   close: []
 }>()
 
 const activeTab = ref<"layout" | "inspector">("layout")
+const searchQuery = ref("")
 
 watch(
   () => props.selectedBlockIndex,
@@ -29,6 +34,33 @@ watch(
     }
   },
 )
+
+interface PersonItem {
+  blockIndex: number
+  block: Extract<BookBlock, { type: "person" }>
+}
+
+const personBlocks = computed<PersonItem[]>(() => {
+  if (!props.blocks) return []
+  const result: PersonItem[] = []
+  props.blocks.forEach((block, index) => {
+    if (block.type === "person") {
+      result.push({ blockIndex: index, block })
+    }
+  })
+  return result
+})
+
+const filteredPersons = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+  if (!query) return personBlocks.value
+  return personBlocks.value.filter(({ block }) =>
+    block.personName.toLowerCase().includes(query) ||
+    String(block.generation).includes(query) ||
+    block.text.toLowerCase().includes(query) ||
+    (block.note && block.note.toLowerCase().includes(query))
+  )
+})
 
 function update<K extends keyof BookLayout>(key: K, value: BookLayout[K]) {
   emit("updateLayout", { ...props.layout, [key]: value })
@@ -141,10 +173,14 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
             :class="['template-card', { active: layout.templateId === tpl.id }]"
             @click="update('templateId', tpl.id)"
           >
-            <span class="template-color-dot" :style="{ backgroundColor: tpl.color, borderColor: tpl.color }"></span>
-            <div class="template-info">
-              <span class="template-name">{{ tpl.name }}</span>
-              <span class="template-desc">{{ tpl.desc }}</span>
+            <div class="tpl-swatch" :style="{ borderColor: tpl.color }">
+              <div class="tpl-swatch-inner" :style="{ background: tpl.id === 'white' ? '#fff' : '#faf6ef' }">
+                <div class="tpl-lines" :style="{ borderColor: tpl.color }"></div>
+              </div>
+            </div>
+            <div class="tpl-meta">
+              <span class="tpl-name">{{ tpl.name }}</span>
+              <span class="tpl-desc">{{ tpl.desc }}</span>
             </div>
             <span v-if="layout.templateId === tpl.id" class="check-mark">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -267,16 +303,53 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
       <!-- Case A: Person Block -->
       <template v-if="selectedBlock?.type === 'person'">
         <div class="inspector-badge-row">
-          <div class="person-seal-avatar">{{ selectedBlock.personName.charAt(0) }}</div>
-          <div class="person-head-info">
-            <h4 class="person-head-name">{{ selectedBlock.personName }}</h4>
-            <span class="person-head-gen">第 {{ selectedBlock.generation }} 世 · 世系行状</span>
+          <div class="person-head-left">
+            <div class="person-seal-avatar">{{ selectedBlock.personName.charAt(0) }}</div>
+            <div class="person-head-info">
+              <h4 class="person-head-name">{{ selectedBlock.personName }}</h4>
+              <span class="person-head-gen">第 {{ selectedBlock.generation }} 世 · 世系行状</span>
+            </div>
+          </div>
+          <div class="person-nav-group">
+            <button
+              type="button"
+              class="person-nav-btn"
+              :disabled="prevPersonIndex === null || prevPersonIndex === undefined"
+              title="上一位先祖"
+              @click="prevPersonIndex !== null && prevPersonIndex !== undefined && emit('selectBlock', prevPersonIndex)"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="person-nav-btn"
+              title="返回世系条目索引"
+              @click="emit('selectBlock', null)"
+            >
+              目录
+            </button>
+            <button
+              type="button"
+              class="person-nav-btn"
+              :disabled="nextPersonIndex === null || nextPersonIndex === undefined"
+              title="下一位先祖"
+              @click="nextPersonIndex !== null && nextPersonIndex !== undefined && emit('selectBlock', nextPersonIndex)"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
           </div>
         </div>
 
         <!-- Person Biography Text -->
         <div class="section">
-          <div class="section-title">行状正文（名讳生平）</div>
+          <div class="section-header-inline">
+            <span class="section-title">行状正文（名讳生平）</span>
+            <span class="char-count">{{ selectedBlock.text.length }} 字</span>
+          </div>
           <div class="quick-chips">
             <button
               v-for="chip in ['讳', '字', '号', '行', '生于', '卒于', '享寿', '葬于']"
@@ -299,7 +372,10 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
 
         <!-- Person Annotation Note -->
         <div class="section">
-          <div class="section-title">双行小字夹注（配偶与子嗣）</div>
+          <div class="section-header-inline">
+            <span class="section-title">双行小字夹注（配偶与子嗣）</span>
+            <span class="char-count">{{ (selectedBlock.note || '').length }} 字</span>
+          </div>
           <div class="quick-chips">
             <button
               v-for="chip in ['配某氏', '继配', '合葬', '生子', '生女', '出嗣']"
@@ -326,12 +402,22 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
             <line x1="12" y1="16" x2="12" y2="12" />
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
-          修改内容后，左侧古籍版芯将自动实时纵向分列与排版。
+          内容修改将触发左侧古籍实时纵向排版并自动保存草稿。
         </div>
       </template>
 
       <!-- Case B: Cover Block -->
       <template v-else-if="selectedBlock?.type === 'cover'">
+        <div class="inspector-badge-row">
+          <div class="person-head-left">
+            <div class="person-seal-avatar">封</div>
+            <div class="person-head-info">
+              <h4 class="person-head-name">书本封面题签</h4>
+              <span class="person-head-gen">传统宣纸磁青封皮</span>
+            </div>
+          </div>
+          <button type="button" class="person-nav-btn" @click="emit('selectBlock', null)">目录</button>
+        </div>
         <div class="section">
           <div class="section-title">谱书主标题（题签）</div>
           <input
@@ -354,8 +440,18 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
 
       <!-- Case C: Generation Heading Block -->
       <template v-else-if="selectedBlock?.type === 'generationHeading'">
+        <div class="inspector-badge-row">
+          <div class="person-head-left">
+            <div class="person-seal-avatar">世</div>
+            <div class="person-head-info">
+              <h4 class="person-head-name">第 {{ selectedBlock.generation }} 世 世系标目</h4>
+              <span class="person-head-gen">世系分卷题头</span>
+            </div>
+          </div>
+          <button type="button" class="person-nav-btn" @click="emit('selectBlock', null)">目录</button>
+        </div>
         <div class="section">
-          <div class="section-title">世系标题</div>
+          <div class="section-title">世系标题内容</div>
           <input
             :value="selectedBlock.text"
             class="inspector-input"
@@ -367,6 +463,16 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
 
       <!-- Case D: Preface Block -->
       <template v-else-if="selectedBlock?.type === 'preface'">
+        <div class="inspector-badge-row">
+          <div class="person-head-left">
+            <div class="person-seal-avatar">序</div>
+            <div class="person-head-info">
+              <h4 class="person-head-name">{{ selectedBlock.title || '谱序' }}</h4>
+              <span class="person-head-gen">序文与凡例</span>
+            </div>
+          </div>
+          <button type="button" class="person-nav-btn" @click="emit('selectBlock', null)">目录</button>
+        </div>
         <div class="section">
           <div class="section-title">谱序正文</div>
           <textarea
@@ -379,16 +485,51 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
         </div>
       </template>
 
-      <!-- Case E: Empty / No selection -->
-      <div v-else class="inspector-empty">
-        <div class="inspector-empty__icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-          </svg>
+      <!-- Case E: Ancestor Quick Index / Filter (When no block is active) -->
+      <div v-else class="ancestor-index-view">
+        <div class="index-head">
+          <div class="index-title-row">
+            <span class="index-title">先祖世系索引</span>
+            <span class="index-count">共 {{ personBlocks.length }} 位</span>
+          </div>
+          <div class="search-box">
+            <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              v-model="searchQuery"
+              type="search"
+              class="search-input"
+              placeholder="搜索先祖名讳、生平或世代..."
+            />
+          </div>
         </div>
-        <div class="inspector-empty__title">点击书页条目精修</div>
-        <p class="inspector-empty__desc">点击书页中的任意先祖行状、配偶小字或封面，即可在此以现代输入习惯舒适修撰，左侧同步实时重排。</p>
+
+        <div class="ancestor-card-list">
+          <button
+            v-for="item in filteredPersons"
+            :key="item.blockIndex"
+            type="button"
+            class="ancestor-card"
+            @click="emit('selectBlock', item.blockIndex)"
+          >
+            <div class="ancestor-avatar">{{ item.block.personName.charAt(0) }}</div>
+            <div class="ancestor-info">
+              <div class="ancestor-top">
+                <strong class="ancestor-name">{{ item.block.personName }}</strong>
+                <span class="ancestor-gen">第 {{ item.block.generation }} 世</span>
+              </div>
+              <p class="ancestor-snippet">{{ item.block.text || item.block.note || '暂无详细行状' }}</p>
+            </div>
+            <svg class="ancestor-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+          <div v-if="filteredPersons.length === 0" class="empty-filter">
+            未找到匹配的先祖条目
+          </div>
+        </div>
       </div>
     </div>
   </aside>
@@ -428,30 +569,29 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
 }
 
 .panel-tab {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 4px 10px;
+  border: 0;
   border-radius: 5px;
-  border: none;
   background: transparent;
-  font-size: 11.5px;
-  font-weight: 500;
   color: var(--text-sub, #6b5e52);
+  font-size: 11.5px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
 }
 
-.panel-tab:hover:not(.active) {
+.panel-tab:hover {
   color: var(--text-main, #241a10);
 }
 
 .panel-tab.active {
-  background: var(--bg-paper, #ffffff);
+  background: #fff;
   color: var(--text-main, #241a10);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .active-dot {
@@ -464,41 +604,40 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
 .panel-close-btn {
   width: 26px;
   height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
   border-radius: 6px;
   background: transparent;
-  border: 1px solid transparent;
-  color: var(--text-soft, #8f8878);
+  color: var(--text-sub, #6b5e52);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: all 0.15s ease;
 }
 
 .panel-close-btn:hover {
-  background: var(--fill-subtle, rgba(0, 0, 0, 0.05));
+  background: var(--fill-subtle, rgba(0, 0, 0, 0.06));
   color: var(--text-main, #241a10);
 }
 
 .panel-body {
   flex: 1;
   overflow-y: auto;
-  padding: 14px 14px 20px;
+  padding: 14px 14px 28px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .section-title {
   font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-sub, #544b3d);
+  font-weight: 700;
+  color: var(--text-main, #241a10);
   letter-spacing: 0.02em;
 }
 
@@ -508,74 +647,93 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
   justify-content: space-between;
 }
 
-.font-size-display {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--color-accent, #724f2e);
+.char-count {
+  font-size: 10.5px;
+  color: var(--text-soft, #8f8878);
   font-variant-numeric: tabular-nums;
 }
 
 .section-hint {
   margin: 0;
   font-size: 11px;
+  line-height: 1.5;
   color: var(--text-soft, #8f8878);
-  line-height: 1.4;
 }
 
-/* Template Cards */
+/* 模板卡片 */
 .template-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .template-card {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   padding: 8px 10px;
-  border-radius: 8px;
   border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.12));
-  background: var(--bg-paper, #ffffff);
+  border-radius: 8px;
+  background: #fff;
   cursor: pointer;
-  text-align: left;
   transition: all 0.15s ease;
+  position: relative;
+  text-align: left;
 }
 
-.template-card:hover:not(.active) {
-  border-color: var(--line-soft, rgba(122, 95, 65, 0.25));
-  background: #fdfcfa;
+.template-card:hover {
+  border-color: var(--line-medium, rgba(122, 95, 65, 0.3));
+  background: #fdfaf6;
 }
 
 .template-card.active {
-  border-color: var(--color-accent, #724f2e);
-  background: rgba(114, 79, 46, 0.04);
+  border-color: var(--color-accent, #a93426);
+  background: rgba(169, 52, 38, 0.03);
+  box-shadow: 0 0 0 1px var(--color-accent, #a93426);
 }
 
-.template-color-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1px solid transparent;
+.tpl-swatch {
+  width: 32px;
+  height: 42px;
+  border: 1.5px solid;
+  border-radius: 3px;
+  padding: 2px;
+  box-sizing: border-box;
   flex-shrink: 0;
 }
 
-.template-info {
+.tpl-swatch-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 1px;
+  display: grid;
+  place-items: center;
+}
+
+.tpl-lines {
+  width: 60%;
+  height: 70%;
+  border-left: 1px dashed;
+  border-right: 1px dashed;
+  opacity: 0.6;
+}
+
+.tpl-meta {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 }
 
-.template-name {
-  font-size: 12px;
-  font-weight: 600;
+.tpl-name {
+  font-size: 12.5px;
+  font-weight: 700;
   color: var(--text-main, #241a10);
 }
 
-.template-desc {
-  font-size: 10.5px;
+.tpl-desc {
+  font-size: 10px;
   color: var(--text-soft, #8f8878);
   white-space: nowrap;
   overflow: hidden;
@@ -583,13 +741,11 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
 }
 
 .check-mark {
-  color: var(--color-accent, #724f2e);
-  display: flex;
-  align-items: center;
+  color: var(--color-accent, #a93426);
   flex-shrink: 0;
 }
 
-/* Font Cards */
+/* 字体选择 */
 .font-list {
   display: flex;
   flex-direction: column;
@@ -600,30 +756,29 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 10px;
-  border-radius: 8px;
+  padding: 8px 10px;
   border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.12));
-  background: var(--bg-paper, #ffffff);
+  border-radius: 7px;
+  background: #fff;
   cursor: pointer;
-  text-align: left;
   transition: all 0.15s ease;
+  text-align: left;
 }
 
-.font-card:hover:not(.active) {
-  border-color: var(--line-soft, rgba(122, 95, 65, 0.25));
-  background: #fdfcfa;
+.font-card:hover {
+  border-color: var(--line-medium, rgba(122, 95, 65, 0.3));
 }
 
 .font-card.active {
-  border-color: var(--color-accent, #724f2e);
-  background: rgba(114, 79, 46, 0.04);
+  border-color: var(--color-accent, #a93426);
+  background: rgba(169, 52, 38, 0.03);
+  box-shadow: 0 0 0 1px var(--color-accent, #a93426);
 }
 
 .font-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  flex: 1;
+  gap: 3px;
   min-width: 0;
 }
 
@@ -634,152 +789,172 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
 }
 
 .font-name {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text-main, #241a10);
 }
 
 .font-tag {
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--text-soft, #8f8878);
 }
 
 .font-sample {
   font-size: 11px;
-  color: var(--text-sub, #544b3d);
-  letter-spacing: 0.05em;
-  opacity: 0.85;
+  color: var(--text-sub, #6b5e52);
+  letter-spacing: 0.04em;
 }
 
-/* Slider & Margin */
+/* 字号滑块 */
+.font-size-display {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-accent, #a93426);
+  font-variant-numeric: tabular-nums;
+}
+
 .slider-row {
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 .range-input {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  outline: none;
-  background: var(--fill-subtle, rgba(122, 95, 65, 0.15));
-  accent-color: var(--color-accent, #724f2e);
+  width: 100%;
+  accent-color: var(--color-accent, #a93426);
   cursor: pointer;
 }
 
 .font-size-presets {
   display: flex;
   gap: 5px;
-  margin-top: 3px;
 }
 
 .preset-btn {
   flex: 1;
-  padding: 3px 0;
-  border-radius: 6px;
-  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.12));
-  background: var(--bg-paper, #ffffff);
-  font-size: 11px;
-  color: var(--text-sub, #544b3d);
+  height: 24px;
+  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.14));
+  border-radius: 5px;
+  background: #fff;
+  color: var(--text-sub, #6b5e52);
+  font-size: 10.5px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.preset-btn:hover {
+  border-color: var(--line-medium, rgba(122, 95, 65, 0.3));
 }
 
 .preset-btn.active {
-  border-color: var(--color-accent, #724f2e);
-  background: var(--color-accent, #724f2e);
-  color: #ffffff;
-  font-weight: 600;
+  background: var(--color-accent, #a93426);
+  color: #fff;
+  border-color: var(--color-accent, #a93426);
 }
 
+/* 边距选项 */
 .margin-grid {
-  display: flex;
-  gap: 5px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 
 .margin-card {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 7px 4px;
-  border-radius: 8px;
+  gap: 2px;
+  padding: 8px 4px;
   border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.12));
-  background: var(--bg-paper, #ffffff);
+  border-radius: 7px;
+  background: #fff;
   cursor: pointer;
-  text-align: center;
   transition: all 0.15s ease;
 }
 
-.margin-card:hover:not(.active) {
-  border-color: var(--line-soft, rgba(122, 95, 65, 0.25));
+.margin-card:hover {
+  border-color: var(--line-medium, rgba(122, 95, 65, 0.3));
 }
 
 .margin-card.active {
-  border-color: var(--color-accent, #724f2e);
-  background: rgba(114, 79, 46, 0.04);
+  border-color: var(--color-accent, #a93426);
+  background: rgba(169, 52, 38, 0.04);
+  box-shadow: 0 0 0 1px var(--color-accent, #a93426);
 }
 
 .margin-label {
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-main, #241a10);
 }
 
 .margin-desc {
   font-size: 9.5px;
   color: var(--text-soft, #8f8878);
-  margin-top: 2px;
 }
 
+/* 分页按钮 */
 .page-break-actions {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 3px;
 }
 
 .action-btn {
-  display: flex;
+  height: 30px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 10px;
-  border-radius: 7px;
-  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.14));
-  background: var(--bg-paper, #ffffff);
-  font-size: 11.5px;
-  font-weight: 500;
+  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.2));
+  border-radius: 6px;
+  background: #fff;
   color: var(--text-main, #241a10);
+  font-size: 11.5px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .action-btn:hover:not(:disabled) {
-  background: var(--fill-subtle, rgba(0, 0, 0, 0.04));
-  border-color: var(--line-soft, rgba(122, 95, 65, 0.25));
+  border-color: var(--color-accent, #a93426);
+  color: var(--color-accent, #a93426);
 }
 
 .action-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .action-btn--danger {
-  color: var(--color-error, #b3261e);
+  color: #c23829;
+  border-color: rgba(194, 56, 41, 0.2);
 }
 
-/* Inspector Elements */
+.action-btn--danger:hover:not(:disabled) {
+  background: rgba(194, 56, 41, 0.05);
+  border-color: #c23829;
+}
+
+/* ───────────────────────────────────────
+   条目修撰 (Inspector)
+   ─────────────────────────────────────── */
 .inspector-badge-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 8px;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 9px;
   background: rgba(169, 52, 38, 0.05);
-  border: 1px solid rgba(169, 52, 38, 0.14);
+  border: 1px solid rgba(169, 52, 38, 0.18);
+}
+
+.person-head-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .person-seal-avatar {
@@ -787,12 +962,13 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
   height: 32px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #a93426;
   color: #fff;
   font-family: var(--font-serif, "Noto Serif SC", serif);
   font-size: 16px;
   font-weight: 700;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
 }
 
@@ -805,123 +981,273 @@ const currentFontId = computed(() => resolveBookFontFamily(props.layout.fontFami
 
 .person-head-name {
   margin: 0;
-  font-family: var(--font-serif, "Noto Serif SC", serif);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-main, #241a10);
 }
 
 .person-head-gen {
-  font-size: 10.5px;
-  color: #a93426;
-  font-weight: 500;
+  font-size: 10px;
+  color: var(--color-accent, #a93426);
+  font-weight: 600;
+}
+
+.person-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.person-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.18));
+  border-radius: 5px;
+  background: #fff;
+  color: var(--text-sub, #6b5e52);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.person-nav-btn:hover:not(:disabled) {
+  border-color: var(--color-accent, #a93426);
+  color: var(--color-accent, #a93426);
+}
+
+.person-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .quick-chips {
   display: flex;
-  gap: 4px;
   flex-wrap: wrap;
-  margin-bottom: 4px;
+  gap: 4px;
 }
 
 .quick-chip {
-  padding: 2px 6px;
+  padding: 2px 7px;
+  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.15));
   border-radius: 4px;
-  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.14));
-  background: var(--bg-paper, #ffffff);
+  background: #fff;
+  color: var(--text-sub, #6b5e52);
   font-size: 10.5px;
-  color: var(--text-sub, #544b3d);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .quick-chip:hover {
-  border-color: var(--color-accent, #724f2e);
-  color: var(--color-accent, #724f2e);
+  border-color: var(--color-accent, #a93426);
+  color: var(--color-accent, #a93426);
+  background: rgba(169, 52, 38, 0.04);
 }
 
+.inspector-input,
 .inspector-textarea {
   width: 100%;
+  box-sizing: border-box;
   padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.18));
-  background: var(--bg-paper, #ffffff);
+  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.2));
+  border-radius: 7px;
+  background: #fff;
   color: var(--text-main, #241a10);
   font-size: 12.5px;
   line-height: 1.6;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   font-family: inherit;
-  box-sizing: border-box;
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+.inspector-input:focus,
 .inspector-textarea:focus {
-  border-color: var(--color-accent, #724f2e);
-  box-shadow: 0 0 0 2px rgba(114, 79, 46, 0.1);
-}
-
-.inspector-input {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.18));
-  background: var(--bg-paper, #ffffff);
-  color: var(--text-main, #241a10);
-  font-size: 12.5px;
-  font-family: inherit;
-  box-sizing: border-box;
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  border-color: var(--color-accent, #a93426);
+  box-shadow: 0 0 0 2px rgba(169, 52, 38, 0.12);
 }
 
-.inspector-input:focus {
-  border-color: var(--color-accent, #724f2e);
-  box-shadow: 0 0 0 2px rgba(114, 79, 46, 0.1);
+.inspector-textarea {
+  resize: vertical;
 }
 
 .live-repage-hint {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
-  font-size: 10.5px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: rgba(122, 95, 65, 0.06);
   color: var(--text-soft, #8f8878);
-  line-height: 1.4;
-  margin-top: 4px;
+  font-size: 10.5px;
+  line-height: 1.5;
 }
 
-.inspector-empty {
+.live-repage-hint svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ───────────────────────────────────────
+   先祖世系索引视图
+   ─────────────────────────────────────── */
+.ancestor-index-view {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 16px;
-  text-align: center;
-  color: var(--text-soft, #8f8878);
+  gap: 12px;
+}
+
+.index-head {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.inspector-empty__icon {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--fill-subtle, rgba(0, 0, 0, 0.04));
-  color: var(--text-sub, #6b5e52);
-  margin-bottom: 4px;
+.index-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.inspector-empty__title {
-  font-size: 13px;
-  font-weight: 600;
+.index-title {
+  font-size: 12.5px;
+  font-weight: 700;
   color: var(--text-main, #241a10);
 }
 
-.inspector-empty__desc {
+.index-count {
+  font-size: 10.5px;
+  color: var(--text-soft, #8f8878);
+  font-variant-numeric: tabular-nums;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 9px;
+  color: var(--text-soft, #8f8878);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px 6px 28px;
+  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.2));
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text-main, #241a10);
+  font-size: 11.5px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.search-input:focus {
+  border-color: var(--color-accent, #a93426);
+  box-shadow: 0 0 0 2px rgba(169, 52, 38, 0.12);
+}
+
+.ancestor-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: calc(100vh - 240px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.ancestor-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.12));
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ancestor-card:hover {
+  border-color: var(--color-accent, #a93426);
+  background: rgba(169, 52, 38, 0.03);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ancestor-avatar {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(169, 52, 38, 0.1);
+  color: #a93426;
+  font-family: var(--font-serif, "Noto Serif SC", serif);
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ancestor-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ancestor-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ancestor-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-main, #241a10);
+}
+
+.ancestor-gen {
+  font-size: 9.5px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(122, 95, 65, 0.08);
+  color: var(--text-sub, #6b5e52);
+  font-weight: 600;
+}
+
+.ancestor-snippet {
   margin: 0;
+  font-size: 10.5px;
+  color: var(--text-soft, #8f8878);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ancestor-chevron {
+  color: var(--text-soft, #8f8878);
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.empty-filter {
+  padding: 24px 0;
+  text-align: center;
   font-size: 11px;
-  line-height: 1.6;
-  max-width: 220px;
+  color: var(--text-soft, #8f8878);
 }
 </style>

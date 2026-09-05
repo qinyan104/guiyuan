@@ -100,12 +100,27 @@ function insertColumnBreak(event: Event) {
 const pageNumberText = computed(() => toHan(props.page?.pageNumber ?? 1))
 
 function toHan(value: number): string {
-  const nums = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
-  if (value <= 10) return nums[value]
-  if (value < 20) return `十${nums[value - 10]}`
-  const tens = Math.floor(value / 10)
-  const ones = value % 10
-  return `${nums[tens]}十${ones ? nums[ones] : ""}`
+  const digits = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
+  if (value <= 0) return "零"
+  if (value < 10) return digits[value]
+  if (value === 10) return "十"
+  if (value < 20) return `十${digits[value % 10]}`
+  if (value < 100) {
+    const tens = Math.floor(value / 10)
+    const ones = value % 10
+    return `${digits[tens]}十${ones ? digits[ones] : ""}`
+  }
+  if (value < 1000) {
+    const hundreds = Math.floor(value / 100)
+    const remainder = value % 100
+    if (remainder === 0) return `${digits[hundreds]}百`
+    if (remainder < 10) return `${digits[hundreds]}百零${digits[remainder]}`
+    if (remainder < 20) return `${digits[hundreds]}百一十${remainder % 10 ? digits[remainder % 10] : ""}`
+    const tens = Math.floor(remainder / 10)
+    const ones = remainder % 10
+    return `${digits[hundreds]}百${digits[tens]}十${ones ? digits[ones] : ""}`
+  }
+  return String(value)
 }
 </script>
 

@@ -89,13 +89,13 @@ const emit = defineEmits<{
 
       <!-- Zoom controls -->
       <div class="zoom-group">
-        <button type="button" class="zoom-btn" title="缩小" @click="emit('zoomOut')">
+        <button type="button" class="zoom-btn" title="缩小 (Ctrl+-)" @click="emit('zoomOut')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </button>
-        <span class="zoom-val" title="点击重置缩放" @click="emit('resetZoom')">{{ Math.round(zoom * 100) }}%</span>
-        <button type="button" class="zoom-btn" title="放大" @click="emit('zoomIn')">
+        <span class="zoom-val" title="点击重置缩放 (Ctrl+0)" @click="emit('resetZoom')">{{ Math.round(zoom * 100) }}%</span>
+        <button type="button" class="zoom-btn" title="放大 (Ctrl++)" @click="emit('zoomIn')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
@@ -111,7 +111,7 @@ const emit = defineEmits<{
         v-if="hasDocument"
         type="button"
         :class="['tool-btn', { 'tool-btn--active': layoutOpen }]"
-        title="设置古籍版芯、字体与页边距"
+        title="版式规制与条目修撰 (Esc)"
         @click="emit('toggleLayout')"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -148,6 +148,7 @@ const emit = defineEmits<{
           type="button"
           class="tool-btn tool-btn--save"
           :disabled="saving"
+          title="保存书稿 (Ctrl+S)"
           @click="emit('save')"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
