@@ -24,7 +24,25 @@ export interface LexiconConfig {
     welcomeTitle: string
     welcomeDesc: string
   }
-  publications: { label: string; soul: string; headerEyebrow: string; headerTitle: string; headerTitleItalic: string; quote: string }
+  publications: {
+    label: string
+    soul: string
+    headerEyebrow: string
+    headerTitle: string
+    headerTitleItalic: string
+    quote: string
+    createBtn: string
+    templateSectionTitle: string
+    archiveSectionTitle: string
+    searchPlaceholder: string
+    loadingText: string
+    emptyTitle: string
+    emptyDesc: string
+    createModalTitle: string
+    createModalSubmit: string
+    editModalTitle: string
+    editModalSubmit: string
+  }
   users: { label: string; soul: string; headerEyebrow: string; headerTitle: string; headerTitleItalic: string; quote: string }
   logs: { label: string; soul: string; headerEyebrow: string; headerTitle: string; headerTitleItalic: string; quote: string }
   settings: { soul: string }
@@ -52,7 +70,25 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       welcomeTitle: '欢迎使用归源家谱管理系统',
       welcomeDesc: '创建您的第一部族谱，轻松整理家族脉络与档案数据。'
     },
-    publications: { label: '我的族谱', soul: '谱', headerEyebrow: '族谱管理', headerTitle: '我的族谱', headerTitleItalic: '列表', quote: '妥善编修与管理每一部宗谱，规范归档家族历史记忆。' },
+    publications: {
+      label: '我的族谱',
+      soul: '谱',
+      headerEyebrow: '族谱管理',
+      headerTitle: '我的族谱',
+      headerTitleItalic: '列表',
+      quote: '妥善编修与管理每一部宗谱，规范归档家族历史记忆。',
+      createBtn: '新建族谱',
+      templateSectionTitle: '经典世系范例',
+      archiveSectionTitle: '我的族谱档案',
+      searchPlaceholder: '搜索族谱名称、堂号、郡望祖籍...',
+      loadingText: '正在加载族谱列表...',
+      emptyTitle: '暂无族谱存档',
+      emptyDesc: '尚未创建任何族谱，您可以点击上方新建族谱，或从经典范例开始。',
+      createModalTitle: '新建族谱',
+      createModalSubmit: '立即创建',
+      editModalTitle: '编辑族谱信息',
+      editModalSubmit: '保存修改'
+    },
     users: { label: '用户管理', soul: '户', headerEyebrow: '账号权限', headerTitle: '用户管理', headerTitleItalic: '名录', quote: '管理系统成员账号与权限角色，协同维护宗谱档案。' },
     logs: { label: '操作日志', soul: '志', headerEyebrow: '审计日志', headerTitle: '操作日志', headerTitleItalic: '审计', quote: '详细记录系统每一次操作与变更，保障档案安全可追溯。' },
     settings: { soul: '设' }
@@ -78,7 +114,25 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       welcomeTitle: '欢迎来到数字档案馆',
       welcomeDesc: '创建您的第一个族谱，开启家族编修之旅。'
     },
-    publications: { label: '典藏', soul: '藏', headerEyebrow: '卷之二 · 谱目', headerTitle: '典藏', headerTitleItalic: '谱目', quote: '岁月失语，唯石能言；\\n人脉流转，唯谱能传。' },
+    publications: {
+      label: '典藏',
+      soul: '藏',
+      headerEyebrow: '卷之二 · 谱目',
+      headerTitle: '典藏',
+      headerTitleItalic: '谱目',
+      quote: '岁月失语，唯石能言；\\n人脉流转，唯谱能传。',
+      createBtn: '新建宗谱存档',
+      templateSectionTitle: '经典王朝世系模板',
+      archiveSectionTitle: '私人研究档案',
+      searchPlaceholder: '检索馆藏宗谱、堂号、郡望祖籍...',
+      loadingText: '正在开启藏经阁...',
+      emptyTitle: '书卷空余，待君挥墨',
+      emptyDesc: '尚未收录任何宗族典藏，您可以开宗立派，或从上方经典模板中演化。',
+      createModalTitle: '开宗立派',
+      createModalSubmit: '建档立案',
+      editModalTitle: '修缮档案属性',
+      editModalSubmit: '封装保存'
+    },
     users: { label: '守藏', soul: '司', headerEyebrow: '卷之三 · 职官', headerTitle: '守藏', headerTitleItalic: '名录', quote: '修谱者，续宗支、识尊卑，\\n功在当代，利在千秋。' },
     logs: { label: '流年', soul: '岁', headerEyebrow: '卷之四 · 纪事', headerTitle: '流年', headerTitleItalic: '纪事', quote: '笔墨之间，见微知著；\\n行止之处，皆有回响。' },
     settings: { soul: '枢' }
@@ -104,7 +158,25 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       welcomeTitle: '欢迎归于宗族明堂',
       welcomeDesc: '敬宗收族，修谱以纪世代昭穆尊卑。'
     },
-    publications: { label: '谱箧', soul: '珍', headerEyebrow: '西厢 · 藏珍', headerTitle: '宗族', headerTitleItalic: '谱箧', quote: '牒谱之作，以奠世系、辨昭穆，\\n敬宗收族也。' },
+    publications: {
+      label: '谱箧',
+      soul: '珍',
+      headerEyebrow: '西厢 · 藏珍',
+      headerTitle: '宗族',
+      headerTitleItalic: '谱箧',
+      quote: '牒谱之作，以奠世系、辨昭穆，\\n敬宗收族也。',
+      createBtn: '开宗建牒',
+      templateSectionTitle: '先贤垂世世系',
+      archiveSectionTitle: '宗祠谱牒名录',
+      searchPlaceholder: '查阅宗祠世系、堂号、郡望祖籍...',
+      loadingText: '正在启开宗祠谱箧...',
+      emptyTitle: '宗卷尚虚，待启华章',
+      emptyDesc: '祠堂谱牒尚未录入，谨奉祖训，敬请立牒开卷。',
+      createModalTitle: '立宗建牒',
+      createModalSubmit: '敬告立牒',
+      editModalTitle: '校勘谱牒纪略',
+      editModalSubmit: '敬谨存录'
+    },
     users: { label: '执事', soul: '执', headerEyebrow: '东厢 · 司理', headerTitle: '执事', headerTitleItalic: '名录', quote: '敬长尊贤，敦宗睦族；\\n各秉其职，代代相继。' },
     logs: { label: '堂志', soul: '志', headerEyebrow: '回廊 · 留痕', headerTitle: '宗祠', headerTitleItalic: '堂志', quote: '堂前燕去燕又回，\\n阶下阶前印苍苔。' },
     settings: { soul: '理' }
@@ -130,7 +202,25 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       welcomeTitle: '欢迎开启寻根溯源之旅',
       welcomeDesc: '树高千丈，落叶归根；万物逆旅，百代过客。'
     },
-    publications: { label: '琅嬛', soul: '玉', headerEyebrow: '次篇 · 拾遗', headerTitle: '琅嬛', headerTitleItalic: '福地', quote: '琅嬛福地，玉轴金薤；\\n片纸只字，皆是云烟。' },
+    publications: {
+      label: '琅嬛',
+      soul: '玉',
+      headerEyebrow: '次篇 · 拾遗',
+      headerTitle: '琅嬛',
+      headerTitleItalic: '福地',
+      quote: '琅嬛福地，玉轴金薤；\\n片纸只字，皆是云烟。',
+      createBtn: '立谱建档',
+      templateSectionTitle: '前代青箱家乘',
+      archiveSectionTitle: '尺素世家册谱',
+      searchPlaceholder: '寻绎青箱家乘、堂号、郡望祖籍...',
+      loadingText: '正在展开墨宝卷轴...',
+      emptyTitle: '青箱未展，待绘云章',
+      emptyDesc: '浮生百代，待绘家族画卷。可溯源立谱，亦可借前贤世系开篇。',
+      createModalTitle: '开轩挥墨',
+      createModalSubmit: '落笔成篇',
+      editModalTitle: '润色宗卷谱序',
+      editModalSubmit: '钤印定稿'
+    },
     users: { label: '同道', soul: '契', headerEyebrow: '三篇 · 结契', headerTitle: '同道', headerTitleItalic: '中人', quote: '岂曰无衣，与子同袍；\\n岂曰无谱，与子同抄。' },
     logs: { label: '流年', soul: '光', headerEyebrow: '末章 · 韶华', headerTitle: '岁月', headerTitleItalic: '流年', quote: '万物逆旅，百代过客；\\n浮生若梦，为欢几何。' },
     settings: { soul: '镜' }
