@@ -138,8 +138,7 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
+  outline: none;
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
