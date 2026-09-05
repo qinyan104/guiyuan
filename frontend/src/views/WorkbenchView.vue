@@ -205,7 +205,7 @@ function updateSettings(patch: Partial<PublicationSettings>) {
 
 function revealSelectedPerson() {
   if (context.pub.selectedPerson.value) {
-    revealPersonInCanvas(context.pub.selectedPerson.value.id)
+    revealPersonInCanvas(context.pub.selectedPerson.value.id, { center: true })
   }
 }
 

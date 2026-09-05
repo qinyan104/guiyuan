@@ -529,5 +529,21 @@ describe('WorkbenchView', () => {
         expect.objectContaining({ center: true }),
       )
     })
+
+    it('centers the selected person when WorkbenchPanels emits reveal-selected-person', async () => {
+      const ctx = createContextStub({ selectedPersonId: 'p1' })
+      const wrapper = mountView(ctx)
+
+      const canvas = wrapper.findComponent({ name: 'PublicationCanvas' })
+      const panels = wrapper.findComponent({ name: 'WorkbenchPanels' })
+      await panels.vm.$emit('reveal-selected-person')
+      await wrapper.vm.$nextTick()
+      await wrapper.vm.$nextTick()
+
+      expect(canvas.vm.revealPerson).toHaveBeenCalledWith(
+        'p1',
+        expect.objectContaining({ center: true }),
+      )
+    })
   })
 })
