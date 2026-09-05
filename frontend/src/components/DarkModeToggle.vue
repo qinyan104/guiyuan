@@ -127,41 +127,48 @@ onBeforeUnmount(() => {
 
 .theme-popover {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 12px);
   right: 0;
-  width: 175px;
+  width: 180px;
   padding: 8px;
-  background: var(--color-panel-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-whisper);
-  z-index: var(--z-popover);
+  border-radius: 20px;
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
+  z-index: 9999;
+  transform-origin: top right;
+}
+
+[data-theme="dark"] .theme-popover {
+  background: var(--color-panel-glass-bg);
+  border-color: var(--color-panel-glass-border);
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
 }
 
 .popover-title {
   font-size: var(--text-label-12, 12px);
   color: var(--color-neutral-6);
-  padding: 4px 8px 6px;
+  padding: 6px 12px 6px;
   font-weight: 600;
 }
 
 .popover-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .theme-popover-item {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   width: 100%;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border: none;
   background: transparent;
-  border-radius: var(--radius-sm, 4px);
+  border-radius: 12px;
   cursor: pointer;
   color: var(--color-neutral-9);
   font-size: var(--text-copy-13, 13px);
@@ -181,6 +188,7 @@ onBeforeUnmount(() => {
 .theme-popover-item.is-active {
   font-weight: 600;
   color: var(--color-accent);
+  background: var(--color-accent-subtle, rgba(198, 60, 46, 0.08));
 }
 
 .color-dot {

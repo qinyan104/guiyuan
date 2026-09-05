@@ -109,21 +109,28 @@ onBeforeUnmount(() => {
 
 .theme-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 12px);
   right: 0;
   width: 240px;
   padding: 8px;
-  background: var(--color-panel-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-whisper);
-  z-index: var(--z-popover);
+  border-radius: 20px;
+  background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-highlight, rgba(255, 255, 255, 0.8));
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
+  z-index: 9999;
+  transform-origin: top right;
+}
+
+[data-theme="dark"] .theme-dropdown {
+  background: var(--color-panel-glass-bg);
+  border-color: var(--color-panel-glass-border);
+  box-shadow: var(--shadow-whisper), var(--shadow-ring);
 }
 
 .dropdown-header {
-  padding: 4px 8px 6px;
+  padding: 6px 12px 6px;
 }
 
 .dropdown-title {
@@ -135,7 +142,7 @@ onBeforeUnmount(() => {
 .theme-list {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .theme-item {
@@ -144,9 +151,9 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   justify-content: space-between;
   width: 100%;
-  padding: 8px 10px;
+  padding: 8px 12px;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 12px;
   background: transparent;
   cursor: pointer;
   text-align: left;
