@@ -439,95 +439,94 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
               @keydown.enter.self="openPublication(pub.id)"
               @keydown.space.self.prevent="openPublication(pub.id)"
             >
-              <!-- Decorative Left Book Spine Accent -->
-              <div class="archive-spine"></div>
-
-              <div class="archive-card-content">
-                <!-- Top Row: Seal Stamp + Title & Subtitle + Badges -->
-                <div class="archive-header-group">
-                  <div class="archive-title-area">
-                    <div class="archive-seal" :title="'姓氏印鉴：' + getSurnameSeal(pub.title)">
-                      {{ getSurnameSeal(pub.title) }}
-                    </div>
-                    <div class="archive-title-meta">
-                      <h3 class="archive-title" :title="pub.title || '未命名宗谱'">
-                        {{ pub.title || '未命名宗谱' }}
-                      </h3>
-                      <p v-if="pub.subtitle" class="archive-subtitle" :title="pub.subtitle">
+              <!-- Top Row: Seal Stamp + Title & Subtitle/Time Meta + Badges -->
+              <div class="archive-header-group">
+                <div class="archive-title-area">
+                  <div class="archive-seal" :title="'姓氏印鉴：' + getSurnameSeal(pub.title)">
+                    {{ getSurnameSeal(pub.title) }}
+                  </div>
+                  <div class="archive-title-meta">
+                    <h3 class="archive-title" :title="pub.title || '未命名宗谱'">
+                      {{ pub.title || '未命名宗谱' }}
+                    </h3>
+                    <div class="archive-sub-meta">
+                      <span v-if="pub.subtitle" class="archive-subtitle" :title="pub.subtitle">
                         {{ pub.subtitle }}
-                      </p>
+                      </span>
+                      <span v-if="pub.subtitle" class="meta-dot">·</span>
+                      <span class="archive-time-tag" :title="formatDate(pub.updatedAt)">
+                        <svg class="clock-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span>{{ formatRelativeTime(pub.updatedAt) }}</span>
+                        <span v-if="pub.lastUpdatedBy" class="archive-author">({{ pub.lastUpdatedBy }})</span>
+                      </span>
                     </div>
-                  </div>
-
-                  <div class="archive-badge-group">
-                    <span :class="['role-badge', getRoleBadge(pub.accessRole).class]">
-                      {{ getRoleBadge(pub.accessRole).label }}
-                    </span>
-                    <span class="archive-revision" :title="'修缮版本 v' + pub.revision">
-                      v{{ pub.revision }}
-                    </span>
                   </div>
                 </div>
 
-                <!-- Tags Row: Hall Name & Ancestral Origin -->
-                <div class="archive-tags" v-if="pub.info?.ancestralOrigin || pub.info?.hallName">
-                  <span v-if="pub.info?.ancestralOrigin" class="meta-tag origin-tag">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span>{{ pub.info.ancestralOrigin }}</span>
+                <div class="archive-badge-group">
+                  <span :class="['role-badge', getRoleBadge(pub.accessRole).class]">
+                    {{ getRoleBadge(pub.accessRole).label }}
                   </span>
-                  <span v-if="pub.info?.hallName" class="meta-tag hall-tag">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11"/></svg>
-                    <span>{{ pub.info.hallName }}</span>
+                  <span class="archive-revision" :title="'修缮版本 v' + pub.revision">
+                    v{{ pub.revision }}
                   </span>
                 </div>
+              </div>
 
-                <!-- Description or Prompt -->
-                <div class="archive-desc-wrap">
-                  <p v-if="pub.info?.description" class="archive-desc">{{ pub.info.description }}</p>
-                  <p v-else-if="pub.info?.familyMotto" class="archive-desc motto-desc">「{{ pub.info.familyMotto }}」</p>
-                  <p v-else class="archive-desc empty-desc-hint">点击卡片进入编撰工作台整理世系谱图</p>
-                </div>
+              <!-- Tags Row: Hall Name & Ancestral Origin -->
+              <div class="archive-tags" v-if="pub.info?.ancestralOrigin || pub.info?.hallName">
+                <span v-if="pub.info?.ancestralOrigin" class="meta-tag origin-tag">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span>{{ pub.info.ancestralOrigin }}</span>
+                </span>
+                <span v-if="pub.info?.hallName" class="meta-tag hall-tag">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11"/></svg>
+                  <span>{{ pub.info.hallName }}</span>
+                </span>
+              </div>
 
-                <!-- Foot Row: Meta & Grouped Action Toolbar -->
-                <div class="archive-foot">
-                  <div class="archive-foot-meta">
-                    <svg class="clock-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <span class="archive-date" :title="formatDate(pub.updatedAt)">{{ formatRelativeTime(pub.updatedAt) }}</span>
-                    <span v-if="pub.lastUpdatedBy" class="archive-author">· {{ pub.lastUpdatedBy }}</span>
+              <!-- Description or Prompt -->
+              <div class="archive-desc-wrap">
+                <p v-if="pub.info?.description" class="archive-desc">{{ pub.info.description }}</p>
+                <p v-else-if="pub.info?.familyMotto" class="archive-desc motto-desc">「{{ pub.info.familyMotto }}」</p>
+                <p v-else class="archive-desc empty-desc-hint">点击卡片进入编撰工作台整理世系谱图</p>
+              </div>
+
+              <!-- Foot Row: Left Primary Action + Right Tools & Management -->
+              <div class="archive-foot">
+                <button class="action-btn action-btn--primary" title="进入编撰工作台" @click.stop="openPublication(pub.id)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                  <span>进入编撰</span>
+                </button>
+
+                <div class="archive-actions" @click.stop>
+                  <div class="action-btn-cluster" aria-label="典籍工具">
+                    <button class="action-btn" title="古籍印制排版" @click.stop="openBookEditor(pub.id)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    </button>
+                    <button class="action-btn" title="编修历程" @click.stop="openActivity(pub.id)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </button>
+                    <button class="action-btn" title="世系统计" @click.stop="openStats(pub.id)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    </button>
                   </div>
 
-                  <div class="archive-actions" @click.stop>
-                    <div class="action-btn-cluster">
-                      <button class="action-btn" title="进入编撰工作台" @click.stop="openPublication(pub.id)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-                      </button>
-                      <button class="action-btn" title="古籍印制排版" @click.stop="openBookEditor(pub.id)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                      </button>
-                      <button class="action-btn" title="编修历程" @click.stop="openActivity(pub.id)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                      </button>
-                      <button class="action-btn" title="世系统计" @click.stop="openStats(pub.id)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                      </button>
-                    </div>
+                  <span class="action-cluster-separator"></span>
 
-                    <span class="action-cluster-separator"></span>
-
-                    <div class="action-btn-cluster">
-                      <button class="action-btn" title="编辑属性" @click.stop="openEditDialog(pub)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                      </button>
-                      <button class="action-btn" title="协作者管理" @click.stop="openCollabDialog(pub.id)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                      </button>
-                      <button class="action-btn" title="分享链接" @click.stop="openShareDialog(pub.id)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
-                      </button>
-                      <button class="action-btn action-btn--danger" title="删除档案" @click.stop="deleteConfirmId = pub.id">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                      </button>
-                    </div>
+                  <div class="action-btn-cluster" aria-label="档案管理">
+                    <button class="action-btn" title="编辑属性" @click.stop="openEditDialog(pub)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                    </button>
+                    <button class="action-btn" title="协作者管理" @click.stop="openCollabDialog(pub.id)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                    </button>
+                    <button class="action-btn" title="分享链接" @click.stop="openShareDialog(pub.id)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                    </button>
+                    <button class="action-btn action-btn--danger" title="删除档案" @click.stop="deleteConfirmId = pub.id">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1014,9 +1013,11 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 .archive-card {
   position: relative;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  padding: 20px 22px;
   min-height: 200px;
   box-sizing: border-box;
+  justify-content: space-between;
   cursor: pointer;
   background: var(--color-panel-bg);
   border: 1px solid var(--color-card-stroke);
@@ -1025,34 +1026,11 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   transition: transform var(--duration-fast, 180ms) var(--ease-breath),
               box-shadow var(--duration-fast, 180ms) var(--ease-breath),
               border-color var(--duration-fast, 180ms) var(--ease-breath);
-  overflow: hidden;
 }
 .archive-card:hover {
   transform: translateY(-3px);
-  border-color: var(--color-neutral-5);
+  border-color: var(--color-accent);
   box-shadow: var(--shadow-whisper, 0 8px 24px rgba(0, 0, 0, 0.08));
-}
-.archive-card:hover .archive-spine {
-  opacity: 1;
-  background: var(--color-accent);
-}
-
-/* Book spine indicator on left */
-.archive-spine {
-  width: 4px;
-  flex-shrink: 0;
-  background: var(--color-card-stroke);
-  opacity: 0.7;
-  transition: all var(--duration-fast, 180ms) var(--ease-breath);
-}
-
-.archive-card-content {
-  flex: 1;
-  min-width: 0;
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 
 /* Header Group: Seal + Titles + Badges */
@@ -1073,9 +1051,9 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
 /* Surname Seal Stamp */
 .archive-seal {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
   border: 1.5px solid var(--color-accent);
   color: var(--color-accent);
   background: var(--color-accent-muted, rgba(184, 51, 42, 0.08));
@@ -1083,7 +1061,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   align-items: center;
   justify-content: center;
   font-family: var(--font-serif);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   flex-shrink: 0;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
@@ -1099,7 +1077,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 .archive-title {
   font-family: var(--font-serif);
-  font-size: 17px;
+  font-size: 17.5px;
   font-weight: 600;
   color: var(--color-neutral-10);
   margin: 0;
@@ -1108,13 +1086,39 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.archive-subtitle {
+
+.archive-sub-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
   font-size: var(--text-label-12, 12px);
   color: var(--color-neutral-6);
-  margin: 2px 0 0;
+  flex-wrap: wrap;
+}
+.archive-subtitle {
+  color: var(--color-neutral-7);
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.meta-dot {
+  color: var(--color-neutral-4);
+}
+.archive-time-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-neutral-6);
+  white-space: nowrap;
+}
+.clock-icon {
+  color: var(--color-neutral-5);
+  flex-shrink: 0;
+}
+.archive-author {
+  color: var(--color-neutral-5);
 }
 
 .archive-badge-group {
@@ -1220,60 +1224,43 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   font-style: normal;
 }
 
-/* Footer: Meta & Action toolbar */
+/* Footer: Primary Action & Tools */
 .archive-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.06));
-  gap: 8px;
-}
-.archive-foot-meta {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: var(--text-label-12, 12px);
-  color: var(--color-neutral-6);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.clock-icon {
-  color: var(--color-neutral-5);
-  flex-shrink: 0;
-}
-.archive-author {
-  color: var(--color-neutral-5);
+  gap: 10px;
 }
 
 /* Actions clusters */
 .archive-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   flex-shrink: 0;
 }
 .action-btn-cluster {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
 }
 .action-cluster-separator {
   width: 1px;
   height: 14px;
   background: var(--color-card-stroke);
-  margin: 0 2px;
+  margin: 0 4px;
 }
 
 /* Action buttons */
 .action-btn {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--color-neutral-6);
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1283,8 +1270,8 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   box-sizing: border-box;
 }
 .action-btn svg {
-  width: 13px;
-  height: 13px;
+  width: 13.5px;
+  height: 13.5px;
 }
 .action-btn:hover {
   background: var(--color-neutral-3);
@@ -1296,6 +1283,35 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   outline-offset: 1px;
   box-shadow: 0 0 0 2px var(--color-accent-muted);
 }
+
+/* Primary Enter Workbench Action Button */
+.action-btn--primary {
+  width: auto;
+  height: 28px;
+  padding: 0 10px;
+  gap: 5px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-accent-muted, rgba(184, 51, 42, 0.08));
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-muted);
+  font-size: var(--text-label-12, 12px);
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast, 150ms) var(--ease-breath);
+}
+.action-btn--primary:hover {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent, #fff);
+  border-color: var(--color-accent);
+}
+.action-btn--primary svg {
+  width: 13px;
+  height: 13px;
+}
+
 .action-btn--danger:hover {
   background: var(--color-error-muted, rgba(239, 68, 68, 0.12));
   color: var(--color-error);
