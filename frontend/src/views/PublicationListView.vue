@@ -134,6 +134,17 @@ function getSamplePersonCount(sample: typeof builtinSamples[0]): number {
   return Object.keys(sample.publication?.people || {}).length
 }
 
+function getSurnameSeal(title: string): string {
+  if (!title) return '谱'
+  const clean = title.trim()
+  const shiIndex = clean.indexOf('氏')
+  if (shiIndex > 0) {
+    return clean.charAt(shiIndex - 1)
+  }
+  const match = clean.match(/[\u4e00-\u9fa5]/)
+  return match ? match[0] : (clean.charAt(0) || '谱')
+}
+
 function getRoleBadge(role: string) {
   const r = (role || '').toUpperCase()
   if (r === 'OWNER') return { label: '谱主', class: 'role-owner' }
@@ -428,66 +439,96 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
               @keydown.enter.self="openPublication(pub.id)"
               @keydown.space.self.prevent="openPublication(pub.id)"
             >
-              <div class="archive-body">
-                <div class="archive-title-row">
-                  <div class="archive-title-wrap">
+              <!-- Decorative Left Book Spine Accent -->
+              <div class="archive-spine"></div>
+
+              <div class="archive-card-content">
+                <!-- Top Row: Seal Stamp + Title & Subtitle + Badges -->
+                <div class="archive-header-group">
+                  <div class="archive-title-area">
+                    <div class="archive-seal" :title="'姓氏印鉴：' + getSurnameSeal(pub.title)">
+                      {{ getSurnameSeal(pub.title) }}
+                    </div>
+                    <div class="archive-title-meta">
+                      <h3 class="archive-title" :title="pub.title || '未命名宗谱'">
+                        {{ pub.title || '未命名宗谱' }}
+                      </h3>
+                      <p v-if="pub.subtitle" class="archive-subtitle" :title="pub.subtitle">
+                        {{ pub.subtitle }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="archive-badge-group">
                     <span :class="['role-badge', getRoleBadge(pub.accessRole).class]">
                       {{ getRoleBadge(pub.accessRole).label }}
                     </span>
-                    <h3 class="archive-title">{{ pub.title || '未命名宗谱' }}</h3>
+                    <span class="archive-revision" :title="'修缮版本 v' + pub.revision">
+                      v{{ pub.revision }}
+                    </span>
                   </div>
-                  <span class="archive-revision" :title="'修缮版本 v' + pub.revision">v{{ pub.revision }}</span>
                 </div>
 
-                <p v-if="pub.subtitle" class="archive-subtitle">{{ pub.subtitle }}</p>
-
-                <!-- Location & Hall Info -->
+                <!-- Tags Row: Hall Name & Ancestral Origin -->
                 <div class="archive-tags" v-if="pub.info?.ancestralOrigin || pub.info?.hallName">
                   <span v-if="pub.info?.ancestralOrigin" class="meta-tag origin-tag">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
-                    {{ pub.info.ancestralOrigin }}
+                    <span>{{ pub.info.ancestralOrigin }}</span>
                   </span>
                   <span v-if="pub.info?.hallName" class="meta-tag hall-tag">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11"/></svg>
-                    {{ pub.info.hallName }}
+                    <span>{{ pub.info.hallName }}</span>
                   </span>
                 </div>
 
-                <!-- Description Text -->
-                <p v-if="pub.info?.description" class="archive-desc">{{ pub.info.description }}</p>
-              </div>
-
-              <div class="archive-foot">
-                <div class="archive-foot-meta">
-                  <span class="archive-date" :title="formatDate(pub.updatedAt)">{{ formatRelativeTime(pub.updatedAt) }}</span>
-                  <span v-if="pub.lastUpdatedBy" class="archive-author">· {{ pub.lastUpdatedBy }}</span>
+                <!-- Description or Prompt -->
+                <div class="archive-desc-wrap">
+                  <p v-if="pub.info?.description" class="archive-desc">{{ pub.info.description }}</p>
+                  <p v-else-if="pub.info?.familyMotto" class="archive-desc motto-desc">「{{ pub.info.familyMotto }}」</p>
+                  <p v-else class="archive-desc empty-desc-hint">点击卡片进入编撰工作台整理世系谱图</p>
                 </div>
 
-                <div class="archive-actions">
-                  <button class="action-btn" title="进入编撰工作台" @click.stop="openPublication(pub.id)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-                  </button>
-                  <button class="action-btn" title="古籍印制排版" @click.stop="openBookEditor(pub.id)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                  </button>
-                  <button class="action-btn" title="编修历程" @click.stop="openActivity(pub.id)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  </button>
-                  <button class="action-btn" title="世系统计" @click.stop="openStats(pub.id)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                  </button>
-                  <button class="action-btn" title="编辑属性" @click.stop="openEditDialog(pub)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                  </button>
-                  <button class="action-btn" title="协作者管理" @click.stop="openCollabDialog(pub.id)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                  </button>
-                  <button class="action-btn" title="分享链接" @click.stop="openShareDialog(pub.id)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
-                  </button>
-                  <button class="action-btn action-btn--danger" title="删除档案" @click.stop="deleteConfirmId = pub.id">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                  </button>
+                <!-- Foot Row: Meta & Grouped Action Toolbar -->
+                <div class="archive-foot">
+                  <div class="archive-foot-meta">
+                    <svg class="clock-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span class="archive-date" :title="formatDate(pub.updatedAt)">{{ formatRelativeTime(pub.updatedAt) }}</span>
+                    <span v-if="pub.lastUpdatedBy" class="archive-author">· {{ pub.lastUpdatedBy }}</span>
+                  </div>
+
+                  <div class="archive-actions" @click.stop>
+                    <div class="action-btn-cluster">
+                      <button class="action-btn" title="进入编撰工作台" @click.stop="openPublication(pub.id)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                      </button>
+                      <button class="action-btn" title="古籍印制排版" @click.stop="openBookEditor(pub.id)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                      </button>
+                      <button class="action-btn" title="编修历程" @click.stop="openActivity(pub.id)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      </button>
+                      <button class="action-btn" title="世系统计" @click.stop="openStats(pub.id)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                      </button>
+                    </div>
+
+                    <span class="action-cluster-separator"></span>
+
+                    <div class="action-btn-cluster">
+                      <button class="action-btn" title="编辑属性" @click.stop="openEditDialog(pub)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                      </button>
+                      <button class="action-btn" title="协作者管理" @click.stop="openCollabDialog(pub.id)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                      </button>
+                      <button class="action-btn" title="分享链接" @click.stop="openShareDialog(pub.id)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                      </button>
+                      <button class="action-btn action-btn--danger" title="删除档案" @click.stop="deleteConfirmId = pub.id">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -849,8 +890,10 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   flex: 1;
   border: none !important;
   background: transparent !important;
-  padding: 0;
-  font-size: var(--text-copy-13, 13px);
+  height: 26px;
+  line-height: 26px;
+  padding: 0 4px;
+  font-size: var(--text-copy-14, 14px);
   color: var(--color-neutral-9);
   outline: none !important;
   box-shadow: none !important;
@@ -965,45 +1008,126 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 /* ── Archive Grid ── */
 .archive-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 22px;
 }
 .archive-card {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  padding: 20px 22px;
+  flex-direction: row;
   min-height: 200px;
   box-sizing: border-box;
-  justify-content: space-between;
   cursor: pointer;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-xl, 16px);
+  box-shadow: var(--shadow-sm, 0 2px 10px rgba(0, 0, 0, 0.04));
+  transition: transform var(--duration-fast, 180ms) var(--ease-breath),
+              box-shadow var(--duration-fast, 180ms) var(--ease-breath),
+              border-color var(--duration-fast, 180ms) var(--ease-breath);
+  overflow: hidden;
 }
-.archive-body {
+.archive-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--color-neutral-5);
+  box-shadow: var(--shadow-whisper, 0 8px 24px rgba(0, 0, 0, 0.08));
+}
+.archive-card:hover .archive-spine {
+  opacity: 1;
+  background: var(--color-accent);
+}
+
+/* Book spine indicator on left */
+.archive-spine {
+  width: 4px;
+  flex-shrink: 0;
+  background: var(--color-card-stroke);
+  opacity: 0.7;
+  transition: all var(--duration-fast, 180ms) var(--ease-breath);
+}
+
+.archive-card-content {
   flex: 1;
-  min-height: 0;
+  min-width: 0;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-}
-.archive-title-row {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
-  min-width: 0;
 }
-.archive-title-wrap {
+
+/* Header Group: Seal + Titles + Badges */
+.archive-header-group {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.archive-title-area {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   min-width: 0;
   flex: 1;
 }
-.role-badge {
-  font-size: 10.5px;
+
+/* Surname Seal Stamp */
+.archive-seal {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1.5px solid var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-muted, rgba(184, 51, 42, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 15px;
   font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
   flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  line-height: 1;
+}
+[data-theme="dark"] .archive-seal {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.archive-title-meta {
+  flex: 1;
+  min-width: 0;
+}
+.archive-title {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-neutral-10);
+  margin: 0;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.archive-subtitle {
+  font-size: var(--text-label-12, 12px);
+  color: var(--color-neutral-6);
+  margin: 2px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archive-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.role-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 4px;
   line-height: 1.4;
 }
 .role-owner {
@@ -1018,58 +1142,38 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 .role-viewer {
   color: var(--color-neutral-6);
-  background: var(--color-neutral-3);
+  background: var(--color-neutral-2);
 }
 .role-default {
   color: var(--color-neutral-7);
   background: var(--color-neutral-2);
 }
-
-.archive-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-title-20, 20px);
-  font-weight: 500;
-  color: var(--color-neutral-10);
-  margin: 0;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
 .archive-revision {
   font-size: 11px;
   font-family: var(--font-mono, monospace);
-  color: var(--color-neutral-5);
-  background: var(--color-neutral-3, rgba(0, 0, 0, 0.04));
+  color: var(--color-neutral-6);
+  background: var(--color-neutral-2, rgba(0, 0, 0, 0.04));
   padding: 1px 6px;
   border-radius: 4px;
-  flex-shrink: 0;
+  border: 1px solid var(--color-card-stroke);
 }
-.archive-subtitle {
-  font-size: var(--text-copy-13);
-  color: var(--color-neutral-6);
-  margin: 0 0 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+
+/* Tags Row */
 .archive-tags {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 .meta-tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
+  gap: 5px;
+  font-size: 11.5px;
   font-weight: 500;
   padding: 2px 8px;
   border-radius: 4px;
-  background: var(--color-neutral-3, rgba(0, 0, 0, 0.04));
+  background: var(--color-neutral-2, rgba(0, 0, 0, 0.04));
   color: var(--color-neutral-7);
   border: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.06));
   max-width: 140px;
@@ -1085,83 +1189,122 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   color: var(--color-accent);
   background: var(--color-accent-muted);
 }
+
+/* Description / Motto Wrap */
+.archive-desc-wrap {
+  flex: 1;
+  min-height: 38px;
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
 .archive-desc {
   font-size: 12px;
   color: var(--color-neutral-6);
-  margin: 4px 0 8px;
-  line-height: 1.45;
+  margin: 0;
+  line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.archive-desc.motto-desc {
+  font-style: italic;
+  font-family: var(--font-serif);
+  color: var(--color-neutral-7);
+}
+.archive-desc.empty-desc-hint {
+  font-size: 11.5px;
+  color: var(--color-neutral-5);
+  font-style: normal;
+}
 
+/* Footer: Meta & Action toolbar */
 .archive-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--color-card-stroke, rgba(0, 0, 0, 0.06));
   gap: 8px;
 }
 .archive-foot-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: var(--text-label-12, 12px);
   color: var(--color-neutral-6);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.clock-icon {
+  color: var(--color-neutral-5);
+  flex-shrink: 0;
+}
 .archive-author {
   color: var(--color-neutral-5);
 }
+
+/* Actions clusters */
 .archive-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-shrink: 0;
 }
+.action-btn-cluster {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.action-cluster-separator {
+  width: 1px;
+  height: 14px;
+  background: var(--color-card-stroke);
+  margin: 0 2px;
+}
 
-/* ── Action buttons ── */
+/* Action buttons */
 .action-btn {
-  width: 28px; height: 28px;
-  border: 1px solid var(--color-card-stroke);
-  background: var(--color-neutral-2);
+  width: 26px;
+  height: 26px;
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--color-neutral-6);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 5px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--duration-fast) var(--ease-breath);
+  transition: all var(--duration-fast, 150ms) var(--ease-breath);
   flex-shrink: 0;
   box-sizing: border-box;
 }
 .action-btn svg {
-  width: 13px; height: 13px;
+  width: 13px;
+  height: 13px;
 }
 .action-btn:hover {
-  background: var(--color-neutral-9);
-  color: var(--color-neutral-1);
-  border-color: var(--color-neutral-9);
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-10);
+  border-color: var(--color-card-stroke);
 }
 .action-btn:focus-visible {
   outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px var(--color-accent-muted);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 2px var(--color-accent-muted);
 }
 .action-btn--danger:hover {
-  background: var(--color-error);
-  color: var(--color-text-on-accent, #fff);
-  border-color: var(--color-error);
+  background: var(--color-error-muted, rgba(239, 68, 68, 0.12));
+  color: var(--color-error);
+  border-color: var(--color-error-muted);
 }
 .action-btn--danger:focus-visible {
   outline: 2px solid var(--color-error);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px var(--color-error-muted);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 2px var(--color-error-muted);
 }
 
 /* ── Delete Confirm ── */
