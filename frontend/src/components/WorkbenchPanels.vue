@@ -117,66 +117,127 @@ watch(
 
 <template>
   <div class="floating-toolbar floating-toolbar--left" role="toolbar" aria-label="画布工具">
-    <div class="tool-switcher" role="group" aria-label="面板切换">
+    <!-- View & Action Group -->
+    <div class="tool-group" role="group" aria-label="画布操作">
+      <button
+        class="tool-btn tool-btn--icon-only"
+        :disabled="!canUndo"
+        type="button"
+        title="撤销 (Ctrl+Z)"
+        aria-label="撤销"
+        @click="$emit('undo')"
+      >
+        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 8h9a4 4 0 0 1 0 8H9" />
+          <path d="M7 4L3 8l4 4" />
+        </svg>
+      </button>
+      <button
+        class="tool-btn tool-btn--icon-only"
+        :disabled="!canRedo"
+        type="button"
+        title="重做 (Ctrl+Y / Ctrl+Shift+Z)"
+        aria-label="重做"
+        @click="$emit('redo')"
+      >
+        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 8H7a4 4 0 0 0 0 8h4" />
+          <path d="M13 4l4 4-4 4" />
+        </svg>
+      </button>
+      <button
+        class="tool-btn tool-btn--quiet"
+        type="button"
+        title="全览 / 居中适应全谱"
+        aria-label="全览"
+        @click="$emit('reset-canvas-view')"
+      >
+        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7V3h4" />
+          <path d="M17 7V3h-4" />
+          <path d="M3 13v4h4" />
+          <path d="M17 13v4h-4" />
+          <circle cx="10" cy="10" r="2.5" />
+        </svg>
+        全览
+      </button>
+      <button
+        v-if="canReturnToMainBranch"
+        class="tool-btn tool-btn--quiet tool-btn--main-branch"
+        type="button"
+        title="返回父系主谱"
+        aria-label="返回父系主谱"
+        @click="$emit('return-main-branch')"
+      >
+        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4L6 10l6 6" />
+          <line x1="6" y1="10" x2="16" y2="10" />
+        </svg>
+        回主谱
+      </button>
+    </div>
+
+    <div class="toolbar-divider" aria-hidden="true"></div>
+
+    <!-- Panel & Tools Group -->
+    <div class="tool-group" role="group" aria-label="设置与工具">
       <button
         class="tool-btn tool-btn--panel"
         :class="{ 'tool-btn--active': layoutPanelOpen }"
         type="button"
+        title="版式设置"
         :aria-pressed="layoutPanelOpen"
         @click="$emit('toggle-layout')"
       >
-        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="3" y="3" width="14" height="14" rx="2" /><line x1="3" y1="8" x2="17" y2="8" /><line x1="10" y1="8" x2="10" y2="17" /></svg>
+        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="3" y="3" width="14" height="14" rx="2" />
+          <line x1="3" y1="8" x2="17" y2="8" />
+          <line x1="10" y1="8" x2="10" y2="17" />
+        </svg>
         版式
       </button>
       <button
         class="tool-btn tool-btn--panel"
         :class="{ 'tool-btn--active': historyOpen }"
         type="button"
+        title="历史记录"
         :aria-pressed="historyOpen"
         @click="$emit('toggle-history')"
       >
-        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 7h5l-2-3" /><path d="M4 7a6 6 0 1 1 0 6" /><circle cx="12" cy="10" r="1" fill="currentColor" stroke="none" /></svg>
+        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="10" cy="10" r="7" />
+          <polyline points="10 6 10 10 13 12" />
+        </svg>
         历史
       </button>
       <button
         class="tool-btn tool-btn--panel"
         :class="{ 'tool-btn--active': validationOpen }"
         type="button"
+        title="谱图质量校验"
         :aria-pressed="validationOpen"
         @click="$emit('toggle-validation')"
       >
-        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M9 11l2 2 4-6" /><circle cx="10" cy="10" r="7" /></svg>
+        <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M9 11l2 2 4-6" />
+          <circle cx="10" cy="10" r="7" />
+        </svg>
         校验
       </button>
+      <button
+        class="tool-btn tool-btn--quiet"
+        type="button"
+        title="推算两位成员之间的亲属称谓"
+        @click="$emit('open-kinship')"
+      >
+        <svg class="tool-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="5" cy="5" r="2.5" />
+          <circle cx="11" cy="11" r="2.5" />
+          <path d="M5 7.5v2a2 2 0 0 0 2 2h2" />
+        </svg>
+        称谓
+      </button>
     </div>
-    <button
-      v-if="canReturnToMainBranch"
-      class="tool-btn tool-btn--quiet"
-      type="button"
-      aria-label="返回父系主谱"
-      @click="$emit('return-main-branch')"
-    >
-      <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L6 10l6 6" /><line x1="6" y1="10" x2="16" y2="10" /></svg>
-      回主谱
-    </button>
-    <button
-      class="tool-btn tool-btn--quiet"
-      type="button"
-      aria-label="查看当前宗支全览"
-      @click="$emit('reset-canvas-view')"
-    >
-      <svg class="tool-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="5" width="16" height="10" rx="2" /><circle cx="10" cy="10" r="3" /><path d="M4.5 7.5l2 2" /></svg>
-      全览
-    </button>
-    <button
-      class="tool-btn tool-btn--quiet"
-      type="button"
-      title="推算两个成员之间的亲属称谓"
-      @click="$emit('open-kinship')"
-    >
-      <svg class="tool-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2" /><circle cx="12" cy="11" r="2" /><path d="M4 7l-1 4 4 1" /><path d="M10 9l1-4-4-1" /></svg>
-      称谓
-    </button>
   </div>
 
   <div class="floating-toolbar floating-toolbar--right">
@@ -552,12 +613,12 @@ watch(
 .floating-toolbar--left {
   top: 16px;
   left: 16px;
-  gap: 6px;
-  padding: 4px;
+  gap: 4px;
+  padding: 4px 6px;
   border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-xl, 14px);
   background: var(--color-panel-bg);
-  box-shadow: var(--shadow-whisper);
+  box-shadow: var(--shadow-whisper, 0 4px 20px rgba(0, 0, 0, 0.08));
 }
 
 .floating-toolbar--right {
@@ -565,6 +626,19 @@ watch(
   right: 16px;
   max-width: min(calc(100% - 32px), 760px);
   justify-content: flex-end;
+}
+
+.tool-group {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-card-stroke);
+  margin: 0 4px;
 }
 
 .tool-btn,
@@ -580,57 +654,48 @@ watch(
   display: inline-flex;
   gap: 5px;
   align-items: center;
-  min-height: 34px;
-  padding: 7px 11px;
+  justify-content: center;
+  min-height: 32px;
+  padding: 5px 9px;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md, 8px);
   background: transparent;
   box-shadow: none;
   color: var(--color-neutral-7);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
-  transition:
-    transform var(--duration-normal) var(--ease-bounce),
-    box-shadow var(--duration-fast) var(--ease-breath),
-    border-color var(--duration-fast) var(--ease-breath),
-    background var(--duration-fast) var(--ease-breath);
+  transition: all var(--duration-fast, 150ms) var(--ease-breath);
 }
 
-.tool-btn:hover {
+.tool-btn:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--color-accent) 18%, transparent);
   background: var(--color-accent-muted);
   color: var(--color-accent);
-  transform: translateY(-1px);
 }
 
 .tool-btn:hover .tool-icon {
   opacity: 1;
 }
 
-.tool-btn:active {
+.tool-btn:active:not(:disabled) {
   transform: scale(0.96);
   transition-duration: 50ms;
 }
 
-.tool-btn:active .tool-icon {
-  opacity: 1;
-  transition-duration: 50ms;
+.tool-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
-.tool-switcher {
-  display: inline-flex;
-  gap: 2px;
-  align-items: center;
+.tool-btn--icon-only {
+  min-width: 32px;
+  width: 32px;
   padding: 0;
-  border: 0;
-  border-radius: inherit;
-  background: transparent;
-  box-shadow: none;
 }
 
 .tool-btn--panel {
-  min-width: 58px;
+  min-width: 54px;
 }
 
 .tool-btn--panel:hover {
@@ -640,10 +705,14 @@ watch(
 
 .tool-btn--active,
 .tool-btn--active:hover {
-  background: #c43a31;
-  border-color: #c43a31;
-  color: var(--color-text-on-accent);
-  box-shadow: 0 8px 18px rgba(196, 58, 49, 0.22);
+  background: var(--color-accent-muted, rgba(184, 51, 42, 0.1));
+  border-color: rgba(184, 51, 42, 0.25);
+  color: var(--color-accent, #b8332a);
+  box-shadow: none;
+}
+
+.tool-btn--main-branch {
+  color: var(--color-accent);
 }
 
 .tool-btn--accent {
