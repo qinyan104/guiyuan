@@ -22,4 +22,4 @@ RUN chown -R nginx:nginx /usr/share/nginx/html /etc/nginx/conf.d
 EXPOSE 80
 
 HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=10s \
-  CMD wget -qO- http://localhost:80/ || exit 1
+  CMD wget -qO- http://127.0.0.1:80/ || exit 1
