@@ -239,13 +239,12 @@ function avatarLetter(name: string): string {
       >
         <div class="kinship-dialog__header">
           <div class="kinship-dialog__title">
-            <p>称谓推算</p>
-            <h2>亲属关系</h2>
-            <span>选择称呼者与被称呼者，查看族谱中的准确称谓。</span>
+            <h2>亲属称谓推算</h2>
+            <p class="kinship-dialog__subtitle">指定两位族人，推算宗法世系亲疏、辈分代差与准确称谓</p>
           </div>
           <button class="kinship-dialog__close" type="button" @click="emit('close')" aria-label="关闭">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <line x1="3" y1="3" x2="13" y2="13" /><line x1="13" y1="3" x2="3" y2="13" />
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
@@ -287,17 +286,18 @@ function avatarLetter(name: string): string {
                 </div>
               </template>
               <template v-else>
-                <div class="kinship-selected-person" @click="selectedA = ''; searchA = ''">
+                <div class="kinship-selected-person" @click="selectedA = ''; searchA = ''" title="点击更换人物">
                   <span class="kinship-selected-person__avatar" :class="personById(selectedA)?.gender === 'female' ? 'avatar--female' : 'avatar--male'">
                     {{ avatarLetter(personById(selectedA)?.name ?? '?') }}
                   </span>
-                  <span class="kinship-selected-person__info">
+                  <div class="kinship-selected-person__info">
                     <span class="kinship-selected-person__name">{{ personById(selectedA)?.name }}</span>
                     <span class="kinship-selected-person__meta">
                       {{ genderLabel(personById(selectedA)?.gender ?? 'unknown') }}
                       <template v-if="personById(selectedA)?.birth"> · {{ personById(selectedA)?.birth }}</template>
                     </span>
-                  </span>
+                  </div>
+                  <span class="kinship-change-btn">更换</span>
                 </div>
               </template>
             </div>
@@ -344,17 +344,18 @@ function avatarLetter(name: string): string {
                 </div>
               </template>
               <template v-else>
-                <div class="kinship-selected-person" @click="selectedB = ''; searchB = ''">
+                <div class="kinship-selected-person" @click="selectedB = ''; searchB = ''" title="点击更换人物">
                   <span class="kinship-selected-person__avatar" :class="personById(selectedB)?.gender === 'female' ? 'avatar--female' : 'avatar--male'">
                     {{ avatarLetter(personById(selectedB)?.name ?? '?') }}
                   </span>
-                  <span class="kinship-selected-person__info">
+                  <div class="kinship-selected-person__info">
                     <span class="kinship-selected-person__name">{{ personById(selectedB)?.name }}</span>
                     <span class="kinship-selected-person__meta">
                       {{ genderLabel(personById(selectedB)?.gender ?? 'unknown') }}
                       <template v-if="personById(selectedB)?.birth"> · {{ personById(selectedB)?.birth }}</template>
                     </span>
-                  </span>
+                  </div>
+                  <span class="kinship-change-btn">更换</span>
                 </div>
               </template>
             </div>
@@ -377,8 +378,8 @@ function avatarLetter(name: string): string {
                     {{ avatarLetter(node.person?.name ?? '?') }}
                   </span>
                   <span class="kinship-path-node__name">{{ node.person?.name }}</span>
-                  <span v-if="node.isA" class="kinship-path-node__tag kinship-path-node__tag--a">A</span>
-                  <span v-else-if="node.isB" class="kinship-path-node__tag kinship-path-node__tag--b">B</span>
+                  <span v-if="node.isA" class="kinship-path-node__tag kinship-path-node__tag--a">称呼者</span>
+                  <span v-else-if="node.isB" class="kinship-path-node__tag kinship-path-node__tag--b">被称呼者</span>
                   <span v-else-if="node.isAncestor" class="kinship-path-node__tag kinship-path-node__tag--ancestor">共同祖先</span>
                   <span v-else-if="node.isSpouse" class="kinship-path-node__tag kinship-path-node__tag--spouse">配偶</span>
                 </div>
@@ -404,15 +405,15 @@ function avatarLetter(name: string): string {
 
             <div class="kinship-result__chips">
               <span v-if="relationshipPath?.bloodPath?.commonAncestorId" class="kinship-chip">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6" /><circle cx="8" cy="8" r="2" /></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" /></svg>
                 共同祖先：{{ personById(relationshipPath.bloodPath.commonAncestorId)?.name ?? '未知' }}
               </span>
               <span v-if="ageComparison" class="kinship-chip">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="8 2 8 8 12 10" /></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                 {{ ageComparison.older === 'A' ? personById(selectedA)?.name : personById(selectedB)?.name }} 年长 {{ ageComparison.diff }} 岁
               </span>
               <span v-if="relationshipPath" class="kinship-chip" :class="{ 'chip--inlaw': relationshipPath.isInLaw }">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="12" rx="2" /><line x1="5" y1="2" x2="5" y2="14" /></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /></svg>
                 {{ relationshipLineLabel }} · {{ generationLabel }}
               </span>
             </div>
@@ -421,23 +422,28 @@ function avatarLetter(name: string): string {
           <!-- No Relationship Found -->
           <div v-if="selectedA && selectedB && !result" class="kinship-empty">
             <div class="kinship-empty__icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
-                <circle cx="24" cy="24" r="20" /><line x1="24" y1="16" x2="24" y2="28" /><circle cx="24" cy="32" r="1.5" fill="currentColor" />
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
             </div>
-            <p>未找到这两位族人之间的关系</p>
-            <span>他们可能来自不同的家族分支，暂时没有血缘或姻亲关联</span>
+            <p>未找到这两位族人之间的直接关系</p>
+            <span>可能归属不同支系分支，或暂无血缘与配偶纽带关联</span>
           </div>
 
           <!-- Empty State -->
           <div v-if="!selectedA || !selectedB" class="kinship-empty">
             <div class="kinship-empty__icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
-                <circle cx="18" cy="14" r="6" /><circle cx="30" cy="14" r="6" />
-                <path d="M6 40c0-8 5-14 12-14s12 6 12 14M18 40c0-8 6-14 12-14s12 6 12 14" />
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
             </div>
-            <p>选择两位族人，查看他们之间的亲戚关系</p>
+            <p>选择两位族人，推算两者之间的宗亲称谓</p>
+            <span>支持直系血亲、旁系五服以及姻亲关系的路径推演</span>
           </div>
         </div>
       </div>
@@ -478,30 +484,36 @@ function avatarLetter(name: string): string {
 }
 
 .kinship-dialog__title {
-  display: grid;
-  gap: 3px;
-}
-
-.kinship-dialog__title p {
-  margin: 0;
-  color: var(--color-accent);
-  font-size: var(--text-label-12);
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .kinship-dialog__title h2 {
   margin: 0;
-  font-family: var(--font-serif);
-  font-size: var(--text-title-24); font-weight: 500;
-  color: var(--text-main, var(--color-neutral-9));
-  letter-spacing: 0.03em;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-neutral-10);
+  line-height: 1.3;
 }
 
-.kinship-dialog__title span {
-  color: var(--text-soft, var(--color-neutral-6));
-  font-size: var(--text-label-12);
-  line-height: 1.55;
+.kinship-dialog__subtitle {
+  margin: 0;
+  color: var(--color-neutral-6);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.kinship-change-btn {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-accent);
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--color-accent-muted);
+  flex-shrink: 0;
 }
 
 .kinship-dialog__close {
