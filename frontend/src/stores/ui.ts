@@ -34,11 +34,11 @@ export const THEME_PRESETS: ThemeOption[] = [
   },
   {
     id: 'pure',
-    name: '纸白 · 朱砂',
-    desc: '清透纸白与沉稳朱砂，轻盈的日常编修',
+    name: '纸白 · 泥金',
+    desc: '清透纸白与典雅泥金，金石铭文昭穆生辉',
     bgPreview: '#F7F8FA',
     cardPreview: '#FFFFFF',
-    accentColor: '#B54335',
+    accentColor: '#B48238',
     textColor: '#25282B',
   },
   {
@@ -52,11 +52,11 @@ export const THEME_PRESETS: ThemeOption[] = [
   },
   {
     id: 'dark',
-    name: '玄墨 · 夜景',
-    desc: '深墨底色与象牙白字，适合暗光环境',
+    name: '玄墨 · 鎏金',
+    desc: '深墨底色与琥珀鎏金，黑漆描金温润护眼',
     bgPreview: '#0C0C0B',
     cardPreview: '#161513',
-    accentColor: '#D95545',
+    accentColor: '#D4A24E',
     textColor: '#E3E1DB',
   },
 ]

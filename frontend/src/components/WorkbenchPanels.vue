@@ -2074,7 +2074,7 @@ watch(
 [data-theme="dark"] .lp-section-icon,
 [data-theme="dark"] .lp-toggle--emphasis {
   background: var(--color-accent-muted);
-  border-color: rgba(217, 85, 69, 0.18);
+  border-color: var(--color-accent-muted);
 }
 
 [data-theme="dark"] .lp-toggle:hover {
