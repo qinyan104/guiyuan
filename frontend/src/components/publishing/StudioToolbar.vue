@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, ref } from "vue"
+import DarkModeToggle from "../DarkModeToggle.vue"
 import { CANVAS_TEMPLATES, FONT_OPTIONS, type CanvasTemplate } from "../../lib/vrainTemplates"
 
 const props = defineProps<{
@@ -101,6 +102,8 @@ function openTpl() {
       <button :class="['tb-tgl', { on: tweaksOpen }]" @click="emit('toggleTweaks')" title="排版微调">
         微调
       </button>
+      <span class="tb-sep" />
+      <DarkModeToggle />
       <span class="tb-page">第 {{ currentPage }}/{{ totalPages }} 页</span>
     </div>
   </header>

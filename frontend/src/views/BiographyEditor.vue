@@ -4,6 +4,7 @@ import FeedbackStrip from '../components/FeedbackStrip.vue'
 
 const feedback = useFeedback()
 import { ref, computed, onMounted, onUnmounted } from "vue"
+import DarkModeToggle from "../components/DarkModeToggle.vue"
 import { useRoute, useRouter } from "vue-router"
 import { getPersonDetail, upsertPersonDetail } from "../api/publishing"
 import type { BookPersonDetail } from "../types/publishing"
@@ -77,6 +78,7 @@ onUnmounted(() => {
       <span class="bio-person-name">{{ personLabel }}</span>
       <span class="bio-label">传记编辑</span>
       <div class="header-spacer" />
+      <DarkModeToggle />
       <button class="btn btn--primary" @click="save">保存</button>
       <span v-if="lastSaved" class="last-saved">上次保存: {{ lastSaved }}</span>
     </header>

@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import DarkModeToggle from '../components/DarkModeToggle.vue'
 import { getPublicationActivity, type ParsedActivity } from '../api/publication'
 import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import {
@@ -81,10 +82,13 @@ onMounted(loadActivities)
 
 <template>
   <section class="activity-view">
-    <button class="activity-back" type="button" data-testid="activity-back" @click="goBack">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
-      返回
-    </button>
+    <div class="activity-topbar">
+      <button class="activity-back" type="button" data-testid="activity-back" @click="goBack">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+        返回
+      </button>
+      <DarkModeToggle />
+    </div>
 
     <header class="activity-header">
       <div class="activity-heading">
@@ -175,6 +179,13 @@ onMounted(loadActivities)
 /* ── Header ── */
 .activity-header {
   /* heading block, back button is separate above */
+}
+
+.activity-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
 }
 
 .activity-back {

@@ -1,6 +1,7 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted, computed } from "vue"
 import { useRouter } from "vue-router"
+import DarkModeToggle from '../components/DarkModeToggle.vue'
 import { listDrafts, createDraft, deleteDraft } from "../api/publishing"
 import { getPublication } from "../api/publication"
 import type { BookDraft } from "../types/publishing"
@@ -140,8 +141,11 @@ export function formatTime(iso: string): string {
   <div class="publishing-dashboard">
     <header class="dashboard-header">
       <div class="header-top">
-        <button class="btn btn--ghost" @click="handleBack">← 返回画布</button>
-        <h1 class="dashboard-title">出版工作室 · {{ pubTitle || '加载中...' }}</h1>
+        <div class="header-top-left">
+          <button class="btn btn--ghost" @click="handleBack">← 返回画布</button>
+          <h1 class="dashboard-title">出版工作室 · {{ pubTitle || '加载中...' }}</h1>
+        </div>
+        <DarkModeToggle />
       </div>
       <div class="header-actions">
         <div class="search-box">
@@ -249,9 +253,16 @@ export function formatTime(iso: string): string {
 
 .header-top {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: 16px;
   margin-bottom: 14px;
+}
+
+.header-top-left {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
 }
 
 .header-actions {
@@ -518,7 +529,7 @@ export function formatTime(iso: string): string {
   }
 
   .header-top {
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
   }
 

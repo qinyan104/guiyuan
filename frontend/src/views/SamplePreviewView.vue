@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
+import DarkModeToggle from '../components/DarkModeToggle.vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { getBuiltinSampleById } from '../data/builtinDynastySamples'
@@ -139,6 +140,7 @@ function handleUpdateZoom(zoom: number) {
         </div>
       </div>
       <div class="header-right">
+        <DarkModeToggle />
         <button class="clone-btn" :disabled="cloning || !!clonedId" @click="handleClone">
           <svg v-if="cloning" class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" /></svg>
           <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>

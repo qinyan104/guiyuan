@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import DarkModeToggle from '../components/DarkModeToggle.vue'
 import { useRoute } from 'vue-router'
 import { getSharePublication, getShareMeta, getSharePhotoUrl } from '../api/share'
 import { usePublicationState } from '../composables/usePublicationState'
@@ -134,6 +135,9 @@ function handleSelectPerson(personId: string) {
             <span v-if="pub.publication.info?.familyMotto" class="tag">{{ pub.publication.info.familyMotto }}</span>
           </div>
         </div>
+        <div class="share-header-actions">
+          <DarkModeToggle />
+        </div>
       </header>
 
       <div class="share-canvas-wrapper">
@@ -212,6 +216,9 @@ function handleSelectPerson(personId: string) {
 }
 
 .share-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 16px 24px;
   background: var(--glass-panel-bg, rgba(255,255,255,0.85));
   backdrop-filter: blur(12px);
@@ -264,6 +271,9 @@ function handleSelectPerson(personId: string) {
 
 @media (max-width: 640px) {
   .share-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
     padding: 12px 16px;
   }
 

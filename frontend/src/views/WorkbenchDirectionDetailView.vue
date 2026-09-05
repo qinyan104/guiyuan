@@ -5,6 +5,7 @@
  * - This page is still a design lab artifact, not production workbench code.
  */
 import { computed } from 'vue'
+import DarkModeToggle from '../components/DarkModeToggle.vue'
 import { useRoute } from 'vue-router'
 
 import WorkbenchDirectionPreview from '../components/WorkbenchDirectionPreview.vue'
@@ -43,6 +44,7 @@ const nextDirection = computed(() =>
             {{ item.title }}
           </RouterLink>
         </div>
+        <DarkModeToggle />
       </div>
 
       <template v-if="direction">

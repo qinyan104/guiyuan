@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import DarkModeToggle from '../components/DarkModeToggle.vue'
 
 const props = defineProps<{
   variant: 'privacy' | 'terms'
@@ -74,7 +75,10 @@ const content = computed(() => {
 <template>
   <div class="doc-page">
     <main class="doc-shell">
-      <router-link to="/" class="doc-back">返回首页</router-link>
+      <div class="doc-topbar">
+        <router-link to="/" class="doc-back">返回首页</router-link>
+        <DarkModeToggle />
+      </div>
       <p class="doc-eyebrow">{{ content.eyebrow }}</p>
       <h1>{{ content.title }}</h1>
       <p class="doc-intro">{{ content.intro }}</p>
@@ -121,6 +125,13 @@ const content = computed(() => {
   font-size: var(--text-label-12);
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.doc-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
 }
 
 .doc-back {

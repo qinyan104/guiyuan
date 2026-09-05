@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BookLayout } from "../../types/bookDocument"
+import DarkModeToggle from "../DarkModeToggle.vue"
 
 defineProps<{
   title: string
@@ -174,6 +175,9 @@ const emit = defineEmits<{
           {{ exporting ? "导出中" : "导出 PDF" }}
         </button>
       </template>
+
+      <div class="divider"></div>
+      <DarkModeToggle />
     </div>
   </header>
 </template>

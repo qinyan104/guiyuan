@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import DarkModeToggle from '../components/DarkModeToggle.vue'
 
 onMounted(() => {
   const ob = new IntersectionObserver(
@@ -23,7 +24,10 @@ onMounted(() => {
           <div class="nav-seal">归</div>
           <span class="nav-brand">归源</span>
         </div>
-        <router-link to="/dashboard" class="nav-cta">进入系统</router-link>
+        <div class="nav-actions">
+          <DarkModeToggle />
+          <router-link to="/dashboard" class="nav-cta">进入系统</router-link>
+        </div>
       </div>
     </nav>
 
@@ -267,6 +271,12 @@ onMounted(() => {
   font-weight: 500;
   color: var(--color-neutral-10);
   letter-spacing: 0.1em;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .nav-cta {
