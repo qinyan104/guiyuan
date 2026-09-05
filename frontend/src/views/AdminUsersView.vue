@@ -85,12 +85,27 @@ const filteredUsers = computed(() => {
   return users.value.filter((u) => u.role === activeTab.value)
 })
 
+const showPasswordPlain = ref(false)
+
+function generateRandomPassword() {
+  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$'
+  let pwd = 'Gy'
+  for (let i = 0; i < 8; i++) {
+    pwd += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  resetNewPassword.value = pwd
+  showPasswordPlain.value = true
+}
+
 const displayedUsers = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   if (!q) return filteredUsers.value
   return filteredUsers.value.filter(u =>
     u.username.toLowerCase().includes(q) ||
-    (u.nickname && u.nickname.toLowerCase().includes(q))
+    (u.nickname && u.nickname.toLowerCase().includes(q)) ||
+    String(u.id).includes(q) ||
+    String(u.id).padStart(4, '0').includes(q) ||
+    (roleConfig[u.role]?.label && roleConfig[u.role].label.toLowerCase().includes(q))
   )
 })
 
@@ -238,10 +253,22 @@ function formatDate(dateStr: string) {
         </template>
       </PoeticHeader>
 
-      <!-- Search -->
+      <!-- Search & Quick Filter -->
       <div class="search-bar">
-        <input v-model="searchQuery" type="text" class="search-input" placeholder="搜索用户名或昵称..." />
-        <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">&times;</button>
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="search-input"
+          placeholder="搜索用户名、字号昵称、卷号ID或职官..."
+        />
+        <button v-if="searchQuery" class="search-clear" title="清空搜索" @click="searchQuery = ''">&times;</button>
+      </div>
+
+      <!-- Filter feedback row -->
+      <div v-if="searchQuery" class="filter-status-row">
+        <span>检索已匹配 <strong>{{ displayedUsers.length }}</strong> 位编委</span>
+        <button class="reset-filter-link" @click="searchQuery = ''">清空搜索条件</button>
       </div>
 
       <!-- Role Tabs -->
@@ -345,7 +372,10 @@ function formatDate(dateStr: string) {
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
         </div>
         <p class="empty-title">{{ searchQuery ? "未找到匹配账号" : "暂无此类账号" }}</p>
-        <p class="empty-desc">{{ searchQuery ? "尝试其他关键词" : "该角色下还没有编委账号" }}</p>
+        <p class="empty-desc">{{ searchQuery ? "尝试其他用户名、字号或卷号" : "该角色下还没有编委账号" }}</p>
+        <button v-if="searchQuery" class="btn btn--sm" style="margin-top: 14px;" @click="searchQuery = ''">
+          清空搜索条件
+        </button>
       </div>
 
       <BaseDialog
@@ -363,17 +393,41 @@ function formatDate(dateStr: string) {
 
       <BaseDialog
         :visible="resetUserId !== null"
-        title="重置密码"
-        max-width="400px"
+        title="重铸编委登录密匙"
+        max-width="440px"
         @update:visible="(v: boolean) => { if (!v) resetUserId = null }"
       >
         <div class="dialog-field">
-          <label>为该编委设置新密码</label>
-          <input v-model="resetNewPassword" type="password" placeholder="输入新密码" @keyup.enter="handleResetPassword" />
+          <div class="field-label-row">
+            <label>为该编委设置新密码</label>
+            <button type="button" class="quick-gen-btn" @click="generateRandomPassword">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              随机生成强密码
+            </button>
+          </div>
+          <div class="password-input-wrap">
+            <input
+              v-model="resetNewPassword"
+              :type="showPasswordPlain ? 'text' : 'password'"
+              placeholder="输入新密码（至少 6 位）"
+              class="reset-input"
+              @keyup.enter="handleResetPassword"
+            />
+            <button
+              type="button"
+              class="pwd-toggle-btn"
+              :title="showPasswordPlain ? '隐藏明文' : '显示明文'"
+              @click="showPasswordPlain = !showPasswordPlain"
+            >
+              <svg v-if="showPasswordPlain" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <span class="field-hint">重置后该编委账号需使用新密码登录，旧会话将自动失效。</span>
         </div>
         <template #footer>
           <button class="btn btn--ghost" @click="resetUserId = null">取消</button>
-          <button class="btn btn--primary" @click="handleResetPassword">确认重置</button>
+          <button class="btn btn--primary" :disabled="!resetNewPassword.trim()" @click="handleResetPassword">确认重置</button>
         </template>
       </BaseDialog>
 
@@ -745,20 +799,33 @@ function formatDate(dateStr: string) {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 16px;
+  padding: 8px 14px;
   background: var(--color-card-fill);
   border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg, 12px);
   box-shadow: var(--shadow-whisper);
+  transition: all var(--duration-fast, 180ms) var(--ease-breath);
+}
+
+.search-bar:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted, rgba(184, 51, 42, 0.12));
+}
+
+.search-icon {
+  color: var(--color-neutral-5);
+  flex-shrink: 0;
 }
 
 .search-input {
   flex: 1;
   border: none;
   background: transparent;
-  font-size: var(--text-copy-14);
+  font-size: var(--text-copy-14, 14px);
   color: var(--color-neutral-9);
   outline: none;
+  height: 24px;
+  line-height: 24px;
 }
 
 .search-input::placeholder {
@@ -766,8 +833,8 @@ function formatDate(dateStr: string) {
 }
 
 .search-clear {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border: none;
   background: var(--color-neutral-3);
   color: var(--color-neutral-7);
@@ -778,12 +845,92 @@ function formatDate(dateStr: string) {
   align-items: center;
   justify-content: center;
   line-height: 1;
-  transition: all var(--duration-fast);
+  transition: all var(--duration-fast, 150ms);
 }
 
 .search-clear:hover {
   background: var(--color-neutral-4);
   color: var(--color-neutral-9);
+}
+
+/* Filter status strip */
+.filter-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-label-12, 12px);
+  color: var(--color-neutral-6);
+  padding: 2px 4px;
+}
+
+.reset-filter-link {
+  background: transparent;
+  border: none;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-size: var(--text-label-12, 12px);
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Reset password custom fields */
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.quick-gen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--color-accent);
+  font-size: var(--text-label-12, 12px);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.quick-gen-btn:hover {
+  background: var(--color-accent-muted);
+}
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.reset-input {
+  width: 100%;
+  padding-right: 38px !important;
+}
+
+.pwd-toggle-btn {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--color-neutral-6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+}
+.pwd-toggle-btn:hover {
+  color: var(--color-neutral-9);
+  background: var(--color-neutral-3);
+}
+
+.field-hint {
+  font-size: var(--text-label-12, 12px);
+  color: var(--color-neutral-5);
+  line-height: 1.4;
 }
 
 /* ── Empty State ── */
