@@ -587,12 +587,12 @@ watch(
           @mousedown.stop
         >
           <div class="validation-dialog-header">
-            <div>
-              <p class="validation-dialog-eyebrow">质量</p>
-              <h2 id="validation-dialog-title">数据校验</h2>
+            <div class="validation-dialog-header__title">
+              <h2 id="validation-dialog-title">数据质量校验</h2>
+              <p class="validation-dialog-subtitle">排查世系断层、生卒逻辑冲突或重名问题</p>
             </div>
             <button class="validation-dialog-close" type="button" @click="closeValidationDialog" aria-label="关闭">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11" /><line x1="11" y1="3" x2="3" y2="11" /></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>
           </div>
           <div class="validation-dialog-body">
@@ -1069,30 +1069,34 @@ watch(
 
 .validation-dialog-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px 24px 14px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--color-card-stroke);
   flex-shrink: 0;
 }
 
-.validation-dialog-eyebrow {
-  margin: 0 0 4px;
-  color: var(--color-accent);
-  font-size: var(--text-label-12);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  line-height: var(--leading-label);
+.validation-dialog-header__title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .validation-dialog-header h2 {
   margin: 0;
   color: var(--color-neutral-10);
-  font-family: var(--font-serif);
-  font-size: var(--text-title-20);
+  font-family: var(--font-sans);
+  font-size: 16px;
   font-weight: 600;
-  line-height: var(--leading-title);
+  line-height: 1.3;
+}
+
+.validation-dialog-subtitle {
+  margin: 0;
+  color: var(--color-neutral-6);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .validation-dialog-close {
