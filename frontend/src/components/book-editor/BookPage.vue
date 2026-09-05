@@ -131,7 +131,7 @@ function toHan(value: number): string {
         <template v-for="item in page.blocks" :key="item.blockIndex">
           <div
             v-if="item.block.type === 'cover'"
-            class="cover"
+            :class="['cover', { 'cover--selected': selectedBlockIndex === item.blockIndex }]"
             :style="{ fontFamily: fontStack(item.fontFamily) }"
             @click="emit('selectBlock', item.blockIndex)"
           >
@@ -179,7 +179,7 @@ function toHan(value: number): string {
           </div>
           <div
             v-else-if="item.block.type === 'preface'"
-            class="preface-block"
+            :class="['preface-block', { 'preface-block--selected': selectedBlockIndex === item.blockIndex }]"
             :style="personStyle(item.columnSpan)"
           >
             <span
@@ -205,7 +205,7 @@ function toHan(value: number): string {
           </div>
           <h2
             v-else-if="item.block.type === 'generationHeading'"
-            class="generation"
+            :class="['generation', { 'generation--selected': selectedBlockIndex === item.blockIndex }]"
             role="button"
             tabindex="0"
             :style="{ fontFamily: fontStack(item.fontFamily) }"
@@ -219,7 +219,7 @@ function toHan(value: number): string {
           </h2>
           <div
             v-else-if="item.block.type === 'person'"
-            class="person-block"
+            :class="['person-block', { 'person-block--selected': selectedBlockIndex === item.blockIndex }]"
             :data-book-block-index="item.blockIndex"
             :style="[personStyle(item.columnSpan), { fontFamily: fontStack(item.fontFamily) }]"
             @click="emit('selectBlock', item.blockIndex)"
@@ -770,6 +770,32 @@ function toHan(value: number): string {
   outline: none;
   caret-color: var(--color-accent);
   cursor: text;
+}
+
+.person-block--selected {
+  outline: 2px solid var(--color-accent, #a93426) !important;
+  outline-offset: 2px !important;
+  background: rgba(169, 52, 38, 0.05);
+  border-radius: 3px;
+}
+
+.generation--selected {
+  outline: 2px solid var(--color-accent, #a93426) !important;
+  outline-offset: 2px !important;
+  background: rgba(169, 52, 38, 0.05);
+  border-radius: 3px;
+}
+
+.preface-block--selected {
+  outline: 2px solid var(--color-accent, #a93426) !important;
+  outline-offset: 2px !important;
+  background: rgba(169, 52, 38, 0.05);
+  border-radius: 3px;
+}
+
+.cover--selected {
+  outline: 2px solid var(--color-accent, #a93426) !important;
+  outline-offset: 2px !important;
 }
 
 .person-block {

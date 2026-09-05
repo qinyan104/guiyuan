@@ -74,6 +74,12 @@ watch(() => document.value?.layout.fontFamily, async (fontFamily) => {
   }
 })
 
+watch(selectedBlockIndex, (index) => {
+  if (index !== null) {
+    layoutOpen.value = true
+  }
+})
+
 watch(pages, (next) => {
   if (selectedBlockIndex.value !== null) {
     const nextIndex = next.findIndex((page) => page.blocks.some((item) => item.blockIndex === selectedBlockIndex.value))
@@ -309,9 +315,12 @@ async function exportPdf() {
         :layout="layout"
         :canInsertPageBreak="canInsertPageBreak"
         :canDeletePageBreak="canDeletePageBreak"
+        :selectedBlock="selectedBlock"
+        :selectedBlockIndex="selectedBlockIndex"
         @updateLayout="updateLayout"
         @insertPageBreak="insertPageBreak"
         @deletePageBreak="deletePageBreak"
+        @updateBlock="updateBlock"
         @close="layoutOpen = false"
       />
     </div>

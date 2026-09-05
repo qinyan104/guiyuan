@@ -53,7 +53,8 @@ const staticCommands = computed<CommandItem[]>(() => [
     category: 'tool',
     icon: 'book-open',
     action: () => {
-      router.push('/book-editor/publication/1')
+      const pubId = router.currentRoute.value.params.id || router.currentRoute.value.params.publicationId || '1'
+      router.push(`/book-editor/publication/${pubId}`)
       isOpen.value = false
     },
   },

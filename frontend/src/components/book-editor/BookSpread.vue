@@ -190,6 +190,20 @@ onBeforeUnmount(() => {
   stopInertia()
   resizeObserver?.disconnect()
 })
+
+function prevSpread() {
+  const step = props.viewMode === "spread" && !isCover.value ? 2 : 1
+  const targetIndex = Math.max(0, props.currentPageIndex - step)
+  const target = pages.value[targetIndex]
+  if (target) emit("goToPage", target.pageNumber)
+}
+
+function nextSpread() {
+  const step = props.viewMode === "spread" && !isCover.value ? 2 : 1
+  const targetIndex = Math.min(pages.value.length - 1, props.currentPageIndex + step)
+  const target = pages.value[targetIndex]
+  if (target) emit("goToPage", target.pageNumber)
+}
 </script>
 
 <template>
@@ -253,11 +267,101 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
+
+    <!-- Floating Page Navigation Pill -->
+    <div class="stage-nav-pill">
+      <button
+        type="button"
+        class="nav-btn"
+        :disabled="currentPageIndex <= 0"
+        title="上一翻（前一页）"
+        @click.stop="prevSpread"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        <span>上一翻</span>
+      </button>
+
+      <span class="nav-counter">
+        第 <strong>{{ currentPage?.pageNumber ?? 1 }}</strong> / {{ pages.length }} 页
+      </span>
+
+      <button
+        type="button"
+        class="nav-btn"
+        :disabled="currentPageIndex >= pages.length - 1"
+        title="下一翻（后一页）"
+        @click.stop="nextSpread"
+      >
+        <span>下一翻</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+    </div>
   </main>
 </template>
 
 <style scoped>
+.stage-nav-pill {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  background: var(--bg-paper-raised, #fcfbfa);
+  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.16));
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(24, 18, 12, 0.12);
+  z-index: 15;
+  user-select: none;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.12));
+  background: var(--bg-paper, #ffffff);
+  color: var(--text-main, #241a10);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: var(--fill-subtle, rgba(0, 0, 0, 0.04));
+  border-color: var(--color-accent, #724f2e);
+  color: var(--color-accent, #724f2e);
+}
+
+.nav-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.nav-counter {
+  font-size: 11px;
+  color: var(--text-sub, #6b5e52);
+  padding: 0 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.nav-counter strong {
+  color: var(--text-main, #241a10);
+  font-weight: 700;
+}
+
 .book-stage {
+  position: relative;
   min-width: 0;
   height: 100%;
   overflow: auto;
