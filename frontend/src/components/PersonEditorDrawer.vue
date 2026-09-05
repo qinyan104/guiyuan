@@ -220,7 +220,7 @@ onBeforeUnmount(() => {
 
           <!-- Main Body: Two Columns -->
           <div class="ped-body">
-            <!-- Left Side: Avatar, Name, Context Tags & Details -->
+            <!-- Left Side: Avatar, Name, Context Tags -->
             <div class="ped-sidebar">
               <div class="ped-avatar-container">
                 <label :class="['ped-avatar-wrap', { 'has-avatar': Boolean(person.avatarUrl) }]" title="点击上传/更换人物照片">
@@ -250,20 +250,13 @@ onBeforeUnmount(() => {
                   <span v-if="lineageSuggestion" class="ped-context-chip">{{ lineageSuggestion }}</span>
                 </div>
               </div>
-
-              <div v-if="details.length" class="ped-details-list">
-                <div v-for="d in details" :key="d.label" class="ped-detail-item">
-                  <span class="ped-detail-label">{{ d.label }}</span>
-                  <span class="ped-detail-value">{{ d.value }}</span>
-                </div>
-              </div>
             </div>
 
             <!-- Right Side: Form Sections -->
             <div class="ped-content">
-              <!-- Group 1: Birth & Death -->
+              <!-- Group 1: Basic Info -->
               <div class="ped-group">
-                <div class="ped-group-head">生卒纪略</div>
+                <div class="ped-group-head">基本信息</div>
                 <div class="ped-row">
                   <label class="ped-field">
                     <span class="ped-field-label">生年</span>
@@ -271,7 +264,7 @@ onBeforeUnmount(() => {
                       :value="person.birth"
                       type="text"
                       class="ped-inp"
-                      placeholder="例：光绪三十二年 或 1906"
+                      placeholder="例：1906 或 光绪三十二年"
                       @input="updatePersonField('birth', $event)"
                     />
                   </label>
@@ -366,6 +359,16 @@ onBeforeUnmount(() => {
                         @dragend="handleChildDragEnd"
                         @click="$emit('select-person', c.person.id)"
                       >
+                        <span class="ped-drag-handle" title="拖拽排序">
+                          <svg width="9" height="12" viewBox="0 0 10 14" fill="currentColor">
+                            <circle cx="3" cy="3" r="1.2" />
+                            <circle cx="7" cy="3" r="1.2" />
+                            <circle cx="3" cy="7" r="1.2" />
+                            <circle cx="7" cy="7" r="1.2" />
+                            <circle cx="3" cy="11" r="1.2" />
+                            <circle cx="7" cy="11" r="1.2" />
+                          </svg>
+                        </span>
                         <span class="ped-person-index-badge">{{ c.index + 1 }}</span>
                         <span class="ped-person-avatar-circle">{{ c.person.name.charAt(0) }}</span>
                         <span class="ped-person-name">{{ c.person.name }}</span>
@@ -379,7 +382,7 @@ onBeforeUnmount(() => {
 
               <!-- Group 3: Branch Settings -->
               <div class="ped-group">
-                <div class="ped-group-head">房支脉络</div>
+                <div class="ped-group-head">支系设置</div>
                 <div class="ped-chips-row">
                   <button class="ped-chip-btn ped-chip-btn--accent" :disabled="isSelectedBranchFocused" @click="$emit('focus-branch')">
                     {{ branchActionLabel }}
@@ -390,7 +393,7 @@ onBeforeUnmount(() => {
                     :class="{ 'is-active': branchMode === 'married-out' }"
                     @click="$emit('update-branch-mode', 'married-out')"
                   >
-                    适人（出嫁）
+                    外嫁
                   </button>
                   <button
                     v-if="canSetBranchMode"
@@ -403,39 +406,45 @@ onBeforeUnmount(() => {
                 </div>
               </div>
 
-              <!-- Group 4: Additional Notes & Mount Point -->
+              <!-- Group 4: Notes & Branch Mount -->
               <div class="ped-group">
-                <div class="ped-group-head">谱记注述</div>
+                <div class="ped-group-head">生平与注记</div>
                 <label class="ped-field">
-                  <span class="ped-field-label">排行 / 注记</span>
-                  <input
+                  <div class="ped-field-header-row">
+                    <span class="ped-field-label">排行 / 注记</span>
+                    <button
+                      v-if="lineageSuggestion && person.note !== lineageSuggestion"
+                      type="button"
+                      class="ped-suggestion-btn"
+                      @click="$emit('apply-note-suggestion', lineageSuggestion)"
+                    >
+                      采纳「{{ lineageSuggestion }}」
+                    </button>
+                  </div>
+                  <textarea
                     :value="person.note"
-                    type="text"
-                    class="ped-inp"
-                    placeholder="例：长房长子、贡生、任职略历"
+                    rows="3"
+                    class="ped-textarea"
+                    placeholder="例：长房长子、贡生、任职略历、墓葬所处等"
                     @input="updatePersonField('note', $event)"
-                  />
-                  <button
-                    v-if="lineageSuggestion && person.note !== lineageSuggestion"
-                    class="ped-suggestion-btn"
-                    @click="$emit('apply-note-suggestion', lineageSuggestion)"
-                  >
-                    采纳「{{ lineageSuggestion }}」
-                  </button>
+                  ></textarea>
                 </label>
                 <div class="ped-divider"></div>
                 <BranchMountManager :person="person" :publicationId="publicationId" />
               </div>
-
-              <!-- Danger Action -->
-              <div class="ped-footer-actions">
-                <button class="ped-delete-btn" @click="$emit('delete-person')">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                  从谱目中除名此人
-                </button>
-              </div>
             </div>
           </div>
+
+          <!-- Card Footer -->
+          <footer class="ped-footer">
+            <button class="ped-delete-btn" @click="$emit('delete-person')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              删除人物
+            </button>
+            <div class="ped-footer-right">
+              <button class="ped-done-btn" @click="$emit('close')">完成</button>
+            </div>
+          </footer>
         </article>
       </div>
     </Transition>
@@ -529,11 +538,11 @@ onBeforeUnmount(() => {
 .ped-sidebar {
   width: 240px;
   flex-shrink: 0;
-  padding: 24px 20px;
+  padding: 32px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   border-right: 1px solid var(--color-card-stroke);
   overflow-y: auto;
   background: var(--color-neutral-1, rgba(0, 0, 0, 0.01));
@@ -791,11 +800,17 @@ onBeforeUnmount(() => {
   color: var(--color-neutral-5);
 }
 
+.ped-field-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
 .ped-suggestion-btn {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  margin-top: 4px;
   padding: 2px 8px;
   border-radius: var(--radius-sm, 4px);
   border: none;
@@ -805,11 +820,34 @@ onBeforeUnmount(() => {
   font-weight: 500;
   cursor: pointer;
   width: fit-content;
+  transition: all var(--duration-fast, 150ms);
 }
 
 .ped-suggestion-btn:hover {
   background: var(--color-accent);
   color: #fff;
+}
+
+.ped-textarea {
+  width: 100%;
+  min-height: 76px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-card-stroke);
+  background: var(--color-panel-bg);
+  color: var(--color-neutral-10);
+  font-size: 13px;
+  line-height: 1.5;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color var(--duration-fast, 150ms);
+}
+
+.ped-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: none;
 }
 
 .ped-divider {
@@ -927,6 +965,18 @@ onBeforeUnmount(() => {
   cursor: grabbing;
 }
 
+.ped-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-neutral-4);
+  margin-right: -2px;
+  cursor: grab;
+}
+
+.ped-person-chip--drag:hover .ped-drag-handle {
+  color: var(--color-neutral-6);
+}
+
 
 
 .ped-person-avatar-circle {
@@ -1016,9 +1066,39 @@ onBeforeUnmount(() => {
 }
 
 /* ── Delete Button ── */
-.ped-footer-actions {
-  padding-top: 8px;
+.ped-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
   border-top: 1px solid var(--color-card-stroke);
+  background: var(--color-panel-bg);
+  flex-shrink: 0;
+}
+
+.ped-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ped-done-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 22px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast, 150ms);
+}
+
+.ped-done-btn:hover {
+  filter: brightness(1.08);
 }
 
 .ped-delete-btn {
@@ -1026,14 +1106,13 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 7px 14px;
   border-radius: var(--radius-md, 8px);
   border: 1px solid var(--color-error-muted, rgba(239, 68, 68, 0.2));
   background: var(--color-error-muted, rgba(239, 68, 68, 0.05));
   color: var(--color-error);
   font-size: 13px;
   cursor: pointer;
-  width: 100%;
   transition: all var(--duration-fast, 150ms);
 }
 
