@@ -245,14 +245,10 @@ onBeforeUnmount(() => {
                   @input="updatePersonField('name', $event)"
                 />
 
-                <div class="ped-context-chips">
-                  <span class="ped-context-chip">当前人物</span>
+                <div v-if="kinshipLabel || lineageSuggestion" class="ped-context-chips">
                   <span v-if="kinshipLabel" class="ped-context-chip ped-context-chip--accent">{{ kinshipLabel }}</span>
-                  <span v-if="suggestion" class="ped-context-chip ped-context-chip--accent">{{ suggestion }}</span>
                   <span v-if="lineageSuggestion" class="ped-context-chip">{{ lineageSuggestion }}</span>
                 </div>
-
-                <p class="ped-context-hint">在此修订名讳行略，关闭后将即时同步至世系画布。</p>
               </div>
 
               <div v-if="details.length" class="ped-details-list">

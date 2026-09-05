@@ -48,13 +48,14 @@ describe('PersonEditorDrawer', () => {
     ).toBe(false)
   })
 
-  it('renders contextual chips when suggestion metadata is available', () => {
+  it('renders contextual chips when kinship or lineage suggestion is available', () => {
     const wrapper = mount(PersonEditorDrawer, {
       props: {
         open: true,
         person,
         publicationId: 7,
-        suggestion: '本人',
+        kinshipLabel: '第十五世',
+        suggestion: '建议补录卒年',
         lineageSuggestion: '长房',
         details: [],
         spouse: null,
@@ -81,8 +82,9 @@ describe('PersonEditorDrawer', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('当前人物')
-    expect(wrapper.text()).toContain('本人')
+    expect(wrapper.text()).toContain('第十五世')
     expect(wrapper.text()).toContain('长房')
+    expect(wrapper.text()).not.toContain('当前人物')
+    expect(wrapper.text()).not.toContain('建议补录卒年')
   })
 })
