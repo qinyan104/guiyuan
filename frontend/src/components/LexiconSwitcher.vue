@@ -57,9 +57,10 @@ onBeforeUnmount(() => {
           >
             <div class="theme-info">
               <div class="theme-title-group">
-                <strong class="theme-name">{{ l.name }}</strong>
+                <span class="seal-tag">{{ l.logo.seal }}</span>
+                <span class="theme-name">{{ l.name }}</span>
               </div>
-              <span class="theme-desc">{{ l.dashboard.label }} / {{ l.publications.label }} / {{ l.users.label }} / {{ l.logs.label }}</span>
+              <span class="theme-desc">{{ l.dashboard.label }} · {{ l.publications.label }} · {{ l.users.label }} · {{ l.logs.label }}</span>
             </div>
             <span v-if="currentLexiconId === l.id" class="check-icon">✓</span>
           </button>
@@ -111,7 +112,7 @@ onBeforeUnmount(() => {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 240px;
+  width: 260px;
   padding: 8px;
   border-radius: 20px;
   background: var(--glass-panel-bg, rgba(255, 255, 255, 0.85));
@@ -148,7 +149,7 @@ onBeforeUnmount(() => {
 .theme-item {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   width: 100%;
   padding: 8px 12px;
@@ -177,41 +178,66 @@ onBeforeUnmount(() => {
 .theme-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  min-width: 0;
 }
 
 .theme-title-group {
   display: flex;
-  gap: 6px;
-  align-items: baseline;
+  gap: 7px;
+  align-items: center;
+}
+
+.seal-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-8);
+  font-family: var(--font-serif);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.theme-item.is-active .seal-tag {
+  background: var(--color-accent);
+  color: #fff;
 }
 
 .theme-name {
   font-size: var(--text-copy-13, 13px);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-neutral-9);
+  line-height: 1.4;
 }
 
 .theme-item.is-active .theme-name {
+  font-weight: 600;
   color: var(--color-accent);
 }
 
 .theme-desc {
-  font-size: 11px;
+  font-size: var(--text-label-12, 12px);
   color: var(--color-neutral-6);
   line-height: 1.4;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 .theme-item.is-active .theme-desc {
-  color: var(--color-neutral-8);
+  color: var(--color-neutral-7);
 }
 
 .check-icon {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--color-accent);
   margin-left: 8px;
-  margin-top: 2px;
   flex-shrink: 0;
 }
 
