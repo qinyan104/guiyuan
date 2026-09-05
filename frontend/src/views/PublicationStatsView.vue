@@ -1,33 +1,38 @@
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue'
+import { computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { parseYear } from '../lib/dateUtils'
-import {
-  PUBLICATION_CONTEXT_KEY,
-  type FamilyUnit,
-  type Person,
-  type PublicationData,
-} from '../types/family'
+import { PUBLICATION_CONTEXT_KEY, type FamilyUnit, type Person, type PublicationData } from '../types/family'
+import DarkModeToggle from '../components/DarkModeToggle.vue'
 
 const props = defineProps<{ publicationId: number }>()
-
 const router = useRouter()
 const context = inject(PUBLICATION_CONTEXT_KEY)!
 const pubData = computed<PublicationData>(() => context.pub.publication)
 
 const people = computed<Person[]>(() => Object.values(pubData.value.people ?? {}))
-const families = computed<Record<string, FamilyUnit>>(() => pubData.value.families ?? {})
-
-// ── 核心人口计数 ──
 const totalCount = computed(() => people.value.length)
+
+// ── 性别与在世统计 ──
 const maleCount = computed(() => people.value.filter((p) => p.gender === 'male').length)
 const femaleCount = computed(() => people.value.filter((p) => p.gender === 'female').length)
 const deceasedCount = computed(() => people.value.filter((p) => p.deceased).length)
 const aliveCount = computed(() => totalCount.value - deceasedCount.value)
-const malePercent = computed(() => totalCount.value > 0 ? Math.round((maleCount.value / totalCount.value) * 100) : 0)
-const femalePercent = computed(() => totalCount.value > 0 ? 100 - malePercent.value : 0)
+const malePercent = computed(() => totalCount.value ? Math.round((maleCount.value / totalCount.value) * 100) : 0)
 
-// ── 世代计算 ──
+// ── 堂号与修谱信息 ──
+const clanHallInfo = computed(() => {
+  const info = pubData.value.info
+  if (!info) return null
+  return {
+    hall: info.hallName?.trim(),
+    motto: info.familyMotto?.trim(),
+    origin: info.ancestralOrigin?.trim(),
+  }
+})
+
+// ── 世代计算与世代金字塔 ──
+const families = computed<Record<string, FamilyUnit>>(() => pubData.value.families ?? {})
 const generationMap = computed(() => {
   const map = new Map<string, number>()
   const rootId = pubData.value.focusFamilyId
@@ -59,409 +64,542 @@ const generationMap = computed(() => {
   return map
 })
 
-const generationCount = computed(() => {
-  const known = Array.from(generationMap.value.values()).filter((v) => v > 0)
-  return known.length > 0 ? Math.max(...known) : 0
-})
-
-interface GenStat {
-  generation: number
-  count: number
-  male: number
-  female: number
-}
-
 const generationDistribution = computed(() => {
-  const map = new Map<number, GenStat>()
-  people.value.forEach((p) => {
-    const g = generationMap.value.get(p.id) || 0
-    if (!map.has(g)) map.set(g, { generation: g, count: 0, male: 0, female: 0 })
-    const entry = map.get(g)!
-    entry.count++
-    if (p.gender === 'male') entry.male++
-    else if (p.gender === 'female') entry.female++
-  })
-  return Array.from(map.entries())
-    .sort((a, b) => a[0] - b[0])
-    .map(([g, stat]) => [g, stat.count] as [number, number])
-})
-
-const generationDetails = computed<GenStat[]>(() => {
-  const map = new Map<number, GenStat>()
-  people.value.forEach((p) => {
-    const g = generationMap.value.get(p.id) || 0
-    if (!map.has(g)) map.set(g, { generation: g, count: 0, male: 0, female: 0 })
-    const entry = map.get(g)!
-    entry.count++
-    if (p.gender === 'male') entry.male++
-    else if (p.gender === 'female') entry.female++
-  })
-  return Array.from(map.values()).sort((a, b) => a.generation - b.generation)
-})
-
-const maxGenCount = computed(() => Math.max(1, ...generationDistribution.value.map(([, c]) => c)))
-const peakGeneration = computed(() => {
-  if (generationDistribution.value.length === 0) return null
-  let max = generationDistribution.value[0]
-  for (const item of generationDistribution.value) {
-    if (item[0] > 0 && item[1] > max[1]) max = item
+  const counts = new Map<number, number>()
+  for (const p of people.value) {
+    const g = generationMap.value.get(p.id) ?? 0
+    counts.set(g, (counts.get(g) ?? 0) + 1)
   }
-  return max[0] > 0 ? max : null
+  return Array.from(counts.entries()).sort((a, b) => a[0] - b[0])
 })
 
-// ── 寿年统计 ──
-const lifespans = computed(() =>
-  people.value
-    .map((p) => {
-      const b = parseYear(p.birth), d = parseYear(p.death)
-      if (b === null || d === null) return null
-      const y = d - b
-      if (y < 0 || y > 120) return null
-      return { id: p.id, name: p.name, years: y, birth: b, death: d }
-    })
-    .filter((x): x is { id: string; name: string; years: number; birth: number; death: number } => x !== null),
-)
+const maxGenCount = computed(() => {
+  let m = 1
+  for (const [, c] of generationDistribution.value) {
+    if (c > m) m = c
+  }
+  return m
+})
+
+const generationCount = computed(() => {
+  const gens = generationDistribution.value.map(([g]) => g).filter((g) => g > 0)
+  return gens.length ? Math.max(...gens) : 0
+})
+
+const peakGeneration = computed(() => {
+  let maxGen = 0
+  let maxC = 0
+  for (const [g, c] of generationDistribution.value) {
+    if (g > 0 && c > maxC) {
+      maxC = c
+      maxGen = g
+    }
+  }
+  return maxGen > 0 ? [maxGen, maxC] : null
+})
+
+const generationDetails = computed(() => {
+  return generationDistribution.value.map(([g, c]) => {
+    const pInGen = people.value.filter((p) => (generationMap.value.get(p.id) ?? 0) === g)
+    const m = pInGen.filter((p) => p.gender === 'male').length
+    const f = pInGen.filter((p) => p.gender === 'female').length
+    return { generation: g, count: c, male: m, female: f }
+  })
+})
+
+// ── 寿数与历史年代统计 ──
+const lifespans = computed<number[]>(() => {
+  const list: number[] = []
+  for (const p of people.value) {
+    const by = parseYear(p.birth)
+    const dy = parseYear(p.death)
+    if (by !== null && dy !== null && dy >= by) {
+      const age = dy - by
+      if (age >= 0 && age <= 120) list.push(age)
+    }
+  }
+  return list
+})
 
 const avgLifespan = computed(() => {
   if (lifespans.value.length === 0) return null
-  return Math.round((lifespans.value.reduce((s, x) => s + x.years, 0) / lifespans.value.length) * 10) / 10
+  const sum = lifespans.value.reduce((acc, v) => acc + v, 0)
+  return Math.round(sum / lifespans.value.length)
 })
 
 const oldestPerson = computed(() => {
-  if (lifespans.value.length === 0) return null
-  return [...lifespans.value].sort((a, b) => b.years - a.years)[0]
-})
-
-const lifespanBuckets = computed(() => {
-  const buckets = new Map<string, number>()
-  const labels = ['30岁以下', '30-49岁', '50-69岁', '70-79岁', '80-89岁', '90岁以上']
-  labels.forEach(l => buckets.set(l, 0))
-
-  for (const item of lifespans.value) {
-    const y = item.years
-    if (y < 30) buckets.set('30岁以下', (buckets.get('30岁以下') || 0) + 1)
-    else if (y < 50) buckets.set('30-49岁', (buckets.get('30-49岁') || 0) + 1)
-    else if (y < 70) buckets.set('50-69岁', (buckets.get('50-69岁') || 0) + 1)
-    else if (y < 80) buckets.set('70-79岁', (buckets.get('70-79岁') || 0) + 1)
-    else if (y < 90) buckets.set('80-89岁', (buckets.get('80-89岁') || 0) + 1)
-    else buckets.set('90岁以上', (buckets.get('90岁以上') || 0) + 1)
-  }
-  return Array.from(buckets.entries())
-})
-const maxBucket = computed(() => Math.max(1, ...lifespanBuckets.value.map(([, c]) => c)))
-
-// ── 时间跨度 ──
-const datedYears = computed(() =>
-  people.value.flatMap((p) => {
-    const b = parseYear(p.birth), d = parseYear(p.death)
-    return [b, d].filter((y): y is number => y !== null)
-  }),
-)
-const earliestYear = computed(() => datedYears.value.length > 0 ? Math.min(...datedYears.value) : null)
-const latestYear = computed(() => datedYears.value.length > 0 ? Math.max(...datedYears.value) : null)
-const timelineSpan = computed(() => earliestYear.value && latestYear.value ? latestYear.value - earliestYear.value : null)
-
-// ── 姓氏与姻亲 ──
-const compoundSurnames = ['欧阳','太史','端木','上官','司马','东方','独孤','南宫','万俟','闻人','夏侯','诸葛','尉迟','公羊','赫连','澹台','皇甫','宗政','濮阳','公冶','太叔','申屠','公孙','慕容','仲孙','钟离','长孙','宇文','司徒','鲜于','司空','闾丘','子车','亓官','司寇','巫马','公西','颛孙','壤驷','公良','漆雕','乐正','宰父','谷梁','拓跋','夹谷','轩辕','令狐','段干','百里','呼延','东郭','南门','羊舌','微生','梁丘','左丘','东门','西门','第五']
-function getSurname(name: string): string {
-  if (!name) return ''
-  if (name.length >= 2 && compoundSurnames.includes(name.slice(0, 2))) return name.slice(0, 2)
-  return name.charAt(0)
-}
-
-const surnameDist = computed(() => {
-  const dist = new Map<string, number>()
+  let maxAge = -1
+  let target: { person: Person; years: number; birth: string; death: string } | null = null
   for (const p of people.value) {
-    const s = getSurname(p.name)
-    if (s) dist.set(s, (dist.get(s) || 0) + 1)
-  }
-  return Array.from(dist.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8)
-})
-const maxSurname = computed(() => Math.max(1, ...surnameDist.value.map(([, c]) => c)))
-
-// ── 昭穆字派高频字洞察 ──
-const nameCharDist = computed(() => {
-  const dist = new Map<string, number>()
-  const ignoreWords = new Set(['氏', '公', '公讳', '孺人', '老', '大', '小', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'])
-  for (const p of people.value) {
-    if (!p.name) continue
-    const surname = getSurname(p.name)
-    const givenName = p.name.slice(surname.length)
-    for (const char of givenName) {
-      if (char.trim() && !ignoreWords.has(char)) {
-        dist.set(char, (dist.get(char) || 0) + 1)
+    const by = parseYear(p.birth)
+    const dy = parseYear(p.death)
+    if (by !== null && dy !== null && dy >= by) {
+      const age = dy - by
+      if (age > maxAge) {
+        maxAge = age
+        target = { person: p, years: age, birth: p.birth || `${by}年`, death: p.death || `${dy}年` }
       }
     }
   }
-  return Array.from(dist.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12)
+  return target ? { id: target.person.id, name: target.person.name, years: target.years, birth: target.birth, death: target.death } : null
 })
 
-// ── 叙述 ──
-const narrative = computed(() => {
+const lifespanBuckets = computed(() => {
+  const buckets = [
+    { label: '30岁以下', min: 0, max: 29, count: 0 },
+    { label: '30-49岁', min: 30, max: 49, count: 0 },
+    { label: '50-69岁', min: 50, max: 69, count: 0 },
+    { label: '70-79岁 (古稀)', min: 70, max: 79, count: 0 },
+    { label: '80岁以上 (耄耋)', min: 80, max: 150, count: 0 },
+  ]
+  for (const age of lifespans.value) {
+    for (const b of buckets) {
+      if (age >= b.min && age <= b.max) {
+        b.count++
+        break
+      }
+    }
+  }
+  return buckets.map((b) => [b.label, b.count] as [string, number])
+})
+
+const maxBucket = computed(() => {
+  let m = 1
+  for (const [, c] of lifespanBuckets.value) {
+    if (c > m) m = c
+  }
+  return m
+})
+
+// ── 历代跨度 ──
+const timelineSpan = computed(() => {
+  let earliest = Infinity
+  let latest = -Infinity
+  for (const p of people.value) {
+    const by = parseYear(p.birth)
+    const dy = parseYear(p.death)
+    if (by !== null) {
+      if (by < earliest) earliest = by
+      if (by > latest) latest = by
+    }
+    if (dy !== null) {
+      if (dy < earliest) earliest = dy
+      if (dy > latest) latest = dy
+    }
+  }
+  if (earliest === Infinity || latest === -Infinity) return null
+  return latest - earliest
+})
+
+// ── 昭穆字派高频字 (字辈分析) ──
+const nameCharDist = computed(() => {
+  const counts = new Map<string, number>()
+  for (const p of people.value) {
+    const raw = (p.name || '').trim()
+    if (raw.length < 2) continue
+    const givenName = raw.slice(1)
+    for (const ch of givenName) {
+      if (/^[\u4e00-\u9fa5]$/.test(ch)) {
+        counts.set(ch, (counts.get(ch) ?? 0) + 1)
+      }
+    }
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .filter(([, c]) => c >= 2)
+    .slice(0, 12)
+})
+
+// ── 姓氏与主要姻亲 ──
+const surnameDist = computed(() => {
+  const counts = new Map<string, number>()
+  for (const p of people.value) {
+    const n = (p.name || '').trim()
+    if (n.length >= 1) {
+      const s = n.charAt(0)
+      counts.set(s, (counts.get(s) ?? 0) + 1)
+    }
+  }
+  return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8)
+})
+
+const maxSurname = computed(() => {
+  let m = 1
+  for (const [, c] of surnameDist.value) {
+    if (c > m) m = c
+  }
+  return m
+})
+
+// ── 叙述性摘要 ──
+const narrativeSummary = computed(() => {
+  if (totalCount.value === 0) return ''
   const parts: string[] = []
-  parts.push(`共 ${totalCount.value} 人`)
-  if (generationCount.value > 0) parts.push(`${generationCount.value} 代`)
-  if (earliestYear.value && latestYear.value) parts.push(`自 ${earliestYear.value} 年 至 ${latestYear.value} 年`)
-  return parts.join('，')
+  parts.push(`本谱共载族人先祖 ${totalCount.value} 位`)
+  if (generationCount.value > 0) parts.push(`历传 ${generationCount.value} 世`)
+  if (timelineSpan.value !== null) parts.push(`跨越 ${timelineSpan.value} 年时空脉络`)
+  if (peakGeneration.value) parts.push(`于第 ${peakGeneration.value[0]} 世迎繁衍鼎盛 (${peakGeneration.value[1]}人)`)
+  if (avgLifespan.value !== null) parts.push(`有据族人平均享寿 ${avgLifespan.value} 岁`)
+  return parts.join('，') + '。'
 })
-
-function goPerson(id: string) {
-  router.push({ name: 'workbench', params: { id: props.publicationId }, query: { personId: id } })
-}
 
 function goBack() {
   router.push({ name: 'workbench', params: { id: props.publicationId } })
+}
+
+function goPerson(personId: string) {
+  router.push({
+    name: 'workbench',
+    params: { id: props.publicationId },
+    query: { personId },
+  })
 }
 </script>
 
 <template>
   <div class="chronicle-root" data-testid="stats-view">
-    <!-- Top Action -->
-    <div class="top-bar">
-      <button class="back-btn" @click="goBack">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12" />
-          <polyline points="12 19 5 12 12 5" />
-        </svg>
-        返回画布
-      </button>
-    </div>
-
-    <!-- Hero Section -->
-    <header class="hero">
-      <div class="hero-left">
-        <div class="hero-seal">源</div>
-      </div>
-      <div class="hero-center">
-        <div class="hero-eyebrow">宗族洞察数据全景</div>
-        <h1>{{ pubData.title || '未命名族谱' }}</h1>
-        <p class="hero-narrative">{{ narrative }}。</p>
-        <p v-if="pubData.subtitle" class="hero-sub">{{ pubData.subtitle }}</p>
-      </div>
-
-      <!-- Clan Seal Badge (堂号与郡望) -->
-      <div v-if="pubData.info?.hallName || pubData.info?.ancestralOrigin" class="clan-hall-card">
-        <span v-if="pubData.info?.ancestralOrigin" class="hall-origin">{{ pubData.info.ancestralOrigin }}郡</span>
-        <strong v-if="pubData.info?.hallName" class="hall-name">{{ pubData.info.hallName }}</strong>
-        <span v-if="pubData.info?.familyMotto" class="hall-motto">“{{ pubData.info.familyMotto }}”</span>
-      </div>
-    </header>
-
-    <!-- 核心指标条 (Metric Strip) -->
-    <section class="metric-strip">
-      <div class="metric-item">
-        <span class="metric-num">{{ totalCount }}</span>
-        <span class="metric-label">谱载族人</span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-num">{{ generationCount || '—' }}</span>
-        <span class="metric-label">传承世代</span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-num">{{ aliveCount }} / {{ deceasedCount }}</span>
-        <span class="metric-label">在世 / 归真</span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-num">{{ malePercent }}<small>%</small></span>
-        <span class="metric-label">男丁比例 ({{ maleCount }}人)</span>
-      </div>
-      <div class="metric-item" v-if="timelineSpan !== null">
-        <span class="metric-num">{{ timelineSpan }}<small> 年</small></span>
-        <span class="metric-label">历代跨度</span>
-      </div>
-      <div class="metric-item" v-if="avgLifespan !== null">
-        <span class="metric-num">{{ avgLifespan }}<small> 岁</small></span>
-        <span class="metric-label">族人平均寿数</span>
-      </div>
-    </section>
-
-    <!-- 世代繁衍分布 (Generation Progression) -->
-    <section class="panel">
-      <div class="panel-head">
-        <div class="panel-title-group">
-          <div class="panel-icon">代</div>
-          <div>
-            <h2>世代繁衍金字塔</h2>
-            <p class="panel-subtitle">历代人口阶梯繁衍，开枝散叶传承脉络</p>
+    <div class="page-container">
+      <!-- Standard Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="back-btn" type="button" @click="goBack" title="返回画布">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            <span>返回画布</span>
+          </button>
+          <div class="topbar-divider"></div>
+          <div class="topbar-breadcrumb">
+            <span class="topbar-pub-title">{{ pubData.title || '未命名族谱' }}</span>
+            <span class="topbar-crumb-sep">/</span>
+            <span class="topbar-page-label">宗族洞察数据</span>
           </div>
         </div>
-        <div class="head-badges">
-          <span v-if="peakGeneration" class="peak-badge">
-            繁衍鼎盛：第 {{ peakGeneration[0] }} 代 ({{ peakGeneration[1] }}人)
-          </span>
-          <span class="panel-chip">{{ generationCount }} 代共承</span>
+
+        <div class="topbar-right">
+          <DarkModeToggle />
         </div>
-      </div>
+      </header>
 
-      <div v-if="generationDistribution.length === 0" class="empty">暂无世代数据</div>
-      <div v-else class="gen-pyramid">
-        <div
-          v-for="stat in generationDetails"
-          :key="stat.generation"
-          class="gen-row"
-        >
-          <div class="gen-name">
-            <strong>{{ stat.generation === 0 ? '未归世' : `第 ${stat.generation} 世` }}</strong>
-            <small>{{ stat.male }} 男 · {{ stat.female }} 女</small>
-          </div>
-
-          <div class="gen-bar-wrap">
-            <div class="gen-bar-track">
-              <div
-                class="gen-bar-fill"
-                :style="{ width: `${(stat.count / maxGenCount) * 100}%` }"
-              >
-                <span v-if="(stat.count / maxGenCount) > 0.15" class="gen-bar-inner-text">
-                  {{ stat.count }} 人
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <span class="gen-val">{{ stat.count }} 人</span>
+      <!-- Hero Card -->
+      <header class="hero">
+        <div class="hero-seal">谱</div>
+        <div class="hero-center">
+          <div class="hero-eyebrow">宗族洞察</div>
+          <h1>{{ pubData.title || '未命名族谱' }}</h1>
+          <p class="hero-narrative" v-if="narrativeSummary">{{ narrativeSummary }}</p>
+          <p class="hero-sub" v-if="pubData.subtitle">{{ pubData.subtitle }}</p>
         </div>
-      </div>
-    </section>
 
-    <!-- 寿数与昭穆字派 双栏 -->
-    <section class="dual-panel">
-      <!-- 寿年分布 -->
-      <div class="panel">
+        <!-- 堂号印章卡片 -->
+        <div v-if="clanHallInfo && (clanHallInfo.hall || clanHallInfo.origin)" class="clan-hall-card">
+          <span v-if="clanHallInfo.origin" class="hall-origin">{{ clanHallInfo.origin }}郡望</span>
+          <strong v-if="clanHallInfo.hall" class="hall-name">{{ clanHallInfo.hall }}</strong>
+          <span v-if="clanHallInfo.motto" class="hall-motto">“{{ clanHallInfo.motto }}”</span>
+        </div>
+      </header>
+
+      <!-- 核心指标条 (Metric Strip) -->
+      <section class="metric-strip">
+        <div class="metric-item">
+          <span class="metric-num">{{ totalCount }}</span>
+          <span class="metric-label">谱载族人</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-num">{{ generationCount || '—' }}</span>
+          <span class="metric-label">传承世代</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-num">{{ aliveCount }} / {{ deceasedCount }}</span>
+          <span class="metric-label">在世 / 归真</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-num">{{ malePercent }}<small>%</small></span>
+          <span class="metric-label">男丁比例 ({{ maleCount }}人)</span>
+        </div>
+        <div class="metric-item" v-if="timelineSpan !== null">
+          <span class="metric-num">{{ timelineSpan }}<small> 年</small></span>
+          <span class="metric-label">历代跨度</span>
+        </div>
+        <div class="metric-item" v-if="avgLifespan !== null">
+          <span class="metric-num">{{ avgLifespan }}<small> 岁</small></span>
+          <span class="metric-label">族人平均寿数</span>
+        </div>
+      </section>
+
+      <!-- 世代繁衍分布 (Generation Progression) -->
+      <section class="panel">
         <div class="panel-head">
           <div class="panel-title-group">
-            <div class="panel-icon">寿</div>
+            <div class="panel-icon">代</div>
             <div>
-              <h2>寿数考录</h2>
-              <p class="panel-subtitle">有生卒年记载之先祖享寿分布</p>
+              <h2>世代繁衍金字塔</h2>
+              <p class="panel-subtitle">历代人口阶梯繁衍，开枝散叶传承脉络</p>
             </div>
           </div>
-          <span class="panel-chip" v-if="avgLifespan !== null">均寿 {{ avgLifespan }} 岁</span>
-        </div>
-
-        <div v-if="lifespans.length === 0" class="empty">补充生卒年数据后将在此展现寿数分布</div>
-        <div v-else class="lifespan-body">
-          <div v-if="oldestPerson" class="longevity-badge" @click="goPerson(oldestPerson.id)">
-            <span class="longevity-tag">最高寿先祖</span>
-            <strong class="longevity-name">{{ oldestPerson.name }}</strong>
-            <span class="longevity-years">享寿 {{ oldestPerson.years }} 岁</span>
-            <small class="longevity-era">({{ oldestPerson.birth }}—{{ oldestPerson.death }})</small>
-          </div>
-
-          <div class="bar-list">
-            <div v-for="[b, c] in lifespanBuckets" :key="b" class="bar-row">
-              <span class="bar-label">{{ b }}</span>
-              <div class="bar-track">
-                <div class="bar-fill bar-fill--warm" :style="{ width: `${(c / maxBucket) * 100}%` }"></div>
-              </div>
-              <span class="bar-val">{{ c }} 人</span>
-            </div>
+          <div class="head-badges">
+            <span v-if="peakGeneration" class="peak-badge">
+              繁衍鼎盛：第 {{ peakGeneration[0] }} 代 ({{ peakGeneration[1] }}人)
+            </span>
+            <span class="panel-chip">{{ generationCount }} 代共承</span>
           </div>
         </div>
-      </div>
 
-      <!-- 昭穆字派与用字洞察 -->
-      <div class="panel">
-        <div class="panel-head">
-          <div class="panel-title-group">
-            <div class="panel-icon">派</div>
-            <div>
-              <h2>昭穆字派高频字</h2>
-              <p class="panel-subtitle">名讳字辈传承用字洞察</p>
-            </div>
-          </div>
-          <span class="panel-chip">字辈前列</span>
-        </div>
-
-        <div v-if="nameCharDist.length === 0" class="empty">暂无足够名讳数据</div>
-        <div v-else class="word-grid">
+        <div v-if="generationDistribution.length === 0" class="empty">暂无世代数据</div>
+        <div v-else class="gen-pyramid">
           <div
-            v-for="[char, count] in nameCharDist"
-            :key="char"
-            class="word-seal"
+            v-for="stat in generationDetails"
+            :key="stat.generation"
+            class="gen-row"
           >
-            <span class="word-char">{{ char }}</span>
-            <span class="word-count">{{ count }} 人</span>
-          </div>
-        </div>
-      </div>
-    </section>
+            <div class="gen-name">
+              <strong>{{ stat.generation === 0 ? '未归世' : `第 ${stat.generation} 世` }}</strong>
+              <small>{{ stat.male }} 男 · {{ stat.female }} 女</small>
+            </div>
 
-    <!-- 姓氏与主要姻亲 -->
-    <section class="panel">
-      <div class="panel-head">
-        <div class="panel-title-group">
-          <div class="panel-icon">宗</div>
-          <div>
-            <h2>姓氏与通婚氏族</h2>
-            <p class="panel-subtitle">本宗宗支与主要配偶氏族源流</p>
-          </div>
-        </div>
-        <span class="panel-chip">Top {{ surnameDist.length }}</span>
-      </div>
+            <div class="gen-bar-wrap">
+              <div class="gen-bar-track">
+                <div
+                  class="gen-bar-fill"
+                  :style="{ width: `${(stat.count / maxGenCount) * 100}%` }"
+                >
+                  <span v-if="(stat.count / maxGenCount) > 0.15" class="gen-bar-inner-text">
+                    {{ stat.count }} 人
+                  </span>
+                </div>
+              </div>
+            </div>
 
-      <div v-if="surnameDist.length === 0" class="empty">暂无姓氏数据</div>
-      <div v-else class="surname-grid">
-        <div
-          v-for="([s, c], idx) in surnameDist"
-          :key="s"
-          class="surname-card"
-        >
-          <div class="surname-seal" :class="{ 'surname-seal--main': idx === 0 }">{{ s }}</div>
-          <div class="surname-info">
-            <strong class="surname-name">{{ s }}氏</strong>
-            <span class="surname-count">{{ c }} 位族人 / 配偶</span>
-          </div>
-          <div class="surname-bar-mini">
-            <div class="surname-bar-fill" :style="{ width: `${(c / maxSurname) * 100}%` }"></div>
+            <span class="gen-val">{{ stat.count }} 人</span>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <!-- 寿数与昭穆字派 双栏 -->
+      <section class="dual-panel">
+        <!-- 寿年分布 -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title-group">
+              <div class="panel-icon">寿</div>
+              <div>
+                <h2>寿数考录</h2>
+                <p class="panel-subtitle">有生卒年记载之先祖享寿分布</p>
+              </div>
+            </div>
+            <span class="panel-chip" v-if="avgLifespan !== null">均寿 {{ avgLifespan }} 岁</span>
+          </div>
+
+          <div v-if="lifespans.length === 0" class="empty">补充生卒年数据后将在此展现寿数分布</div>
+          <div v-else class="lifespan-body">
+            <div v-if="oldestPerson" class="longevity-badge" @click="goPerson(oldestPerson.id)">
+              <span class="longevity-tag">最高寿先祖</span>
+              <strong class="longevity-name">{{ oldestPerson.name }}</strong>
+              <span class="longevity-years">享寿 {{ oldestPerson.years }} 岁</span>
+              <small class="longevity-era">({{ oldestPerson.birth }}—{{ oldestPerson.death }})</small>
+            </div>
+
+            <div class="bar-list">
+              <div v-for="[b, c] in lifespanBuckets" :key="b" class="bar-row">
+                <span class="bar-label">{{ b }}</span>
+                <div class="bar-track">
+                  <div class="bar-fill bar-fill--warm" :style="{ width: `${(c / maxBucket) * 100}%` }"></div>
+                </div>
+                <span class="bar-val">{{ c }} 人</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 昭穆字派与用字洞察 -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title-group">
+              <div class="panel-icon">派</div>
+              <div>
+                <h2>昭穆字派高频字</h2>
+                <p class="panel-subtitle">名讳字辈传承用字洞察</p>
+              </div>
+            </div>
+            <span class="panel-chip">字辈前列</span>
+          </div>
+
+          <div v-if="nameCharDist.length === 0" class="empty">暂无足够名讳数据</div>
+          <div v-else class="word-grid">
+            <div
+              v-for="[char, count] in nameCharDist"
+              :key="char"
+              class="word-seal"
+            >
+              <span class="word-char">{{ char }}</span>
+              <span class="word-count">{{ count }} 人</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 姓氏与主要姻亲 -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title-group">
+            <div class="panel-icon">宗</div>
+            <div>
+              <h2>姓氏与通婚氏族</h2>
+              <p class="panel-subtitle">本宗宗支与主要配偶氏族源流</p>
+            </div>
+          </div>
+          <span class="panel-chip">Top {{ surnameDist.length }}</span>
+        </div>
+
+        <div v-if="surnameDist.length === 0" class="empty">暂无姓氏数据</div>
+        <div v-else class="surname-grid">
+          <div
+            v-for="([s, c], idx) in surnameDist"
+            :key="s"
+            class="surname-card"
+          >
+            <div class="surname-seal" :class="{ 'surname-seal--main': idx === 0 }">{{ s }}</div>
+            <div class="surname-info">
+              <strong class="surname-name">{{ s }}氏</strong>
+              <span class="surname-count">{{ c }} 位族人 / 配偶</span>
+            </div>
+            <div class="surname-bar-mini">
+              <div class="surname-bar-fill" :style="{ width: `${(c / maxSurname) * 100}%` }"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .chronicle-root {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 48px clamp(16px, 3.5vw, 40px) 80px;
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--color-canvas-bg, var(--color-neutral-1));
   color: var(--color-neutral-9);
+  box-sizing: border-box;
+  position: relative;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-.top-bar {
-  margin-bottom: 28px;
+.page-container {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 16px 24px 80px;
+  box-sizing: border-box;
+}
+
+/* ── Standard Topbar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 18px;
+  background: var(--workbench-header-bg, var(--color-panel-bg));
+  border: 1px solid var(--workbench-header-border, var(--color-card-stroke));
+  border-radius: var(--radius-2xl, 16px);
+  box-shadow: var(--workbench-header-shadow, var(--shadow-whisper));
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  position: sticky;
+  top: 14px;
+  z-index: 50;
+  margin-bottom: 24px;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
 .back-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 16px;
-  font-size: 13px;
+  padding: 6px 14px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--color-neutral-7);
-  background: var(--bg-paper-raised, #ffffff);
-  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.2));
-  border-radius: 8px;
+  color: var(--color-neutral-8);
+  background: var(--color-card-fill, var(--color-neutral-2));
+  border: 1px solid var(--color-neutral-4);
+  border-radius: var(--radius-md, 8px);
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .back-btn:hover {
   background: var(--color-neutral-9);
-  color: #fff;
+  color: var(--color-neutral-1);
   border-color: var(--color-neutral-9);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-whisper);
 }
 
-/* ── Hero ── */
+.topbar-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-neutral-4);
+  flex-shrink: 0;
+}
+
+.topbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.topbar-pub-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  color: var(--color-neutral-10);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.topbar-crumb-sep {
+  color: var(--color-neutral-5);
+  font-size: 12px;
+}
+
+.topbar-page-label {
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* ── Hero Card ── */
 .hero {
   display: flex;
   align-items: flex-start;
   gap: 20px;
-  margin-bottom: 32px;
+  padding: 24px 28px;
+  background: var(--color-card-fill, var(--color-neutral-2));
+  border: 1px solid var(--color-card-stroke, var(--color-neutral-4));
+  border-radius: var(--radius-xl, 16px);
+  box-shadow: var(--shadow-whisper);
+  margin-bottom: 24px;
   position: relative;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
 .hero-seal {
@@ -469,16 +607,16 @@ function goBack() {
   height: 48px;
   display: grid;
   place-items: center;
-  border-radius: 12px;
-  background: rgba(169, 52, 38, 0.08);
-  border: 1.5px solid rgba(169, 52, 38, 0.3);
-  color: #a93426;
-  font-family: var(--font-serif, "Noto Serif SC", serif);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-accent-muted);
+  border: 1.5px solid var(--color-accent);
+  color: var(--color-accent);
+  font-family: var(--font-serif);
   font-size: 24px;
   font-weight: 700;
-  box-shadow: inset 0 0 8px rgba(169, 52, 38, 0.08);
+  box-shadow: var(--shadow-accent);
   flex-shrink: 0;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .hero-center {
@@ -489,14 +627,14 @@ function goBack() {
 .hero-eyebrow {
   font-size: 11px;
   font-weight: 700;
-  color: #a93426;
+  color: var(--color-accent);
   letter-spacing: 0.1em;
   margin-bottom: 4px;
 }
 
 .hero h1 {
-  font-family: var(--font-serif, "Noto Serif SC", serif);
-  font-size: clamp(26px, 3.5vw, 36px);
+  font-family: var(--font-serif);
+  font-size: clamp(24px, 3.2vw, 32px);
   font-weight: 700;
   color: var(--color-neutral-10);
   margin: 0 0 8px;
@@ -504,8 +642,8 @@ function goBack() {
 }
 
 .hero-narrative {
-  font-family: var(--font-serif, "Noto Serif SC", serif);
-  font-size: 14.5px;
+  font-family: var(--font-serif);
+  font-size: 14px;
   color: var(--color-neutral-7);
   margin: 0 0 4px;
   line-height: 1.8;
@@ -523,24 +661,25 @@ function goBack() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 10px 16px;
-  border-radius: 10px;
-  background: rgba(169, 52, 38, 0.05);
-  border: 1.5px solid rgba(169, 52, 38, 0.2);
+  gap: 3px;
+  padding: 10px 18px;
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-accent-muted);
+  border: 1.5px solid var(--color-accent);
   flex-shrink: 0;
+  align-self: center;
 }
 
 .hall-origin {
   font-size: 10.5px;
-  color: var(--color-neutral-6);
+  color: var(--color-neutral-7);
   font-weight: 600;
 }
 
 .hall-name {
-  font-family: var(--font-serif, "Noto Serif SC", serif);
+  font-family: var(--font-serif);
   font-size: 16px;
-  color: #a93426;
+  color: var(--color-accent);
   font-weight: 800;
 }
 
@@ -554,13 +693,14 @@ function goBack() {
 .metric-strip {
   display: flex;
   gap: 28px;
-  padding: 22px 28px;
-  background: var(--bg-paper-raised, #ffffff);
-  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.16));
-  border-radius: 12px;
-  margin-bottom: 28px;
+  padding: 20px 28px;
+  background: var(--color-card-fill, var(--color-neutral-2));
+  border: 1px solid var(--color-card-stroke, var(--color-neutral-4));
+  border-radius: var(--radius-lg, 12px);
+  margin-bottom: 24px;
   flex-wrap: wrap;
-  box-shadow: 0 4px 16px rgba(24, 18, 12, 0.04);
+  box-shadow: var(--shadow-whisper);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
 .metric-item {
@@ -570,7 +710,7 @@ function goBack() {
 }
 
 .metric-num {
-  font-family: var(--font-serif, "Noto Serif SC", serif);
+  font-family: var(--font-serif);
   font-size: 24px;
   font-weight: 700;
   color: var(--color-neutral-10);
@@ -592,12 +732,13 @@ function goBack() {
 
 /* ── Panels ── */
 .panel {
-  background: var(--bg-paper-raised, #ffffff);
-  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.16));
-  border-radius: 12px;
+  background: var(--color-card-fill, var(--color-neutral-2));
+  border: 1px solid var(--color-card-stroke, var(--color-neutral-4));
+  border-radius: var(--radius-lg, 12px);
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 16px rgba(24, 18, 12, 0.04);
+  box-shadow: var(--shadow-whisper);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
 .panel-head {
@@ -618,16 +759,16 @@ function goBack() {
   height: 32px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: rgba(169, 52, 38, 0.08);
-  color: #a93426;
-  font-family: var(--font-serif, "Noto Serif SC", serif);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+  font-family: var(--font-serif);
   font-size: 15px;
   font-weight: 700;
 }
 
 .panel-head h2 {
-  font-family: var(--font-serif, "Noto Serif SC", serif);
+  font-family: var(--font-serif);
   font-size: 17px;
   font-weight: 700;
   color: var(--color-neutral-10);
@@ -648,19 +789,19 @@ function goBack() {
 
 .peak-badge {
   font-size: 11px;
-  color: #a93426;
-  background: rgba(169, 52, 38, 0.06);
-  border: 1px solid rgba(169, 52, 38, 0.2);
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent);
   padding: 2px 8px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm, 5px);
   font-weight: 600;
 }
 
 .panel-chip {
   font-size: 11px;
   padding: 2px 8px;
-  border-radius: 5px;
-  background: var(--fill-subtle, rgba(122, 95, 65, 0.08));
+  border-radius: var(--radius-sm, 5px);
+  background: var(--color-neutral-3);
   color: var(--color-neutral-7);
   font-weight: 600;
 }
@@ -688,7 +829,7 @@ function goBack() {
 .gen-name strong {
   font-size: 13px;
   font-weight: 700;
-  color: var(--color-neutral-9);
+  color: var(--color-neutral-10);
 }
 
 .gen-name small {
@@ -702,15 +843,15 @@ function goBack() {
 
 .gen-bar-track {
   height: 22px;
-  background: rgba(122, 95, 65, 0.06);
-  border-radius: 6px;
+  background: var(--color-neutral-3);
+  border-radius: var(--radius-sm, 6px);
   overflow: hidden;
 }
 
 .gen-bar-fill {
   height: 100%;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #a93426, #c5574a);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-accent-gradient);
   display: flex;
   align-items: center;
   padding: 0 10px;
@@ -719,7 +860,7 @@ function goBack() {
 
 .gen-bar-inner-text {
   font-size: 11px;
-  color: #fff;
+  color: var(--color-text-on-accent, #fff);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -751,36 +892,36 @@ function goBack() {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(169, 52, 38, 0.05);
-  border: 1px solid rgba(169, 52, 38, 0.18);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .longevity-badge:hover {
-  background: rgba(169, 52, 38, 0.08);
+  background: var(--color-neutral-3);
   transform: translateY(-1px);
 }
 
 .longevity-tag {
   font-size: 10px;
-  color: #fff;
-  background: #a93426;
+  color: var(--color-text-on-accent, #fff);
+  background: var(--color-accent);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm, 4px);
   font-weight: 600;
 }
 
 .longevity-name {
   font-size: 13px;
   font-weight: 700;
-  color: var(--color-neutral-9);
+  color: var(--color-neutral-10);
 }
 
 .longevity-years {
   font-size: 12px;
-  color: #a93426;
+  color: var(--color-accent);
   font-weight: 700;
 }
 
@@ -798,7 +939,7 @@ function goBack() {
 
 .bar-row {
   display: grid;
-  grid-template-columns: 75px 1fr 50px;
+  grid-template-columns: 85px 1fr 50px;
   align-items: center;
   gap: 10px;
 }
@@ -810,19 +951,19 @@ function goBack() {
 
 .bar-track {
   height: 14px;
-  background: rgba(122, 95, 65, 0.06);
-  border-radius: 4px;
+  background: var(--color-neutral-3);
+  border-radius: var(--radius-sm, 4px);
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-sm, 4px);
   transition: width 0.3s ease;
 }
 
 .bar-fill--warm {
-  background: linear-gradient(90deg, #b07d4b, #cf9d6b);
+  background: linear-gradient(90deg, var(--color-warning), var(--color-accent));
 }
 
 .bar-val {
@@ -846,23 +987,23 @@ function goBack() {
   align-items: center;
   gap: 4px;
   padding: 10px 4px;
-  border-radius: 8px;
-  background: var(--fill-subtle, rgba(122, 95, 65, 0.04));
-  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.1));
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-neutral-3);
+  border: 1px solid var(--color-neutral-4);
   transition: all 0.15s ease;
 }
 
 .word-seal:hover {
-  background: rgba(169, 52, 38, 0.05);
-  border-color: rgba(169, 52, 38, 0.3);
+  background: var(--color-accent-muted);
+  border-color: var(--color-accent);
   transform: translateY(-1px);
 }
 
 .word-char {
-  font-family: var(--font-serif, "Noto Serif SC", serif);
+  font-family: var(--font-serif);
   font-size: 20px;
   font-weight: 800;
-  color: #a93426;
+  color: var(--color-accent);
 }
 
 .word-count {
@@ -883,14 +1024,15 @@ function goBack() {
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  border-radius: 8px;
-  background: var(--fill-subtle, rgba(122, 95, 65, 0.04));
-  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.1));
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-neutral-3);
+  border: 1px solid var(--color-neutral-4);
   transition: all 0.15s ease;
 }
 
 .surname-card:hover {
-  border-color: rgba(122, 95, 65, 0.3);
+  border-color: var(--color-neutral-5);
+  background: var(--color-card-hover-fill, var(--color-neutral-1));
   transform: translateY(-1px);
 }
 
@@ -899,17 +1041,19 @@ function goBack() {
   height: 32px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: rgba(122, 95, 65, 0.12);
-  color: var(--color-neutral-9);
-  font-family: var(--font-serif, "Noto Serif SC", serif);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-card-fill, var(--color-neutral-2));
+  color: var(--color-neutral-8);
+  font-family: var(--font-serif);
   font-size: 15px;
   font-weight: 700;
+  border: 1px solid var(--color-neutral-4);
 }
 
 .surname-seal--main {
-  background: #a93426;
-  color: #fff;
+  background: var(--color-accent);
+  color: var(--color-text-on-accent, #fff);
+  border-color: var(--color-accent);
 }
 
 .surname-info {
@@ -921,7 +1065,7 @@ function goBack() {
 .surname-name {
   font-size: 14px;
   font-weight: 700;
-  color: var(--color-neutral-9);
+  color: var(--color-neutral-10);
 }
 
 .surname-count {
@@ -931,7 +1075,7 @@ function goBack() {
 
 .surname-bar-mini {
   height: 4px;
-  background: rgba(122, 95, 65, 0.08);
+  background: var(--color-neutral-4);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -939,7 +1083,7 @@ function goBack() {
 .surname-bar-fill {
   height: 100%;
   border-radius: 2px;
-  background: #a93426;
+  background: var(--color-accent);
 }
 
 .empty {
@@ -950,6 +1094,17 @@ function goBack() {
 }
 
 @media (max-width: 768px) {
+  .page-container {
+    padding: 12px 14px 60px;
+  }
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .topbar-left, .topbar-right {
+    justify-content: space-between;
+  }
   .dual-panel {
     grid-template-columns: 1fr;
   }
