@@ -2,12 +2,15 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /build
 
+# Configure Aliyun Maven mirror for fast and stable dependency downloads
+COPY release/settings.xml /root/.m2/settings.xml
+
 # Cache dependencies layer (pom.xml changes less often than sources)
 COPY backend/pom.xml .
-RUN mvn dependency:go-offline -q
+RUN mvn dependency:resolve -B
 
 COPY backend/src src/
-RUN mvn package -DskipTests -DskipITs -q && \
+RUN mvn package -DskipTests -DskipITs -B && \
     cp target/*.jar app.jar
 
 # ─── Stage 2: Runtime ───
