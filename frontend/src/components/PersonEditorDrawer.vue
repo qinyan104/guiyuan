@@ -1,5 +1,5 @@
-﻿<script setup lang="ts">
-import { ref, watch } from "vue"
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useFeedback } from "../composables/useFeedback"
 import FeedbackStrip from "../components/FeedbackStrip.vue"
 import BranchMountManager from "./BranchMountManager.vue"
@@ -7,8 +7,18 @@ import AppSelect from "./AppSelect.vue"
 import type { FamilyBranchMode, Gender, Person } from "../types/family"
 import { uploadPhoto, getPhotoUrl } from "../api/photo"
 
-interface PersonDetailItem { label: string; value: string }
-interface ChildOrderItem { person: Person; index: number; isFirst: boolean; isLast: boolean }
+interface PersonDetailItem {
+  label: string
+  value: string
+}
+
+interface ChildOrderItem {
+  person: Person
+  index: number
+  isFirst: boolean
+  isLast: boolean
+}
+
 type EditablePersonField = "name" | "birth" | "death" | "age" | "titleName" | "clan" | "note" | "avatarUrl"
 
 const feedback = useFeedback()
@@ -53,35 +63,81 @@ const emit = defineEmits<{
   (e: "delete-person"): void
 }>()
 
-
-function uf(f: EditablePersonField, e: Event) { emit("update-person-field", { field: f, value: (e.target as HTMLInputElement).value }) }
-function ug(e: Event) { emit("update-person-gender", (e.target as HTMLSelectElement).value as Gender) }
-async function upAvatar(e: Event) {
-  const i = e.target as HTMLInputElement; if (!i.files?.length) return
-  const file = i.files[0]
-  if (file.size > 5 * 1024 * 1024) { feedback.errorMessage.value = "照片过大，请上传 5MB 以内的文件"; return }
-  if (!file.type.startsWith('image/')) { feedback.errorMessage.value = "仅支持图片文件"; return }
-  if (!props.publicationId) { feedback.errorMessage.value = "请先保存族谱到服务器后再上传照片"; return }
-  try { const pid = await uploadPhoto(props.person.id, props.publicationId, file); emit("update-person-field", { field: "avatarUrl", value: getPhotoUrl(pid) }) }
-  catch { feedback.errorMessage.value = "上传失败" }
+function updatePersonField(field: EditablePersonField, event: Event) {
+  const target = event.target as HTMLInputElement
+  emit("update-person-field", { field, value: target.value })
 }
 
-const dcid = ref<string | null>(null); const dcoid = ref<string | null>(null)
-function cds(id: string, e: DragEvent) { dcid.value = id; e.dataTransfer!.effectAllowed = "move" }
-function cdo(id: string, e: DragEvent) { e.preventDefault(); dcoid.value = id }
-function cdl() { dcoid.value = null }
-function cdop(tid: string, e: DragEvent) {
-  e.preventDefault(); const s = dcid.value; dcid.value = null; dcoid.value = null
-  if (!s || s === tid) return
-  const si = props.childItems.findIndex(c => c.person.id === s)
-  const ti = props.childItems.findIndex(c => c.person.id === tid)
+function updatePersonGender(genderVal: string) {
+  emit("update-person-gender", genderVal as Gender)
+}
+
+async function handleUploadAvatar(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files?.length) return
+  const file = input.files[0]
+  if (file.size > 5 * 1024 * 1024) {
+    feedback.errorMessage.value = "照片过大，请上传 5MB 以内的文件"
+    return
+  }
+  if (!file.type.startsWith("image/")) {
+    feedback.errorMessage.value = "仅支持图片文件"
+    return
+  }
+  if (!props.publicationId) {
+    feedback.errorMessage.value = "请先保存族谱到服务器后再上传照片"
+    return
+  }
+  try {
+    const pid = await uploadPhoto(props.person.id, props.publicationId, file)
+    emit("update-person-field", { field: "avatarUrl", value: getPhotoUrl(pid) })
+  } catch {
+    feedback.errorMessage.value = "上传失败"
+  }
+}
+
+// Child Drag and Drop state
+const draggingChildId = ref<string | null>(null)
+const dragOverChildId = ref<string | null>(null)
+
+function handleChildDragStart(id: string, e: DragEvent) {
+  draggingChildId.value = id
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = "move"
+  }
+}
+
+function handleChildDragOver(id: string, e: DragEvent) {
+  e.preventDefault()
+  dragOverChildId.value = id
+}
+
+function handleChildDragLeave() {
+  dragOverChildId.value = null
+}
+
+function handleChildDrop(targetId: string, e: DragEvent) {
+  e.preventDefault()
+  const sourceId = draggingChildId.value
+  draggingChildId.value = null
+  dragOverChildId.value = null
+  if (!sourceId || sourceId === targetId) return
+  const si = props.childItems.findIndex((c) => c.person.id === sourceId)
+  const ti = props.childItems.findIndex((c) => c.person.id === targetId)
   if (si === -1 || ti === -1) return
-  for (let i = 0; i < Math.abs(ti - si); i++) emit("move-child", { childId: s, direction: ti > si ? 1 : -1 })
+  for (let i = 0; i < Math.abs(ti - si); i++) {
+    emit("move-child", { childId: sourceId, direction: ti > si ? 1 : -1 })
+  }
 }
-function cde() { dcid.value = null; dcoid.value = null }
 
-function gl(g: Gender) { return g === "male" ? "男" : g === "female" ? "女" : "未知" }
-function gc(g: Gender) { return g === "male" ? "gm" : g === "female" ? "gf" : "" }
+function handleChildDragEnd() {
+  draggingChildId.value = null
+  dragOverChildId.value = null
+}
+
+function getGenderClass(g: Gender) {
+  return g === "male" ? "is-male" : g === "female" ? "is-female" : "is-unknown"
+}
 
 function extractYear(s: string | undefined): number | null {
   if (!s) return null
@@ -91,117 +147,291 @@ function extractYear(s: string | undefined): number | null {
 
 const autoAge = ref<string>("")
 
-const genderOptions = [{ value: "male", label: "男" }, { value: "female", label: "女" }, { value: "unknown", label: "未知" }]
+const genderOptions = [
+  { value: "male", label: "男" },
+  { value: "female", label: "女" },
+  { value: "unknown", label: "未知" },
+]
 
-watch([() => props.person.birth, () => props.person.death], ([b, d]) => {
-  const by = extractYear(b)
-  if (!by) { autoAge.value = ""; return }
-  const dy = extractYear(d)
-  if (dy && dy > by && dy - by < 150) {
-    autoAge.value = String(dy - by)
-    emit("update-person-field", { field: "age", value: String(dy - by) })
-  } else if (!d || !dy) {
-    autoAge.value = String(new Date().getFullYear() - by)
-  } else {
-    autoAge.value = ""
+watch(
+  [() => props.person.birth, () => props.person.death],
+  ([b, d]) => {
+    const by = extractYear(b)
+    if (!by) {
+      autoAge.value = ""
+      return
+    }
+    const dy = extractYear(d)
+    if (dy && dy > by && dy - by < 150) {
+      autoAge.value = String(dy - by)
+      emit("update-person-field", { field: "age", value: String(dy - by) })
+    } else if (!d || !dy) {
+      autoAge.value = String(new Date().getFullYear() - by)
+    } else {
+      autoAge.value = ""
+    }
+  },
+  { immediate: true },
+)
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === "Escape" && props.open) {
+    emit("close")
   }
-}, { immediate: true })
+}
 
+onMounted(() => {
+  window.addEventListener("keydown", onKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", onKeydown)
+})
 </script>
 
 <template>
-  <FeedbackStrip :errorMessage="feedback.errorMessage.value" :statusMessage="feedback.statusMessage.value" @dismiss="feedback.dismiss" />
+  <FeedbackStrip
+    :errorMessage="feedback.errorMessage.value"
+    :statusMessage="feedback.statusMessage.value"
+    @dismiss="feedback.dismiss"
+  />
   <Teleport to="body">
-    <Transition name="ak-slide">
-      <div v-if="open" class="ak-overlay" @click.self="$emit('close')">
-        <article class="ak-card" @click.stop>
-          <div class="ak-bar">
-            <button class="ak-bar__btn" @click="$emit('close')">关闭</button>
-            <span class="ak-bar__title">编辑人物</span>
-            <button class="ak-bar__btn ak-bar__done" @click="$emit('close')">完成</button>
-          </div>
-          <div class="ak-hbody">
-            <div class="ak-left">
-              <label class="ak-av">
-                <img v-if="person.avatarUrl" :src="person.avatarUrl" class="ak-av__img" />
-                <svg v-else width="36" height="36" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="4" stroke="currentColor" stroke-width="1.2" /><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" /></svg>
-                <input type="file" accept="image/*" class="ak-av__inp" @change="upAvatar" />
-              </label>
-              <div class="ak-identity">
-                <input :value="person.name" type="text" class="ak-inp ak-inp--hero" placeholder="姓名" @input="uf('name', $event)" />
-                <div class="ak-context">
-                  <span class="ak-context__chip">当前人物</span>
-                  <span v-if="kinshipLabel" class="ak-context__chip ak-context__chip--accent">{{ kinshipLabel }}</span>
-                  <span v-if="suggestion" class="ak-context__chip ak-context__chip--accent">{{ suggestion }}</span>
-                  <span v-if="lineageSuggestion" class="ak-context__chip">{{ lineageSuggestion }}</span>
-                </div>
-                <p class="ak-context__hint">先在此修订人物信息，再回到画布继续排布世系。</p>
+    <Transition name="ped-fade">
+      <div v-if="open" class="ped-overlay" @click.self="$emit('close')">
+        <article class="ped-card" role="dialog" aria-label="编辑人物" @click.stop>
+          <!-- Elegant Classical Header -->
+          <header class="ped-header">
+            <div class="ped-header-left">
+              <span class="ped-seal">人</span>
+              <div class="ped-header-meta">
+                <h3 class="ped-header-title">人物谱帙</h3>
+                <span class="ped-header-sub">厘正世系 · 勘录行状</span>
               </div>
-              <div v-if="details.length" class="ak-dlist">
-                <div v-for="d in details" :key="d.label" class="ak-ditem">
-                  <span class="ak-ditem__l">{{ d.label }}</span>
-                  <span class="ak-ditem__v">{{ d.value }}</span>
+            </div>
+
+            <div class="ped-header-right">
+              <button class="ped-close-btn" title="关闭 (Esc)" @click="$emit('close')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </div>
+          </header>
+
+          <!-- Main Body: Two Columns -->
+          <div class="ped-body">
+            <!-- Left Side: Avatar, Name, Context Tags & Details -->
+            <div class="ped-sidebar">
+              <label class="ped-avatar-wrap" title="点击上传/更换人物照片">
+                <img v-if="person.avatarUrl" :src="person.avatarUrl" class="ped-avatar-img" />
+                <div v-else class="ped-avatar-placeholder">
+                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="4" stroke="currentColor" stroke-width="1.3" /><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
+                  <span class="ped-avatar-tip">传图存照</span>
+                </div>
+                <input type="file" accept="image/*" class="ped-avatar-file-input" @change="handleUploadAvatar" />
+              </label>
+
+              <div class="ped-identity-wrap">
+                <input
+                  :value="person.name"
+                  type="text"
+                  class="ped-inp ped-inp--hero"
+                  placeholder="姓名"
+                  @input="updatePersonField('name', $event)"
+                />
+
+                <div class="ped-context-chips">
+                  <span class="ped-context-chip">当前人物</span>
+                  <span v-if="kinshipLabel" class="ped-context-chip ped-context-chip--accent">{{ kinshipLabel }}</span>
+                  <span v-if="suggestion" class="ped-context-chip ped-context-chip--accent">{{ suggestion }}</span>
+                  <span v-if="lineageSuggestion" class="ped-context-chip">{{ lineageSuggestion }}</span>
+                </div>
+
+                <p class="ped-context-hint">在此修订名讳行略，关闭后将即时同步至世系画布。</p>
+              </div>
+
+              <div v-if="details.length" class="ped-details-list">
+                <div v-for="d in details" :key="d.label" class="ped-detail-item">
+                  <span class="ped-detail-label">{{ d.label }}</span>
+                  <span class="ped-detail-value">{{ d.value }}</span>
                 </div>
               </div>
             </div>
-            <div class="ak-right">
-              <div class="ak-grp">
-                <div class="ak-grp__h">生卒信息</div>
-                <div class="ak-row"><label class="ak-fld"><span class="ak-fld__l">生年</span><input :value="person.birth" type="text" class="ak-inp" placeholder="光绪三十二年" @input="uf('birth', $event)" /></label><label class="ak-fld"><span class="ak-fld__l">卒年</span><input :value="person.death" type="text" class="ak-inp" placeholder="" @input="uf('death', $event)" /></label></div>
-                <div class="ak-row"><label class="ak-fld"><span class="ak-fld__l">性别</span><AppSelect :modelValue="person.gender" :options="genderOptions" placeholder="选择性别" @update:modelValue="(v: string) => emit('update-person-gender', v as Gender)" /></label><label class="ak-fld"><span class="ak-fld__l">{{ person.death ? '享年' : '年龄' }}</span><input :value="person.age" type="text" class="ak-inp" :placeholder="autoAge || '自动推算'" @input="uf('age', $event)" /></label></div>
+
+            <!-- Right Side: Form Sections -->
+            <div class="ped-content">
+              <!-- Group 1: Birth & Death -->
+              <div class="ped-group">
+                <div class="ped-group-head">生卒纪略</div>
+                <div class="ped-row">
+                  <label class="ped-field">
+                    <span class="ped-field-label">生年</span>
+                    <input
+                      :value="person.birth"
+                      type="text"
+                      class="ped-inp"
+                      placeholder="例：光绪三十二年 或 1906"
+                      @input="updatePersonField('birth', $event)"
+                    />
+                  </label>
+                  <label class="ped-field">
+                    <span class="ped-field-label">卒年</span>
+                    <input
+                      :value="person.death"
+                      type="text"
+                      class="ped-inp"
+                      placeholder="健在留空"
+                      @input="updatePersonField('death', $event)"
+                    />
+                  </label>
+                </div>
+                <div class="ped-row">
+                  <label class="ped-field">
+                    <span class="ped-field-label">性别</span>
+                    <AppSelect
+                      :modelValue="person.gender"
+                      :options="genderOptions"
+                      placeholder="选择性别"
+                      @update:modelValue="updatePersonGender"
+                    />
+                  </label>
+                  <label class="ped-field">
+                    <span class="ped-field-label">{{ person.death ? '享年' : '年龄' }}</span>
+                    <input
+                      :value="person.age"
+                      type="text"
+                      class="ped-inp"
+                      :placeholder="autoAge || '自动推算'"
+                      @input="updatePersonField('age', $event)"
+                    />
+                  </label>
+                </div>
               </div>
 
-              <div class="ak-grp">
-                <div class="ak-grp__h">亲属关系</div>
-                
-                <div class="ak-rel__row">
-                  <span class="ak-rel__label">配偶</span>
-                  <div class="ak-rel__body">
+              <!-- Group 2: Relatives -->
+              <div class="ped-group">
+                <div class="ped-group-head">亲属关系</div>
+
+                <!-- Spouses -->
+                <div class="ped-rel-row">
+                  <span class="ped-rel-label">配偶</span>
+                  <div class="ped-rel-body">
                     <template v-if="spouse">
-                      <button class="ak-pchp" :class="gc(spouse.gender)" @click="$emit('select-person', spouse.id)"><span class="ak-pchp__a">{{ spouse.name.charAt(0) }}</span><span class="ak-pchp__n">{{ spouse.name }}</span></button>
-                      <button v-if="canSwapAdults" class="ak-rel__aux-btn" @click="$emit('swap-partners')">调整</button>
-                      <button class="ak-rel__aux-btn ak-rel__aux-btn--del" @click="$emit('remove-spouse')">解除</button>
+                      <button class="ped-person-chip" :class="getGenderClass(spouse.gender)" @click="$emit('select-person', spouse.id)">
+                        <span class="ped-person-avatar-circle">{{ spouse.name.charAt(0) }}</span>
+                        <span class="ped-person-name">{{ spouse.name }}</span>
+                      </button>
+                      <button v-if="canSwapAdults" class="ped-aux-btn" @click="$emit('swap-partners')">调整顺位</button>
+                      <button class="ped-aux-btn ped-aux-btn--danger" @click="$emit('remove-spouse')">解除关联</button>
                     </template>
-                    <button v-else-if="canAddSpouse" class="ak-rel__add" @click="$emit('add-spouse')">+ 添加配偶</button>
-                    <span v-else class="ak-rel__nil">—</span>
+                    <button v-else-if="canAddSpouse" class="ped-add-btn" @click="$emit('add-spouse')">+ 添加配偶</button>
+                    <span v-else class="ped-nil">—</span>
                   </div>
                 </div>
-                <div class="ak-rel__row">
-                  <span class="ak-rel__label">父母</span>
-                  <div class="ak-rel__body">
+
+                <!-- Parents -->
+                <div class="ped-rel-row">
+                  <span class="ped-rel-label">父母</span>
+                  <div class="ped-rel-body">
                     <template v-if="parents.length">
-                      <button v-for="p in parents" :key="p.id" class="ak-pchp" :class="gc(p.gender)" @click="$emit('select-person', p.id)"><span class="ak-pchp__a">{{ p.name.charAt(0) }}</span><span class="ak-pchp__n">{{ p.name }}</span></button>
-                      <button class="ak-rel__aux-btn ak-rel__aux-btn--del" @click="$emit('remove-parents')">解除</button>
+                      <button v-for="p in parents" :key="p.id" class="ped-person-chip" :class="getGenderClass(p.gender)" @click="$emit('select-person', p.id)">
+                        <span class="ped-person-avatar-circle">{{ p.name.charAt(0) }}</span>
+                        <span class="ped-person-name">{{ p.name }}</span>
+                      </button>
+                      <button class="ped-aux-btn ped-aux-btn--danger" @click="$emit('remove-parents')">解除关联</button>
                     </template>
-                    <button v-else-if="!hasCompleteParents" class="ak-rel__add" @click="$emit('add-parents')">{{ parentActionLabel || '+ 添加父母' }}</button>
-                    <span v-else class="ak-rel__nil">—</span>
+                    <button v-else-if="!hasCompleteParents" class="ped-add-btn" @click="$emit('add-parents')">
+                      {{ parentActionLabel || '+ 添加父母' }}
+                    </button>
+                    <span v-else class="ped-nil">—</span>
                   </div>
                 </div>
-                <div class="ak-rel__row">
-                  <span class="ak-rel__label">子女</span>
-                  <div class="ak-rel__body">
+
+                <!-- Children -->
+                <div class="ped-rel-row">
+                  <span class="ped-rel-label">子女</span>
+                  <div class="ped-rel-body">
                     <template v-if="childItems.length">
-                      <button v-for="c in childItems" :key="c.person.id" class="ak-pchp ak-pchp--drag" :class="[gc(c.person.gender), {'ak-chi--over':dcoid===c.person.id,'ak-chi--drag':dcid===c.person.id}]" draggable="true" @dragstart="cds(c.person.id,$event)" @dragover="cdo(c.person.id,$event)" @dragleave="cdl" @drop="cdop(c.person.id,$event)" @dragend="cde" @click="$emit('select-person', c.person.id)"><span class="ak-pchp__badge">{{ c.index + 1 }}</span><span class="ak-pchp__a">{{ c.person.name.charAt(0) }}</span><span class="ak-pchp__n">{{ c.person.name }}</span></button>
+                      <button
+                        v-for="c in childItems"
+                        :key="c.person.id"
+                        class="ped-person-chip ped-person-chip--drag"
+                        :class="[getGenderClass(c.person.gender), { 'is-drag-over': dragOverChildId === c.person.id, 'is-dragging': draggingChildId === c.person.id }]"
+                        draggable="true"
+                        title="可拖拽排序"
+                        @dragstart="handleChildDragStart(c.person.id, $event)"
+                        @dragover="handleChildDragOver(c.person.id, $event)"
+                        @dragleave="handleChildDragLeave"
+                        @drop="handleChildDrop(c.person.id, $event)"
+                        @dragend="handleChildDragEnd"
+                        @click="$emit('select-person', c.person.id)"
+                      >
+                        <span class="ped-person-index-badge">{{ c.index + 1 }}</span>
+                        <span class="ped-person-avatar-circle">{{ c.person.name.charAt(0) }}</span>
+                        <span class="ped-person-name">{{ c.person.name }}</span>
+                      </button>
                     </template>
-                    <button class="ak-rel__add" @click="$emit('add-child','male')">+ 添子</button>
-                    <button class="ak-rel__add" @click="$emit('add-child','female')">+ 添女</button>
+                    <button class="ped-add-btn" @click="$emit('add-child', 'male')">+ 添子</button>
+                    <button class="ped-add-btn" @click="$emit('add-child', 'female')">+ 添女</button>
                   </div>
                 </div>
               </div>
 
-              <div class="ak-grp">
-                <div class="ak-grp__h">分支设置</div>
-                <div class="ak-chips"><button class="ak-chp ak-chp--b" :disabled="isSelectedBranchFocused" @click="$emit('focus-branch')">{{ branchActionLabel }}</button><button v-if="canSetBranchMode" class="ak-chp" :class="{'ak-chp--on':branchMode==='married-out'}" @click="$emit('update-branch-mode','married-out')">适人</button><button v-if="canSetBranchMode" class="ak-chp" :class="{'ak-chp--on':branchMode==='uxorilocal'}" @click="$emit('update-branch-mode','uxorilocal')">赘婿</button></div>
+              <!-- Group 3: Branch Settings -->
+              <div class="ped-group">
+                <div class="ped-group-head">房支脉络</div>
+                <div class="ped-chips-row">
+                  <button class="ped-chip-btn ped-chip-btn--accent" :disabled="isSelectedBranchFocused" @click="$emit('focus-branch')">
+                    {{ branchActionLabel }}
+                  </button>
+                  <button
+                    v-if="canSetBranchMode"
+                    class="ped-chip-btn"
+                    :class="{ 'is-active': branchMode === 'married-out' }"
+                    @click="$emit('update-branch-mode', 'married-out')"
+                  >
+                    适人（出嫁）
+                  </button>
+                  <button
+                    v-if="canSetBranchMode"
+                    class="ped-chip-btn"
+                    :class="{ 'is-active': branchMode === 'uxorilocal' }"
+                    @click="$emit('update-branch-mode', 'uxorilocal')"
+                  >
+                    招婿
+                  </button>
+                </div>
               </div>
 
-              <div class="ak-grp">
-                <div class="ak-grp__h">补充信息</div>
-                <label class="ak-fld"><span class="ak-fld__l">注记</span><input :value="person.note" type="text" class="ak-inp" placeholder="长房 / 次子" @input="uf('note', $event)" /><button v-if="lineageSuggestion && person.note !== lineageSuggestion" class="ak-sug" @click="$emit('apply-note-suggestion', lineageSuggestion)">采纳「{{ lineageSuggestion }}」</button></label>
-                <div class="ak-sep"></div>
+              <!-- Group 4: Additional Notes & Mount Point -->
+              <div class="ped-group">
+                <div class="ped-group-head">谱记注述</div>
+                <label class="ped-field">
+                  <span class="ped-field-label">排行 / 注记</span>
+                  <input
+                    :value="person.note"
+                    type="text"
+                    class="ped-inp"
+                    placeholder="例：长房长子、贡生、任职略历"
+                    @input="updatePersonField('note', $event)"
+                  />
+                  <button
+                    v-if="lineageSuggestion && person.note !== lineageSuggestion"
+                    class="ped-suggestion-btn"
+                    @click="$emit('apply-note-suggestion', lineageSuggestion)"
+                  >
+                    采纳「{{ lineageSuggestion }}」
+                  </button>
+                </label>
+                <div class="ped-divider"></div>
                 <BranchMountManager :person="person" :publicationId="publicationId" />
               </div>
 
-              <button class="ak-del" @click="$emit('delete-person')">删除此人</button>
+              <!-- Danger Action -->
+              <div class="ped-footer-actions">
+                <button class="ped-delete-btn" @click="$emit('delete-person')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  从谱目中除名此人
+                </button>
+              </div>
             </div>
           </div>
         </article>
@@ -211,107 +441,664 @@ watch([() => props.person.birth, () => props.person.death], ([b, d]) => {
 </template>
 
 <style scoped>
-.ak-overlay { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:center; justify-content:center; background:rgba(20,19,18,0.22); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
-.ak-card { width:860px; max-height:88vh; background:rgba(249,248,245,0.95); backdrop-filter:blur(32px); -webkit-backdrop-filter:blur(32px); border-radius:var(--radius-xl); border:1px solid rgba(255,255,255,.45); box-shadow:0 24px 64px rgba(20,19,18,.12), inset 0 1px 0 rgba(255,255,255,.66); display:flex; flex-direction:column; overflow:hidden; }
-.ak-bar { display:flex; align-items:center; padding:16px 22px 10px; flex-shrink:0; border-bottom:1px solid var(--color-card-stroke); background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0)); }
-.ak-bar__btn { font-size:15px; color:var(--color-accent); border:none; background:none; cursor:pointer; font-family:var(--font-sans); padding:0; font-weight:500; min-width:44px; text-align:left; }
-.ak-bar__btn:active { opacity:.3; }
-.ak-bar__done { text-align:right; font-weight:600; }
-.ak-bar__title { flex:1; text-align:center; font-size:16px; font-weight:600; color:var(--color-neutral-10); }
-.ak-hbody { display:flex; gap:0; overflow:hidden; flex:1; min-height:0; }
-.ak-left { width:220px; flex-shrink:0; padding:24px 20px 22px; display:flex; flex-direction:column; align-items:center; gap:14px; border-right:1px solid var(--color-card-stroke); overflow-y:auto; background:linear-gradient(180deg, rgba(255,255,255,.3), rgba(255,255,255,0)); }
-.ak-right { flex:1; padding:24px 24px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; min-width:0; }
-.ak-left::-webkit-scrollbar, .ak-right::-webkit-scrollbar { width:3px; }
-.ak-left::-webkit-scrollbar-thumb, .ak-right::-webkit-scrollbar-thumb { background:color-mix(in srgb, var(--color-neutral-7) 18%, transparent); border-radius:3px; }
-.ak-av { position:relative; width:96px; height:96px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--color-neutral-2); border:1px solid var(--color-card-stroke); border-radius:var(--radius-lg); flex-shrink:0; transition:background .15s, border-color .15s; }
-.ak-av:hover { background:color-mix(in srgb, var(--color-error) 8%, transparent); border-color:color-mix(in srgb, var(--color-error) 22%, transparent); }
-.ak-av__img { width:100%; height:100%; object-fit:contain; }
-.ak-av__inp { position:absolute; inset:0; opacity:0; cursor:pointer; }
-.ak-identity { width:100%; display:flex; flex-direction:column; align-items:center; gap:2px; }
-.ak-context { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:8px; }
-.ak-context__chip { display:inline-flex; align-items:center; padding:4px 10px; border-radius:var(--radius-full); background:rgba(255,255,255,.86); border:1px solid var(--color-card-stroke); color:var(--color-neutral-8); font-size:11px; font-weight:600; }
-.ak-context__chip--accent { background:var(--color-accent-muted); border-color:color-mix(in srgb, var(--color-error) 12%, transparent); color:var(--color-accent); }
-.ak-context__hint { margin:8px 0 0; color:var(--color-neutral-6); font-size:12px; line-height:1.6; text-align:center; }
-.ak-dlist { width:100%; display:flex; flex-direction:column; gap:1px; background:var(--color-card-stroke); border-radius:var(--radius-md); overflow:hidden; }
-.ak-ditem { display:flex; align-items:center; justify-content:space-between; padding:7px 10px; background:var(--color-neutral-1); }
-.ak-ditem + .ak-ditem { border-top:1px solid var(--color-card-stroke); }
-.ak-ditem__l { font-size:11px; color:var(--color-neutral-7); font-weight:500; }
-.ak-ditem__v { font-size:12px; color:var(--color-neutral-9); font-weight:500; text-align:right; }
-.ak-inp { width:100%; padding:8px 12px; border-radius:var(--radius-md); border:none; background:var(--color-neutral-1); border:1px solid var(--color-card-stroke); font-size:14px; font-family:var(--font-sans); color:var(--color-neutral-9); box-sizing:border-box; transition:background .15s; }
-.ak-inp:focus { outline:none; border-color:var(--color-accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent); background:var(--color-neutral-1); }
-.ak-inp::placeholder { color:var(--color-neutral-5); }
-.ak-inp--hero { font-size:28px; font-weight:700; text-align:center; background:transparent; color:var(--color-neutral-9); padding:4px 0; letter-spacing:-.01em; width:100%; }
-.ak-inp--hero:focus { background:transparent; }
-.ak-sel { appearance:none; background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2386868b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; cursor:pointer; }
-.ak-fld { display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
-.ak-fld__l { font-size:10px; color:var(--color-neutral-7); font-weight:500; }
-.ak-sug { display:inline-flex; align-items:center; gap:3px; margin-top:4px; padding:2px 8px; border-radius:var(--radius-sm); border:none; background:color-mix(in srgb, var(--color-accent) 6%, transparent); color:var(--color-accent); font-size:11px; font-weight:500; cursor:pointer; font-family:inherit; width:fit-content; }
-.ak-sug:hover { background:color-mix(in srgb, var(--color-accent) 12%, transparent); }
-.ak-row { display:flex; gap:12px; }
-.ak-grp { background:var(--color-neutral-1); border-radius:var(--radius-lg); padding:16px; border:1px solid var(--color-card-stroke); }
-.ak-grp__h { font-size:11px; font-weight:600; color:var(--color-neutral-9); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--color-card-stroke); }
-.ak-sep { height:1px; background:var(--color-card-stroke); margin:8px 0; }
-.ak-rel__row { display:flex; align-items:flex-start; gap:12px; padding:10px 0; }
-.ak-rel__row + .ak-rel__row { border-top:1px solid var(--color-card-stroke); }
-.ak-rel__label { width:36px; flex-shrink:0; font-size:13px; font-weight:600; color:var(--color-neutral-9); padding-top:4px; }
-.ak-rel__body { flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
-.ak-rel__add { font-size:12px; color:var(--color-accent); border:none; background:none; cursor:pointer; font-family:inherit; padding:3px 0; white-space:nowrap; }
-.ak-rel__add:hover { opacity:.7; }
-.ak-rel__nil { margin:0; font-size:12px; color:var(--color-neutral-5); padding:3px 0; }
-.ak-rel__aux-btn { font-size:11px; padding:2px 7px; border-radius:var(--radius-sm); border:1px solid var(--color-card-stroke); background:transparent; color:var(--color-neutral-7); cursor:pointer; font-family:inherit; white-space:nowrap; }
-.ak-rel__aux-btn:hover { border-color:color-mix(in srgb, var(--color-neutral-5) 40%, transparent); background:color-mix(in srgb, var(--color-neutral-5) 8%, transparent); }
-.ak-rel__aux-btn--del { color:var(--color-error); }
-.ak-rel__aux-btn--del:hover { background:color-mix(in srgb, var(--color-error) 6%, transparent); }
-.ak-chp { font-size:12px; padding:4px 12px; border-radius:var(--radius-sm); border:1px solid var(--color-card-stroke); background:var(--color-neutral-1); color:var(--color-neutral-9); cursor:pointer; font-family:inherit; transition:background .15s; }
-.ak-chp:hover:not(:disabled) { background:color-mix(in srgb, var(--color-accent) 6%, transparent); border-color:color-mix(in srgb, var(--color-neutral-5) 40%, transparent); }
-.ak-chp:disabled { opacity:.25; cursor:not-allowed; }
-.ak-chp--d { color:var(--color-error); }
-.ak-chp--d:hover:not(:disabled) { background:color-mix(in srgb, var(--color-error) 8%, transparent); }
-.ak-chp--b { color:var(--color-accent); font-weight:500; }
-.ak-chp--on { background:color-mix(in srgb, var(--color-accent) 10%, transparent); color:var(--color-accent); }
-.ak-chips { display:flex; flex-wrap:wrap; gap:4px; }
-.ak-pchps { display:flex; flex-wrap:wrap; gap:3px; }
-.ak-pchp { display:inline-flex; align-items:center; gap:6px; padding:6px 12px 6px 6px; border-radius:var(--radius-md); border:1px solid var(--color-card-stroke); background:var(--color-neutral-1); cursor:pointer; font-family:inherit; font-size:13px; color:var(--color-neutral-9); transition:all .15s; }
-.ak-pchp:hover { border-color:var(--color-accent); background:color-mix(in srgb, var(--color-accent) 4%, transparent); }
-.ak-pchp--drag { cursor:grab; }
-.ak-pchp--drag:active { cursor:grabbing; }
-.ak-pchp__badge { display:flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:color-mix(in srgb, var(--color-neutral-7) 12%, transparent); font-size:9px; font-weight:700; color:var(--color-neutral-7); flex-shrink:0; }
-.ak-pchp.gm { background:color-mix(in srgb, var(--color-accent) 6%, transparent); }
-.ak-pchp.gf { background:color-mix(in srgb, var(--color-error) 6%, transparent); }
-.ak-pchp__a { display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:color-mix(in srgb, var(--color-neutral-7) 10%, transparent); font-size:10px; font-weight:600; color:var(--color-neutral-7); flex-shrink:0; }
-.ak-pchp__n { font-weight:500; max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-
-.ak-del { padding:10px; border-radius:var(--radius-md); border:none; background:transparent; color:var(--color-error); font-size:14px; font-weight:400; cursor:pointer; font-family:inherit; transition:background .15s; width:100%; }
-.ak-del:hover { background:color-mix(in srgb, var(--color-error) 6%, transparent); }
-.ak-slide-enter-active { transition:opacity 300ms cubic-bezier(.22,1,.36,1); }
-.ak-slide-leave-active { transition:opacity 200ms ease-in; }
-.ak-slide-enter-active .ak-card { animation:ak-up 380ms cubic-bezier(.22,1,.36,1) forwards; }
-.ak-slide-leave-active .ak-card { animation:ak-down 180ms ease-in forwards; }
-/* AppSelect — blend into drawer aesthetic */
-:deep(.app-select .app-select__trigger) { background:var(--color-neutral-1); border:1px solid var(--color-card-stroke); border-radius:var(--radius-md); padding:8px 12px; font-size:14px; color:var(--color-neutral-9); }
-:deep(.app-select.open .app-select__trigger),
-:deep(.app-select .app-select__trigger:hover) { border-color:var(--color-accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent); }
-:deep(.app-select .app-select__value.placeholder) { color:var(--color-neutral-5); }
-:deep(.app-select__dropdown) { background:var(--color-neutral-1); border:1px solid var(--color-card-stroke); border-radius:var(--radius-lg); box-shadow:0 4px 24px rgba(0,0,0,.12); }
-:deep(.app-select__option) { color:var(--color-neutral-9); font-size:14px; }
-:deep(.app-select__option:hover),
-:deep(.app-select__option.highlighted) { background:color-mix(in srgb, var(--color-accent) 8%, transparent); }
-:deep(.app-select__option.selected) { color:var(--color-accent); font-weight:600; }
-:deep(.app-select__option.selected::after) { background:var(--color-accent); }
-
-[data-theme="dark"] .ak-overlay { background:var(--color-overlay); }
-[data-theme="dark"] .ak-card { background:var(--color-panel-bg); border-color:var(--color-card-stroke); box-shadow:var(--shadow-whisper), var(--shadow-ring), inset 0 1px 0 var(--color-panel-glass-inset-shadow); }
-[data-theme="dark"] .ak-bar { border-bottom-color:var(--color-card-stroke); background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)); }
-[data-theme="dark"] .ak-left { border-right-color:var(--color-card-stroke); background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); }
-[data-theme="dark"] .ak-av { background:var(--color-neutral-3); border-color:var(--color-card-stroke); }
-[data-theme="dark"] .ak-context__chip { background:var(--color-neutral-3); border-color:var(--color-card-stroke); color:var(--color-neutral-8); }
-
-@media (max-width: 900px) {
-  .ak-card { width:min(100vw - 20px, 860px); max-height:92vh; }
-  .ak-hbody { flex-direction:column; }
-  .ak-left { width:auto; border-right:none; border-bottom:1px solid rgba(120,118,112,.12); }
+/* ── Overlay ── */
+.ped-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-overlay, rgba(20, 19, 18, 0.45));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 20px;
 }
 
-@keyframes ak-up { from { opacity:0; transform:translateY(32px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-@keyframes ak-down { from { opacity:1; transform:translateY(0) scale(1); } to { opacity:0; transform:translateY(16px) scale(.98); } }
+/* ── Card ── */
+.ped-card {
+  width: 860px;
+  max-width: 92vw;
+  max-height: 88vh;
+  background: var(--color-panel-bg);
+  border-radius: var(--radius-xl, 20px);
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: var(--shadow-whisper, 0 24px 60px rgba(0, 0, 0, 0.16));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ── Classical Header ── */
+.ped-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--color-card-stroke);
+  background: var(--color-panel-bg);
+  flex-shrink: 0;
+}
+
+.ped-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ped-seal {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1.5px solid var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-muted, rgba(184, 51, 42, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.ped-header-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ped-header-title {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-neutral-10);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.ped-header-sub {
+  font-size: 11.5px;
+  color: var(--color-neutral-6);
+  font-family: var(--font-serif);
+}
+
+.ped-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-neutral-6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast, 150ms) var(--ease-breath);
+}
+
+.ped-close-btn:hover {
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-10);
+  border-color: var(--color-card-stroke);
+}
+
+/* ── Body ── */
+.ped-body {
+  display: flex;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Sidebar (Left) ── */
+.ped-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  border-right: 1px solid var(--color-card-stroke);
+  overflow-y: auto;
+  background: var(--color-neutral-1, rgba(0, 0, 0, 0.01));
+}
+
+.ped-avatar-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: var(--radius-lg, 14px);
+  border: 1.5px dashed var(--color-card-stroke);
+  background: var(--color-neutral-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: all var(--duration-fast, 150ms) var(--ease-breath);
+}
+
+.ped-avatar-wrap:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-muted);
+}
+
+.ped-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ped-avatar-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-neutral-5);
+}
+
+.ped-avatar-tip {
+  font-size: 10.5px;
+  font-family: var(--font-serif);
+  color: var(--color-neutral-6);
+}
+
+.ped-avatar-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ped-identity-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ped-inp--hero {
+  font-size: 24px;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  text-align: center;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  color: var(--color-neutral-10);
+  padding: 4px 0;
+  outline: none !important;
+  box-shadow: none !important;
+  width: 100%;
+  transition: border-color var(--duration-fast, 150ms);
+}
+
+.ped-inp--hero:focus {
+  border-bottom-color: var(--color-accent) !important;
+}
+
+.ped-context-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.ped-context-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  color: var(--color-neutral-7);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.ped-context-chip--accent {
+  background: var(--color-accent-muted);
+  border-color: rgba(184, 51, 42, 0.2);
+  color: var(--color-accent);
+}
+
+.ped-context-hint {
+  margin: 8px 0 0;
+  color: var(--color-neutral-5);
+  font-size: 11.5px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.ped-details-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+
+.ped-detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--color-neutral-1);
+}
+
+.ped-detail-item + .ped-detail-item {
+  border-top: 1px solid var(--color-card-stroke);
+}
+
+.ped-detail-label {
+  font-size: 11px;
+  color: var(--color-neutral-6);
+}
+
+.ped-detail-value {
+  font-size: 12px;
+  color: var(--color-neutral-9);
+  font-weight: 500;
+  text-align: right;
+}
+
+/* ── Content (Right) ── */
+.ped-content {
+  flex: 1;
+  padding: 24px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.ped-group {
+  background: var(--color-neutral-1);
+  border-radius: var(--radius-lg, 12px);
+  padding: 16px;
+  border: 1px solid var(--color-card-stroke);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ped-group-head {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-neutral-9);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-card-stroke);
+}
+
+.ped-row {
+  display: flex;
+  gap: 14px;
+}
+
+.ped-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ped-field-label {
+  font-size: 11.5px;
+  color: var(--color-neutral-7);
+  font-weight: 500;
+}
+
+/* Standardized input without focus halos */
+.ped-inp {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  font-size: 13.5px;
+  color: var(--color-neutral-10);
+  box-sizing: border-box;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: border-color var(--duration-fast, 150ms) var(--ease-breath);
+}
+
+.ped-inp:focus,
+.ped-inp:focus-visible {
+  outline: none !important;
+  border-color: var(--color-accent);
+  box-shadow: none !important;
+}
+
+.ped-inp::placeholder {
+  color: var(--color-neutral-5);
+}
+
+.ped-suggestion-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm, 4px);
+  border: none;
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.ped-suggestion-btn:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.ped-divider {
+  height: 1px;
+  background: var(--color-card-stroke);
+  margin: 4px 0;
+}
+
+/* ── Rel Rows ── */
+.ped-rel-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.ped-rel-row + .ped-rel-row {
+  border-top: 1px dashed var(--color-card-stroke);
+  padding-top: 10px;
+}
+
+.ped-rel-label {
+  width: 36px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-neutral-9);
+  padding-top: 4px;
+}
+
+.ped-rel-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ped-add-btn {
+  font-size: 12px;
+  color: var(--color-accent);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm, 6px);
+  transition: all var(--duration-fast, 150ms);
+}
+
+.ped-add-btn:hover {
+  background: var(--color-accent-muted);
+}
+
+.ped-nil {
+  font-size: 12px;
+  color: var(--color-neutral-5);
+  padding: 4px 0;
+}
+
+.ped-aux-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--color-card-stroke);
+  background: var(--color-panel-bg);
+  color: var(--color-neutral-7);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--duration-fast, 150ms);
+}
+
+.ped-aux-btn:hover {
+  border-color: var(--color-neutral-5);
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-10);
+}
+
+.ped-aux-btn--danger {
+  color: var(--color-error);
+}
+
+.ped-aux-btn--danger:hover {
+  background: var(--color-error-muted, rgba(239, 68, 68, 0.1));
+  border-color: var(--color-error-muted);
+}
+
+/* ── Person Chips ── */
+.ped-person-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-card-stroke);
+  background: var(--color-panel-bg);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--color-neutral-10);
+  transition: all var(--duration-fast, 150ms);
+}
+
+.ped-person-chip:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-muted);
+}
+
+.ped-person-chip--drag {
+  cursor: grab;
+}
+
+.ped-person-chip--drag:active {
+  cursor: grabbing;
+}
+
+.ped-person-chip.is-male {
+  border-left: 3px solid #2563eb;
+}
+
+.ped-person-chip.is-female {
+  border-left: 3px solid #db2777;
+}
+
+.ped-person-avatar-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-neutral-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-neutral-7);
+  flex-shrink: 0;
+}
+
+.ped-person-index-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-neutral-3);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--color-neutral-6);
+  flex-shrink: 0;
+}
+
+.ped-person-name {
+  font-weight: 500;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.is-drag-over {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.is-dragging {
+  opacity: 0.5;
+}
+
+/* ── Chip buttons ── */
+.ped-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ped-chip-btn {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--color-card-stroke);
+  background: var(--color-panel-bg);
+  color: var(--color-neutral-8);
+  cursor: pointer;
+  transition: all var(--duration-fast, 150ms);
+}
+
+.ped-chip-btn:hover:not(:disabled) {
+  border-color: var(--color-neutral-5);
+  background: var(--color-neutral-3);
+}
+
+.ped-chip-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ped-chip-btn--accent {
+  color: var(--color-accent);
+  border-color: rgba(184, 51, 42, 0.25);
+  background: var(--color-accent-muted);
+  font-weight: 500;
+}
+
+.ped-chip-btn.is-active {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent, #fff);
+  border-color: var(--color-accent);
+}
+
+/* ── Delete Button ── */
+.ped-footer-actions {
+  padding-top: 8px;
+  border-top: 1px solid var(--color-card-stroke);
+}
+
+.ped-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-error-muted, rgba(239, 68, 68, 0.2));
+  background: var(--color-error-muted, rgba(239, 68, 68, 0.05));
+  color: var(--color-error);
+  font-size: 13px;
+  cursor: pointer;
+  width: 100%;
+  transition: all var(--duration-fast, 150ms);
+}
+
+.ped-delete-btn:hover {
+  background: var(--color-error);
+  color: #fff;
+}
+
+/* ── Transition ── */
+.ped-fade-enter-active,
+.ped-fade-leave-active {
+  transition: opacity 220ms var(--ease-breath);
+}
+
+.ped-fade-enter-from,
+.ped-fade-leave-to {
+  opacity: 0;
+}
+
+.ped-fade-enter-active .ped-card {
+  animation: ped-scale-up 240ms var(--ease-breath) forwards;
+}
+
+.ped-fade-leave-active .ped-card {
+  animation: ped-scale-down 160ms ease-in forwards;
+}
+
+@keyframes ped-scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes ped-scale-down {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ped-card {
+    width: 96vw;
+    max-height: 94vh;
+  }
+  .ped-body {
+    flex-direction: column;
+  }
+  .ped-sidebar {
+    width: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--color-card-stroke);
+    padding: 16px;
+  }
+  .ped-content {
+    padding: 16px;
+  }
+}
 </style>
