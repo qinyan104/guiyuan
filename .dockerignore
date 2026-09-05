@@ -25,7 +25,8 @@ node_modules
 frontend/node_modules
 
 # Build artifacts (rebuilt inside container)
-backend/target
+backend/target/*
+!backend/target/*.jar
 frontend/dist
 
 # Env secrets

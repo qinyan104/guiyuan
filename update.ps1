@@ -53,6 +53,19 @@ try {
         }
     }
 
+    # 宿主机本地快速编译 jar 包（复用本地缓存，极速装箱）
+    Write-Host "Compiling backend jar locally..." -ForegroundColor Cyan
+    Push-Location (Join-Path $repoRoot "backend")
+    try {
+        & .\mvnw.cmd package -DskipTests -DskipITs -B
+        if ($LASTEXITCODE -ne 0) {
+            throw "Local maven package failed with exit code $LASTEXITCODE."
+        }
+    }
+    finally {
+        Pop-Location
+    }
+
     & docker compose --env-file $envFile -f $composeFile up --build -d
     if ($LASTEXITCODE -ne 0) {
         throw "docker compose up failed with exit code $LASTEXITCODE."
