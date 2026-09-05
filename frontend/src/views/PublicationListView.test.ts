@@ -116,16 +116,23 @@ describe('PublicationListView', () => {
     const wrapper = mountView()
     await flushPromises()
 
-    // Sort by title_asc
-    const sortSelect = wrapper.find('.sort-select')
-    await sortSelect.setValue('title_asc')
+    // Open AppSelect and pick "谱名拼音"
+    await wrapper.find('.sort-select-wrapper .app-select__trigger').trigger('click')
+    const options = wrapper.findAll('.app-select__option')
+    const titleOption = options.find((opt) => opt.text().includes('谱名拼音'))
+    expect(titleOption).toBeDefined()
+    await titleOption!.trigger('click')
     await flushPromises()
 
     const titles = wrapper.findAll('.archive-title').map((el) => el.text())
     expect(titles).toEqual(['陈氏宗谱', '李氏世家'])
 
-    // Sort by revision_desc
-    await sortSelect.setValue('revision_desc')
+    // Open AppSelect and pick "修缮次数"
+    await wrapper.find('.sort-select-wrapper .app-select__trigger').trigger('click')
+    const optionsAfter = wrapper.findAll('.app-select__option')
+    const revOption = optionsAfter.find((opt) => opt.text().includes('修缮次数'))
+    expect(revOption).toBeDefined()
+    await revOption!.trigger('click')
     await flushPromises()
 
     const revTitles = wrapper.findAll('.archive-title').map((el) => el.text())

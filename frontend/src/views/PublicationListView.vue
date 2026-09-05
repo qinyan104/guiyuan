@@ -16,6 +16,7 @@ import CollaboratorManager from '../components/CollaboratorManager.vue'
 import { useLexiconStore } from '../stores/lexicon'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import PoeticHeader from '../components/PoeticHeader.vue'
+import AppSelect, { type AppSelectOption } from '../components/AppSelect.vue'
 import { useFeedback } from '../composables/useFeedback'
 
 const router = useRouter()
@@ -53,8 +54,15 @@ const collabDialogPubId = ref<number | null>(null)
 
 // ── Search, Sort & Filter State ──
 const searchQuery = ref('')
-const sortBy = ref<'updatedAt_desc' | 'createdAt_desc' | 'title_asc' | 'revision_desc'>('updatedAt_desc')
+const sortBy = ref<string>('updatedAt_desc')
 const templatesExpanded = ref(true)
+
+const sortOptions: AppSelectOption[] = [
+  { value: 'updatedAt_desc', label: '最近更新' },
+  { value: 'createdAt_desc', label: '最新创建' },
+  { value: 'title_asc', label: '谱名拼音' },
+  { value: 'revision_desc', label: '修缮次数' },
+]
 
 const filteredPublications = computed(() => {
   let list = [...publications.value]
@@ -379,15 +387,11 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
               <div class="toolbar-controls">
                 <div class="sort-select-wrapper">
-                  <span class="sort-icon-tag">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
-                  </span>
-                  <select v-model="sortBy" class="sort-select" aria-label="排序方式">
-                    <option value="updatedAt_desc">最近更新</option>
-                    <option value="createdAt_desc">最新创建</option>
-                    <option value="title_asc">谱名拼音</option>
-                    <option value="revision_desc">修缮次数</option>
-                  </select>
+                  <AppSelect
+                    v-model="sortBy"
+                    :options="sortOptions"
+                    variant="compact"
+                  />
                 </div>
                 <div class="count-pill">
                   <span v-if="searchQuery">
@@ -816,36 +820,52 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 }
 
 .search-box {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--color-card-fill);
+  background: var(--color-panel-bg);
   border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-lg, 12px);
-  padding: 0 12px;
+  border-radius: 999px;
+  padding: 0 14px;
   height: 36px;
   min-width: 260px;
   max-width: 320px;
-  transition: border-color var(--duration-fast) var(--ease-breath), box-shadow var(--duration-fast) var(--ease-breath);
+  transition: border-color var(--duration-fast) var(--ease-breath),
+              box-shadow var(--duration-fast) var(--ease-breath);
+}
+.search-box:hover {
+  border-color: var(--color-neutral-5);
 }
 .search-box:focus-within {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 .search-icon {
-  color: var(--color-neutral-5);
+  color: var(--color-neutral-6);
   flex-shrink: 0;
 }
 .search-input {
-  border: none;
-  background: transparent;
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  padding: 0;
   font-size: var(--text-copy-13, 13px);
   color: var(--color-neutral-9);
-  outline: none;
+  outline: none !important;
+  box-shadow: none !important;
+  letter-spacing: 0.02em;
   width: 100%;
 }
+.search-input:focus,
+.search-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
 .search-input::placeholder {
-  color: var(--color-neutral-5);
+  color: var(--color-neutral-6);
+  font-weight: 400;
 }
 .clear-search-btn {
   border: none;
@@ -872,25 +892,26 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 .sort-select-wrapper {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: var(--color-card-fill);
-  border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-lg, 12px);
-  padding: 0 10px;
+}
+.sort-select-wrapper :deep(.app-select.compact) {
+  min-width: 110px;
+}
+.sort-select-wrapper :deep(.app-select.compact .app-select__trigger) {
   height: 36px;
-}
-.sort-icon-tag {
-  color: var(--color-neutral-5);
-  display: flex;
-  align-items: center;
-}
-.sort-select {
-  border: none;
-  background: transparent;
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-panel-bg);
+  border-color: var(--color-card-stroke);
   font-size: var(--text-label-12, 12px);
-  color: var(--color-neutral-8);
-  outline: none;
-  cursor: pointer;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+.sort-select-wrapper :deep(.app-select.compact .app-select__trigger:hover) {
+  border-color: var(--color-neutral-5);
+}
+.sort-select-wrapper :deep(.app-select.open .app-select__trigger),
+.sort-select-wrapper :deep(.app-select.compact .app-select__trigger:focus-visible) {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 
 .count-pill {
