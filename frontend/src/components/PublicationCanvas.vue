@@ -734,9 +734,13 @@ function resetView() {
 
 .tree-lines path {
   fill: none;
-  stroke: var(--tree-line-color);
+  stroke: var(--tree-line-color, #000000);
   stroke-width: 2.6;
   stroke-linecap: round;
+}
+
+.su-pearl {
+  fill: var(--tree-line-color, #000000);
 }
 
 .tree-lines path.tree-lines__line--spousal {

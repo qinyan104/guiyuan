@@ -30,7 +30,7 @@
   --minimap-bg: var(--color-minimap-bg);
   --minimap-node: var(--color-minimap-node);
   --minimap-node-selected: var(--color-minimap-node-selected);
-  --tree-line-color: var(--color-tree-line, var(--color-neutral-5));
+  --tree-line-color: var(--color-tree-line, #000000);
   --scrim-bg: var(--color-overlay);
   --editor-panel-bg: var(--color-panel-bg);
   --btn-primary-bg: var(--color-accent);

@@ -59,7 +59,7 @@
   --card-dark-color: var(--color-neutral-1);
 
   /* ── 树连线 ── */
-  --tree-line-color: var(--color-tree-line, var(--color-neutral-5));
+  --tree-line-color: var(--color-tree-line, #000000);
 
   /* ── 画布 ── */
   --canvas-grid-color: var(--color-canvas-grid);

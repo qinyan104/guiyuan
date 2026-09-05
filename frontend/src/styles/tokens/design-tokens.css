@@ -77,7 +77,7 @@
   --color-deceased: #8C8473;      /* 已故 — neutral-6  */
 
   /* 族谱树连线 */
-  --color-tree-line: rgba(140, 132, 115, 0.6);    /* 普通连线 */
+  --color-tree-line: #000000;    /* 普通连线 */
   --color-tree-line-selected: #C63C2E;               /* 选中连线 — accent */
 
   /* 卡片系统 */
@@ -289,7 +289,7 @@
   --color-card-fill: var(--color-neutral-2);
   --color-card-stroke: var(--color-neutral-4);
   --color-card-hover-fill: var(--color-neutral-3);
-  --color-tree-line: var(--color-neutral-5);
+  --color-tree-line: #000000;
   --color-tree-line-selected: var(--color-accent);
   --color-deceased: var(--color-neutral-6);
   --color-canvas-bg: var(--color-neutral-1);
