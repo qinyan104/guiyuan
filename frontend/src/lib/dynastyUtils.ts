@@ -122,6 +122,7 @@ export interface HistoricalDateInfo {
   year: number
   dynasty: string
   eraName?: string
+  reign?: string
   regnalYear?: string
   ganzhi: string
   zodiac: string
@@ -158,6 +159,7 @@ export function getHistoricalEra(year: number): HistoricalDateInfo {
         year,
         dynasty: era.dynasty,
         eraName: era.name,
+        reign: era.name,
         regnalYear,
         ganzhi,
         zodiac,

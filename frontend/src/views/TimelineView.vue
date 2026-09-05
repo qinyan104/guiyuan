@@ -493,7 +493,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
               </div>
 
               <div class="spectrum-era-label">
-                {{ item.era.reign || item.era.dynasty || `${item.birthYear}年` }}
+                {{ item.era.eraName || item.era.reign || item.era.dynasty || `${item.birthYear}年` }}
               </div>
             </div>
           </div>
