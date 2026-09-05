@@ -502,14 +502,17 @@ watch(
                   <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
                 </span>
               </label>
-              <label class="lp-toggle lp-toggle--chip">
-                <span>世系</span>
-                <span class="lp-switch lp-switch--sm" :class="{ 'lp-switch--active': settings.showLineage }">
-                  <input :checked="settings.showLineage" type="checkbox" @change="updateSetting('showLineage', readCheckedValue($event))" />
-                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-                </span>
-              </label>
             </div>
+
+            <div class="lp-toggle-divider" aria-hidden="true" />
+
+            <label class="lp-toggle lp-toggle--standalone">
+              <span class="lp-toggle-name">显示世系标记</span>
+              <span class="lp-switch" :class="{ 'lp-switch--active': settings.showLineage }">
+                <input :checked="settings.showLineage" type="checkbox" @change="updateSetting('showLineage', readCheckedValue($event))" />
+                <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+              </span>
+            </label>
           </div>
         </div>
       </div>
@@ -1382,6 +1385,22 @@ watch(
 .lp-switch--sm {
   transform: scale(0.85);
   transform-origin: right center;
+}
+
+.lp-toggle-divider {
+  height: 1px;
+  background: var(--color-card-stroke);
+  margin: 4px 0;
+}
+
+.lp-toggle--standalone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--color-neutral-9);
+  padding-top: 2px;
 }
 
 /* ── Custom range slider with filled track ── */
