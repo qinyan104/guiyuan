@@ -77,7 +77,7 @@ describe('DashboardView', () => {
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('馆藏总卷数')
+    expect(wrapper.text()).toContain('族谱总数')
   })
 
   it('shows empty state when no publications', async () => {
@@ -96,5 +96,37 @@ describe('DashboardView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('创建第一个族谱')
+  })
+
+  it('updates dashboard labels dynamically when lexicon changes', async () => {
+    const { useLexiconStore } = await import('../stores/lexicon')
+    const store = useLexiconStore()
+    store.setLexicon('standard')
+
+    const wrapper = mount(DashboardView, {
+      global: {
+        stubs: {
+          Teleport: {
+            template: '<div><slot /></div>',
+          },
+        },
+      },
+    })
+
+    await flushPromises()
+    expect(wrapper.text()).toContain('族谱总数')
+    expect(wrapper.text()).toContain('新建族谱')
+
+    store.setLexicon('archive')
+    await flushPromises()
+    expect(wrapper.text()).toContain('馆藏总卷')
+    expect(wrapper.text()).toContain('起草新谱')
+
+    store.setLexicon('shrine')
+    await flushPromises()
+    expect(wrapper.text()).toContain('宗谱总册')
+    expect(wrapper.text()).toContain('修撰宗谱')
+
+    store.setLexicon('standard')
   })
 })

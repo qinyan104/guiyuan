@@ -26,6 +26,7 @@ describe('lexicon store', () => {
     await nextTick()
     expect(store.currentLexiconId).toBe('archive')
     expect(store.lexicon.name).toBe('史馆藏书')
+    expect(store.lexicon.dashboard.statPubsLabel).toBe('馆藏总卷')
     expect(store.lexicon.dashboard.label).toBe('卷首')
     expect(localStorage.getItem('genealogy-lexicon-theme')).toBe('archive')
 

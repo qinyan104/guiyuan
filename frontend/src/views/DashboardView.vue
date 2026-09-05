@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLexiconStore } from '../stores/lexicon'
@@ -67,6 +67,25 @@ async function handleBackup() {
   }
 }
 
+function formatRelativeTime(dateStr?: string | null): string {
+  if (!dateStr) return '未知时间'
+  try {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMin = Math.floor(diffMs / 60000)
+    if (diffMin < 1) return '刚刚'
+    if (diffMin < 60) return `${diffMin} 分钟前`
+    const diffHour = Math.floor(diffMin / 60)
+    if (diffHour < 24) return `${diffHour} 小时前`
+    const diffDay = Math.floor(diffHour / 24)
+    if (diffDay < 30) return `${diffDay} 天前`
+    return formatDate(dateStr)
+  } catch {
+    return formatDate(dateStr)
+  }
+}
+
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
   return `${d.getMonth() + 1}月${d.getDate()}日`
@@ -126,23 +145,23 @@ async function handleCreateFromDashboard() {
 
       <div v-else-if="pubCount > 0" class="bento-grid">
         <!-- Box A: Latest Publication (Hero) -->
-        <div v-if="latestPub" class="bento-card panel-glass card-hero" @click="openPublication(latestPub.id)">
+        <div v-if="latestPub" class="bento-card panel-glass card-hero" tabindex="0" role="button" aria-label="继续编撰最新族谱" @click="openPublication(latestPub.id)" @keydown.enter.self="openPublication(latestPub.id)">
           <div class="hero-bg-layer"></div>
           <div class="hero-accent-line"></div>
           <div class="card-glass-panel">
-            <span class="card-eyebrow">最新修撰</span>
+            <span class="card-eyebrow">{{ lexicon.dashboard.heroLabel }}</span>
             <h2 class="hero-pub-title">{{ latestPub.title || '未命名族谱' }}</h2>
             <p class="hero-pub-subtitle">{{ latestPub.subtitle || '暂无副标题' }}</p>
             <div class="hero-footer">
-              <span class="hero-date">{{ formatDate(latestPub.updatedAt) }} 更新</span>
+              <span class="hero-date">{{ formatRelativeTime(latestPub.updatedAt) }} 更新</span>
               <button class="btn btn--primary" @click.stop="openPublication(latestPub.id)">
                 继续编撰 
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
             </div>
           </div>
         </div>
-        <div v-else class="bento-card panel-glass card-hero empty-hero" @click="router.push({ name: 'publications' })">
+        <div v-else class="bento-card panel-glass card-hero empty-hero" tabindex="0" role="button" @click="router.push({ name: 'publications' })" @keydown.enter.self="router.push({ name: 'publications' })">
           <div class="hero-bg-layer"></div>
           <div class="hero-accent-line"></div>
           <div class="card-glass-panel">
@@ -155,47 +174,69 @@ async function handleCreateFromDashboard() {
         </div>
 
         <!-- Box B: Total Stats -->
-        <div class="bento-card panel-glass card-stat card-dark" @click="router.push({ name: 'publications' })">
+        <div class="bento-card panel-glass card-stat card-dark" tabindex="0" role="button" aria-label="查看全部族谱" @click="router.push({ name: 'publications' })" @keydown.enter.self="router.push({ name: 'publications' })">
           <div class="stat-content">
             <span class="stat-value">{{ pubCount }}</span>
-            <span class="stat-label">馆藏总卷数</span>
+            <span class="stat-label">{{ lexicon.dashboard.statPubsLabel }}</span>
           </div>
-          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
+          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
         </div>
 
         <!-- Box C: Action (Quick Create) -->
-        <div class="bento-card panel-glass card-action" @click="showCreateDialog = true">
+        <div class="bento-card panel-glass card-action" tabindex="0" role="button" aria-label="创建新族谱" @click="showCreateDialog = true" @keydown.enter.self="showCreateDialog = true">
           <div class="action-shimmer"></div>
           <div class="action-content">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
-            <span class="action-title">起草新谱</span>
+            <svg class="action-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+              <line x1="12" y1="8" x2="12" y2="14" />
+              <line x1="9" y1="11" x2="15" y2="11" />
+            </svg>
+            <span class="action-title">{{ lexicon.dashboard.quickActionTitle }}</span>
           </div>
         </div>
 
-        <!-- Box D: Recent History -->
-        <div class="bento-card panel-glass card-history">
+        <!-- Box D: Recent History (Flexibly spans 12, 8, or 6 based on permissions) -->
+        <div
+          class="bento-card panel-glass card-history"
+          :class="{
+            'span-full': !isAdmin(),
+            'span-major': isAdmin() && !isSuperAdmin(),
+            'span-standard': isAdmin() && isSuperAdmin()
+          }"
+        >
           <div class="history-header">
-            <span class="card-eyebrow">近期活跃</span>
+            <span class="card-eyebrow">{{ lexicon.dashboard.recentActivityTitle }}</span>
             <button class="link-btn" @click="router.push({ name: 'publications' })">查看全部</button>
           </div>
         
           <div class="history-list">
-            <div v-for="pub in otherRecentPubs" :key="pub.id" class="history-item" @click="openPublication(pub.id)">
+            <div v-for="pub in otherRecentPubs" :key="pub.id" class="history-item" tabindex="0" role="button" @click="openPublication(pub.id)" @keydown.enter.self="openPublication(pub.id)">
               <div class="history-thread"></div>
-              <div class="history-time">{{ formatDate(pub.updatedAt) }}</div>
+              <div class="history-time">{{ formatRelativeTime(pub.updatedAt) }}</div>
               <div class="history-detail">
                 <div class="history-title">{{ pub.title || '未命名' }}</div>
+                <span v-if="pub.subtitle" class="history-tag">{{ pub.subtitle }}</span>
               </div>
+              <svg class="history-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
             </div>
             <div v-if="otherRecentPubs.length === 0" class="empty-hint">暂无更多记录</div>
           </div>
         </div>
 
         <!-- Box E: Users (If Admin) -->
-        <div v-if="isAdmin()" class="bento-card panel-glass card-users" @click="router.push({ name: 'admin-users' })">
+        <div
+          v-if="isAdmin()"
+          class="bento-card panel-glass card-users"
+          :class="{ 'span-wide': !isSuperAdmin() }"
+          tabindex="0"
+          role="button"
+          aria-label="查看系统成员"
+          @click="router.push({ name: 'admin-users' })"
+          @keydown.enter.self="router.push({ name: 'admin-users' })"
+        >
           <div class="stat-content">
             <span class="stat-value small">{{ userCount }}</span>
-            <span class="stat-label">编委人数</span>
+            <span class="stat-label">{{ lexicon.dashboard.statUsersLabel }}</span>
           </div>
           <div class="users-avatars">
             <UserAvatar
@@ -212,10 +253,10 @@ async function handleCreateFromDashboard() {
         </div>
 
         <!-- Box F: Backup (If SuperAdmin) -->
-        <div v-if="isSuperAdmin()" class="bento-card panel-glass card-backup" @click="handleBackup">
+        <div v-if="isSuperAdmin()" class="bento-card panel-glass card-backup" tabindex="0" role="button" aria-label="数据备份归档" @click="handleBackup" @keydown.enter.self="handleBackup">
           <div class="action-content">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-            <span class="action-title">{{ backupLoading ? '正在归档...' : '数据归档' }}</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            <span class="action-title">{{ backupLoading ? '正在备份...' : lexicon.dashboard.backupTitle }}</span>
           </div>
         </div>
       </div>
@@ -225,19 +266,19 @@ async function handleCreateFromDashboard() {
         <div class="welcome-card">
           <div class="welcome-glow"></div>
           <div class="welcome-content">
-            <div class="welcome-seal">序</div>
-            <h2 class="welcome-title">欢迎来到数字档案馆</h2>
-            <p class="welcome-desc">创建您的第一个族谱，开启家族编修之旅。</p>
+            <div class="welcome-seal">{{ lexicon.logo.seal }}</div>
+            <h2 class="welcome-title">{{ lexicon.dashboard.welcomeTitle }}</h2>
+            <p class="welcome-desc">{{ lexicon.dashboard.welcomeDesc }}</p>
             <div class="welcome-actions">
               <button class="btn btn--primary" @click="showCreateDialog = true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                 创建第一个族谱
               </button>
               <button class="btn btn--secondary" @click="router.push({ name: 'publications' })">
                 浏览示例模板
               </button>
               <button class="btn btn--ghost" @click="router.push({ name: 'publications' })">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                 导入族谱数据
               </button>
             </div>
@@ -318,7 +359,7 @@ async function handleCreateFromDashboard() {
 }
 
 
-/* Grid Spanning */
+/* Grid Spanning - Adaptive based on user permissions to eliminate holes */
 .card-hero {
   grid-column: span 8;
   grid-row: span 2;
@@ -337,13 +378,40 @@ async function handleCreateFromDashboard() {
   grid-row: span 2;
   cursor: default;
 }
+.card-history.span-major {
+  grid-column: span 8;
+}
+.card-history.span-full {
+  grid-column: span 12;
+}
 .card-users {
   grid-column: span 3;
   grid-row: span 1;
 }
+.card-users.span-wide {
+  grid-column: span 4;
+}
 .card-backup {
   grid-column: span 3;
   grid-row: span 1;
+}
+
+@media (max-width: 960px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .card-hero,
+  .card-stat,
+  .card-action,
+  .card-history,
+  .card-history.span-major,
+  .card-history.span-full,
+  .card-users,
+  .card-users.span-wide,
+  .card-backup {
+    grid-column: span 1 !important;
+    grid-row: auto !important;
+  }
 }
 
 /* ── Specific Card Styles ── */
@@ -454,13 +522,12 @@ async function handleCreateFromDashboard() {
 }
 .stat-value {
   font-family: var(--font-serif);
-  font-size: 5rem;
+  font-size: 4.5rem;
   line-height: 1;
-  font-weight: 300;
-  background: linear-gradient(135deg, var(--color-warning), var(--color-accent-light));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-weight: 400;
+  color: var(--color-accent);
+  background: none;
+  -webkit-text-fill-color: initial;
 }
 .card-users .stat-value {
   background: linear-gradient(135deg, var(--color-neutral-10), var(--color-neutral-8));
@@ -599,15 +666,37 @@ async function handleCreateFromDashboard() {
   box-shadow: 0 0 0 4px var(--color-card-fill);
 }
 
+
+.history-arrow {
+  margin-left: auto;
+  color: var(--color-neutral-5);
+  transition: transform var(--duration-fast) var(--ease-breath), color var(--duration-fast) var(--ease-breath);
+}
+.history-item:hover .history-arrow {
+  transform: translateX(3px);
+  color: var(--color-accent);
+}
+.history-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-7);
+  margin-top: 2px;
+}
+.bento-card:focus-visible,
+.history-item:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 .history-item:hover {
-  background: var(--glass-pill-bg, rgba(0,0,0,0.03));
+  background: var(--color-neutral-3);
   transform: translateX(4px);
 }
 .history-item:hover .history-thread {
   transform: translateY(-50%) scale(1.5);
-}
-[data-theme="dark"] .history-item:hover {
-  background: var(--color-neutral-3);
 }
 
 .history-time {
