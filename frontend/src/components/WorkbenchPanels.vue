@@ -696,7 +696,7 @@ watch(
   gap: 4px;
   padding: 4px 6px;
   border: 1px solid var(--color-card-stroke);
-  border-radius: var(--radius-xl, 14px);
+  border-radius: 10px;
   background: var(--color-panel-bg);
   box-shadow: var(--shadow-whisper, 0 4px 20px rgba(0, 0, 0, 0.08));
 }
@@ -809,7 +809,7 @@ watch(
   align-items: center;
   gap: 6px;
   padding: 5px 12px;
-  border-radius: var(--radius-xl, 14px);
+  border-radius: 10px;
   background: var(--color-panel-bg);
   border: 1px solid var(--color-card-stroke);
   box-shadow: var(--shadow-whisper, 0 4px 20px rgba(0, 0, 0, 0.08));
@@ -845,7 +845,7 @@ watch(
   align-items: center;
   gap: 12px;
   padding: 6px 10px;
-  border-radius: var(--radius-xl, 14px);
+  border-radius: 10px;
   background: var(--color-panel-bg);
   border: 1px solid var(--color-card-stroke);
   box-shadow: var(--shadow-whisper, 0 4px 20px rgba(0, 0, 0, 0.08));
@@ -878,7 +878,7 @@ watch(
   display: inline-flex;
   align-items: center;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--color-neutral-2);
   border: 1px solid var(--color-card-stroke);
   color: var(--color-neutral-6);
@@ -997,7 +997,7 @@ watch(
   align-items: center;
   gap: 2px;
   padding: 3px 4px;
-  border-radius: var(--radius-xl, 14px);
+  border-radius: 10px;
   background: var(--color-panel-bg);
   border: 1px solid var(--color-card-stroke);
   box-shadow: var(--shadow-whisper, 0 4px 20px rgba(0, 0, 0, 0.08));
