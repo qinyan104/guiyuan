@@ -34,12 +34,12 @@ export const THEME_PRESETS: ThemeOption[] = [
   },
   {
     id: 'pure',
-    name: '纸白 · 泥金',
-    desc: '清透纸白与典雅泥金，金石铭文昭穆生辉',
-    bgPreview: '#F7F8FA',
+    name: '纸白 · 徽墨',
+    desc: '清透纸白与沉凝徽墨，水墨留白文人素雅',
+    bgPreview: '#F8F9FA',
     cardPreview: '#FFFFFF',
-    accentColor: '#B48238',
-    textColor: '#25282B',
+    accentColor: '#2C3238',
+    textColor: '#1F2327',
   },
   {
     id: 'pine',
@@ -52,11 +52,11 @@ export const THEME_PRESETS: ThemeOption[] = [
   },
   {
     id: 'dark',
-    name: '玄墨 · 鎏金',
-    desc: '深墨底色与琥珀鎏金，黑漆描金温润护眼',
+    name: '玄墨 · 月魄',
+    desc: '深墨底色与冰霜月华，清冷出尘夜读护眼',
     bgPreview: '#0C0C0B',
     cardPreview: '#161513',
-    accentColor: '#D4A24E',
+    accentColor: '#C8D6E5',
     textColor: '#E3E1DB',
   },
 ]

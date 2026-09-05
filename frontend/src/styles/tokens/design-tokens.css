@@ -229,21 +229,21 @@
 
 /* 三套清透浅色主题共用表面规则，保留 pure / slate ID 兼容已保存偏好。 */
 [data-theme="pure"] {
-  --color-neutral-1: #F7F8FA;
+  --color-neutral-1: #F8F9FA;
   --color-neutral-2: #FFFFFF;
   --color-neutral-3: #EFF1F3;
-  --color-neutral-4: #E3E6E8;
-  --color-neutral-5: #BAC0C5;
-  --color-neutral-6: #626970;
-  --color-neutral-7: #565D64;
-  --color-neutral-8: #3B4249;
-  --color-neutral-9: #25282B;
-  --color-neutral-10: #191D21;
-  --color-accent: #B48238;
-  --color-accent-light: #C9964A;
-  --color-accent-deep: #926423;
-  --color-accent-muted: #F8F3EA;
-  --shadow-accent: 0 4px 16px rgba(180, 130, 56, 0.18);
+  --color-neutral-4: #E2E5E8;
+  --color-neutral-5: #B6BCC2;
+  --color-neutral-6: #646B73;
+  --color-neutral-7: #4C535A;
+  --color-neutral-8: #32383E;
+  --color-neutral-9: #1F2327;
+  --color-neutral-10: #121518;
+  --color-accent: #2C3238;
+  --color-accent-light: #4A535D;
+  --color-accent-deep: #1A1E22;
+  --color-accent-muted: #ECEFF2;
+  --shadow-accent: 0 4px 16px rgba(31, 35, 39, 0.12);
 }
 
 [data-theme="slate"] {
@@ -337,11 +337,11 @@
   --color-neutral-9: #E3E1DB;   /* 默认正文色：象牙灰白 */
   --color-neutral-10: #F3F2EE;  /* 标题、最强强调 */
 
-  /* 强调色 — 琥珀鎏金（黑漆描金温润微光） */
-  --color-accent: #D4A24E;
-  --color-accent-deep: #A3752A;
-  --color-accent-light: #E5B868;
-  --color-accent-muted: rgba(212, 162, 78, 0.14);
+  /* 强调色 — 冰霜月华（冷月银霜清辉） */
+  --color-accent: #C8D6E5;
+  --color-accent-deep: #7C91A6;
+  --color-accent-light: #E2ECF7;
+  --color-accent-muted: rgba(200, 214, 229, 0.14);
   --color-accent-gradient: linear-gradient(145deg, var(--color-accent-deep), var(--color-accent));
 
   /* 语义色 — 各提亮约 15% */
@@ -365,7 +365,7 @@
   --color-deceased: #807E7A;
 
   --color-tree-line: rgba(128, 126, 122, 0.5);
-  --color-tree-line-selected: #D4A24E;
+  --color-tree-line-selected: #C8D6E5;
 
   --color-card-fill: var(--color-neutral-2);
   --color-card-stroke: rgba(255, 255, 255, 0.04);
@@ -376,7 +376,7 @@
   --color-canvas-grid: rgba(84, 82, 79, 0.15);
   --color-minimap-bg: rgba(12, 12, 11, 0.9);
   --color-minimap-node: rgba(128, 126, 122, 0.4);
-  --color-minimap-node-selected: rgba(212, 162, 78, 0.8);
+  --color-minimap-node-selected: rgba(200, 214, 229, 0.85);
 
   --color-panel-bg: rgba(22, 21, 19, 0.96);
   --color-overlay: rgba(0, 0, 0, 0.5);
@@ -401,13 +401,13 @@
 
   /* 落地页暗色覆写 — 纯灰三段，降朱砂光强度避免暗底过亮 */
   --bg-landing-gradient: linear-gradient(180deg, #0C0C0B 0%, #151413 48%, #1C1B1A 100%);
-  --bg-landing-glow: rgba(212, 162, 78, 0.08);
+  --bg-landing-glow: rgba(200, 214, 229, 0.08);
   --bg-landing-vignette: rgba(0, 0, 0, 0.24);
   --bg-landing-grid: rgba(255, 255, 255, 0.015);
 
   --shadow-whisper: 0 4px 24px rgba(0, 0, 0, 0.25);
   --shadow-ring: 0 0 0 1px rgba(255, 255, 255, 0.06);
-  --shadow-accent: 0 12px 32px rgba(212, 162, 78, 0.18);  /* 琥珀鎏金柔和阴影 */
+  --shadow-accent: 0 12px 32px rgba(180, 205, 230, 0.16);  /* 冰霜月华清冷阴影 */
 
   color-scheme: dark;
 }
