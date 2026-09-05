@@ -264,41 +264,66 @@ watch(
 
   <div class="floating-toolbar floating-toolbar--right">
     <div v-if="!hasSelectedPerson" class="status-chip status-chip--compact">
-      <span class="status-chip__label">当前宗支</span>
+      <svg class="status-chip__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="6" y1="3" x2="6" y2="15" />
+        <circle cx="18" cy="6" r="3" />
+        <circle cx="6" cy="18" r="3" />
+        <path d="M18 9a9 9 0 0 1-9 9" />
+      </svg>
+      <span class="status-chip__label">宗支</span>
       <strong class="status-chip__value">{{ focusFamilyLabel }}</strong>
     </div>
 
     <div v-if="hasSelectedPerson" class="selection-chip">
       <div class="selection-chip__content">
         <div class="selection-chip__header">
+          <strong class="selection-chip__name">{{ selectedPersonName }}</strong>
           <span class="selection-chip__family">{{ focusFamilyLabel }}</span>
-          <strong>{{ selectedPersonName }}</strong>
         </div>
-        <em>{{ selectedPersonMeta }}</em>
+        <em v-if="selectedPersonMeta" class="selection-chip__meta">{{ selectedPersonMeta }}</em>
         <div v-if="relationshipToSelected" class="selection-chip__kinship">
           <span class="selection-chip__kinship-tag">{{ relationshipToSelected.term }}</span>
           <span class="selection-chip__kinship-desc">{{ relationshipToSelected.description }}</span>
         </div>
       </div>
       <div class="selection-chip__actions">
-        <button class="selection-chip__btn selection-chip__btn--danger" type="button" @click="$emit('open-editor')">
-          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M11 2l3 3-9 9H2v-3l9-9z" /></svg>
+        <button class="selection-chip__btn selection-chip__btn--primary" type="button" @click="$emit('open-editor')">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
           编辑
         </button>
         <button class="selection-chip__btn" type="button" @click="$emit('reveal-selected-person')">
-          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3" /><path d="M1 8s3-6 7-6 7 6 7 6-3 6-7 6-7-6-7-6z" /></svg>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M3 12h3m12 0h3M12 3v3m0 12v3" />
+          </svg>
           定位
         </button>
         <button v-if="canFocusSelectedBranch" class="selection-chip__btn selection-chip__btn--accent" type="button" @click="$emit('focus-selected-branch')">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="m9 12 2 2 4-4" />
+          </svg>
           设为主支
         </button>
       </div>
     </div>
 
     <div class="zoom-control">
-      <button class="zoom-control__btn" type="button" @click="$emit('adjust-zoom', -0.05)">−</button>
-      <span class="zoom-control__value">缩放 {{ Math.round(zoom * 100) }}%</span>
-      <button class="zoom-control__btn" type="button" @click="$emit('adjust-zoom', 0.05)">+</button>
+      <button class="zoom-control__btn" type="button" title="缩小画布" aria-label="缩小" @click="$emit('adjust-zoom', -0.05)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
+      <span class="zoom-control__value">{{ Math.round(zoom * 100) }}%</span>
+      <button class="zoom-control__btn" type="button" title="放大画布" aria-label="放大" @click="$emit('adjust-zoom', 0.05)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -781,47 +806,58 @@ watch(
 
 .status-chip {
   display: inline-flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 10px;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-xl, 14px);
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: var(--shadow-whisper, 0 4px 20px rgba(0, 0, 0, 0.08));
+  min-height: 34px;
 }
 
 .status-chip--compact {
   min-width: 100px;
 }
 
+.status-chip__icon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-accent);
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
 .status-chip__label {
   color: var(--color-neutral-6);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .status-chip__value {
   color: var(--color-neutral-9);
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
 .selection-chip {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
-  border-radius: var(--radius-xl);
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: var(--radius-xl, 14px);
   background: var(--color-panel-bg);
   border: 1px solid var(--color-card-stroke);
-  box-shadow: var(--shadow-float);
+  box-shadow: var(--shadow-whisper, 0 4px 20px rgba(0, 0, 0, 0.08));
 }
 
 .selection-chip__content {
   display: flex;
-  min-width: 220px;
+  min-width: 180px;
   max-width: 320px;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
-  padding: 2px 4px 2px 6px;
+  gap: 3px;
 }
 
 .selection-chip__header {
@@ -831,30 +867,30 @@ watch(
   flex-wrap: wrap;
 }
 
+.selection-chip__name {
+  color: var(--color-neutral-10);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .selection-chip__family {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 1px 7px;
   border-radius: 999px;
   background: var(--color-neutral-2);
   border: 1px solid var(--color-card-stroke);
   color: var(--color-neutral-6);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10.5px;
+  font-weight: 500;
 }
 
-.selection-chip__content strong {
-  color: var(--color-neutral-9);
-  font-family: var(--font-serif);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.selection-chip__content em {
+.selection-chip__meta {
   max-width: 320px;
   overflow: hidden;
   color: var(--color-neutral-6);
-  font-size: 12px;
+  font-size: 11.5px;
   font-style: normal;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -862,33 +898,32 @@ watch(
 
 .selection-chip__kinship {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
   flex-wrap: wrap;
+  margin-top: 2px;
 }
 
 .selection-chip__kinship-tag {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
+  padding: 1px 6px;
+  border-radius: 4px;
   background: var(--color-accent-muted);
-  border: 1px solid var(--color-accent-muted);
   color: var(--color-accent);
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-weight: 600;
 }
 
 .selection-chip__kinship-desc {
   color: var(--color-neutral-6);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 11.5px;
+  line-height: 1.4;
 }
 
 .selection-chip__actions {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -897,28 +932,27 @@ watch(
   display: inline-flex;
   gap: 4px;
   align-items: center;
-  min-width: 56px;
-  border-radius: var(--radius-md);
-  padding: 6px 10px;
+  justify-content: center;
+  min-height: 28px;
+  border-radius: 6px;
+  padding: 4px 9px;
   background: var(--color-panel-bg);
   border: 1px solid var(--color-card-stroke);
-  color: var(--color-neutral-6);
-  font-size: 12px;
-  font-weight: 800;
+  color: var(--color-neutral-7);
+  font-size: 11.5px;
+  font-weight: 600;
   cursor: pointer;
-  transition:
-    transform var(--duration-fast) var(--ease-breath),
-    background var(--duration-fast) var(--ease-breath),
-    box-shadow var(--duration-fast) var(--ease-breath);
+  transition: all var(--duration-fast, 150ms) var(--ease-breath);
 }
 
 .selection-chip__btn:hover:not(:disabled) {
   background: var(--color-neutral-2);
+  border-color: var(--color-neutral-5);
+  color: var(--color-neutral-9);
 }
 
 .selection-chip__btn:active:not(:disabled) {
   transform: scale(0.97);
-  transition-duration: 50ms;
 }
 
 .selection-chip__btn:disabled {
@@ -926,34 +960,29 @@ watch(
   opacity: var(--opacity-disabled);
 }
 
-.selection-chip__btn--accent {
+.selection-chip__btn--primary {
   background: var(--color-accent);
-  color: var(--color-text-on-accent);
+  color: var(--color-text-on-accent, #ffffff);
   border-color: var(--color-accent);
+}
+
+.selection-chip__btn--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 88%, black);
+  border-color: color-mix(in srgb, var(--color-accent) 88%, black);
+  color: #ffffff;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 28%, transparent);
+}
+
+.selection-chip__btn--accent {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 28%, transparent);
 }
 
 .selection-chip__btn--accent:hover:not(:disabled) {
-  background: var(--color-accent);
-  color: var(--color-text-on-accent);
+  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
   border-color: var(--color-accent);
-  box-shadow: 0 7px 16px color-mix(in srgb, var(--color-accent) 24%, transparent);
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-}
-
-.selection-chip__btn--danger {
-  background: #c43a31;
-  color: var(--color-text-on-accent);
-  border-color: #c43a31;
-}
-
-.selection-chip__btn--danger:hover:not(:disabled) {
-  background: #c43a31;
-  color: var(--color-text-on-accent);
-  border-color: #c43a31;
-  box-shadow: 0 7px 16px rgba(196, 58, 49, 0.24);
-  filter: brightness(1.08);
-  transform: translateY(-1px);
+  color: var(--color-accent);
 }
 
 .tool-btn:focus-visible,
@@ -966,42 +995,44 @@ watch(
 .zoom-control {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px;
+  gap: 2px;
+  padding: 3px 4px;
+  border-radius: var(--radius-xl, 14px);
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: var(--shadow-whisper, 0 4px 20px rgba(0, 0, 0, 0.08));
+  min-height: 34px;
 }
 
 .zoom-control__value {
   min-width: 44px;
   text-align: center;
-  color: var(--color-neutral-9);
-  font-size: 13px;
-  font-weight: 700;
+  color: var(--color-neutral-8);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 0 4px;
+  user-select: none;
 }
 
 .zoom-control__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-md);
-  background: var(--color-panel-bg);
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: transparent;
   color: var(--color-neutral-6);
-  font-size: 16px;
-  font-weight: 700;
   cursor: pointer;
-  transition:
-    transform var(--duration-fast) var(--ease-breath),
-    background var(--duration-fast) var(--ease-breath);
+  border: 1px solid transparent;
+  transition: all var(--duration-fast, 150ms);
 }
 
 .zoom-control__btn:hover {
-  background: var(--color-neutral-2);
-}
-
-.zoom-control__btn:active {
-  transform: scale(0.95);
-  transition-duration: 50ms;
+  background: var(--color-neutral-3);
+  color: var(--color-neutral-9);
+  border-color: var(--color-card-stroke);
 }
 
 .floating-panel {
