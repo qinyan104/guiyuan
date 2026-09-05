@@ -432,18 +432,20 @@ onBeforeUnmount(() => {
                 <div class="ped-divider"></div>
                 <BranchMountManager :person="person" :publicationId="publicationId" />
               </div>
+
+              <!-- Danger Zone -->
+              <div class="ped-danger-zone">
+                <button class="ped-delete-btn" @click="$emit('delete-person')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  删除人物
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Card Footer -->
           <footer class="ped-footer">
-            <button class="ped-delete-btn" @click="$emit('delete-person')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-              删除人物
-            </button>
-            <div class="ped-footer-right">
-              <button class="ped-done-btn" @click="$emit('close')">完成</button>
-            </div>
+            <button class="ped-done-btn" @click="$emit('close')">完成</button>
           </footer>
         </article>
       </div>
@@ -538,10 +540,11 @@ onBeforeUnmount(() => {
 .ped-sidebar {
   width: 240px;
   flex-shrink: 0;
-  padding: 32px 20px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 20px;
   border-right: 1px solid var(--color-card-stroke);
   overflow-y: auto;
@@ -1065,28 +1068,22 @@ onBeforeUnmount(() => {
   border-color: var(--color-accent);
 }
 
-/* ── Delete Button ── */
+/* ── Footer ── */
 .ped-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 12px 24px;
   border-top: 1px solid var(--color-card-stroke);
   background: var(--color-panel-bg);
   flex-shrink: 0;
 }
 
-.ped-footer-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .ped-done-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 7px 22px;
+  padding: 7px 24px;
   border-radius: var(--radius-md, 8px);
   border: 1px solid var(--color-accent);
   background: var(--color-accent);
@@ -1101,17 +1098,27 @@ onBeforeUnmount(() => {
   filter: brightness(1.08);
 }
 
+/* ── Danger Zone ── */
+.ped-danger-zone {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--color-card-stroke);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
 .ped-delete-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 6px 12px;
   border-radius: var(--radius-md, 8px);
   border: 1px solid var(--color-error-muted, rgba(239, 68, 68, 0.2));
   background: var(--color-error-muted, rgba(239, 68, 68, 0.05));
   color: var(--color-error);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all var(--duration-fast, 150ms);
 }
