@@ -16,7 +16,7 @@ export interface ThemeOption {
 export const THEME_PRESETS: ThemeOption[] = [
   {
     id: 'paper',
-    name: '经典宣纸',
+    name: '经典 · 宣纸',
     desc: '典雅温润古风宣纸，朱砂沉香',
     bgPreview: '#FAF9F6',
     cardPreview: '#F3F1EB',
@@ -52,7 +52,7 @@ export const THEME_PRESETS: ThemeOption[] = [
   },
   {
     id: 'dark',
-    name: '玄墨夜景',
+    name: '玄墨 · 夜景',
     desc: '深墨底色与象牙白字，适合暗光环境',
     bgPreview: '#0C0C0B',
     cardPreview: '#161513',

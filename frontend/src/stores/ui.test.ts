@@ -27,4 +27,10 @@ describe('theme preferences', () => {
     localStorage.setItem('guiyuan:dark-mode', 'true')
     expect(useUiStore().currentTheme).toBe('dark')
   })
+
+  it('ensures all theme preset names follow the unified dot notation', () => {
+    for (const preset of THEME_PRESETS) {
+      expect(preset.name).toMatch(/^.+ · .+$/)
+    }
+  })
 })

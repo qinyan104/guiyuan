@@ -1,15 +1,16 @@
-﻿<script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useLexiconStore, type LexiconId } from '../stores/lexicon'
 
 const lexiconStore = useLexiconStore()
-const { currentLexiconId, lexicons, setLexicon } = lexiconStore
+const currentLexiconId = computed(() => lexiconStore.currentLexiconId)
+const lexicons = computed(() => lexiconStore.lexicons)
 
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
 
 function selectLexicon(id: LexiconId) {
-  setLexicon(id)
+  lexiconStore.setLexicon(id)
   open.value = false
 }
 
@@ -35,15 +36,15 @@ onBeforeUnmount(() => {
 <template>
   <div ref="root" class="theme-switcher">
     <button class="action-btn" type="button" title="切换语境风格" @click="toggle">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
       </svg>
     </button>
 
     <Transition name="glass-pop">
-      <div v-if="open" class="theme-dropdown panel-glass">
+      <div v-if="open" class="theme-dropdown">
         <div class="dropdown-header">
-          <span class="dropdown-title">语境意境 / LEXICON</span>
+          <span class="dropdown-title">切换语境</span>
         </div>
         <div class="theme-list">
           <button
@@ -71,77 +72,105 @@ onBeforeUnmount(() => {
 <style scoped>
 .theme-switcher {
   position: relative;
+  display: inline-block;
 }
 
 .action-btn {
-  background: none;
-  border: none;
-  color: var(--text-soft, #888);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--color-neutral-7);
+  background: transparent;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) var(--ease-breath);
 }
+
 .action-btn:hover {
-  background: var(--glass-panel-bg, rgba(255,255,255,0.4));
-  color: var(--text-main, #000);
+  color: var(--color-neutral-9);
+  background: var(--color-neutral-3);
+}
+
+.action-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.action-btn svg {
+  transition: transform var(--duration-normal) var(--ease-breath);
+}
+
+.action-btn:hover svg {
+  transform: scale(1.08);
 }
 
 .theme-dropdown {
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% + 8px);
   right: 0;
-  width: 220px;
-  border-radius: 16px;
-  padding: 6px;
-  z-index: 9999;
-  transform-origin: top right;
+  width: 240px;
+  padding: 8px;
+  background: var(--color-panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-whisper);
+  z-index: var(--z-popover);
 }
 
 .dropdown-header {
-  padding: 6px 8px 4px;
-  margin-bottom: 2px;
+  padding: 4px 8px 6px;
 }
+
 .dropdown-title {
-  font-family: monospace;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
+  font-size: var(--text-label-12, 12px);
   color: var(--color-neutral-6);
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .theme-list {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .theme-item {
   position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 12px;
-  border-radius: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
   border: 1px solid transparent;
+  border-radius: var(--radius-sm, 6px);
   background: transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
   text-align: left;
+  transition: all var(--duration-fast) var(--ease-breath);
 }
 
 .theme-item:hover {
-  background: var(--glass-pill-bg, rgba(0,0,0,0.04));
+  background: var(--color-neutral-3);
+}
+
+.theme-item:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
 }
 
 .theme-item.is-active {
-  background: var(--color-accent);
-  color: var(--btn-primary-color);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  background: var(--color-accent-subtle, rgba(198, 60, 46, 0.08));
+  border-color: var(--color-accent);
+}
+
+.theme-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .theme-title-group {
@@ -151,42 +180,42 @@ onBeforeUnmount(() => {
 }
 
 .theme-name {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--text-copy-13, 13px);
+  font-weight: 600;
   color: var(--color-neutral-9);
 }
+
 .theme-item.is-active .theme-name {
-  color: inherit;
+  color: var(--color-accent);
 }
 
 .theme-desc {
-  color: var(--color-neutral-6);
   font-size: 11px;
+  color: var(--color-neutral-6);
   line-height: 1.4;
-  margin-top: 2px;
 }
+
 .theme-item.is-active .theme-desc {
-  color: rgba(255,255,255,0.82);
+  color: var(--color-neutral-8);
 }
 
 .check-icon {
-  position: absolute;
-  top: 10px;
-  right: 12px;
   font-size: 12px;
-  color: inherit;
-  font-weight: 800;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-left: 8px;
+  margin-top: 2px;
+  flex-shrink: 0;
 }
 
 .glass-pop-enter-active,
 .glass-pop-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity var(--duration-fast) var(--ease-breath), transform var(--duration-fast) var(--ease-breath);
 }
+
 .glass-pop-enter-from,
 .glass-pop-leave-to {
   opacity: 0;
-  transform: scale(0.95) translateY(-8px);
+  transform: translateY(-4px) scale(0.96);
 }
 </style>
-
-

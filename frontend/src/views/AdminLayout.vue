@@ -12,7 +12,8 @@ import UserAvatar from '../components/UserAvatar.vue'
 const router = useRouter()
 const route = useRoute()
 
-const { lexicon } = useLexiconStore()
+const lexiconStore = useLexiconStore()
+const lexicon = computed(() => lexiconStore.lexicon)
 const currentUsername = computed(() => getUsername() ?? '')
 const avatarTone = computed(() => (getRole() ?? 'USER').toLowerCase())
 
@@ -26,13 +27,13 @@ interface NavItem {
 
 const navItems = computed<NavItem[]>(() => [
 
-  { key: 'dashboard', label: lexicon.dashboard.label, routeName: 'dashboard', icon: 'home' },
+  { key: 'dashboard', label: lexicon.value.dashboard.label, routeName: 'dashboard', icon: 'home' },
 
-  { key: 'publications', label: lexicon.publications.label, routeName: 'publications', icon: 'book' },
+  { key: 'publications', label: lexicon.value.publications.label, routeName: 'publications', icon: 'book' },
 
-  { key: 'users', label: lexicon.users.label, routeName: 'admin-users', icon: 'users', adminOnly: true },
+  { key: 'users', label: lexicon.value.users.label, routeName: 'admin-users', icon: 'users', adminOnly: true },
 
-  { key: 'logs', label: lexicon.logs.label, routeName: 'admin-logs', icon: 'log', adminOnly: true },
+  { key: 'logs', label: lexicon.value.logs.label, routeName: 'admin-logs', icon: 'log', adminOnly: true },
 
 ])
 
@@ -42,18 +43,18 @@ const activeRouteName = computed(() => route.name as string)
 // 灵魂水印逻辑
 const soulMap = computed<Record<string, string>>(() => ({
 
-  'dashboard': lexicon.dashboard.soul,
+  'dashboard': lexicon.value.dashboard.soul,
 
-  'publications': lexicon.publications.soul,
+  'publications': lexicon.value.publications.soul,
 
-  'admin-users': lexicon.users.soul,
+  'admin-users': lexicon.value.users.soul,
 
-  'admin-logs': lexicon.logs.soul,
+  'admin-logs': lexicon.value.logs.soul,
 
-  'settings': lexicon.settings.soul
+  'settings': lexicon.value.settings.soul
 
 }))
-const currentSoul = computed(() => soulMap.value[activeRouteName.value] || lexicon.dashboard.soul)
+const currentSoul = computed(() => soulMap.value[activeRouteName.value] || lexicon.value.dashboard.soul)
 
 function navigateTo(routeName: string) {
   router.push({ name: routeName })
@@ -135,7 +136,7 @@ onBeforeUnmount(() => {
 
       <!-- Sidebar Poetic Footer -->
       <div class="dock-footer">
-        <p class="dock-poetic-quote">万物逆旅，百代过客</p>
+        <p class="dock-poetic-quote">{{ lexicon.footerQuote }}</p>
       </div>
     </aside>
 

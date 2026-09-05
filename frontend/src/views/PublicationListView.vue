@@ -19,8 +19,9 @@ import PoeticHeader from '../components/PoeticHeader.vue'
 import { useFeedback } from '../composables/useFeedback'
 const router = useRouter()
 const feedback = useFeedback()
-const { lexicon } = useLexiconStore()
-const publicationsQuote = computed(() => lexicon.publications.quote.replace(/\\n/g, '<br/>'))
+const lexiconStore = useLexiconStore()
+const lexicon = computed(() => lexiconStore.lexicon)
+const publicationsQuote = computed(() => lexicon.value.publications.quote.replace(/\\n/g, '<br/>'))
 
 const publications = ref<PublicationSummary[]>([])
 const loading = ref(true)

@@ -1,10 +1,11 @@
-﻿<script setup lang="ts">
-import { onMounted, ref } from 'vue'
+<script setup lang="ts">
+import { onMounted, ref, computed } from 'vue'
 import { listLogs, type AuditLogEntry } from '../api/audit'
 import { useLexiconStore } from '../stores/lexicon'
 import PoeticHeader from '../components/PoeticHeader.vue'
 
-const { lexicon } = useLexiconStore()
+const lexiconStore = useLexiconStore()
+const lexicon = computed(() => lexiconStore.lexicon)
 const logs = ref<AuditLogEntry[]>([])
 const loading = ref(true)
 const errorMsg = ref('')

@@ -15,7 +15,7 @@ try {
 
 let pubState: any = null
 try {
-  pubState = usePublicationState()
+  pubState = (usePublicationState as any)()
 } catch {
   pubState = { publications: ref([]) }
 }

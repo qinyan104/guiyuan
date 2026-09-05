@@ -12,7 +12,8 @@ import UserAvatar from '../components/UserAvatar.vue'
 import { adminListUsers, adminBackupDatabase, type AdminUser } from '../api/admin'
 
 const router = useRouter()
-const { lexicon } = useLexiconStore()
+const lexiconStore = useLexiconStore()
+const lexicon = computed(() => lexiconStore.lexicon)
 const feedback = useFeedback()
 
 const pubCount = ref(0)

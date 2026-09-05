@@ -37,58 +37,31 @@ onBeforeUnmount(() => {
       type="button"
       aria-label="切换界面主题"
       :aria-expanded="isOpen"
-      :title="'界面主题: ' + uiStore.THEME_PRESETS.find(p => p.id === uiStore.currentTheme)?.name"
+      :title="'切换主题 (' + (uiStore.THEME_PRESETS.find(p => p.id === uiStore.currentTheme)?.name || '') + ')'"
       @click="toggleMenu"
     >
       <svg
-        v-if="uiStore.currentTheme === 'dark'"
-        width="18" height="18" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="palette-icon"
       >
-        <circle cx="12" cy="12" r="5" />
-        <line x1="12" y1="1" x2="12" y2="3" />
-        <line x1="12" y1="21" x2="12" y2="23" />
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-        <line x1="1" y1="12" x2="3" y2="12" />
-        <line x1="21" y1="12" x2="23" y2="12" />
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-      </svg>
-      <svg
-        v-else-if="uiStore.currentTheme === 'slate'"
-        width="18" height="18" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round"
-      >
-        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-        <line x1="8" y1="21" x2="16" y2="21"></line>
-        <line x1="12" y1="17" x2="12" y2="21"></line>
-      </svg>
-      <svg
-        v-else-if="uiStore.currentTheme === 'pure'"
-        width="18" height="18" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" />
-      </svg>
-      <svg
-        v-else
-        width="18" height="18" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round"
-      >
-        <path d="M12 3v18M3 12h18" />
-        <circle cx="12" cy="12" r="9" />
+        <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+        <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+        <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+        <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z" />
       </svg>
     </button>
 
     <transition name="glass-pop">
       <div v-if="isOpen" class="theme-popover">
-        <div class="popover-title">切换背景主题</div>
+        <div class="popover-title">切换主题</div>
         <div class="popover-list">
           <button
             v-for="preset in uiStore.THEME_PRESETS"
@@ -101,7 +74,9 @@ onBeforeUnmount(() => {
           >
             <span
               class="color-dot"
-              :style="{ backgroundColor: preset.bgPreview, borderColor: preset.accentColor }"
+              :style="{
+                background: `linear-gradient(135deg, ${preset.bgPreview} 50%, ${preset.accentColor} 50%)`
+              }"
             ></span>
             <span class="theme-label">{{ preset.name }}</span>
             <span v-if="uiStore.currentTheme === preset.id" class="check-mark">✓</span>
@@ -142,19 +117,19 @@ onBeforeUnmount(() => {
   outline-offset: 2px;
 }
 
-.dark-toggle svg {
+.palette-icon {
   transition: transform var(--duration-normal) var(--ease-breath);
 }
 
-.dark-toggle:hover svg {
-  transform: scale(1.1);
+.dark-toggle:hover .palette-icon {
+  transform: rotate(15deg) scale(1.08);
 }
 
 .theme-popover {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 170px;
+  width: 175px;
   padding: 8px;
   background: var(--color-panel-bg);
   backdrop-filter: blur(16px);
@@ -181,7 +156,7 @@ onBeforeUnmount(() => {
 .theme-popover-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   width: 100%;
   padding: 6px 8px;
   border: none;
@@ -209,16 +184,27 @@ onBeforeUnmount(() => {
 }
 
 .color-dot {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  border: 1.5px solid;
+  border: 1px solid var(--color-card-stroke);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
+  transition: transform var(--duration-fast) var(--ease-breath);
+}
+
+.theme-popover-item:hover .color-dot {
+  transform: scale(1.15);
+}
+
+.theme-popover-item.is-active .color-dot {
+  box-shadow: 0 0 0 1.5px var(--color-accent);
 }
 
 .check-mark {
   margin-left: auto;
   font-size: 12px;
+  font-weight: 700;
 }
 
 .glass-pop-enter-active,
