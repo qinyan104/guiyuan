@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import AppSelect from "../AppSelect.vue"
-import { resolveBookFontFamily } from "../../features/book-editor/bookFonts"
 import type { BookLayout } from "../../types/bookDocument"
 
-const props = defineProps<{
+defineProps<{
   title: string
   layout: BookLayout
   saving: boolean
@@ -14,6 +12,7 @@ const props = defineProps<{
   canInsertPageBreak: boolean
   canDeletePageBreak: boolean
   hasUnsavedChanges: boolean
+  layoutOpen?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -28,136 +27,153 @@ const emit = defineEmits<{
   zoomIn: []
   zoomOut: []
   resetZoom: []
+  toggleLayout: []
 }>()
-
-function update<K extends keyof BookLayout>(layout: BookLayout, key: K, value: BookLayout[K]) {
-  emit("updateLayout", { ...layout, [key]: value })
-}
-
-const templateOptions = [
-  { value: "classic", label: "朱丝古籍 · 鱼尾版心" },
-  { value: "plain", label: "素雅宣纸 · 墨栏留白" },
-  { value: "white", label: "白底清稿 · 无栏校样" },
-]
-
-const fontOptions = [
-  { value: "LXGWWenKai", label: "霞鹜文楷 · 手抄谱牒" },
-  { value: "WenYue-GuTiFangSong", label: "文悦仿宋 · 世系昭穆" },
-  { value: "PingXianZhenSong", label: "屏显真宋 · 谱牒修明" },
-  { value: "HanaMinA", label: "花园明朝 · 宗支有序" },
-  { value: "qiji-combo", label: "奇迹手写 · 慎终追远" },
-  { value: "XiaolaiMonoSC", label: "小赖手写 · 家乘流芳" },
-]
-
-const marginOptions = [
-  { value: "compact", label: "窄" },
-  { value: "standard", label: "标准" },
-  { value: "loose", label: "宽" },
-]
-
-function updateTemplate(value: string) {
-  update(props.layout, "templateId", value)
-}
-
-function updateFont(value: string) {
-  update(props.layout, "fontFamily", value)
-}
-
-function updateFontSize(event: Event) {
-  update(props.layout, "fontSize", Number((event.target as HTMLInputElement).value))
-}
-
-function updateMargin(value: string) {
-  update(props.layout, "marginPreset", value as BookLayout["marginPreset"])
-}
 </script>
 
 <template>
   <header class="book-toolbar">
-    <div class="toolbar-group toolbar-group--title">
-      <button class="icon-btn" type="button" title="返回画布" @click="emit('back')">←</button>
-      <div class="title">{{ title || "古籍族谱" }}</div>
+    <!-- Left: Back & Book Identity -->
+    <div class="toolbar-group toolbar-group--left">
+      <button class="icon-btn" type="button" title="返回画布工作台" @click="emit('back')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12" />
+          <polyline points="12 19 5 12 12 5" />
+        </svg>
+      </button>
+      <div class="book-meta">
+        <span class="book-badge">古籍线装</span>
+        <span class="title" :title="title">{{ title || "古籍族谱" }}</span>
+      </div>
       <span
         v-if="hasDocument"
         role="status"
         aria-live="polite"
         :class="['save-state', { dirty: hasUnsavedChanges }]"
-      >{{ hasUnsavedChanges ? "未保存" : "已保存" }}</span>
+      >
+        <span class="save-state__dot"></span>
+        {{ hasUnsavedChanges ? "未保存" : "已保存" }}
+      </span>
     </div>
-    <div class="spacer" />
-    <div class="toolbar-group toolbar-actions">
-      <button class="tool-btn tool-btn--quiet" type="button" @click="emit('generate')">{{ hasDocument ? "重新生成" : "生成书稿" }}</button>
+
+    <!-- Center: View Mode & Zoom -->
+    <div v-if="hasDocument" class="toolbar-group toolbar-group--center">
+      <!-- View mode switch -->
+      <div class="pill-group">
+        <button
+          type="button"
+          :class="['pill-btn', { active: viewMode === 'spread' }]"
+          title="对开双页展开阅览"
+          @click="emit('updateViewMode', 'spread')"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+          </svg>
+          双页
+        </button>
+        <button
+          type="button"
+          :class="['pill-btn', { active: viewMode === 'single' }]"
+          title="单页顺序阅览"
+          @click="emit('updateViewMode', 'single')"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="3" width="14" height="18" rx="2" />
+          </svg>
+          单页
+        </button>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Zoom controls -->
+      <div class="zoom-group">
+        <button type="button" class="zoom-btn" title="缩小" @click="emit('zoomOut')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <span class="zoom-val" title="点击重置缩放" @click="emit('resetZoom')">{{ Math.round(zoom * 100) }}%</span>
+        <button type="button" class="zoom-btn" title="放大" @click="emit('zoomIn')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+      </div>
     </div>
-    <template v-if="hasDocument">
-      <div class="toolbar-group">
-        <label class="view-switch">
-          <span>视图</span>
-          <button
-            type="button"
-            :class="{ active: viewMode === 'spread' }"
-            @click="emit('updateViewMode', 'spread')"
-          >双页</button>
-          <button
-            type="button"
-            :class="{ active: viewMode === 'single' }"
-            @click="emit('updateViewMode', 'single')"
-          >单页</button>
-        </label>
-        <label class="zoom-control">
-          <span>缩放</span>
-          <button type="button" title="缩小" @click="emit('zoomOut')">−</button>
-          <strong>{{ Math.round(zoom * 100) }}%</strong>
-          <button type="button" title="放大" @click="emit('zoomIn')">＋</button>
-          <button type="button" title="重置缩放" @click="emit('resetZoom')">重置</button>
-        </label>
-        <label>
-          <span>纸张</span>
-          <AppSelect
-            class="toolbar-select toolbar-select--paper"
-            variant="compact"
-            :modelValue="layout.templateId"
-            :options="templateOptions"
-            @update:modelValue="updateTemplate"
-          />
-        </label>
-        <label>
-          <span>字体</span>
-          <AppSelect
-            class="toolbar-select toolbar-select--font"
-            variant="compact"
-            :modelValue="resolveBookFontFamily(layout.fontFamily)"
-            :options="fontOptions"
-            @update:modelValue="updateFont"
-          />
-        </label>
-        <label class="number-field">
-          <span>字号</span>
-          <input
-            type="number"
-            min="14"
-            max="32"
-            :value="layout.fontSize"
-            @change="updateFontSize"
-          />
-        </label>
-        <label>
-          <span>边距</span>
-          <AppSelect
-            class="toolbar-select toolbar-select--margin"
-            variant="compact"
-            :modelValue="layout.marginPreset"
-            :options="marginOptions"
-            @update:modelValue="updateMargin"
-          />
-        </label>
-      </div>
-      <div class="toolbar-group toolbar-actions">
-        <button class="tool-btn tool-btn--quiet" type="button" :disabled="!canInsertPageBreak" @click="emit('insertPageBreak')">插入分页</button>
-        <button class="tool-btn tool-btn--quiet" type="button" :disabled="!canDeletePageBreak" @click="emit('deletePageBreak')">删除分页</button>
-        <button class="tool-btn" type="button" :disabled="saving" @click="emit('save')">{{ saving ? "保存中" : "保存书稿" }}</button>
-        <button class="tool-btn primary" type="button" :disabled="exporting" @click="emit('exportPdf')">{{ exporting ? "导出中" : "导出 PDF" }}</button>
-      </div>
-    </template>
+
+    <!-- Right: Actions -->
+    <div class="toolbar-group toolbar-group--right">
+      <!-- Layout Drawer Toggle -->
+      <button
+        v-if="hasDocument"
+        type="button"
+        :class="['tool-btn', { 'tool-btn--active': layoutOpen }]"
+        title="设置古籍版芯、字体与页边距"
+        @click="emit('toggleLayout')"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14" />
+          <line x1="4" y1="10" x2="4" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12" y2="3" />
+          <line x1="20" y1="21" x2="20" y2="16" />
+          <line x1="20" y1="12" x2="20" y2="3" />
+          <line x1="1" y1="14" x2="7" y2="14" />
+          <line x1="9" y1="8" x2="15" y2="8" />
+          <line x1="17" y1="16" x2="23" y2="16" />
+        </svg>
+        版式设计
+      </button>
+
+      <!-- Re-generate / Generate button -->
+      <button
+        type="button"
+        class="tool-btn tool-btn--quiet"
+        :title="hasDocument ? '从谱系数据重新生成书稿' : '生成古籍书稿'"
+        @click="emit('generate')"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10" />
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+        </svg>
+        {{ hasDocument ? "重新编排" : "生成书稿" }}
+      </button>
+
+      <template v-if="hasDocument">
+        <!-- Save button -->
+        <button
+          type="button"
+          class="tool-btn tool-btn--save"
+          :disabled="saving"
+          @click="emit('save')"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+          </svg>
+          {{ saving ? "保存中" : "保存" }}
+        </button>
+
+        <!-- Export PDF button -->
+        <button
+          type="button"
+          class="tool-btn tool-btn--primary primary"
+          :disabled="exporting"
+          @click="emit('exportPdf')"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          {{ exporting ? "导出中" : "导出 PDF" }}
+        </button>
+      </template>
+    </div>
   </header>
 </template>
 
@@ -199,200 +215,270 @@ function updateMargin(value: string) {
 }
 
 .book-toolbar {
-  min-height: 60px;
+  height: 52px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 18px;
-  overflow-x: auto;
-  border-bottom: 1px solid rgba(28, 24, 20, 0.08);
-  background: #fbf8f1;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 16px;
+  background: var(--bg-paper-raised, #fcfbfa);
+  border-bottom: 1px solid var(--line-soft, rgba(122, 95, 65, 0.16));
+  box-shadow: 0 1px 3px rgba(24, 18, 12, 0.04);
+  flex-shrink: 0;
+  z-index: 20;
+  box-sizing: border-box;
 }
 
 .toolbar-group {
-  min-height: 38px;
   display: flex;
   align-items: center;
-  flex: 0 0 auto;
-  gap: 7px;
-  padding: 4px 7px;
-  border: 1px solid rgba(28, 24, 20, 0.08);
-  border-radius: 6px;
-  background: #fffdfa;
+  gap: 10px;
 }
 
-.toolbar-group--title {
-  border-color: transparent;
-  background: transparent;
-  padding-left: 0;
+.toolbar-group--left {
+  flex: 1;
+  min-width: 0;
 }
 
-.toolbar-actions {
-  align-items: stretch;
-  gap: 2px;
-  padding: 4px;
-  border-radius: 999px;
-  background: #f7f2e9;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+.toolbar-group--center {
+  flex-shrink: 0;
+}
+
+.toolbar-group--right {
+  flex: 1;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.12));
+  background: var(--bg-paper, #ffffff);
+  color: var(--text-main, #241a10);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.icon-btn:hover {
+  background: var(--fill-subtle, rgba(0, 0, 0, 0.05));
+  border-color: var(--line-soft, rgba(122, 95, 65, 0.25));
+}
+
+.book-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.book-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(114, 79, 46, 0.08);
+  color: var(--color-accent, #724f2e);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
 }
 
 .title {
-  font-family: var(--font-serif);
-  font-size: 16px;
-  font-weight: 700;
-  color: #1c1814;
-  max-width: 320px;
+  font-family: var(--font-serif, "Noto Serif SC", serif);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-main, #241a10);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .save-state {
-  flex: 0 0 auto;
-  padding: 3px 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
   border-radius: 999px;
-  background: #e8efe5;
-  color: #496044;
+  background: rgba(34, 139, 34, 0.09);
+  color: #2e6b2e;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.save-state__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2e6b2e;
 }
 
 .save-state.dirty {
-  background: #f7e5df;
-  color: #8a2b20;
+  background: rgba(217, 83, 79, 0.1);
+  color: #b33936;
 }
 
-.spacer { flex: 1; }
-
-button,
-input {
-  height: 28px;
-  border: 1px solid rgba(28, 24, 20, 0.1);
-  border-radius: 4px;
-  background: transparent;
-  color: #2d261f;
-  font-size: 12px;
-  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+.save-state.dirty .save-state__dot {
+  background: #b33936;
 }
 
-button {
-  padding: 0 10px;
-  cursor: pointer;
-  font-weight: 600;
+/* Pill Group (View Mode) */
+.pill-group {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--fill-subtle, rgba(0, 0, 0, 0.04));
+  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.08));
 }
 
-label {
+.pill-btn {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #6b6252;
-  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-sub, #6b5e52);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pill-btn:hover:not(.active) {
+  color: var(--text-main, #241a10);
+}
+
+.pill-btn.active {
+  background: var(--bg-paper, #ffffff);
+  color: var(--text-main, #241a10);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   font-weight: 600;
+}
+
+.divider {
+  width: 1px;
+  height: 18px;
+  background: var(--line-subtle, rgba(122, 95, 65, 0.12));
+}
+
+/* Zoom Group */
+.zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  border-radius: 8px;
+  background: var(--fill-subtle, rgba(0, 0, 0, 0.04));
+  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.08));
+}
+
+.zoom-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-sub, #6b5e52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.zoom-btn:hover {
+  background: var(--bg-paper, #ffffff);
+  color: var(--text-main, #241a10);
+}
+
+.zoom-val {
+  min-width: 42px;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main, #241a10);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.zoom-val:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Action Tool Buttons */
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.14));
+  background: var(--bg-paper, #ffffff);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-main, #241a10);
+  cursor: pointer;
+  transition: all 0.15s ease;
   white-space: nowrap;
 }
 
-input {
-  width: 48px;
-  padding: 0 6px;
-  background: #f4efe6;
-  font-variant-numeric: tabular-nums;
-}
-.number-field { gap: 3px; }
-.view-switch {
-  gap: 3px;
-}
-.view-switch button {
-  width: 42px;
-  padding: 0;
-}
-.view-switch button.active {
-  background: #2d261f;
-  border-color: #2d261f;
-  color: #fff;
-}
-.zoom-control {
-  gap: 3px;
-}
-.zoom-control button {
-  width: 32px;
-  padding: 0;
-}
-.zoom-control button:last-child {
-  width: 44px;
-}
-.zoom-control strong {
-  min-width: 40px;
-  text-align: center;
-  color: #2d261f;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-button:hover:not(:disabled),
-input:hover {
-  background: #eee6da;
-  border-color: rgba(28, 24, 20, 0.18);
+.tool-btn:hover:not(:disabled) {
+  border-color: var(--line-soft, rgba(122, 95, 65, 0.28));
+  background: #faf8f5;
 }
 
-button:active:not(:disabled) { transform: translateY(1px); }
-
-button:focus-visible,
-input:focus-visible {
-  outline: 2px solid rgba(198, 60, 46, 0.18);
-  border-color: var(--color-accent);
+.tool-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
-button:disabled { opacity: 0.5; cursor: default; }
-.toolbar-select {
-  width: 112px;
-  --control-radius: 4px;
-  --line-soft: rgba(28, 24, 20, 0.1);
-  --bg-paper: #f4efe6;
-  --text-main: #2d261f;
-  --text-soft: #6b6252;
-  --accent-signal: var(--color-accent);
-  --shadow-ring: 0 0 0 2px rgba(198, 60, 46, 0.18);
-}
-
-.toolbar-select--paper { width: 154px; }
-.toolbar-select--font { width: 166px; }
-.toolbar-select--margin { width: 78px; }
-
-.icon-btn {
-  width: 30px;
-  padding: 0;
-  color: #463e32;
-  background: #f0e9dd;
-}
-.tool-btn {
-  min-width: auto;
-  min-height: 30px;
-  padding: 0 13px;
-  border: 0;
-  border-radius: 999px;
-  color: #6b6252;
-  background: transparent;
+.tool-btn--active {
+  border-color: var(--color-accent, #724f2e);
+  background: rgba(114, 79, 46, 0.08);
+  color: var(--color-accent, #724f2e);
+  font-weight: 600;
 }
 
 .tool-btn--quiet {
-  color: #6b6252;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-sub, #6b5e52);
 }
 
-.tool-btn:hover:not(:disabled),
 .tool-btn--quiet:hover:not(:disabled) {
-  color: #2d261f;
-  background: #fffdfa;
+  background: var(--fill-subtle, rgba(0, 0, 0, 0.05));
+  border-color: transparent;
+  color: var(--text-main, #241a10);
 }
 
+.tool-btn--save {
+  color: var(--text-main, #241a10);
+}
+
+.tool-btn--primary,
 .primary {
-  min-width: 90px;
-  background: var(--color-accent);
-  color: #fff;
-  box-shadow: 0 8px 16px rgba(198, 60, 46, 0.16);
+  background: var(--btn-primary-bg, #241a10);
+  border-color: transparent;
+  color: var(--btn-primary-color, #ffffff);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  font-weight: 600;
 }
 
+.tool-btn--primary:hover:not(:disabled),
 .primary:hover:not(:disabled) {
-  background: var(--color-accent-deep);
-  border-color: var(--color-accent-deep);
+  background: #382c20;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  border-color: transparent;
 }
 </style>

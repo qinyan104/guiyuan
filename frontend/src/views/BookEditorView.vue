@@ -4,6 +4,7 @@ import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router"
 import BookSpread from "../components/book-editor/BookSpread.vue"
 import BookToolbar from "../components/book-editor/BookToolbar.vue"
 import PageThumbnailRail from "../components/book-editor/PageThumbnailRail.vue"
+import BookLayoutPanel from "../components/book-editor/BookLayoutPanel.vue"
 import { getPublication } from "../api/publication"
 import { generateBookDocument } from "../features/book-editor/bookGenerator"
 import { getBookDocument, saveBookDocument } from "../features/book-editor/bookDocumentApi"
@@ -31,6 +32,7 @@ const viewMode = ref<"single" | "spread">("spread")
 const zoom = ref(1)
 const fontSupport = ref<BookFontSupport | null>(null)
 const savedSnapshot = ref<string | null>(null)
+const layoutOpen = ref(false)
 let fontRequest = 0
 
 function draftSnapshot(value: BookDocument | null): string | null {
@@ -254,6 +256,7 @@ async function exportPdf() {
       :canInsertPageBreak="canInsertPageBreak"
       :canDeletePageBreak="canDeletePageBreak"
       :hasUnsavedChanges="hasUnsavedChanges"
+      :layoutOpen="layoutOpen"
       @back="back"
       @generate="generate"
       @save="save"
@@ -265,14 +268,24 @@ async function exportPdf() {
       @zoomIn="updateZoom(0.1)"
       @zoomOut="updateZoom(-0.1)"
       @resetZoom="zoom = 1"
+      @toggleLayout="layoutOpen = !layoutOpen"
     />
 
     <div v-if="loading" class="state">正在加载书稿...</div>
     <div v-else-if="error && !publication" class="state error">{{ error }}</div>
     <div v-else-if="!document" class="start">
-      <h1>{{ publication?.title || "古籍族谱" }}</h1>
-      <p>从当前族谱自动生成封面和世系录，之后可在书页中直接编辑人物条目。</p>
-      <button type="button" @click="generate">生成古籍族谱</button>
+      <div class="start-card">
+        <div class="start-seal">譜</div>
+        <h1>{{ publication?.title || "古籍族谱" }}</h1>
+        <p>基于当前谱系世系与族人资料，一键自动编排线装仿古书卷，支持苏欧版芯、双页对开阅览与高精矢量 PDF 出版印刷。</p>
+        <button type="button" class="btn-generate" @click="generate">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          一键生成古籍书稿
+        </button>
+      </div>
     </div>
     <div v-else-if="!pagination" class="state" :class="{ error: fontError || layoutError }">{{ fontError || layoutError || "正在加载排版字体..." }}</div>
     <div v-else class="workbench">
@@ -291,6 +304,16 @@ async function exportPdf() {
         @goToPage="goToPage"
         @zoom="updateZoom"
       />
+      <BookLayoutPanel
+        v-if="layoutOpen && document"
+        :layout="layout"
+        :canInsertPageBreak="canInsertPageBreak"
+        :canDeletePageBreak="canDeletePageBreak"
+        @updateLayout="updateLayout"
+        @insertPageBreak="insertPageBreak"
+        @deletePageBreak="deletePageBreak"
+        @close="layoutOpen = false"
+      />
     </div>
 
     <div v-if="message || error || fontError || layoutError" class="toast" :class="{ danger: error || fontError || layoutError }">
@@ -304,15 +327,14 @@ async function exportPdf() {
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: #eee7da;
+  background: var(--canvas-bg, #f2ece1);
   color: var(--color-neutral-9);
 }
 
 .workbench {
   min-height: 0;
   flex: 1;
-  display: grid;
-  grid-template-columns: 136px minmax(0, 1fr);
+  display: flex;
   position: relative;
   overflow: hidden;
 }
@@ -332,6 +354,59 @@ async function exportPdf() {
 .state {
   font-size: 14px;
   font-weight: 600;
+}
+
+.start-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 48px;
+  background: var(--bg-paper-raised, #fcfbfa);
+  border: 1px solid var(--line-soft, rgba(122, 95, 65, 0.16));
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(24, 18, 12, 0.08);
+  max-width: 520px;
+}
+
+.start-seal {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(169, 52, 38, 0.08);
+  border: 1.5px solid rgba(169, 52, 38, 0.3);
+  color: #a93426;
+  font-family: var(--font-serif, "Noto Serif SC", serif);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0;
+  box-shadow: inset 0 0 10px rgba(169, 52, 38, 0.06);
+}
+
+.btn-generate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  height: 42px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--btn-primary-bg, #241a10);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transition: all 0.15s ease;
+}
+
+.btn-generate:hover {
+  background: #382c20;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
 }
 
 .start h1 {
