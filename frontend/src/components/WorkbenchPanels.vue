@@ -66,6 +66,26 @@ function handleValidationLocate(personId: string) {
 
 useFocusTrap(validationDialogRef, validationOpenRef, closeValidationDialog)
 
+function resetLayoutSettings() {
+  emit('update-settings', {
+    cardWidth: 158,
+    cardRadius: 24,
+    cardShadowOpacity: 18,
+    cardBackgroundColor: '#F3F1EB',
+    generationGap: 170,
+    siblingGap: 88,
+    fontScale: 1,
+    showCard: true,
+    showBirth: true,
+    showDeath: true,
+    showAge: true,
+    showNote: true,
+    showStatus: true,
+    showLineage: true,
+    showPhoto: true,
+  })
+}
+
 function updateSetting<K extends keyof PublicationSettings>(key: K, value: PublicationSettings[K]) {
   emit('update-settings', { [key]: value } as Partial<PublicationSettings>)
 }
@@ -285,23 +305,29 @@ watch(
   <Transition name="float-panel">
     <section v-if="layoutPanelOpen" class="layout-panel floating-panel--left" @mousedown.stop @wheel.stop>
       <div class="floating-panel__header">
-        <div>
-          <p class="floating-panel__eyebrow">排版</p>
-          <h2>版式设置</h2>
+        <h2 class="lp-panel-title">版式设置</h2>
+        <div class="lp-header-actions">
+          <button class="lp-reset-btn" type="button" title="恢复为推荐的标准版式参数" @click="resetLayoutSettings">
+            恢复默认
+          </button>
+          <button class="floating-panel__close" type="button" @click="$emit('close-layout')" aria-label="关闭">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
         </div>
-        <button class="floating-panel__close" type="button" @click="$emit('close-layout')" aria-label="关闭">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11" /><line x1="11" y1="3" x2="3" y2="11" /></svg>
-        </button>
       </div>
 
       <div class="lp-stack">
+        <!-- 尺寸与间距 -->
         <div class="lp-section">
           <div class="lp-section-head">
             <div class="lp-section-icon">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 12.5h10" /><path d="M5 12.5V7.5" /><path d="M8 12.5V4.5" /><path d="M11 12.5V9.5" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M9 3v18" />
+              </svg>
             </div>
             <div>
-              <p class="lp-section-title">卡片与间距</p>
+              <p class="lp-section-title">尺寸与间距</p>
             </div>
           </div>
 
@@ -315,41 +341,6 @@ watch(
                 type="range" min="120" max="200" step="2"
                 :style="{ '--lp-fill': sliderFill(settings.cardWidth, 120, 200) }"
                 @input="updateSetting('cardWidth', readNumericValue($event))"
-              />
-            </label>
-
-            <label class="lp-field">
-              <span class="lp-label">卡片圆角</span>
-              <span class="lp-value">{{ settings.cardRadius }}<small>px</small></span>
-              <input
-                class="lp-slider"
-                :value="settings.cardRadius"
-                type="range" min="0" max="32" step="2"
-                :style="{ '--lp-fill': sliderFill(settings.cardRadius, 0, 32) }"
-                @input="updateSetting('cardRadius', readNumericValue($event))"
-              />
-            </label>
-
-            <label class="lp-field">
-              <span class="lp-label">卡片阴影</span>
-              <span class="lp-value">{{ settings.cardShadowOpacity }}<small>%</small></span>
-              <input
-                class="lp-slider"
-                :value="settings.cardShadowOpacity"
-                type="range" min="0" max="40" step="2"
-                :style="{ '--lp-fill': sliderFill(settings.cardShadowOpacity, 0, 40) }"
-                @input="updateSetting('cardShadowOpacity', readNumericValue($event))"
-              />
-            </label>
-
-            <label class="lp-field">
-              <span class="lp-label">卡片背景</span>
-              <span class="lp-value">{{ settings.cardBackgroundColor.toUpperCase() }}</span>
-              <input
-                class="lp-color"
-                :value="settings.cardBackgroundColor"
-                type="color"
-                @input="updateSetting('cardBackgroundColor', readStringValue($event))"
               />
             </label>
 
@@ -391,102 +382,129 @@ watch(
           </div>
         </div>
 
+        <!-- 卡片外观 -->
         <div class="lp-section">
           <div class="lp-section-head">
             <div class="lp-section-icon">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2" /><path d="M5.5 6.5h5" /><path d="M5.5 9.5h3" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+              </svg>
             </div>
             <div>
-              <p class="lp-section-title">卡片信息</p>
+              <p class="lp-section-title">卡片外观</p>
+            </div>
+          </div>
+
+          <div class="lp-surface">
+            <label class="lp-field">
+              <span class="lp-label">卡片圆角</span>
+              <span class="lp-value">{{ settings.cardRadius }}<small>px</small></span>
+              <input
+                class="lp-slider"
+                :value="settings.cardRadius"
+                type="range" min="0" max="32" step="2"
+                :style="{ '--lp-fill': sliderFill(settings.cardRadius, 0, 32) }"
+                @input="updateSetting('cardRadius', readNumericValue($event))"
+              />
+            </label>
+
+            <label class="lp-field">
+              <span class="lp-label">卡片阴影</span>
+              <span class="lp-value">{{ settings.cardShadowOpacity }}<small>%</small></span>
+              <input
+                class="lp-slider"
+                :value="settings.cardShadowOpacity"
+                type="range" min="0" max="40" step="2"
+                :style="{ '--lp-fill': sliderFill(settings.cardShadowOpacity, 0, 40) }"
+                @input="updateSetting('cardShadowOpacity', readNumericValue($event))"
+              />
+            </label>
+
+            <label class="lp-field lp-field--color">
+              <span class="lp-label">卡片底色</span>
+              <div class="lp-color-row">
+                <span class="lp-value">{{ settings.cardBackgroundColor.toUpperCase() }}</span>
+                <input
+                  class="lp-color-dot"
+                  :value="settings.cardBackgroundColor"
+                  type="color"
+                  @input="updateSetting('cardBackgroundColor', readStringValue($event))"
+                />
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 内容显示（整合网格） -->
+        <div class="lp-section lp-section--last">
+          <div class="lp-section-head">
+            <div class="lp-section-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+            <div>
+              <p class="lp-section-title">内容显示</p>
             </div>
           </div>
 
           <div class="lp-surface lp-surface--toggle-grid">
-            <div class="lp-toggles lp-toggles--grid">
-              <label class="lp-toggle lp-toggle--emphasis">
-                <span>显示卡片</span>
-                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showCard }">
-                  <input :checked="settings.showCard" type="checkbox" @change="updateSetting('showCard', readCheckedValue($event))" />
-                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-                </span>
-              </label>
-              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-                <span>显示照片</span>
-                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showPhoto }">
+            <label class="lp-toggle lp-toggle--master">
+              <span class="lp-toggle-name">显示卡片框体</span>
+              <span class="lp-switch" :class="{ 'lp-switch--active': settings.showCard }">
+                <input :checked="settings.showCard" type="checkbox" @change="updateSetting('showCard', readCheckedValue($event))" />
+                <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+              </span>
+            </label>
+
+            <div class="lp-toggles-grid" :class="{ 'lp-toggles-grid--disabled': !settings.showCard }">
+              <label class="lp-toggle lp-toggle--chip">
+                <span>照片</span>
+                <span class="lp-switch lp-switch--sm" :class="{ 'lp-switch--active': settings.showPhoto }">
                   <input :checked="settings.showPhoto" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showPhoto', readCheckedValue($event))" />
                   <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
                 </span>
               </label>
-              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-                <span>显示状态</span>
-                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showStatus }">
-                  <input :checked="settings.showStatus" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showStatus', readCheckedValue($event))" />
-                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
-                </span>
-              </label>
-              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-                <span>显示注记</span>
-                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showNote }">
+              <label class="lp-toggle lp-toggle--chip">
+                <span>注记</span>
+                <span class="lp-switch lp-switch--sm" :class="{ 'lp-switch--active': settings.showNote }">
                   <input :checked="settings.showNote" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showNote', readCheckedValue($event))" />
                   <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
                 </span>
               </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="lp-section">
-          <div class="lp-section-head">
-            <div class="lp-section-icon">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 4.5h10" /><path d="M3 8h10" /><path d="M3 11.5h6" /></svg>
-            </div>
-            <div>
-              <p class="lp-section-title">生卒信息</p>
-            </div>
-          </div>
-
-          <div class="lp-surface lp-surface--toggle-grid">
-            <div class="lp-toggles lp-toggles--grid">
-              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-                <span>显示生辰</span>
-                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showBirth }">
+              <label class="lp-toggle lp-toggle--chip">
+                <span>生辰</span>
+                <span class="lp-switch lp-switch--sm" :class="{ 'lp-switch--active': settings.showBirth }">
                   <input :checked="settings.showBirth" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showBirth', readCheckedValue($event))" />
                   <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
                 </span>
               </label>
-              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-                <span>显示卒年</span>
-                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showDeath }">
+              <label class="lp-toggle lp-toggle--chip">
+                <span>卒年</span>
+                <span class="lp-switch lp-switch--sm" :class="{ 'lp-switch--active': settings.showDeath }">
                   <input :checked="settings.showDeath" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showDeath', readCheckedValue($event))" />
                   <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
                 </span>
               </label>
-              <label class="lp-toggle" :class="{ 'lp-toggle--disabled': !settings.showCard }">
-                <span>显示年龄</span>
-                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showAge }">
+              <label class="lp-toggle lp-toggle--chip">
+                <span>年龄</span>
+                <span class="lp-switch lp-switch--sm" :class="{ 'lp-switch--active': settings.showAge }">
                   <input :checked="settings.showAge" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showAge', readCheckedValue($event))" />
                   <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
                 </span>
               </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="lp-section lp-section--last">
-          <div class="lp-section-head">
-            <div class="lp-section-icon">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 3v10" /><path d="M4 5.5h8" /><path d="M5.5 9h5" /></svg>
-            </div>
-            <div>
-              <p class="lp-section-title">世系标记</p>
-            </div>
-          </div>
-
-          <div class="lp-surface lp-surface--toggle-grid">
-            <div class="lp-toggles">
-              <label class="lp-toggle">
-                <span>显示世系</span>
-                <span class="lp-switch" :class="{ 'lp-switch--active': settings.showLineage }">
+              <label class="lp-toggle lp-toggle--chip">
+                <span>状态</span>
+                <span class="lp-switch lp-switch--sm" :class="{ 'lp-switch--active': settings.showStatus }">
+                  <input :checked="settings.showStatus" type="checkbox" :disabled="!settings.showCard" @change="updateSetting('showStatus', readCheckedValue($event))" />
+                  <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
+                </span>
+              </label>
+              <label class="lp-toggle lp-toggle--chip">
+                <span>世系</span>
+                <span class="lp-switch lp-switch--sm" :class="{ 'lp-switch--active': settings.showLineage }">
                   <input :checked="settings.showLineage" type="checkbox" @change="updateSetting('showLineage', readCheckedValue($event))" />
                   <span class="lp-switch__track"><span class="lp-switch__thumb" /></span>
                 </span>
@@ -1141,26 +1159,41 @@ watch(
 
 /* ── Panel header overrides ── */
 
-.layout-panel :deep(.floating-panel__header) {
-  margin-bottom: 12px;
+.layout-panel .floating-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
 
-.layout-panel :deep(.floating-panel__eyebrow) {
-  font-family: var(--font-sans);
-  font-size: var(--text-label-12);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-  margin: 0 0 2px;
-}
-
-.layout-panel :deep(.floating-panel__header h2) {
-  font-family: var(--font-serif);
-  font-size: 22px;
+.lp-panel-title {
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-neutral-10);
-  line-height: var(--leading-title);
+  line-height: 1.3;
+}
+
+.lp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-reset-btn {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--color-accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+  transition: all var(--duration-fast, 150ms);
+}
+
+.lp-reset-btn:hover {
+  background: var(--color-accent-muted);
 }
 
 .lp-stack {
@@ -1289,15 +1322,66 @@ watch(
   opacity: 0.7;
 }
 
-.lp-color {
-  grid-column: 1 / -1;
-  width: 100%;
-  height: 32px;
-  padding: 2px;
-  border: 1px solid var(--color-neutral-4);
-  border-radius: var(--radius-sm);
-  background: var(--color-neutral-2);
+.lp-field--color {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lp-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-color-dot {
+  width: 26px;
+  height: 26px;
+  padding: 1px;
+  border-radius: 6px;
+  border: 1px solid var(--color-card-stroke);
   cursor: pointer;
+  background: transparent;
+}
+
+.lp-toggle--master {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--color-card-stroke);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--color-neutral-9);
+}
+
+.lp-toggles-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 8px;
+  transition: opacity var(--duration-fast, 150ms);
+}
+
+.lp-toggles-grid--disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.lp-toggle--chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-card-stroke);
+  border-radius: 7px;
+  font-size: 11.5px;
+  color: var(--color-neutral-8);
+}
+
+.lp-switch--sm {
+  transform: scale(0.85);
+  transform-origin: right center;
 }
 
 /* ── Custom range slider with filled track ── */
