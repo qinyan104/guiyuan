@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
 
 .search-input-wrapper:focus-within {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px var(--color-accent-muted);
+  box-shadow: none;
 }
 
 .search-icon {

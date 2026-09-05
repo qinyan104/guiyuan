@@ -809,7 +809,7 @@ function formatDate(dateStr: string) {
 
 .search-bar:focus-within {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px var(--color-accent-muted, rgba(184, 51, 42, 0.12));
+  box-shadow: none;
 }
 
 .search-icon {
@@ -819,13 +819,24 @@ function formatDate(dateStr: string) {
 
 .search-input {
   flex: 1;
-  border: none;
-  background: transparent;
+  border: none !important;
+  background: transparent !important;
   font-size: var(--text-copy-14, 14px);
   color: var(--color-neutral-9);
-  outline: none;
-  height: 24px;
-  line-height: 24px;
+  outline: none !important;
+  box-shadow: none !important;
+  height: 26px;
+  line-height: 26px;
+  padding: 0 4px !important;
+  width: 100%;
+}
+
+.search-input:focus,
+.search-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
 }
 
 .search-input::placeholder {
