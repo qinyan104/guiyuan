@@ -230,4 +230,17 @@ describe('PublicationLayout conflict handling', () => {
     expect(publicationContext.settings.showAge).toBe(true)
     expect(getConflictDraft(7)).toBeNull()
   })
+
+  it('renders circular indicator, progress bar and stage text while loading', () => {
+    vi.mocked(getPublication).mockReturnValue(new Promise(() => {}))
+
+    const wrapper = mount(PublicationLayout, {
+      global: { stubs: { RouterView: true } },
+    })
+
+    expect(wrapper.find('.loading-overlay').exists()).toBe(true)
+    expect(wrapper.find('.loading-circular').exists()).toBe(true)
+    expect(wrapper.find('.loading-bar-track').exists()).toBe(true)
+    expect(wrapper.find('.loading-title').text()).toContain('正在读取宗谱档案')
+  })
 })

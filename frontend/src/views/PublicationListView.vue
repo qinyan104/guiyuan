@@ -110,12 +110,26 @@ async function loadPublications() {
 
 onMounted(loadPublications)
 
-function openPublication(id: number) {
-  router.push({ name: 'workbench', params: { id } })
+const openingId = ref<number | null>(null)
+
+async function openPublication(id: number) {
+  if (openingId.value !== null) return
+  openingId.value = id
+  try {
+    await router.push({ name: 'workbench', params: { id } })
+  } catch {
+    openingId.value = null
+  }
 }
 
-function openBookEditor(pubId: number) {
-  router.push({ name: 'book-editor-publication', params: { publicationId: pubId } })
+async function openBookEditor(pubId: number) {
+  if (openingId.value !== null) return
+  openingId.value = pubId
+  try {
+    await router.push({ name: 'book-editor-publication', params: { publicationId: pubId } })
+  } catch {
+    openingId.value = null
+  }
 }
 
 function openActivity(pubId: number) {
@@ -286,6 +300,10 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
 <template>
   <div class="publication-list-view-root">
+    <!-- 顶部微光进度条（页面跳转与数据载入时显示） -->
+    <div v-if="openingId !== null" class="view-top-progress" aria-hidden="true">
+      <div class="view-top-progress__bar"></div>
+    </div>
     <div class="gallery-stage">
       <FeedbackStrip :status-message="feedback.statusMessage.value" :error-message="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
 
@@ -432,13 +450,20 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
               v-for="pub in filteredPublications"
               :key="pub.id"
               class="panel-glass archive-card"
+              :class="{ 'archive-card--opening': openingId === pub.id, 'archive-card--disabled': openingId !== null && openingId !== pub.id }"
               tabindex="0"
               role="button"
+              :aria-busy="openingId === pub.id"
               :aria-label="'宗谱：' + (pub.title || '未命名宗谱')"
               @click="openPublication(pub.id)"
               @keydown.enter.self="openPublication(pub.id)"
               @keydown.space.self.prevent="openPublication(pub.id)"
             >
+              <!-- 卡片顶部光流进度条 (当正在打开该族谱时显示) -->
+              <div v-if="openingId === pub.id" class="card-loading-bar" aria-label="正在载入族谱...">
+                <div class="card-loading-bar__inner"></div>
+              </div>
+
               <!-- Top Row: Seal Stamp + Title & Subtitle/Time Meta + Badges -->
               <div class="archive-header-group">
                 <div class="archive-title-area">
@@ -494,9 +519,20 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
               <!-- Foot Row: Left Primary Action + Right Tools & Management -->
               <div class="archive-foot">
-                <button class="action-btn action-btn--primary" title="进入编撰工作台" @click.stop="openPublication(pub.id)">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-                  <span>进入编撰</span>
+                <button
+                  class="action-btn action-btn--primary"
+                  :class="{ 'action-btn--loading': openingId === pub.id }"
+                  :disabled="openingId !== null"
+                  :title="openingId === pub.id ? '正在载入...' : '进入编撰工作台'"
+                  @click.stop="openPublication(pub.id)"
+                >
+                  <svg v-if="openingId === pub.id" class="spin-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/>
+                  </svg>
+                  <span>{{ openingId === pub.id ? '载入中...' : '进入编撰' }}</span>
                 </button>
 
                 <div class="archive-actions" @click.stop>
@@ -1031,6 +1067,79 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   transform: translateY(-3px);
   border-color: var(--color-accent);
   box-shadow: var(--shadow-whisper, 0 8px 24px rgba(0, 0, 0, 0.08));
+}
+
+.archive-card--opening {
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 8px 24px var(--color-accent-muted, rgba(198, 60, 46, 0.16)) !important;
+  cursor: wait;
+}
+
+.archive-card--disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.card-loading-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  background: var(--color-accent-muted, rgba(198, 60, 46, 0.12));
+  z-index: 5;
+}
+
+.card-loading-bar__inner {
+  height: 100%;
+  width: 50%;
+  background: linear-gradient(90deg, transparent, var(--color-accent, #c63c2e), transparent);
+  animation: card-scan 1.2s infinite ease-in-out;
+}
+
+@keyframes card-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.view-top-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 9999;
+  overflow: hidden;
+  background: rgba(198, 60, 46, 0.1);
+  pointer-events: none;
+}
+
+.view-top-progress__bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #c63c2e, #e06d53, #c63c2e);
+  animation: view-progress-run 1.4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes view-progress-run {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
+}
+
+.spin-icon {
+  animation: spin 0.8s linear infinite;
+}
+
+.action-btn--loading {
+  cursor: wait;
+  opacity: 0.9;
+  background: var(--color-accent) !important;
+  color: #fff !important;
+  border-color: var(--color-accent) !important;
 }
 
 /* Header Group: Seal + Titles + Badges */

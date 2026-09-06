@@ -221,4 +221,24 @@ describe('PublicationListView', () => {
     await wrapper.get('.delete-overlay .btn--danger').trigger('click')
     expect(deletePublication).toHaveBeenCalledWith(7)
   })
+
+  it('shows visual loading indicator on the card and top progress bar when opening a publication', async () => {
+    const wrapper = mountView()
+    await flushPromises()
+
+    const firstCard = wrapper.find('.archive-card')
+    expect(firstCard.exists()).toBe(true)
+    expect(wrapper.find('.view-top-progress').exists()).toBe(false)
+    expect(firstCard.find('.card-loading-bar').exists()).toBe(false)
+
+    // Click "进入编撰" button on the first card
+    const enterBtn = firstCard.find('.action-btn--primary')
+    await enterBtn.trigger('click')
+
+    expect(push).toHaveBeenCalledWith({ name: 'workbench', params: { id: 7 } })
+    expect(firstCard.classes()).toContain('archive-card--opening')
+    expect(firstCard.find('.card-loading-bar').exists()).toBe(true)
+    expect(wrapper.find('.view-top-progress').exists()).toBe(true)
+    expect(firstCard.find('.action-btn--primary').text()).toContain('载入中...')
+  })
 })

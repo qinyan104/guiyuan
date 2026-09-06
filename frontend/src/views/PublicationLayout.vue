@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { getPublication, updatePublication } from '../api/publication'
@@ -270,6 +270,42 @@ async function detectViewerPerson() {
   }
 }
 
+const loadingProgress = ref(15)
+const loadingStageText = ref('正在读取宗谱档案...')
+const isLargeDataDetected = ref(false)
+let progressTimer: ReturnType<typeof setInterval> | null = null
+
+function startProgressSimulation() {
+  loadingProgress.value = 15
+  loadingStageText.value = '正在读取宗谱档案...'
+  isLargeDataDetected.value = false
+  if (progressTimer) clearInterval(progressTimer)
+
+  const startTime = Date.now()
+  progressTimer = setInterval(() => {
+    const elapsed = Date.now() - startTime
+    if (elapsed > 1800) {
+      isLargeDataDetected.value = true
+      loadingStageText.value = '谱系规模庞大，正在构建分支谱图与世系索引...'
+      loadingProgress.value = Math.min(92, loadingProgress.value + 0.6)
+    } else if (elapsed > 700) {
+      loadingStageText.value = '正在解析世系分支与人丁记录...'
+      loadingProgress.value = Math.min(82, loadingProgress.value + 1.8)
+    } else if (elapsed > 200) {
+      loadingStageText.value = '正在读取宗谱档案...'
+      loadingProgress.value = Math.min(60, loadingProgress.value + 4)
+    }
+  }, 100)
+}
+
+function stopProgressSimulation() {
+  if (progressTimer) {
+    clearInterval(progressTimer)
+    progressTimer = null
+  }
+  loadingProgress.value = 100
+}
+
 let loadGeneration = 0
 
 async function load(force = false) {
@@ -289,6 +325,7 @@ async function load(force = false) {
   baselineReady.value = false
   clearScheduledSave()
   clearBaselineInit()
+  startProgressSimulation()
 
   try {
     const result = await getPublication(targetId)
@@ -317,9 +354,18 @@ async function load(force = false) {
     }
     syncStatus.value = 'saved'
     lastSyncedSignature.value = `revision:${result.revision}`
+
+    const peopleCount = Object.keys(result.publication.people).length
+    if (peopleCount > 80) {
+      isLargeDataDetected.value = true
+      loadingStageText.value = `已载入 ${peopleCount} 位族人，正在完成世系编排...`
+      loadingProgress.value = 96
+    }
+    stopProgressSimulation()
     loading.value = false
     initializeLargeStateAfterPaint(myGeneration, result.publication, { ...defaultSettings, ...result.settings })
   } catch (err: any) {
+    stopProgressSimulation()
     // Don't show error for stale requests
     if (myGeneration !== loadGeneration) return
     if (err?.response?.status === 403) {
@@ -330,6 +376,7 @@ async function load(force = false) {
     feedback.setError(loadError.value)
   } finally {
     if (myGeneration === loadGeneration) {
+      stopProgressSimulation()
       loading.value = false
     }
   }
@@ -488,6 +535,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  stopProgressSimulation()
   window.removeEventListener('keydown', handleHistoryShortcut)
   window.removeEventListener('beforeunload', protectBrowserLeave)
   document.removeEventListener('visibilitychange', preserveRecoveryWhenHidden)
@@ -500,9 +548,40 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
 </script>
 
 <template>
-  <div v-if="loading" class="loading-overlay">
-    <div class="loading-spinner"></div>
-    <span>正在加载族谱数据...</span>
+  <div v-if="loading" class="loading-overlay" aria-live="polite">
+    <div class="loading-card panel-glass">
+      <!-- 典雅同心圆转动动效 (Circular Progress Indicator) -->
+      <div class="loading-circular">
+        <div class="circular-ring-outer"></div>
+        <div class="circular-ring-inner"></div>
+        <div class="circular-center-seal">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- 动态阶段文案与族谱格调副标 -->
+      <div class="loading-info">
+        <h3 class="loading-title">{{ loadingStageText }}</h3>
+        <p class="loading-subtitle">宗族源流 · 脉络考定</p>
+      </div>
+
+      <!-- 优雅进度条 (Horizontal Progress Bar) -->
+      <div class="loading-bar-wrapper">
+        <div class="loading-bar-track">
+          <div class="loading-bar-fill" :style="{ width: `${loadingProgress}%` }">
+            <div class="loading-bar-glow"></div>
+          </div>
+        </div>
+        <span class="loading-bar-percent">{{ Math.round(loadingProgress) }}%</span>
+      </div>
+
+      <div class="loading-tip" v-if="isLargeDataDetected">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>当前族谱人丁浩繁，正在加速构建谱图排版</span>
+      </div>
+    </div>
   </div>
   <div v-else-if="loadError" class="loading-overlay loading-overlay--error">
     <strong>加载族谱失败</strong>
@@ -549,23 +628,178 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   justify-content: center;
   background: var(--bg-shell, #f5f0e8);
   z-index: 1000;
-  gap: 1rem;
   color: var(--text-soft, #888);
-  font-weight: 500;
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--border-color, rgba(0,0,0,0.06));
-  border-top-color: var(--accent-signal, #a96e35);
+.loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 34px 38px;
+  background: var(--bg-paper, #ffffff);
+  border: 1px solid var(--border-color, rgba(122, 95, 65, 0.16));
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(70, 48, 24, 0.12);
+  min-width: 320px;
+  max-width: 440px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+  backdrop-filter: blur(12px);
+  animation: card-appear 0.22s ease-out;
+}
+
+@keyframes card-appear {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* 典雅同心环圆圈指示器 (Circular Indicator) */
+.loading-circular {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circular-ring-outer {
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  border: 2px dashed rgba(198, 60, 46, 0.28);
+  animation: ring-rotate-clockwise 14s linear infinite;
+}
+
+.circular-ring-inner {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  border-top-color: var(--color-accent, #c63c2e);
+  border-right-color: var(--color-accent, #c63c2e);
+  animation: ring-rotate-counter 1.1s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+}
+
+.circular-center-seal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent, #c63c2e);
+  animation: seal-pulse 2s ease-in-out infinite;
+}
+
+/* 阶段文本 */
+.loading-info {
+  margin-bottom: 18px;
+}
+
+.loading-title {
+  font-family: var(--font-serif, 'Noto Serif SC', serif);
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--text-main, #241a10);
+  margin: 0 0 5px;
+  letter-spacing: 0.02em;
+  transition: all 0.3s ease;
+}
+
+.loading-subtitle {
+  font-size: 12px;
+  color: var(--text-soft, #8c827a);
+  margin: 0;
+  letter-spacing: 0.08em;
+}
+
+/* 优雅进度条 (Progress Bar) */
+.loading-bar-wrapper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loading-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--line-soft, rgba(122, 95, 65, 0.12));
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c63c2e, #e06d53);
+  border-radius: 999px;
+  transition: width 0.18s ease-out;
+  position: relative;
+}
+
+.loading-bar-glow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 18px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85));
+  animation: bar-glow-shimmer 1s infinite;
+}
+
+.loading-bar-percent {
+  font-size: 12px;
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--text-soft, #666);
+  min-width: 34px;
+  text-align: right;
+}
+
+.loading-tip {
+  margin-top: 14px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: rgba(198, 60, 46, 0.07);
+  color: var(--color-accent, #c63c2e);
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: tip-fade-in 0.3s ease-out;
+}
+
+@keyframes ring-rotate-clockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ring-rotate-counter {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes seal-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+@keyframes bar-glow-shimmer {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+@keyframes tip-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .loading-overlay--error {
   background: var(--color-neutral-1, #f5f0e8);
   text-align: center;
+  gap: 1rem;
 }
 
 .loading-overlay--error strong {
@@ -573,10 +807,6 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   font-family: var(--font-serif, serif);
   font-size: var(--text-title-24, 24px);
   font-weight: 500;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 .sync-conflict-banner {
