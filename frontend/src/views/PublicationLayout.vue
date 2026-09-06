@@ -288,16 +288,10 @@ const loadingProgressLabel = computed(() => {
   return downloadedBytes.value > 0 ? formatBytes(downloadedBytes.value) : '连接中'
 })
 
+const MIN_LOADING_VISIBLE_MS = 240
 const isTestEnv = import.meta.env.MODE === 'test'
-const isOverlayVisible = ref(isTestEnv)
-let overlayDelayTimer: ReturnType<typeof setTimeout> | null = null
-
-function clearOverlayDelay() {
-  if (overlayDelayTimer) {
-    clearTimeout(overlayDelayTimer)
-    overlayDelayTimer = null
-  }
-}
+const isOverlayVisible = ref(true)
+let loadingStartedAt = 0
 
 function resetLoadingProgress() {
   loadingProgress.value = 10
@@ -347,22 +341,9 @@ async function load(force = false) {
   baselineReady.value = false
   clearScheduledSave()
   clearBaselineInit()
-  clearOverlayDelay()
   resetLoadingProgress()
-
-  // 240ms 免打扰策略：
-  // 若能在 240ms 内极速返回（小族谱或快速缓存），不弹出中心加载卡片，避免对用户造成无谓的打扰与视觉闪烁；
-  // 若耗时超过 240ms（大族谱或慢网络），才顺畅浮现中心进度卡片与灵动流光。
-  if (isTestEnv) {
-    isOverlayVisible.value = true
-  } else {
-    isOverlayVisible.value = false
-    overlayDelayTimer = setTimeout(() => {
-      if (loading.value && myGeneration === loadGeneration) {
-        isOverlayVisible.value = true
-      }
-    }, 240)
-  }
+  loadingStartedAt = Date.now()
+  isOverlayVisible.value = true
 
   try {
     const result = await getPublication(targetId, (event) => {
@@ -371,7 +352,6 @@ async function load(force = false) {
     // Check if a newer load() call has started
     if (myGeneration !== loadGeneration) return
 
-    clearOverlayDelay()
     loadingProgress.value = 70
     loadingStageText.value = '族谱数据接收完成，正在装载人物与家庭...'
     applyPublicationSnapshot(result.publication, result.settings)
@@ -415,11 +395,15 @@ async function load(force = false) {
     loadingProgress.value = 100
     loadingStageText.value = '族谱首屏已就绪'
     await paintLoadingStage()
+    initializeLargeStateAfterPaint(myGeneration, result.publication, { ...defaultSettings, ...result.settings })
+    const remainingVisibleMs = MIN_LOADING_VISIBLE_MS - (Date.now() - loadingStartedAt)
+    if (remainingVisibleMs > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, remainingVisibleMs))
+    }
+    if (myGeneration !== loadGeneration) return
     isOverlayVisible.value = false
     loading.value = false
-    initializeLargeStateAfterPaint(myGeneration, result.publication, { ...defaultSettings, ...result.settings })
   } catch (err: any) {
-    clearOverlayDelay()
     // Don't show error for stale requests
     if (myGeneration !== loadGeneration) return
     isOverlayVisible.value = false
@@ -586,7 +570,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  clearOverlayDelay()
   window.removeEventListener('keydown', handleHistoryShortcut)
   window.removeEventListener('beforeunload', protectBrowserLeave)
   document.removeEventListener('visibilitychange', preserveRecoveryWhenHidden)
