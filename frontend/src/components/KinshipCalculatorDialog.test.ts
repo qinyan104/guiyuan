@@ -23,7 +23,7 @@ describe('KinshipCalculatorDialog', () => {
       },
     })
 
-    expect(wrapper.get('h2').text()).toBe('亲属关系')
+    expect(wrapper.get('h2').text()).toBe('亲属称谓推算')
     expect(wrapper.text()).toContain('称呼者')
     expect(wrapper.text()).toContain('被称呼者')
   })

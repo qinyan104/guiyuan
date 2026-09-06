@@ -74,6 +74,58 @@
           <p class="description">导出为高分辨率 PNG 位图图片，便于直接发到微信群与族人交流，或插入汇报文档中快速预览。</p>
         </div>
 
+        <div v-if="isLargeGenealogy" class="scale-warning-card">
+          <div class="scale-warning-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </div>
+          <div class="scale-warning-text">
+            <div class="scale-warning-title">当前族谱规模较大{{ personCount ? `（共 ${personCount} 人）` : '' }}</div>
+            <p class="scale-warning-desc">
+              整图幅面极宽。若需获得<strong>无限放大永不模糊、专业印制</strong>的效果，强烈推荐切换上方「<strong>矢量 SVG</strong>」；或导出「<strong>分享网页</strong>」在手机/电脑浏览器中自由无级缩放。
+            </p>
+          </div>
+        </div>
+
+        <div class="options-group">
+          <label class="field-label">
+            <span>导出清晰度</span>
+            <span class="field-label__extra">超清适合查阅字迹，便携适合微信快速发送</span>
+          </label>
+          <div class="quality-grid" role="radiogroup" aria-label="导出清晰度">
+            <button
+              type="button"
+              class="quality-card"
+              :class="{ 'quality-card--active': selectedQuality === 'hd' }"
+              role="radio"
+              :aria-checked="selectedQuality === 'hd'"
+              @click="selectedQuality = 'hd'"
+            >
+              <div class="quality-card__header">
+                <span class="quality-card__title">原画超清</span>
+                <span class="quality-card__badge">推荐</span>
+              </div>
+              <p class="quality-card__desc">最高 16K 超宽画布渲染，放大看清卡片细微文字</p>
+            </button>
+            <button
+              type="button"
+              class="quality-card"
+              :class="{ 'quality-card--active': selectedQuality === 'standard' }"
+              role="radio"
+              :aria-checked="selectedQuality === 'standard'"
+              @click="selectedQuality = 'standard'"
+            >
+              <div class="quality-card__header">
+                <span class="quality-card__title">便携传输</span>
+              </div>
+              <p class="quality-card__desc">8K 适中体积，便于微信等社群快速发送</p>
+            </button>
+          </div>
+        </div>
+
         <div class="options-group">
           <label class="field-label">
             <span>配色风格</span>
@@ -248,22 +300,33 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { THEME_PRESETS, type ThemeMode } from './exportTheme'
+import type { PngExportQuality } from './publicationExport'
 import { useUiStore } from '../../stores/ui'
 
 const props = defineProps<{
   modelValue: boolean
   isProcessing?: boolean
+  personCount?: number
+  layoutWidth?: number
+  layoutHeight?: number
 }>()
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: boolean): void
-  (event: 'export-png', payload: { theme: ThemeMode }): void
+  (event: 'export-png', payload: { theme: ThemeMode; quality: PngExportQuality }): void
   (event: 'export-svg', payload: { theme: ThemeMode }): void
   (event: 'export-share-html', payload: { password?: string; theme: ThemeMode }): void
 }>()
 
 const activeTab = ref<'png' | 'svg' | 'share'>('png')
 const sharePassword = ref('')
+const selectedQuality = ref<PngExportQuality>('hd')
+
+const isLargeGenealogy = computed(() => {
+  if (props.personCount && props.personCount > 50) return true
+  if (props.layoutWidth && props.layoutWidth > 4500) return true
+  return false
+})
 
 function getCurrentTheme(): ThemeMode {
   try {
@@ -306,7 +369,7 @@ const passwordStrength = computed(() => {
 })
 
 function emitExportPng() {
-  emit('export-png', { theme: selectedTheme.value })
+  emit('export-png', { theme: selectedTheme.value, quality: selectedQuality.value })
 }
 
 function emitExportSvg() {
@@ -485,6 +548,110 @@ function emitExportShareHtml() {
   font-size: 0.82rem;
   color: var(--text-sub, #6b5e52);
   line-height: 1.6;
+}
+
+.scale-warning-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--color-accent-muted, rgba(198, 60, 46, 0.06));
+  border: 1px solid var(--color-accent-subtle, rgba(198, 60, 46, 0.18));
+  border-radius: 9px;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+}
+
+.scale-warning-icon {
+  color: var(--color-accent, #C63C2E);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.scale-warning-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.scale-warning-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main, #241a10);
+}
+
+.scale-warning-desc {
+  font-size: 11.5px;
+  color: var(--text-sub, #6b5e52);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.scale-warning-desc strong {
+  color: var(--color-accent, #C63C2E);
+}
+
+.quality-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.quality-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--bg-paper, #ffffff);
+  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.14));
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.quality-card:hover {
+  border-color: var(--line-soft, rgba(122, 95, 65, 0.28));
+  transform: translateY(-1px);
+}
+
+.quality-card--active {
+  border-color: var(--color-accent, #C63C2E);
+  background: var(--bg-paper, #ffffff);
+  box-shadow: 0 0 0 2px var(--color-accent-muted, rgba(198, 60, 46, 0.12));
+}
+
+.quality-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.quality-card__title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-main, #241a10);
+}
+
+.quality-card--active .quality-card__title {
+  color: var(--color-accent, #C63C2E);
+}
+
+.quality-card__badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-accent-muted, rgba(198, 60, 46, 0.08));
+  color: var(--color-accent, #C63C2E);
+}
+
+.quality-card__desc {
+  font-size: 11px;
+  color: var(--text-soft, #8f8878);
+  margin: 0;
+  line-height: 1.35;
 }
 
 .options-group {

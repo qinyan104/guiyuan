@@ -8,6 +8,7 @@ import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import CollaboratorManager from './CollaboratorManager.vue'
 import ExportDialog from '../features/export/ExportDialog.vue'
 import type { ThemeMode } from '../features/export/exportTheme'
+import type { PngExportQuality } from '../features/export/publicationExport'
 import GedcomImportDialog from '../features/gedcom/GedcomImportDialog.vue'
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -57,6 +58,13 @@ const draftDescriptor = computed(() => {
   return props.nativeFileAccess ? '未命名本地草稿' : '云端草稿'
 })
 
+const personCount = computed(() => {
+  const people = context?.pub?.publication?.people
+  return people ? Object.keys(people).length : 0
+})
+const layoutWidth = computed(() => context?.pub?.layout?.value?.width || 0)
+const layoutHeight = computed(() => context?.pub?.layout?.value?.height || 0)
+
 function triggerFileInput() {
   fileInputRef.value?.click()
 }
@@ -91,7 +99,7 @@ const emit = defineEmits<{
   (event: 'create-blank'): void
   (event: 'save-file'): void
   (event: 'save-file-as'): void
-  (event: 'download-png', theme?: ThemeMode): void
+  (event: 'download-png', payload?: { theme?: ThemeMode; quality?: PngExportQuality } | ThemeMode): void
   (event: 'download-svg', theme?: ThemeMode): void
   (event: 'print-publication'): void
   (event: 'export-json'): void
@@ -314,7 +322,10 @@ onBeforeUnmount(() => {
       <ExportDialog
         v-model="showExportDialog"
         :isProcessing="exporting"
-        @export-png="(payload) => { emit('download-png', payload?.theme); showExportDialog = false }"
+        :personCount="personCount"
+        :layoutWidth="layoutWidth"
+        :layoutHeight="layoutHeight"
+        @export-png="(payload) => { emit('download-png', payload); showExportDialog = false }"
         @export-svg="(payload) => { emit('download-svg', payload?.theme); showExportDialog = false }"
         @export-share-html="handleExportShareHtml"
       />

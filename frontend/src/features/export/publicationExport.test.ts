@@ -8,6 +8,7 @@ import {
   createPrintPageSvg,
   createStandalonePublicationSvg,
   getRasterExportSize,
+  getRasterExportSizeForQuality,
   serializeSvg,
 } from './publicationExport'
 import { DEFAULT_DROP_LINE_PRINT_PROFILE } from './dropLinePrint'
@@ -60,6 +61,26 @@ describe('getRasterExportSize', () => {
     const size = getRasterExportSize({ width: 8192, height: 8192 })
 
     expect(size.width * size.height).toBeLessThanOrEqual(32 * 1024 * 1024)
+  })
+})
+
+describe('getRasterExportSizeForQuality', () => {
+  it('allows HD quality to reach up to 16K resolution and 128MP', () => {
+    const hdSize = getRasterExportSizeForQuality({ width: 10000, height: 5000 }, 'hd')
+    expect(hdSize.width).toBe(16384)
+    expect(hdSize.height).toBe(8192)
+    expect(hdSize.pixelRatio).toBeCloseTo(1.6384, 4)
+
+    const standardSize = getRasterExportSizeForQuality({ width: 10000, height: 5000 }, 'standard')
+    expect(standardSize.width).toBe(8192)
+    expect(standardSize.height).toBe(4096)
+    expect(standardSize.pixelRatio).toBeCloseTo(0.8192, 4)
+  })
+
+  it('defaults to HD quality when omitted', () => {
+    const defaultSize = getRasterExportSizeForQuality({ width: 1200, height: 800 })
+    const hdSize = getRasterExportSizeForQuality({ width: 1200, height: 800 }, 'hd')
+    expect(defaultSize).toEqual(hdSize)
   })
 })
 

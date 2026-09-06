@@ -8,6 +8,7 @@ import {
   createStandalonePublicationSvg,
   rasterizeSvgToPngBlob,
   serializeSvg as serializeStandaloneSvg,
+  type PngExportQuality,
 } from '../features/export/publicationExport'
 import { generateShareHtml } from '../features/export/shareHtmlExport'
 import {
@@ -324,17 +325,21 @@ export function useFileOperations(deps: FileOperationsDeps) {
     })
   }
 
-  function downloadPng(theme?: ThemeMode) {
+  function downloadPng(options?: ThemeMode | { theme?: ThemeMode; quality?: PngExportQuality }) {
+    const targetTheme = typeof options === 'string' ? options : options?.theme
+    const quality = (typeof options === 'object' && options?.quality) ? options.quality : 'hd'
+    const activeTheme = getActiveTheme(targetTheme)
+
     return runCanvasExport('导出 PNG 失败。', async () => {
       statusMessage.value = '正在导出 PNG...'
       const exportLayout = getPngExportLayout()
-      const svg = await createCurrentStandaloneSvg(exportLayout, theme)
+      const svg = await createCurrentStandaloneSvg(exportLayout, activeTheme)
       if (!svg) {
         errorMessage.value = '当前画布没有可导出的内容。'
         statusMessage.value = ''
         return
       }
-      const blob = await rasterizeSvgToPngBlob(svg, exportLayout)
+      const blob = await rasterizeSvgToPngBlob(svg, exportLayout, { quality })
       downloadBlobFile(`${sanitizeFileName(publication.title)}.png`, blob)
       statusMessage.value = 'PNG 已下载。'
     })

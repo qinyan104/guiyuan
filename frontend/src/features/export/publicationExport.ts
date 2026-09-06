@@ -129,9 +129,21 @@ export interface CreatePrintDocumentOptions {
   pageSvgMarkups: string[]
 }
 
-const DEFAULT_RASTER_PIXEL_RATIO = 2
-const MAX_RASTER_SIDE = 8192
-const MAX_RASTER_PIXELS = 32 * 1024 * 1024
+export type PngExportQuality = 'standard' | 'hd'
+
+export interface RasterizePngOptions {
+  quality?: PngExportQuality
+  pixelRatio?: number
+  maxSide?: number
+  maxPixels?: number
+}
+
+export const DEFAULT_RASTER_PIXEL_RATIO = 2
+export const MAX_RASTER_SIDE = 8192
+export const MAX_RASTER_PIXELS = 32 * 1024 * 1024
+
+export const MAX_RASTER_SIDE_HD = 16384
+export const MAX_RASTER_PIXELS_HD = 128 * 1024 * 1024
 
 function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
@@ -573,10 +585,11 @@ export function getRasterExportSize(
   layout: Pick<PublicationLayout, 'width' | 'height'>,
   pixelRatio = DEFAULT_RASTER_PIXEL_RATIO,
   maxSide = MAX_RASTER_SIDE,
+  maxPixels = MAX_RASTER_PIXELS,
 ): RasterExportSize {
   const width = Math.max(1, layout.width)
   const height = Math.max(1, layout.height)
-  const ratio = Math.min(pixelRatio, maxSide / width, maxSide / height, Math.sqrt(MAX_RASTER_PIXELS / (width * height)))
+  const ratio = Math.min(pixelRatio, maxSide / width, maxSide / height, Math.sqrt(maxPixels / (width * height)))
   const safeRatio = Math.max(Number.EPSILON, ratio)
 
   return {
@@ -584,6 +597,26 @@ export function getRasterExportSize(
     height: Math.max(1, Math.floor(height * safeRatio)),
     pixelRatio: safeRatio,
   }
+}
+
+export function getRasterExportSizeForQuality(
+  layout: Pick<PublicationLayout, 'width' | 'height'>,
+  quality: PngExportQuality = 'hd',
+): RasterExportSize {
+  if (quality === 'hd') {
+    return getRasterExportSize(
+      layout,
+      DEFAULT_RASTER_PIXEL_RATIO,
+      MAX_RASTER_SIDE_HD,
+      MAX_RASTER_PIXELS_HD,
+    )
+  }
+  return getRasterExportSize(
+    layout,
+    1.5,
+    MAX_RASTER_SIDE,
+    MAX_RASTER_PIXELS,
+  )
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -598,8 +631,16 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 export async function rasterizeSvgToPngBlob(
   svg: SVGSVGElement,
   layout: Pick<PublicationLayout, 'width' | 'height'>,
+  options?: RasterizePngOptions | PngExportQuality,
 ): Promise<Blob> {
-  const size = getRasterExportSize(layout)
+  const quality: PngExportQuality = typeof options === 'string' ? options : options?.quality || 'hd'
+  const customPixelRatio = typeof options === 'object' ? options?.pixelRatio : undefined
+  const customMaxSide = typeof options === 'object' ? options?.maxSide : undefined
+  const customMaxPixels = typeof options === 'object' ? options?.maxPixels : undefined
+
+  const size = (customPixelRatio !== undefined || customMaxSide !== undefined || customMaxPixels !== undefined)
+    ? getRasterExportSize(layout, customPixelRatio ?? DEFAULT_RASTER_PIXEL_RATIO, customMaxSide ?? MAX_RASTER_SIDE_HD, customMaxPixels ?? MAX_RASTER_PIXELS_HD)
+    : getRasterExportSizeForQuality(layout, quality)
   const svgBlob = new Blob([serializeSvg(svg)], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(svgBlob)
 
