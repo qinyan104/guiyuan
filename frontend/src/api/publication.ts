@@ -23,14 +23,25 @@ export interface PublicationLoadResult {
   settings: PublicationSettings
 }
 
+export interface PublicationDownloadProgress {
+  loaded: number
+  total?: number
+}
+
 export async function listPublications(): Promise<PublicationSummary[]> {
   const resp = await http.get<ApiResponse<PublicationSummary[]>>('/publications')
   if (resp.data.code !== 200) throw new Error(resp.data.message || '获取族谱列表失败')
   return resp.data.data
 }
 
-export async function getPublication(id: number): Promise<PublicationLoadResult> {
-  const resp = await http.get<ApiResponse<PublicationLoadResult>>(`/publications/${id}`)
+export async function getPublication(
+  id: number,
+  onDownloadProgress?: (event: PublicationDownloadProgress) => void,
+): Promise<PublicationLoadResult> {
+  const resp = await http.get<ApiResponse<PublicationLoadResult>>(
+    `/publications/${id}`,
+    onDownloadProgress ? { onDownloadProgress } : undefined,
+  )
   if (resp.data.code !== 200) throw new Error(resp.data.message || '获取族谱失败')
   return resp.data.data
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
-import { getPublication, updatePublication } from '../api/publication'
+import { getPublication, updatePublication, type PublicationDownloadProgress } from '../api/publication'
 import { listAccounts } from '../api/account'
 import { getUsername } from '../api/tokenStore'
 import { useFeedback } from '../composables/useFeedback'
@@ -273,6 +273,20 @@ async function detectViewerPerson() {
 const loadingProgress = ref(10)
 const loadingStageText = ref('正在读取宗谱档案...')
 const isLargeDataDetected = ref(false)
+const downloadedBytes = ref(0)
+const downloadTotalBytes = ref<number | null>(null)
+const isDownloadIndeterminate = computed(() => downloadTotalBytes.value === null && loadingProgress.value < 70)
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+const loadingProgressLabel = computed(() => {
+  if (!isDownloadIndeterminate.value) return `${Math.round(loadingProgress.value)}%`
+  return downloadedBytes.value > 0 ? formatBytes(downloadedBytes.value) : '连接中'
+})
 
 const isTestEnv = import.meta.env.MODE === 'test'
 const isOverlayVisible = ref(isTestEnv)
@@ -285,37 +299,32 @@ function clearOverlayDelay() {
   }
 }
 
-let progressTimer: ReturnType<typeof setInterval> | null = null
-let loadStartTime = 0
-
-function startProgressSimulation() {
-  loadStartTime = Date.now()
-  loadingProgress.value = 15
+function resetLoadingProgress() {
+  loadingProgress.value = 10
   loadingStageText.value = '正在读取宗谱档案...'
   isLargeDataDetected.value = false
-  if (progressTimer) clearInterval(progressTimer)
-
-  // Asymptotic smooth progression that NEVER freezes:
-  // Step is proportional to (95 - current), updating every 50ms (20fps)
-  progressTimer = setInterval(() => {
-    const elapsed = Date.now() - loadStartTime
-    const targetCap = 94
-    const delta = Math.max(0.12, (targetCap - loadingProgress.value) * 0.045)
-    loadingProgress.value = Math.min(targetCap, loadingProgress.value + delta)
-
-    if (elapsed > 1800) {
-      isLargeDataDetected.value = true
-      loadingStageText.value = '谱系规模庞大，正在构建分支谱图与世系索引...'
-    } else if (elapsed > 600) {
-      loadingStageText.value = '正在解析世系分支与人丁记录...'
-    }
-  }, 50)
+  downloadedBytes.value = 0
+  downloadTotalBytes.value = null
 }
 
-function stopProgressSimulation() {
-  if (progressTimer) {
-    clearInterval(progressTimer)
-    progressTimer = null
+function reportDownloadProgress(event: PublicationDownloadProgress) {
+  downloadedBytes.value = Math.max(0, event.loaded)
+  if (event.total && event.total > 0) {
+    downloadTotalBytes.value = event.total
+    loadingProgress.value = 10 + Math.min(1, event.loaded / event.total) * 60
+    loadingStageText.value = `正在接收族谱数据 ${formatBytes(event.loaded)} / ${formatBytes(event.total)}`
+    isLargeDataDetected.value = event.total >= 1024 * 1024
+  } else {
+    downloadTotalBytes.value = null
+    loadingStageText.value = `已接收 ${formatBytes(event.loaded)}，正在读取族谱数据...`
+    isLargeDataDetected.value = event.loaded >= 1024 * 1024
+  }
+}
+
+async function paintLoadingStage() {
+  await nextTick()
+  if (isOverlayVisible.value && !isTestEnv) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 0))
   }
 }
 
@@ -339,31 +348,32 @@ async function load(force = false) {
   clearScheduledSave()
   clearBaselineInit()
   clearOverlayDelay()
-  stopProgressSimulation()
+  resetLoadingProgress()
 
   // 240ms 免打扰策略：
   // 若能在 240ms 内极速返回（小族谱或快速缓存），不弹出中心加载卡片，避免对用户造成无谓的打扰与视觉闪烁；
   // 若耗时超过 240ms（大族谱或慢网络），才顺畅浮现中心进度卡片与灵动流光。
   if (isTestEnv) {
     isOverlayVisible.value = true
-    startProgressSimulation()
   } else {
     isOverlayVisible.value = false
-    loadStartTime = Date.now()
     overlayDelayTimer = setTimeout(() => {
       if (loading.value && myGeneration === loadGeneration) {
         isOverlayVisible.value = true
-        startProgressSimulation()
       }
     }, 240)
   }
 
   try {
-    const result = await getPublication(targetId)
+    const result = await getPublication(targetId, (event) => {
+      if (myGeneration === loadGeneration) reportDownloadProgress(event)
+    })
     // Check if a newer load() call has started
     if (myGeneration !== loadGeneration) return
 
     clearOverlayDelay()
+    loadingProgress.value = 70
+    loadingStageText.value = '族谱数据接收完成，正在装载人物与家庭...'
     applyPublicationSnapshot(result.publication, result.settings)
 
     if (!pub.selectedPersonId.value || !result.publication.people[pub.selectedPersonId.value]) {
@@ -388,27 +398,28 @@ async function load(force = false) {
     lastSyncedSignature.value = `revision:${result.revision}`
 
     const peopleCount = Object.keys(result.publication.people).length
-    loadingProgress.value = 100
+    loadingProgress.value = 82
     if (peopleCount > 80) {
       isLargeDataDetected.value = true
-      loadingStageText.value = `已载入 ${peopleCount} 位族人，正在展开世系谱图...`
+      loadingStageText.value = `已载入 ${peopleCount} 位族人，正在计算世系谱图...`
     } else {
-      loadingStageText.value = '宗谱载入就绪，正在展开世系...'
+      loadingStageText.value = '人物与家庭已装载，正在计算世系谱图...'
     }
+    await paintLoadingStage()
 
-    // 只有当加载确实较慢并向用户展示了加载卡片时，才给予 120ms 的自然冲顶过渡；
-    // 快速加载（未展示卡片）直接 0 延迟切换，实现真正的“瞬开”。
-    if (!isTestEnv && isOverlayVisible.value) {
-      await new Promise(resolve => setTimeout(resolve, 120))
-    }
+    const displayedPeople = pub.layout.value.displayedPeople
+    loadingProgress.value = 94
+    loadingStageText.value = `谱图计算完成，正在渲染 ${displayedPeople} 张人物卡片...`
+    await paintLoadingStage()
 
-    stopProgressSimulation()
+    loadingProgress.value = 100
+    loadingStageText.value = '族谱首屏已就绪'
+    await paintLoadingStage()
     isOverlayVisible.value = false
     loading.value = false
     initializeLargeStateAfterPaint(myGeneration, result.publication, { ...defaultSettings, ...result.settings })
   } catch (err: any) {
     clearOverlayDelay()
-    stopProgressSimulation()
     // Don't show error for stale requests
     if (myGeneration !== loadGeneration) return
     isOverlayVisible.value = false
@@ -576,7 +587,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearOverlayDelay()
-  stopProgressSimulation()
   window.removeEventListener('keydown', handleHistoryShortcut)
   window.removeEventListener('beforeunload', protectBrowserLeave)
   document.removeEventListener('visibilitychange', preserveRecoveryWhenHidden)
@@ -625,20 +635,30 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
 
         <!-- 灵动进度条 (Lively Fluid Progress Bar) -->
         <div class="loading-bar-wrapper">
-          <div class="loading-bar-track">
-            <div class="loading-bar-fill" :style="{ width: `${loadingProgress}%` }">
+          <div
+            class="loading-bar-track"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            :aria-valuenow="isDownloadIndeterminate ? undefined : Math.round(loadingProgress)"
+          >
+            <div
+              class="loading-bar-fill"
+              :class="{ 'loading-bar-fill--indeterminate': isDownloadIndeterminate }"
+              :style="{ width: `${loadingProgress}%` }"
+            >
               <!-- 永不停歇的水波流光 (Continuous Liquid Stream) -->
               <div class="loading-bar-liquid"></div>
               <!-- 前端脉动水滴光晕 (Leading Head Droplet) -->
               <div class="loading-bar-head"></div>
             </div>
           </div>
-          <span class="loading-bar-percent">{{ Math.round(loadingProgress) }}%</span>
+          <span class="loading-bar-percent">{{ loadingProgressLabel }}</span>
         </div>
 
         <div class="loading-tip" v-if="isLargeDataDetected">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span>当前族谱人丁浩繁，正在加速构建谱图排版</span>
+          <span>当前族谱数据量较大，正按实际阶段装载与渲染</span>
         </div>
       </div>
     </div>
@@ -834,6 +854,16 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   transition: width 0.15s cubic-bezier(0.2, 0.8, 0.4, 1);
   position: relative;
   overflow: visible;
+}
+
+.loading-bar-fill--indeterminate {
+  width: 36% !important;
+  animation: loading-bar-indeterminate 1.2s ease-in-out infinite;
+}
+
+@keyframes loading-bar-indeterminate {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(320%); }
 }
 
 /* 永不停歇的水波流光 (Continuous Liquid Stream) */
