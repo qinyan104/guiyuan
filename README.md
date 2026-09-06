@@ -2,13 +2,13 @@
 
 归源是一套面向家族谱牒整理、协作修订与传统线装出版的现代化数字化工具。深度融合中国传统文脉美学与现代图形学技术，覆盖 Web 端无限画布族谱工作台、古籍出版排版工坊、宗族洞察大屏、家族全景编年史以及 Docker 一键容器化部署方案。
 
-![宗谱工作台 · 无涯画布](screenshots/Snipaste_2026-09-05_19-40-10.png)
+![门户首页 · 溯源归真](screenshots/介绍页1.png)
 
-![门户首页 · 溯源归真](screenshots/Snipaste_2026-09-05_19-41-24.png)
+![世系树交互预览](screenshots/介绍页2.png)
 
-![世系树交互预览](screenshots/Snipaste_2026-09-05_19-39-23.png)
+![登录界面 · 东方美学](screenshots/登录页.png)
 
-![登录界面 · 东方美学](screenshots/Snipaste_2026-09-05_19-39-33.png)
+![宗谱工作台 · 无涯画布](screenshots/工作台.png)
 
 ## 功能概览
 
