@@ -73,8 +73,36 @@
           </div>
           <p class="description">导出为高分辨率 PNG 位图图片，便于直接发到微信群与族人交流，或插入汇报文档中快速预览。</p>
         </div>
+
+        <div class="options-group">
+          <label class="field-label">
+            <span>配色风格</span>
+            <span class="field-label__extra">导出所选格调的位图</span>
+          </label>
+          <div class="theme-options-grid" role="radiogroup" aria-label="导出配色">
+            <button
+              v-for="preset in THEME_PRESETS"
+              :key="preset.id"
+              type="button"
+              class="theme-pill-btn"
+              :class="{ 'theme-pill-btn--active': selectedTheme === preset.id }"
+              :title="preset.desc"
+              role="radio"
+              :aria-checked="selectedTheme === preset.id"
+              @click="selectedTheme = preset.id"
+            >
+              <div class="theme-pill-swatch" :style="{ backgroundColor: preset.bgPreview }">
+                <div class="theme-pill-card" :style="{ backgroundColor: preset.cardPreview }">
+                  <span class="theme-pill-accent" :style="{ backgroundColor: preset.accentColor }"></span>
+                </div>
+              </div>
+              <span class="theme-pill-name">{{ preset.name }}</span>
+            </button>
+          </div>
+        </div>
+
         <div class="actions">
-          <button class="btn btn--primary" :disabled="isProcessing" type="button" @click="$emit('export-png')">
+          <button class="btn btn--primary" :disabled="isProcessing" type="button" @click="emitExportPng">
             <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
@@ -94,8 +122,36 @@
           </div>
           <p class="description">导出为无限放大的标准 SVG 矢量文件。线条与文字永不模糊失真，适合专业排版、大型挂幅喷绘或作为原始数字档案备份。</p>
         </div>
+
+        <div class="options-group">
+          <label class="field-label">
+            <span>配色风格</span>
+            <span class="field-label__extra">矢量线条与背景色调</span>
+          </label>
+          <div class="theme-options-grid" role="radiogroup" aria-label="导出配色">
+            <button
+              v-for="preset in THEME_PRESETS"
+              :key="preset.id"
+              type="button"
+              class="theme-pill-btn"
+              :class="{ 'theme-pill-btn--active': selectedTheme === preset.id }"
+              :title="preset.desc"
+              role="radio"
+              :aria-checked="selectedTheme === preset.id"
+              @click="selectedTheme = preset.id"
+            >
+              <div class="theme-pill-swatch" :style="{ backgroundColor: preset.bgPreview }">
+                <div class="theme-pill-card" :style="{ backgroundColor: preset.cardPreview }">
+                  <span class="theme-pill-accent" :style="{ backgroundColor: preset.accentColor }"></span>
+                </div>
+              </div>
+              <span class="theme-pill-name">{{ preset.name }}</span>
+            </button>
+          </div>
+        </div>
+
         <div class="actions">
-          <button class="btn btn--primary" :disabled="isProcessing" type="button" @click="$emit('export-svg')">
+          <button class="btn btn--primary" :disabled="isProcessing" type="button" @click="emitExportSvg">
             <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
@@ -114,6 +170,33 @@
             <span class="format-tag">支持密码加密</span>
           </div>
           <p class="description">生成一个独立的 HTML 文件，无需网络或安装任何软件，族人只需双击即可在任何浏览器中平移、缩放与查阅交互式世系。</p>
+        </div>
+
+        <div class="options-group">
+          <label class="field-label">
+            <span>初始配色风格</span>
+            <span class="field-label__extra">在分享网页内也可随时切换</span>
+          </label>
+          <div class="theme-options-grid" role="radiogroup" aria-label="导出配色">
+            <button
+              v-for="preset in THEME_PRESETS"
+              :key="preset.id"
+              type="button"
+              class="theme-pill-btn"
+              :class="{ 'theme-pill-btn--active': selectedTheme === preset.id }"
+              :title="preset.desc"
+              role="radio"
+              :aria-checked="selectedTheme === preset.id"
+              @click="selectedTheme = preset.id"
+            >
+              <div class="theme-pill-swatch" :style="{ backgroundColor: preset.bgPreview }">
+                <div class="theme-pill-card" :style="{ backgroundColor: preset.cardPreview }">
+                  <span class="theme-pill-accent" :style="{ backgroundColor: preset.accentColor }"></span>
+                </div>
+              </div>
+              <span class="theme-pill-name">{{ preset.name }}</span>
+            </button>
+          </div>
         </div>
 
         <div class="options-group">
@@ -163,17 +246,47 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { THEME_PRESETS, type ThemeMode } from './exportTheme'
+import { useUiStore } from '../../stores/ui'
 
-defineProps<{
+const props = defineProps<{
   modelValue: boolean
   isProcessing?: boolean
 }>()
 
-const emit = defineEmits(['update:modelValue', 'export-png', 'export-svg', 'export-share-html'])
+const emit = defineEmits<{
+  (event: 'update:modelValue', value: boolean): void
+  (event: 'export-png', payload: { theme: ThemeMode }): void
+  (event: 'export-svg', payload: { theme: ThemeMode }): void
+  (event: 'export-share-html', payload: { password?: string; theme: ThemeMode }): void
+}>()
 
 const activeTab = ref<'png' | 'svg' | 'share'>('png')
 const sharePassword = ref('')
+
+function getCurrentTheme(): ThemeMode {
+  try {
+    const uiStore = useUiStore()
+    if (uiStore?.currentTheme) return uiStore.currentTheme
+  } catch {}
+  if (typeof document !== 'undefined') {
+    const theme = document.documentElement.getAttribute('data-theme') as ThemeMode
+    if (theme) return theme
+  }
+  return 'paper'
+}
+
+const selectedTheme = ref<ThemeMode>(getCurrentTheme())
+
+watch(
+  () => props.modelValue,
+  (visible) => {
+    if (visible) {
+      selectedTheme.value = getCurrentTheme()
+    }
+  },
+)
 
 const passwordStrength = computed(() => {
   const pwd = sharePassword.value
@@ -192,8 +305,16 @@ const passwordStrength = computed(() => {
   return { level: 'strong', label: '强', color: 'var(--color-success, #1b8a4b)', percent: 100 }
 })
 
+function emitExportPng() {
+  emit('export-png', { theme: selectedTheme.value })
+}
+
+function emitExportSvg() {
+  emit('export-svg', { theme: selectedTheme.value })
+}
+
 function emitExportShareHtml() {
-  emit('export-share-html', { password: sharePassword.value })
+  emit('export-share-html', { password: sharePassword.value, theme: selectedTheme.value })
 }
 </script>
 
@@ -385,6 +506,81 @@ function emitExportShareHtml() {
   color: var(--text-soft, #8f8878);
 }
 
+.theme-options-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.theme-pill-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px 6px;
+  background: var(--bg-paper, #ffffff);
+  border: 1px solid var(--line-subtle, rgba(122, 95, 65, 0.14));
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.theme-pill-btn:hover {
+  border-color: var(--line-soft, rgba(122, 95, 65, 0.28));
+  transform: translateY(-1px);
+}
+
+.theme-pill-btn--active {
+  border-color: var(--color-accent, #C63C2E);
+  box-shadow: 0 0 0 2px var(--color-accent-muted, rgba(198, 60, 46, 0.15));
+}
+
+.theme-pill-swatch {
+  width: 32px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+}
+
+.theme-pill-card {
+  width: 22px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.theme-pill-accent {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.theme-pill-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-main, #241a10);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.theme-pill-btn--active .theme-pill-name {
+  font-weight: 600;
+  color: var(--color-accent, #C63C2E);
+}
+
 .share-password-wrapper {
   position: relative;
   display: flex;
@@ -508,6 +704,12 @@ function emitExportShareHtml() {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(10px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 480px) {
+  .theme-options-grid {
+    grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+  }
 }
 
 @media (prefers-reduced-motion) {

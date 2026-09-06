@@ -1,4 +1,4 @@
-﻿import type { PublicationLayout, PublicationPaper } from '../../types/family'
+import type { PublicationLayout, PublicationPaper } from '../../types/family'
 import PERSON_CARD_STYLE from '../../components/PersonCardSvg.style?raw'
 import {
   DEFAULT_DROP_LINE_PRINT_PROFILE,
@@ -7,6 +7,11 @@ import {
   type DropLinePrintOrientation,
   type DropLinePrintProfile,
 } from './dropLinePrint'
+import {
+  buildExportThemeCss,
+  getThemeCssVariables,
+  type ThemeMode,
+} from './exportTheme'
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink'
@@ -87,6 +92,7 @@ export interface CreateStandaloneSvgOptions {
   embedImages?: boolean
   resourceBaseUrl?: string
   exportHeader?: PdfExportHeader
+  theme?: ThemeMode
 }
 
 export interface PrintLayoutPage {
@@ -209,31 +215,32 @@ function resolveCssValue(value: string, themeValues: Record<string, string>): st
   return resolved
 }
 
-function buildExportStyle(pdfFriendly = false): string {
+function buildExportStyle(pdfFriendly = false, theme: ThemeMode = 'paper'): string {
+  const themeCss = buildExportThemeCss(theme)
   if (!pdfFriendly) {
-    return getSvgThemeVariables() + '\n' + EXPORT_SVG_STYLE
+    return themeCss + '\n' + EXPORT_SVG_STYLE
   }
 
-  const themeValues = getSvgThemeMap()
+  const themeValues = getThemeCssVariables(theme)
   return resolveCssValue(
-    EXPORT_SVG_STYLE.replace(/^\s*@import\s+url\([^)]*\)\s*;\s*/m, '\n')
+    (themeCss + '\n' + EXPORT_SVG_STYLE).replace(/^\s*@import\s+url\([^)]*\)\s*;\s*/m, '\n')
       .replaceAll("'Noto Serif SC', 'Songti SC', serif", PDF_SERIF_FONT_STACK)
       .replaceAll("'Manrope', sans-serif", PDF_SANS_FONT_STACK),
     themeValues,
   )
 }
 
-function insertExportStyles(svg: SVGSVGElement, pdfFriendly = false) {
+function insertExportStyles(svg: SVGSVGElement, pdfFriendly = false, theme: ThemeMode = 'paper') {
   const defs = getOrCreateDefs(svg)
   defs.querySelector('[data-export-style="publication"]')?.remove()
 
   const style = document.createElementNS(SVG_NAMESPACE, 'style')
   style.setAttribute('data-export-style', 'publication')
-  style.textContent = buildExportStyle(pdfFriendly)
+  style.textContent = buildExportStyle(pdfFriendly, theme)
   defs.insertBefore(style, defs.firstChild)
 }
 
-function insertExportHeader(svg: SVGSVGElement, header?: PdfExportHeader) {
+function insertExportHeader(svg: SVGSVGElement, header?: PdfExportHeader, theme: ThemeMode = 'paper') {
   svg.querySelector('[data-export-header="publication"]')?.remove()
 
   if (!header) {
@@ -245,6 +252,7 @@ function insertExportHeader(svg: SVGSVGElement, header?: PdfExportHeader) {
     existingTitle.remove()
   }
 
+  const themeVars = getThemeCssVariables(theme)
   const headerGroup = document.createElementNS(SVG_NAMESPACE, 'g')
   headerGroup.setAttribute('data-export-header', 'publication')
   headerGroup.setAttribute('transform', 'translate(72 56)')
@@ -252,7 +260,7 @@ function insertExportHeader(svg: SVGSVGElement, header?: PdfExportHeader) {
   const title = document.createElementNS(SVG_NAMESPACE, 'text')
   title.setAttribute('x', '0')
   title.setAttribute('y', '0')
-  title.setAttribute('fill', 'var(--text-main, #241a10)')
+  title.setAttribute('fill', themeVars['--text-main'] || 'var(--text-main, #241a10)')
   title.setAttribute('font-size', '28')
   title.setAttribute('font-weight', '700')
   title.setAttribute('font-family', "'Noto Serif SC', 'Songti SC', serif")
@@ -264,7 +272,7 @@ function insertExportHeader(svg: SVGSVGElement, header?: PdfExportHeader) {
     const subtitle = document.createElementNS(SVG_NAMESPACE, 'text')
     subtitle.setAttribute('x', '0')
     subtitle.setAttribute('y', String(currentY))
-    subtitle.setAttribute('fill', 'var(--text-soft, #8a6845)')
+    subtitle.setAttribute('fill', themeVars['--text-soft'] || 'var(--text-soft, #8a6845)')
     subtitle.setAttribute('font-size', '15')
     subtitle.setAttribute('font-family', "'Noto Serif SC', 'Songti SC', serif")
     subtitle.textContent = header.subtitle
@@ -276,7 +284,7 @@ function insertExportHeader(svg: SVGSVGElement, header?: PdfExportHeader) {
     const text = document.createElementNS(SVG_NAMESPACE, 'text')
     text.setAttribute('x', '0')
     text.setAttribute('y', String(currentY))
-    text.setAttribute('fill', 'var(--text-soft, #8a6845)')
+    text.setAttribute('fill', themeVars['--text-soft'] || 'var(--text-soft, #8a6845)')
     text.setAttribute('font-size', '12')
     text.setAttribute('font-family', "'Noto Serif SC', 'Songti SC', serif")
     text.textContent = line
@@ -287,16 +295,12 @@ function insertExportHeader(svg: SVGSVGElement, header?: PdfExportHeader) {
   svg.insertBefore(headerGroup, svg.firstChild)
 }
 
-function insertBackground(svg: SVGSVGElement, layout: PublicationLayout) {
+function insertBackground(svg: SVGSVGElement, layout: PublicationLayout, theme: ThemeMode = 'paper') {
   svg.querySelector('[data-export-background="publication"]')?.remove()
   svg.querySelector('#canvas-bg-gradient')?.remove()
 
-  const root = document.documentElement
-  const computed = getComputedStyle(root)
-  let canvasBg = computed.getPropertyValue('--canvas-bg').trim()
-  if (!canvasBg) {
-    canvasBg = computed.getPropertyValue('--bg-paper').trim() || '#fff9ef'
-  }
+  const themeVars = getThemeCssVariables(theme)
+  let canvasBg = themeVars['--canvas-bg'] || themeVars['--bg-paper'] || '#FAF9F6'
 
   let fillValue = canvasBg
   if (canvasBg.includes('linear-gradient') || canvasBg.includes('radial-gradient')) {
@@ -326,7 +330,7 @@ function insertBackground(svg: SVGSVGElement, layout: PublicationLayout) {
 
       fillValue = 'url(#canvas-bg-gradient)'
     } else {
-      fillValue = computed.getPropertyValue('--bg-shell').trim() || '#e8ddc8'
+      fillValue = themeVars['--bg-shell'] || '#FAF9F6'
     }
   }
 
@@ -338,6 +342,7 @@ function insertBackground(svg: SVGSVGElement, layout: PublicationLayout) {
   background.setAttribute('width', formatNumber(layout.width))
   background.setAttribute('height', formatNumber(layout.height))
 
+  background.setAttribute('fill', fillValue)
   background.style.fill = fillValue
 
   const defs = svg.querySelector(':scope > defs')
@@ -459,6 +464,12 @@ function setImageHref(image: SVGImageElement, value: string) {
 }
 
 export async function createStandalonePublicationSvg(options: CreateStandaloneSvgOptions): Promise<SVGSVGElement> {
+  const targetTheme: ThemeMode =
+    options.theme ||
+    (typeof document !== 'undefined'
+      ? (document.documentElement.getAttribute('data-theme') as ThemeMode)
+      : undefined) ||
+    'paper'
   const svg = options.svgElement.cloneNode(true) as SVGSVGElement
   const headerHeight = options.exportHeader ? 120 : 0
   const totalHeight = options.layout.height + headerHeight
@@ -467,6 +478,8 @@ export async function createStandalonePublicationSvg(options: CreateStandaloneSv
   svg.setAttribute('xmlns:xlink', XLINK_NAMESPACE)
   svg.setAttribute('version', '1.1')
   svg.setAttribute('role', 'img')
+  svg.setAttribute('data-theme', targetTheme)
+  svg.setAttribute('class', `publication-svg theme-${targetTheme}`)
   svg.setAttribute('aria-label', options.title)
   svg.setAttribute('viewBox', `0 0 ${formatNumber(options.layout.width)} ${formatNumber(totalHeight)}`)
   svg.setAttribute('width', formatNumber(options.layout.width))
@@ -486,12 +499,12 @@ export async function createStandalonePublicationSvg(options: CreateStandaloneSv
     }
 
     svg.appendChild(contentGroup)
-    insertExportHeader(svg, options.exportHeader)
+    insertExportHeader(svg, options.exportHeader, targetTheme)
   }
 
   insertExportTitle(svg, options.title)
-  insertExportStyles(svg, options.pdfFriendly)
-  insertBackground(svg, { ...options.layout, height: totalHeight })
+  insertExportStyles(svg, options.pdfFriendly, targetTheme)
+  insertBackground(svg, { ...options.layout, height: totalHeight }, targetTheme)
 
   // Embed images as base64 to ensure they are visible in standalone files
   const images = Array.from(svg.querySelectorAll('image'))

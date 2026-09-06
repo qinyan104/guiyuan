@@ -114,6 +114,27 @@ describe('createStandalonePublicationSvg', () => {
     expect(exported.querySelector('.person-card > title')?.textContent).toBe('李明')
     expect(exported.querySelector('.person-card')?.getAttribute('aria-label')).toBe('李明')
   })
+
+  it('applies selected theme data attribute, class, styles, and background fill', async () => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    const standalone = await createStandalonePublicationSvg({
+      svgElement: svg,
+      layout,
+      title: '测试族谱',
+      theme: 'dark',
+    })
+
+    expect(standalone.getAttribute('data-theme')).toBe('dark')
+    expect(standalone.getAttribute('class')).toContain('theme-dark')
+
+    const background = standalone.querySelector('[data-export-background="publication"]')
+    expect(background?.getAttribute('fill')).toBe('#0C0C0B')
+
+    const style = standalone.querySelector('style[data-export-style="publication"]')
+    expect(style?.textContent).toContain('--canvas-bg: #0C0C0B')
+    expect(style?.textContent).toContain('--card-panel-fill: #161513')
+    expect(style?.textContent).toContain('--accent-signal: #437EEB')
+  })
 })
 
 function createLayout(

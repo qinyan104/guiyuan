@@ -26,6 +26,7 @@ import {
 import { formatValidationIssues } from '../features/validation/draftSchema'
 import { uploadPhoto, getPhotoUrl } from '../api/photo'
 import { layoutPublication } from '../lib/layout'
+import { useUiStore, type ThemeMode } from '../stores/ui'
 
 import type { PublicationStateReturn } from './usePublicationState'
 interface FileOperationsDeps {
@@ -142,9 +143,24 @@ export function useFileOperations(deps: FileOperationsDeps) {
     return layoutPublication(publication, { ...settings, zoom: 1 })
   }
 
+  function getActiveTheme(explicitTheme?: ThemeMode): ThemeMode {
+    if (explicitTheme) return explicitTheme
+    try {
+      const uiStore = useUiStore()
+      if (uiStore?.currentTheme) return uiStore.currentTheme
+    } catch {}
+    if (typeof document !== 'undefined') {
+      const attr = document.documentElement.getAttribute('data-theme') as ThemeMode
+      if (attr) return attr
+    }
+    return 'paper'
+  }
+
   async function createCurrentStandaloneSvg(
     exportLayout: PublicationLayout = layout.value,
+    theme?: ThemeMode,
   ): Promise<SVGSVGElement | null> {
+    const activeTheme = getActiveTheme(theme)
     // 方案一安全锁：导出前强制渲染全部节点，防止视口裁剪导致导出残缺
     await canvasRef.value?.prepareForExport?.()
     const svgElement = canvasRef.value?.getSvgElement?.()
@@ -157,14 +173,15 @@ export function useFileOperations(deps: FileOperationsDeps) {
         svgElement,
         layout: exportLayout,
         title: publication.title.trim() || '归元档案预览',
+        theme: activeTheme,
       })
     } finally {
       canvasRef.value?.releaseExportLock?.()
     }
   }
 
-  async function serializeCurrentSvg(): Promise<string | null> {
-    const svg = await createCurrentStandaloneSvg()
+  async function serializeCurrentSvg(theme?: ThemeMode): Promise<string | null> {
+    const svg = await createCurrentStandaloneSvg(layout.value, theme)
     if (!svg) return null
     return serializeStandaloneSvg(svg)
   }
@@ -293,10 +310,10 @@ export function useFileOperations(deps: FileOperationsDeps) {
     }
   }
 
-  function downloadSvg() {
+  function downloadSvg(theme?: ThemeMode) {
     return runCanvasExport('导出 SVG 失败。', async () => {
       statusMessage.value = '正在导出 SVG...'
-      const serialized = await serializeCurrentSvg()
+      const serialized = await serializeCurrentSvg(theme)
       if (!serialized) {
         errorMessage.value = '当前画布没有可导出的SVG。'
         statusMessage.value = ''
@@ -307,11 +324,11 @@ export function useFileOperations(deps: FileOperationsDeps) {
     })
   }
 
-  function downloadPng() {
+  function downloadPng(theme?: ThemeMode) {
     return runCanvasExport('导出 PNG 失败。', async () => {
       statusMessage.value = '正在导出 PNG...'
       const exportLayout = getPngExportLayout()
-      const svg = await createCurrentStandaloneSvg(exportLayout)
+      const svg = await createCurrentStandaloneSvg(exportLayout, theme)
       if (!svg) {
         errorMessage.value = '当前画布没有可导出的内容。'
         statusMessage.value = ''
@@ -410,10 +427,14 @@ export function useFileOperations(deps: FileOperationsDeps) {
     })
   }
 
-  function exportShareHtml(password?: string) {
+  function exportShareHtml(options?: string | { password?: string; theme?: ThemeMode }) {
+    const password = typeof options === 'string' ? options : options?.password
+    const targetTheme = typeof options === 'object' ? options?.theme : undefined
+    const activeTheme = getActiveTheme(targetTheme)
+
     return runCanvasExport('生成分享页面失败。', async () => {
       statusMessage.value = '正在生成分享页面...'
-      const standaloneSvg = await createCurrentStandaloneSvg()
+      const standaloneSvg = await createCurrentStandaloneSvg(undefined, activeTheme)
       if (!standaloneSvg) {
         errorMessage.value = '当前画布没有可导出的内容。'
         statusMessage.value = ''
@@ -425,6 +446,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
         settings,
         standaloneSvg,
         password: password || undefined,
+        theme: activeTheme,
         onProgress: (_stage, percent) => {
           statusMessage.value = `正在生成分享页面... ${percent}%`
         },

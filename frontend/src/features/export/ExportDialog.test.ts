@@ -19,16 +19,19 @@ describe('ExportDialog', () => {
     expect(text).not.toContain('谱书 PDF')
 
     await wrapper.get('.btn.btn--primary').trigger('click')
-    expect(wrapper.emitted('export-png')).toHaveLength(1)
+    expect(wrapper.emitted('export-png')).toEqual([[{ theme: 'paper' }]])
 
     await wrapper.get('.tab-btn:nth-child(2)').trigger('click')
+    // Select pine theme in svg tab
+    const pineBtn = wrapper.findAll('.theme-pill-btn').find(b => b.text().includes('松绿'))
+    await pineBtn?.trigger('click')
     await wrapper.get('.btn.btn--primary').trigger('click')
-    expect(wrapper.emitted('export-svg')).toHaveLength(1)
+    expect(wrapper.emitted('export-svg')).toEqual([[{ theme: 'pine' }]])
 
     await wrapper.get('.tab-btn:nth-child(3)').trigger('click')
     await wrapper.get('.share-password-input').setValue('secret123')
     await wrapper.get('.btn.btn--primary').trigger('click')
 
-    expect(wrapper.emitted('export-share-html')).toEqual([[{ password: 'secret123' }]])
+    expect(wrapper.emitted('export-share-html')).toEqual([[{ password: 'secret123', theme: 'pine' }]])
   })
 })

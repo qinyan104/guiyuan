@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, inject, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DarkModeToggle from './DarkModeToggle.vue'
@@ -7,6 +7,7 @@ import { getRole } from '../api/auth'
 import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import CollaboratorManager from './CollaboratorManager.vue'
 import ExportDialog from '../features/export/ExportDialog.vue'
+import type { ThemeMode } from '../features/export/exportTheme'
 import GedcomImportDialog from '../features/gedcom/GedcomImportDialog.vue'
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -60,9 +61,9 @@ function triggerFileInput() {
   fileInputRef.value?.click()
 }
 
-function handleExportShareHtml(options: { password: string }) {
+function handleExportShareHtml(options: { password?: string; theme?: ThemeMode }) {
   showExportDialog.value = false
-  emit('export-share-html', options.password)
+  emit('export-share-html', options)
 }
 
 const props = withDefaults(
@@ -90,11 +91,11 @@ const emit = defineEmits<{
   (event: 'create-blank'): void
   (event: 'save-file'): void
   (event: 'save-file-as'): void
-  (event: 'download-png'): void
-  (event: 'download-svg'): void
+  (event: 'download-png', theme?: ThemeMode): void
+  (event: 'download-svg', theme?: ThemeMode): void
   (event: 'print-publication'): void
   (event: 'export-json'): void
-  (event: 'export-share-html', password: string): void
+  (event: 'export-share-html', payload: { password?: string; theme?: ThemeMode } | string): void
   (event: 'import-gedcom'): void
   (event: 'export-gedcom'): void
   (event: 'logout'): void
@@ -313,8 +314,8 @@ onBeforeUnmount(() => {
       <ExportDialog
         v-model="showExportDialog"
         :isProcessing="exporting"
-        @export-png="emit('download-png'); showExportDialog = false"
-        @export-svg="emit('download-svg'); showExportDialog = false"
+        @export-png="(payload) => { emit('download-png', payload?.theme); showExportDialog = false }"
+        @export-svg="(payload) => { emit('download-svg', payload?.theme); showExportDialog = false }"
         @export-share-html="handleExportShareHtml"
       />
     </Teleport>

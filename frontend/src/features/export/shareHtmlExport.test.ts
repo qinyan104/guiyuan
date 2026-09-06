@@ -153,4 +153,24 @@ describe('shareHtmlExport helpers', () => {
     expect(doc.querySelector('#pwd-input')?.getAttribute('placeholder')).toBe('\u8bf7\u8f93\u5165\u5bc6\u7801')
     expect(doc.querySelector('#pwd-input')?.getAttribute('autocomplete')).toBe('off')
   })
+
+  it('generateShareHtml supports explicit theme, embeds all themes css and switcher menu', async () => {
+    const html = await generateShareHtml({
+      publication: samplePublication,
+      settings: sampleSettings,
+      standaloneSvg: createSvgFixture(),
+      theme: 'pine',
+    })
+
+    const doc = new DOMParser().parseFromString(html, 'text/html')
+    expect(doc.documentElement.getAttribute('data-theme')).toBe('pine')
+    expect(html).toContain('[data-theme="dark"]')
+    expect(html).toContain('[data-theme="slate"]')
+    expect(html).toContain('[data-theme="pine"]')
+    expect(html).toContain('[data-theme="pure"]')
+    expect(doc.querySelector('#theme-btn')).not.toBeNull()
+    expect(doc.querySelector('#theme-menu')).not.toBeNull()
+    expect(doc.querySelectorAll('.theme-option')).toHaveLength(5)
+    expect(html).not.toContain('<svg')
+  })
 })

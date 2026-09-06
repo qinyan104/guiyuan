@@ -1,13 +1,20 @@
-﻿import type { PublicationData, PublicationSettings } from '../../types/family'
-import { escapeHtml, getSvgThemeMap, serializeSvg } from './publicationExport'
+import type { PublicationData, PublicationSettings } from '../../types/family'
+import { escapeHtml, serializeSvg } from './publicationExport'
 import { createPortablePublication } from '../persistence/draftPersistence'
 import { isPersonDeceased } from '../../lib/personStatus'
+import {
+  buildAllExportThemesCss,
+  getThemeCssVariables,
+  THEME_PRESETS,
+  type ThemeMode,
+} from './exportTheme'
 
 export interface ShareHtmlOptions {
   publication: PublicationData
   settings: PublicationSettings
   standaloneSvg: SVGSVGElement
   password?: string
+  theme?: ThemeMode
   onProgress?: (stage: string, percent: number) => void
 }
 
@@ -110,7 +117,7 @@ function serializeInlineScriptValue(value: unknown): string {
     .replace(/\u2029/g, '\\u2029')
 }
 
-export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): string {
+export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean, defaultTheme: ThemeMode = 'paper'): string {
   const plainData = isEncrypted ? 'null' : serializeInlineScriptValue(dataJson)
   const encryptedBlob = isEncrypted ? serializeInlineScriptValue(JSON.parse(dataJson)) : 'null'
 
@@ -446,6 +453,70 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     });
   }
 
+  // --- Theme switcher ---
+  function setupThemeSwitcher(initialTheme) {
+    var themeBtn = document.getElementById('theme-btn');
+    var themeMenu = document.getElementById('theme-menu');
+    var nameEl = document.getElementById('current-theme-name');
+    var dotEl = document.getElementById('current-theme-dot');
+    var THEME_NAMES = {
+      paper: '经典 · 宣纸',
+      slate: '素白 · 黛蓝',
+      pure: '纸白 · 徽墨',
+      pine: '宣白 · 松绿',
+      dark: '玄墨 · 霁蓝'
+    };
+
+    function applyTheme(themeId) {
+      document.documentElement.setAttribute('data-theme', themeId);
+      var svg = document.querySelector('#tree-camera svg');
+      if (svg) {
+        svg.setAttribute('data-theme', themeId);
+        svg.setAttribute('class', 'publication-svg theme-' + themeId);
+      }
+      if (nameEl) nameEl.textContent = THEME_NAMES[themeId] || '配色';
+      var option = document.querySelector('.theme-option[data-theme-id="' + themeId + '"]');
+      if (dotEl && option) {
+        var optDot = option.querySelector('.theme-dot');
+        if (optDot) dotEl.style.background = optDot.style.background;
+      }
+      document.querySelectorAll('.theme-option').forEach(function(btn) {
+        if (btn.getAttribute('data-theme-id') === themeId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      try {
+        localStorage.setItem('guiyuan:share-theme', themeId);
+      } catch (e) {}
+    }
+
+    var saved = null;
+    try {
+      saved = localStorage.getItem('guiyuan:share-theme');
+    } catch (e) {}
+    applyTheme(saved || initialTheme || 'paper');
+
+    if (themeBtn && themeMenu) {
+      themeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        themeMenu.classList.toggle('show');
+      });
+      document.addEventListener('click', function() {
+        themeMenu.classList.remove('show');
+      });
+      document.querySelectorAll('.theme-option').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var tid = btn.getAttribute('data-theme-id');
+          applyTheme(tid);
+          themeMenu.classList.remove('show');
+        });
+      });
+    }
+  }
+
   // --- Init ---
   function init(data) {
     var app = document.getElementById('app');
@@ -460,6 +531,7 @@ export function buildEmbeddedScript(dataJson: string, isEncrypted: boolean): str
     // Show app
     app.style.display = 'flex';
 
+    setupThemeSwitcher(data.defaultTheme || '${defaultTheme}');
     setupInteraction(viewport, camera);
     setupCardClick(viewport, data);
     setupClosePanel();
@@ -508,9 +580,11 @@ export function buildHtmlTemplate(options: {
   script: string
   isEncrypted: boolean
   generatedAt: string
+  defaultTheme?: ThemeMode
 }): string {
+  const defaultTheme = options.defaultTheme || 'paper'
   return `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="${defaultTheme}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -654,10 +728,86 @@ body {
   color: var(--text-main, #241a10);
   border: 1px solid var(--card-panel-stroke, rgba(0,0,0,0.04));
 }
-#header-toggle {
+#header-actions {
   position: absolute;
   right: 32px;
   top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
+.theme-dropdown-container {
+  position: relative;
+}
+#theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  background: var(--bg-shell, #f5f0e8);
+  border: 1px solid var(--card-panel-stroke, rgba(0,0,0,0.08));
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-main, #241a10);
+  transition: all 0.2s ease;
+}
+#theme-btn:hover {
+  border-color: var(--card-hover-stroke, rgba(0,0,0,0.2));
+}
+.theme-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.12);
+}
+.theme-chevron {
+  font-size: 0.65rem;
+  color: var(--text-soft, #8a8078);
+}
+.theme-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-panel, #ffffff);
+  border: 1px solid var(--card-panel-stroke, rgba(0,0,0,0.12));
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  padding: 4px;
+  min-width: 120px;
+  z-index: 100;
+  flex-direction: column;
+  gap: 2px;
+}
+.theme-menu.show {
+  display: flex;
+}
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-main, #241a10);
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.theme-option:hover {
+  background: var(--card-header-fill, rgba(0,0,0,0.05));
+}
+.theme-option.active {
+  font-weight: 600;
+  color: var(--accent-signal, #c63c2e);
+}
+#header-toggle {
   font-size: 0.7rem;
   padding: 4px 10px;
   background: var(--bg-shell, #f5f0e8);
@@ -980,6 +1130,7 @@ body {
 @media (max-width: 900px) {
   #pub-header { padding: 10px 14px; }
   #pub-header h1 { font-size: 1.1rem; }
+  #header-actions { right: 14px; top: 10px; gap: 6px; }
   #detail-panel {
     padding: 12px;
   }
@@ -1023,7 +1174,19 @@ body {
 
 <div id="app">
   <header id="pub-header">
-    <button id="header-toggle">收起</button>
+    <div id="header-actions">
+      <div class="theme-dropdown-container">
+        <button id="theme-btn" type="button" title="切换配色">
+          <span class="theme-dot" id="current-theme-dot"></span>
+          <span id="current-theme-name">配色</span>
+          <span class="theme-chevron">&#9662;</span>
+        </button>
+        <div id="theme-menu" class="theme-menu">
+          ${THEME_PRESETS.map(t => `<button type="button" class="theme-option${t.id === defaultTheme ? ' active' : ''}" data-theme-id="${t.id}"><span class="theme-dot" style="background: ${t.accentColor}"></span><span>${escapeHtml(t.name)}</span></button>`).join('\n          ')}
+        </div>
+      </div>
+      <button id="header-toggle" type="button">收起</button>
+    </div>
     <div id="pub-header-content">${options.isEncrypted ? '' : options.infoHeader}</div>
   </header>
 
@@ -1056,12 +1219,13 @@ ${options.script}
 }
 
 export async function generateShareHtml(options: ShareHtmlOptions): Promise<string> {
-  const { publication, settings, standaloneSvg, password, onProgress } = options
+  const { publication, settings, standaloneSvg, password, theme, onProgress } = options
+  const activeTheme = theme || (publication as any).theme || 'paper'
 
   onProgress?.('capturing', 25)
 
   // Phase 2: Capture theme variables
-  const themeVars = getSvgThemeMap()
+  const themeVars = getThemeCssVariables(activeTheme)
   onProgress?.('capturing', 30)
 
   // Phase 3: Serialize SVG
@@ -1078,6 +1242,7 @@ export async function generateShareHtml(options: ShareHtmlOptions): Promise<stri
     settings,
     themeVars,
     svgMarkup,
+    defaultTheme: activeTheme,
   })
   onProgress?.('building', 70)
 
@@ -1098,11 +1263,11 @@ export async function generateShareHtml(options: ShareHtmlOptions): Promise<stri
 
   // Phase 7: Build HTML
   onProgress?.('assembling', 90)
-  const themeCss = buildThemeCss(themeVars)
+  const themeCss = buildAllExportThemesCss()
   const infoHeader = buildInfoHeader(publication)
   const statsHtml = buildStatsHtml(publication)
   const generatedAt = new Date().toLocaleString('zh-CN')
-  const script = buildEmbeddedScript(dataJson, isEncrypted)
+  const script = buildEmbeddedScript(dataJson, isEncrypted, activeTheme)
 
   const html = buildHtmlTemplate({
     title: publication.title.trim() || '未命名',
@@ -1112,6 +1277,7 @@ export async function generateShareHtml(options: ShareHtmlOptions): Promise<stri
     script,
     isEncrypted,
     generatedAt,
+    defaultTheme: activeTheme,
   })
 
   onProgress?.('done', 100)
