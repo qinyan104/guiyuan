@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { calculateRevealPan, type RevealPersonOptions } from '../lib/canvasViewport'
 import type { KinshipTerm } from '../lib/kinship'
@@ -36,7 +36,7 @@ const renderedZoom = ref(props.settings.zoom)
 const viewportWidth = ref(typeof window === 'undefined' ? 1280 : window.innerWidth)
 const viewportHeight = ref(typeof window === 'undefined' ? 720 : window.innerHeight)
 
-const LARGE_TREE_THRESHOLD = 500
+const LARGE_TREE_THRESHOLD = 40
 const renderAllForExport = ref(false)
 const renderPanX = ref(props.panX)
 const renderPanY = ref(props.panY)
@@ -235,6 +235,7 @@ onBeforeUnmount(() => {
 
 onMounted(() => {
   updateViewportSize()
+  refreshRenderWindow(true)
   if (viewportRef.value && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(updateViewportSize)
     resizeObserver.observe(viewportRef.value)

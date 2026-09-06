@@ -274,12 +274,23 @@ const loadingProgress = ref(10)
 const loadingStageText = ref('正在读取宗谱档案...')
 const isLargeDataDetected = ref(false)
 
+const isTestEnv = import.meta.env.MODE === 'test'
+const isOverlayVisible = ref(isTestEnv)
+let overlayDelayTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearOverlayDelay() {
+  if (overlayDelayTimer) {
+    clearTimeout(overlayDelayTimer)
+    overlayDelayTimer = null
+  }
+}
+
 let progressTimer: ReturnType<typeof setInterval> | null = null
 let loadStartTime = 0
 
 function startProgressSimulation() {
   loadStartTime = Date.now()
-  loadingProgress.value = 12
+  loadingProgress.value = 15
   loadingStageText.value = '正在读取宗谱档案...'
   isLargeDataDetected.value = false
   if (progressTimer) clearInterval(progressTimer)
@@ -327,13 +338,32 @@ async function load(force = false) {
   baselineReady.value = false
   clearScheduledSave()
   clearBaselineInit()
-  startProgressSimulation()
+  clearOverlayDelay()
+  stopProgressSimulation()
+
+  // 240ms 免打扰策略：
+  // 若能在 240ms 内极速返回（小族谱或快速缓存），不弹出中心加载卡片，避免对用户造成无谓的打扰与视觉闪烁；
+  // 若耗时超过 240ms（大族谱或慢网络），才顺畅浮现中心进度卡片与灵动流光。
+  if (isTestEnv) {
+    isOverlayVisible.value = true
+    startProgressSimulation()
+  } else {
+    isOverlayVisible.value = false
+    loadStartTime = Date.now()
+    overlayDelayTimer = setTimeout(() => {
+      if (loading.value && myGeneration === loadGeneration) {
+        isOverlayVisible.value = true
+        startProgressSimulation()
+      }
+    }, 240)
+  }
 
   try {
     const result = await getPublication(targetId)
     // Check if a newer load() call has started
     if (myGeneration !== loadGeneration) return
 
+    clearOverlayDelay()
     applyPublicationSnapshot(result.publication, result.settings)
 
     if (!pub.selectedPersonId.value || !result.publication.people[pub.selectedPersonId.value]) {
@@ -366,25 +396,22 @@ async function load(force = false) {
       loadingStageText.value = '宗谱载入就绪，正在展开世系...'
     }
 
-    // In test environment, skip delays to preserve instant test execution.
-    // In real browser, ensure minimum display duration (300ms) so it never flashes abruptly.
-    const isTestEnv = import.meta.env.MODE === 'test'
-    if (!isTestEnv) {
-      const elapsed = Date.now() - loadStartTime
-      const minDuration = 320
-      if (elapsed < minDuration) {
-        await new Promise(resolve => setTimeout(resolve, minDuration - elapsed))
-      }
-      await new Promise(resolve => setTimeout(resolve, 80))
+    // 只有当加载确实较慢并向用户展示了加载卡片时，才给予 120ms 的自然冲顶过渡；
+    // 快速加载（未展示卡片）直接 0 延迟切换，实现真正的“瞬开”。
+    if (!isTestEnv && isOverlayVisible.value) {
+      await new Promise(resolve => setTimeout(resolve, 120))
     }
 
     stopProgressSimulation()
+    isOverlayVisible.value = false
     loading.value = false
     initializeLargeStateAfterPaint(myGeneration, result.publication, { ...defaultSettings, ...result.settings })
   } catch (err: any) {
+    clearOverlayDelay()
     stopProgressSimulation()
     // Don't show error for stale requests
     if (myGeneration !== loadGeneration) return
+    isOverlayVisible.value = false
     loading.value = false
     if (err?.response?.status === 403) {
       loadError.value = '你无权访问此家谱，请联系管理员将你添加为协作者'
@@ -548,6 +575,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  clearOverlayDelay()
   stopProgressSimulation()
   window.removeEventListener('keydown', handleHistoryShortcut)
   window.removeEventListener('beforeunload', protectBrowserLeave)
@@ -573,9 +601,10 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
     <div
       v-if="loading && !loadError"
       class="loading-overlay"
+      :class="{ 'loading-overlay--quiet': !isOverlayVisible }"
       aria-live="polite"
     >
-      <div class="loading-card panel-glass">
+      <div v-if="isOverlayVisible" class="loading-card panel-glass">
         <!-- 典雅同心圆转动动效 (Lively Concentric Rings & Ink Ripple) -->
         <div class="loading-circular">
           <div class="circular-aura"></div>
