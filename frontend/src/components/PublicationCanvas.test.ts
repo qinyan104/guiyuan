@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { defaultSettings } from '../data/sampleFamily'
@@ -53,6 +54,44 @@ function mountCanvas(settings: Partial<PublicationSettings> = {}) {
   })
 }
 
+function mountLargeCanvas() {
+  const people: PublicationData['people'] = {}
+  const cards: PublicationLayout['cards'] = []
+  for (let index = 0; index < 2001; index += 1) {
+    const personId = `p${index}`
+    people[personId] = { id: personId, name: personId, gender: 'unknown' }
+    cards.push({ personId, x: index * 200, y: 40, width: 160, height: 294 })
+  }
+
+  return mount(PublicationCanvas, {
+    props: {
+      publication: {
+        title: '大族谱',
+        subtitle: '',
+        focusFamilyId: 'f1',
+        people,
+        families: { f1: { id: 'f1', adults: ['p0'], children: [] } },
+      },
+      settings: { ...defaultSettings, zoom: 1 },
+      layout: {
+        ...layout,
+        width: 400_000,
+        height: 20_000,
+        cards,
+        displayedPeople: cards.length,
+      },
+      selectedPersonId: 'p0',
+      panX: 0,
+      panY: 0,
+    },
+    global: {
+      stubs: {
+        PersonCardSvg: true,
+      },
+    },
+  })
+}
+
 describe('PublicationCanvas', () => {
   beforeEach(() => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null)
@@ -72,5 +111,18 @@ describe('PublicationCanvas', () => {
 
     expect(wrapper.emitted('update:panX')?.at(-1)).toEqual([125])
     expect(wrapper.emitted('update:panY')?.at(-1)).toEqual([150])
+  })
+
+  it('keeps the live SVG surface viewport-sized for a 2,000-person tree', async () => {
+    const wrapper = mountLargeCanvas()
+    await nextTick()
+
+    const svg = wrapper.get('.publication-svg')
+    expect(Number(svg.attributes('width'))).toBeLessThan(10_000)
+    expect(svg.attributes('viewBox')).not.toBe('0 0 400000 20000')
+
+    const cameraStyle = wrapper.get('.canvas-camera').attributes('style')
+    expect(cameraStyle).toContain('will-change: auto')
+    expect(cameraStyle).not.toContain('translate3d')
   })
 })
