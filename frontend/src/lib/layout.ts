@@ -95,20 +95,21 @@ function buildTreeNode(
   }
 
   globalVisited.add(familyId)
-  const nextVisited = new Set(visited)
-  nextVisited.add(familyId)
+  // Reuse the current recursion-path set. Copying it for every family makes
+  // a long lineage quadratic in both allocations and membership work.
+  visited.add(familyId)
 
   const children = family.children.map((childId) => {
     const childFamilyId = adultFamilyMap.get(childId)
-    if (childFamilyId && !nextVisited.has(childFamilyId) && !globalVisited.has(childFamilyId)) {
+    if (childFamilyId && !visited.has(childFamilyId) && !globalVisited.has(childFamilyId)) {
       const branchMode = resolveFamilyBranchMode(data, childFamilyId, childPersonIds)
       if (branchMode === 'married-out') {
-        const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, nextVisited, childId, childId, globalVisited)
+        const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, visited, childId, childId, globalVisited)
         node.inLawAdultIds = node.adults.filter((adultId) => adultId !== childId)
         return node
       }
 
-      const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, nextVisited, childId, undefined, globalVisited)
+      const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, visited, childId, undefined, globalVisited)
       if (branchMode === 'uxorilocal') {
         node.inLawAdultIds = node.adults.filter((adultId) => adultId !== childId)
       }
@@ -134,7 +135,7 @@ function buildTreeNode(
     }
   })
 
-  return {
+  const result = {
     id: familyId,
     adults: familyAdults,
     branchMode,
@@ -150,6 +151,8 @@ function buildTreeNode(
     rightExtent: 0,
     childrenRowWidth: 0,
   }
+  visited.delete(familyId)
+  return result
 }
 
 // ─── Modern Style Layout (Existing) ──────────────────────────────

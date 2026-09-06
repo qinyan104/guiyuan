@@ -200,6 +200,7 @@ function closeEditor() {
 
 function updateSettings(patch: Partial<PublicationSettings>) {
   Object.assign(context.pub.settings, patch)
+  context.pub.invalidateLayout()
   fileOps.hasUnsavedFileChanges.value = true
 }
 

@@ -37,7 +37,9 @@ const viewportWidth = ref(typeof window === 'undefined' ? 1280 : window.innerWid
 const viewportHeight = ref(typeof window === 'undefined' ? 720 : window.innerHeight)
 
 const LARGE_TREE_THRESHOLD = 40
+const CARD_RENDER_BATCH_SIZE = 160
 const renderAllForExport = ref(false)
+const renderedCardLimit = ref(Number.POSITIVE_INFINITY)
 const renderPanX = ref(props.panX)
 const renderPanY = ref(props.panY)
 const renderZoom = ref(props.settings.zoom)
@@ -45,8 +47,10 @@ const isLargeTree = computed(() => props.layout.cards.length >= LARGE_TREE_THRES
 const shouldCull = computed(() => isLargeTree.value && !renderAllForExport.value)
 const renderBounds = computed(() => {
   const zoom = Math.max(0.1, renderZoom.value)
-  const overscanX = viewportWidth.value
-  const overscanY = viewportHeight.value
+  // Keep the initial SVG mount bounded for very large trees. A full viewport
+  // of overscan on both sides can otherwise materialize thousands of cards at once.
+  const overscanX = Math.min(viewportWidth.value * 0.5, 640)
+  const overscanY = Math.min(viewportHeight.value * 0.5, 360)
   return {
     left: props.layout.width / 2 + (-viewportWidth.value / 2 - renderPanX.value - overscanX) / zoom,
     right: props.layout.width / 2 + (viewportWidth.value / 2 - renderPanX.value + overscanX) / zoom,
@@ -74,10 +78,11 @@ const svgStyle = computed(() => ({
 const renderedCards = computed(() => {
   if (!shouldCull.value) return props.layout.cards
   const bounds = renderBounds.value
-  return props.layout.cards.filter((card) =>
+  const visibleCards = props.layout.cards.filter((card) =>
     card.x + card.width >= bounds.left && card.x <= bounds.right &&
     card.y + card.height >= bounds.top && card.y <= bounds.bottom,
   )
+  return visibleCards.slice(0, renderedCardLimit.value)
 })
 const renderedLines = computed(() => {
   if (!shouldCull.value) return props.layout.lines
@@ -229,6 +234,7 @@ let dragStartY = 0
 let panStartX = 0
 let panStartY = 0
 let resizeObserver: ResizeObserver | null = null
+let renderBatchRafId: number | null = null
 let pinchStartDist = 0
 let pinchStartZoom = 0
 let lastMoveTime = 0
@@ -249,8 +255,28 @@ onBeforeUnmount(() => {
   if (inertiaRafId !== null) { cancelAnimationFrame(inertiaRafId); inertiaRafId = null }
   if (panRafId !== null) cancelAnimationFrame(panRafId)
   if (zoomIdleTimer !== null) clearTimeout(zoomIdleTimer)
+  if (renderBatchRafId !== null) cancelAnimationFrame(renderBatchRafId)
   resizeObserver?.disconnect()
 })
+
+function startProgressiveCardMount(total: number) {
+  if (renderBatchRafId !== null) cancelAnimationFrame(renderBatchRafId)
+  if (total <= CARD_RENDER_BATCH_SIZE) {
+    renderedCardLimit.value = Number.POSITIVE_INFINITY
+    return
+  }
+
+  renderedCardLimit.value = CARD_RENDER_BATCH_SIZE
+  const appendBatch = () => {
+    renderedCardLimit.value = Math.min(total, renderedCardLimit.value + CARD_RENDER_BATCH_SIZE)
+    if (renderedCardLimit.value < total) {
+      renderBatchRafId = requestAnimationFrame(appendBatch)
+    } else {
+      renderBatchRafId = null
+    }
+  }
+  renderBatchRafId = requestAnimationFrame(appendBatch)
+}
 
 onMounted(() => {
   updateViewportSize()
@@ -309,6 +335,7 @@ watch(
 watch(
   () => props.layout,
   (newLayout, oldLayout) => {
+    startProgressiveCardMount(newLayout.cards.length)
     refreshRenderWindow(true)
     if (props.panX === 0 && props.panY === 0 && (!oldLayout || oldLayout.cards.length === 0) && newLayout.cards.length > 0) {
       resetView()

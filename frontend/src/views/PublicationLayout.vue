@@ -20,6 +20,7 @@ import {
 import { useEditorHistory } from '../features/history/useEditorHistory'
 import { serializeTrackedState, type EditorSnapshot } from '../features/history/historyCore'
 import { PUBLICATION_CONTEXT_KEY, type PublicationContext, type PublicationData, type PublicationSettings } from '../types/family'
+import { layoutPublication } from '../lib/layout'
 
 const route = useRoute()
 const router = useRouter()
@@ -84,7 +85,36 @@ const persistedSignature = computed(() => baselineReady.value ? buildPersistedSi
 
 let serverSaveTimeout: ReturnType<typeof setTimeout> | null = null
 let baselineInitTimeout: ReturnType<typeof setTimeout> | null = null
+let baselineInitIdleCallback: number | null = null
 let saveRequestedWhileSyncing = false
+let activeLayoutWorker: Worker | null = null
+
+function stopLayoutWorker() {
+  activeLayoutWorker?.terminate()
+  activeLayoutWorker = null
+}
+
+function calculateLayoutInWorker(publication: PublicationData, settings: PublicationSettings): Promise<ReturnType<typeof layoutPublication>> {
+  if (typeof Worker === 'undefined') return Promise.resolve(layoutPublication(publication, settings))
+
+  stopLayoutWorker()
+  const worker = new Worker(new URL('../workers/publicationLayout.worker.ts', import.meta.url), { type: 'module' })
+  activeLayoutWorker = worker
+
+  return new Promise((resolve) => {
+    worker.onmessage = (event: MessageEvent<ReturnType<typeof layoutPublication>>) => {
+      worker.terminate()
+      if (activeLayoutWorker === worker) activeLayoutWorker = null
+      resolve(event.data)
+    }
+    worker.onerror = () => {
+      worker.terminate()
+      if (activeLayoutWorker === worker) activeLayoutWorker = null
+      resolve(layoutPublication(publication, settings))
+    }
+    worker.postMessage({ publication, settings })
+  })
+}
 
 function clearScheduledSave() {
   if (serverSaveTimeout) {
@@ -97,6 +127,10 @@ function clearBaselineInit() {
   if (baselineInitTimeout) {
     clearTimeout(baselineInitTimeout)
     baselineInitTimeout = null
+  }
+  if (baselineInitIdleCallback !== null) {
+    window.cancelIdleCallback?.(baselineInitIdleCallback)
+    baselineInitIdleCallback = null
   }
 }
 
@@ -203,9 +237,10 @@ function initializeLargeStateAfterPaint(
   settings: PublicationSettings,
 ) {
   clearBaselineInit()
-  // ponytail: defer O(n) JSON snapshots so large trees render before bookkeeping runs.
-  baselineInitTimeout = setTimeout(async () => {
+  // ponytail: keep the O(n) JSON snapshot out of the opening critical path.
+  const initialize = async () => {
     baselineInitTimeout = null
+    baselineInitIdleCallback = null
     if (myGeneration !== loadGeneration || loading.value) return
     const signature = serializeTrackedState(publication, settings)
     const revision = serverRevision.value ?? publication.revision
@@ -225,7 +260,13 @@ function initializeLargeStateAfterPaint(
     })
     baselineReady.value = true
     await detectViewerPerson()
-  }, 600)
+  }
+
+  if (typeof window.requestIdleCallback === 'function') {
+    baselineInitIdleCallback = window.requestIdleCallback(() => { void initialize() }, { timeout: 5000 })
+  } else {
+    baselineInitTimeout = setTimeout(() => { void initialize() }, 1500)
+  }
 }
 
 watch(
@@ -337,6 +378,7 @@ async function load(force = false) {
   }
 
   const myGeneration = ++loadGeneration
+  stopLayoutWorker()
   loading.value = true
   baselineReady.value = false
   clearScheduledSave()
@@ -354,6 +396,7 @@ async function load(force = false) {
 
     loadingProgress.value = 70
     loadingStageText.value = '族谱数据接收完成，正在装载人物与家庭...'
+    pub.beginLayoutCalculation()
     applyPublicationSnapshot(result.publication, result.settings)
 
     if (!pub.selectedPersonId.value || !result.publication.people[pub.selectedPersonId.value]) {
@@ -387,7 +430,14 @@ async function load(force = false) {
     }
     await paintLoadingStage()
 
-    const displayedPeople = pub.layout.value.displayedPeople
+    const calculatedLayout = await calculateLayoutInWorker(
+      result.publication,
+      { ...defaultSettings, ...result.settings },
+    )
+    if (myGeneration !== loadGeneration) return
+    pub.applyCalculatedLayout(calculatedLayout)
+
+    const displayedPeople = calculatedLayout.displayedPeople
     loadingProgress.value = 94
     loadingStageText.value = `谱图计算完成，正在渲染 ${displayedPeople} 张人物卡片...`
     await paintLoadingStage()
@@ -576,6 +626,7 @@ onBeforeUnmount(() => {
   history.disposeHistory()
   clearScheduledSave()
   clearBaselineInit()
+  stopLayoutWorker()
 })
 
 defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflictDraft, dismissConflictDraft })

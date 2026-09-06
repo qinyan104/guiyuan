@@ -1,4 +1,4 @@
-import { computed, markRaw, reactive, ref } from 'vue'
+import { computed, markRaw, reactive, ref, shallowRef } from 'vue'
 
 import type {
   FamilyBranchMode,
@@ -9,7 +9,7 @@ import type {
   PublicationSettings,
 } from '../types/family'
 import { findFamilyEntryPersonId, resolveFamilyBranchMode } from '../lib/familyBranchMode'
-import { layoutPublication } from '../lib/layout'
+import { layoutPublication, PAPER_PRESETS } from '../lib/layout'
 import { resolveKinshipTermExtended, getKinshipLabelExtended } from '../lib/kinship'
 import { suggestLineageNote } from '../lib/lineageLabels'
 import { getPersonStatusLabel, isPersonDeceased } from '../lib/personStatus'
@@ -51,6 +51,9 @@ export function usePublicationState(
   )
   const hoveredPersonId = ref<string | null>(null)
 
+  const layoutOverride = shallowRef<ReturnType<typeof layoutPublication> | null>(null)
+  const layoutPending = ref(false)
+
   function replaceReactiveObject<T extends object>(target: T, source: T) {
     const timer = audit.trackTimed('replaceReactiveObject', { keys: Object.keys(source).length })
     Object.keys(target).forEach((key) => {
@@ -60,6 +63,7 @@ export function usePublicationState(
       freezePublication(source as unknown as PublicationData)
     }
     Object.assign(target, source)
+    layoutOverride.value = null
     timer.end({ targetKeys: Object.keys(target).length })
   }
 
@@ -123,7 +127,24 @@ export function usePublicationState(
   const peopleList = computed(() => Object.values(publication.people))
   const totalPeople = computed(() => peopleList.value.length)
   const selectedPerson = computed(() => publication.people[selectedPersonId.value] ?? null)
-  const layout = computed(() => layoutPublication(publication, settings))
+  const layout = computed(() => {
+    if (layoutPending.value) {
+      const paper = PAPER_PRESETS[settings.paper]
+      return {
+        width: 1,
+        height: 1,
+        cards: [],
+        lines: [],
+        displayedPeople: 0,
+        generationCount: 0,
+        pageCount: 1,
+        paperPixelWidth: paper.width,
+        paperPixelHeight: paper.height,
+        titleAreaHeight: 0,
+      }
+    }
+    return layoutOverride.value ?? layoutPublication(publication, settings)
+  })
   const relationshipToSelected = computed(() => {
     const selected = selectedPersonId.value
     const hovered = hoveredPersonId.value
@@ -332,6 +353,20 @@ export function usePublicationState(
     _viewerPersonId.value = id
   }
 
+  function beginLayoutCalculation() {
+    layoutPending.value = true
+    layoutOverride.value = null
+  }
+
+  function applyCalculatedLayout(nextLayout: ReturnType<typeof layoutPublication>) {
+    layoutOverride.value = markRaw(nextLayout)
+    layoutPending.value = false
+  }
+
+  function invalidateLayout() {
+    layoutOverride.value = null
+  }
+
   return {
     // State
     publication,
@@ -352,6 +387,9 @@ export function usePublicationState(
     totalPeople,
     selectedPerson,
     layout,
+    beginLayoutCalculation,
+    applyCalculatedLayout,
+    invalidateLayout,
     relationshipToSelected,
     aliveCount,
     deceasedCount,
