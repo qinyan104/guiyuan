@@ -1071,8 +1071,14 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
 .archive-card--opening {
   border-color: var(--color-accent) !important;
-  box-shadow: 0 8px 24px var(--color-accent-muted, rgba(198, 60, 46, 0.16)) !important;
+  box-shadow: 0 10px 30px var(--color-accent-muted, rgba(198, 60, 46, 0.22)) !important;
   cursor: wait;
+  animation: card-active-glow 1.8s infinite alternate ease-in-out;
+}
+
+@keyframes card-active-glow {
+  0% { transform: translateY(-3px) scale(1); }
+  100% { transform: translateY(-3px) scale(1.008); box-shadow: 0 14px 36px rgba(198, 60, 46, 0.28); }
 }
 
 .archive-card--disabled {

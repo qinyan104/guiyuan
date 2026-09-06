@@ -270,32 +270,35 @@ async function detectViewerPerson() {
   }
 }
 
-const loadingProgress = ref(15)
+const loadingProgress = ref(10)
 const loadingStageText = ref('正在读取宗谱档案...')
 const isLargeDataDetected = ref(false)
+
 let progressTimer: ReturnType<typeof setInterval> | null = null
+let loadStartTime = 0
 
 function startProgressSimulation() {
-  loadingProgress.value = 15
+  loadStartTime = Date.now()
+  loadingProgress.value = 12
   loadingStageText.value = '正在读取宗谱档案...'
   isLargeDataDetected.value = false
   if (progressTimer) clearInterval(progressTimer)
 
-  const startTime = Date.now()
+  // Asymptotic smooth progression that NEVER freezes:
+  // Step is proportional to (95 - current), updating every 50ms (20fps)
   progressTimer = setInterval(() => {
-    const elapsed = Date.now() - startTime
+    const elapsed = Date.now() - loadStartTime
+    const targetCap = 94
+    const delta = Math.max(0.12, (targetCap - loadingProgress.value) * 0.045)
+    loadingProgress.value = Math.min(targetCap, loadingProgress.value + delta)
+
     if (elapsed > 1800) {
       isLargeDataDetected.value = true
       loadingStageText.value = '谱系规模庞大，正在构建分支谱图与世系索引...'
-      loadingProgress.value = Math.min(92, loadingProgress.value + 0.6)
-    } else if (elapsed > 700) {
+    } else if (elapsed > 600) {
       loadingStageText.value = '正在解析世系分支与人丁记录...'
-      loadingProgress.value = Math.min(82, loadingProgress.value + 1.8)
-    } else if (elapsed > 200) {
-      loadingStageText.value = '正在读取宗谱档案...'
-      loadingProgress.value = Math.min(60, loadingProgress.value + 4)
     }
-  }, 100)
+  }, 50)
 }
 
 function stopProgressSimulation() {
@@ -303,7 +306,6 @@ function stopProgressSimulation() {
     clearInterval(progressTimer)
     progressTimer = null
   }
-  loadingProgress.value = 100
 }
 
 let loadGeneration = 0
@@ -356,11 +358,26 @@ async function load(force = false) {
     lastSyncedSignature.value = `revision:${result.revision}`
 
     const peopleCount = Object.keys(result.publication.people).length
+    loadingProgress.value = 100
     if (peopleCount > 80) {
       isLargeDataDetected.value = true
-      loadingStageText.value = `已载入 ${peopleCount} 位族人，正在完成世系编排...`
-      loadingProgress.value = 96
+      loadingStageText.value = `已载入 ${peopleCount} 位族人，正在展开世系谱图...`
+    } else {
+      loadingStageText.value = '宗谱载入就绪，正在展开世系...'
     }
+
+    // In test environment, skip delays to preserve instant test execution.
+    // In real browser, ensure minimum display duration (300ms) so it never flashes abruptly.
+    const isTestEnv = import.meta.env.MODE === 'test'
+    if (!isTestEnv) {
+      const elapsed = Date.now() - loadStartTime
+      const minDuration = 320
+      if (elapsed < minDuration) {
+        await new Promise(resolve => setTimeout(resolve, minDuration - elapsed))
+      }
+      await new Promise(resolve => setTimeout(resolve, 80))
+    }
+
     stopProgressSimulation()
     loading.value = false
     initializeLargeStateAfterPaint(myGeneration, result.publication, { ...defaultSettings, ...result.settings })
@@ -368,17 +385,13 @@ async function load(force = false) {
     stopProgressSimulation()
     // Don't show error for stale requests
     if (myGeneration !== loadGeneration) return
+    loading.value = false
     if (err?.response?.status === 403) {
       loadError.value = '你无权访问此家谱，请联系管理员将你添加为协作者'
     } else {
       loadError.value = err?.response?.data?.message || err?.message || '加载族谱失败'
     }
     feedback.setError(loadError.value)
-  } finally {
-    if (myGeneration === loadGeneration) {
-      stopProgressSimulation()
-      loading.value = false
-    }
   }
 }
 
@@ -548,47 +561,59 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
 </script>
 
 <template>
-  <div v-if="loading" class="loading-overlay" aria-live="polite">
-    <div class="loading-card panel-glass">
-      <!-- 典雅同心圆转动动效 (Circular Progress Indicator) -->
-      <div class="loading-circular">
-        <div class="circular-ring-outer"></div>
-        <div class="circular-ring-inner"></div>
-        <div class="circular-center-seal">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-          </svg>
-        </div>
-      </div>
-
-      <!-- 动态阶段文案与族谱格调副标 -->
-      <div class="loading-info">
-        <h3 class="loading-title">{{ loadingStageText }}</h3>
-        <p class="loading-subtitle">宗族源流 · 脉络考定</p>
-      </div>
-
-      <!-- 优雅进度条 (Horizontal Progress Bar) -->
-      <div class="loading-bar-wrapper">
-        <div class="loading-bar-track">
-          <div class="loading-bar-fill" :style="{ width: `${loadingProgress}%` }">
-            <div class="loading-bar-glow"></div>
-          </div>
-        </div>
-        <span class="loading-bar-percent">{{ Math.round(loadingProgress) }}%</span>
-      </div>
-
-      <div class="loading-tip" v-if="isLargeDataDetected">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        <span>当前族谱人丁浩繁，正在加速构建谱图排版</span>
-      </div>
-    </div>
-  </div>
-  <div v-else-if="loadError" class="loading-overlay loading-overlay--error">
+  <div v-if="loadError" class="loading-overlay loading-overlay--error">
     <strong>加载族谱失败</strong>
     <span>{{ loadError }}</span>
     <button class="btn btn--primary" type="button" @click="router.push({ name: 'publications' })">返回族谱列表</button>
   </div>
   <router-view v-else />
+
+  <!-- 灵动全屏加载遮罩 (使用 Vue transition 实现离开时优雅淡出，不阻断路由挂载) -->
+  <transition name="overlay-fade">
+    <div
+      v-if="loading && !loadError"
+      class="loading-overlay"
+      aria-live="polite"
+    >
+      <div class="loading-card panel-glass">
+        <!-- 典雅同心圆转动动效 (Lively Concentric Rings & Ink Ripple) -->
+        <div class="loading-circular">
+          <div class="circular-aura"></div>
+          <div class="circular-ring-outer"></div>
+          <div class="circular-ring-inner"></div>
+          <div class="circular-center-seal">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- 动态阶段文案与族谱格调副标 -->
+        <div class="loading-info">
+          <h3 class="loading-title">{{ loadingStageText }}</h3>
+          <p class="loading-subtitle">宗族源流 · 脉络考定</p>
+        </div>
+
+        <!-- 灵动进度条 (Lively Fluid Progress Bar) -->
+        <div class="loading-bar-wrapper">
+          <div class="loading-bar-track">
+            <div class="loading-bar-fill" :style="{ width: `${loadingProgress}%` }">
+              <!-- 永不停歇的水波流光 (Continuous Liquid Stream) -->
+              <div class="loading-bar-liquid"></div>
+              <!-- 前端脉动水滴光晕 (Leading Head Droplet) -->
+              <div class="loading-bar-head"></div>
+            </div>
+          </div>
+          <span class="loading-bar-percent">{{ Math.round(loadingProgress) }}%</span>
+        </div>
+
+        <div class="loading-tip" v-if="isLargeDataDetected">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>当前族谱人丁浩繁，正在加速构建谱图排版</span>
+        </div>
+      </div>
+    </div>
+  </transition>
   <div v-if="conflictDraft && syncStatus !== 'conflict'" class="conflict-draft-notice" data-testid="conflict-draft-notice">
     <div class="conflict-draft-notice__text">
       <span>检测到未恢复的本地草稿：{{ conflictDraft.publication.title || '未命名族谱' }}</span>
@@ -631,6 +656,21 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   color: var(--text-soft, #888);
 }
 
+.overlay-fade-enter-active,
+.overlay-fade-leave-active {
+  transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              filter 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.overlay-fade-enter-from,
+.overlay-fade-leave-to {
+  opacity: 0;
+  transform: scale(1.025);
+  filter: blur(4px);
+  pointer-events: none;
+}
+
 .loading-card {
   display: flex;
   flex-direction: column;
@@ -639,48 +679,69 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   background: var(--bg-paper, #ffffff);
   border: 1px solid var(--border-color, rgba(122, 95, 65, 0.16));
   border-radius: 20px;
-  box-shadow: 0 16px 40px rgba(70, 48, 24, 0.12);
+  box-shadow: 0 18px 48px rgba(70, 48, 24, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04);
   min-width: 320px;
   max-width: 440px;
   width: 90%;
   text-align: center;
   position: relative;
-  backdrop-filter: blur(12px);
-  animation: card-appear 0.22s ease-out;
+  backdrop-filter: blur(14px);
+  animation: card-appear 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes card-appear {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* 典雅同心环圆圈指示器 (Circular Indicator) */
 .loading-circular {
   position: relative;
-  width: 60px;
-  height: 60px;
-  margin-bottom: 18px;
+  width: 68px;
+  height: 68px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 外层水墨呼吸光晕 (Ambient Aura Ripple) */
+.circular-aura {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(198, 60, 46, 0.18) 0%, rgba(198, 60, 46, 0) 70%);
+  animation: aura-breath 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes aura-breath {
+  0%, 100% { transform: scale(0.88); opacity: 0.35; }
+  50% { transform: scale(1.22); opacity: 0.85; }
 }
 
 .circular-ring-outer {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px dashed rgba(198, 60, 46, 0.28);
-  animation: ring-rotate-clockwise 14s linear infinite;
+  border: 2px dashed rgba(198, 60, 46, 0.35);
+  animation: ring-rotate-clockwise 16s linear infinite;
 }
 
 .circular-ring-inner {
   position: absolute;
-  inset: 5px;
+  inset: 6px;
   border-radius: 50%;
   border: 2.5px solid transparent;
   border-top-color: var(--color-accent, #c63c2e);
   border-right-color: var(--color-accent, #c63c2e);
-  animation: ring-rotate-counter 1.1s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+  animation: ring-cadence 1.4s cubic-bezier(0.65, 0.05, 0.35, 0.95) infinite;
+}
+
+@keyframes ring-cadence {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(200deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .circular-center-seal {
@@ -689,11 +750,17 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   justify-content: center;
   color: var(--color-accent, #c63c2e);
   animation: seal-pulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 2px 6px rgba(198, 60, 46, 0.25));
+}
+
+@keyframes seal-pulse {
+  0%, 100% { transform: scale(0.95); opacity: 0.85; }
+  50% { transform: scale(1.1); opacity: 1; }
 }
 
 /* 阶段文本 */
 .loading-info {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .loading-title {
@@ -701,19 +768,19 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   font-size: 15.5px;
   font-weight: 600;
   color: var(--text-main, #241a10);
-  margin: 0 0 5px;
-  letter-spacing: 0.02em;
-  transition: all 0.3s ease;
+  margin: 0 0 6px;
+  letter-spacing: 0.03em;
+  transition: all 0.25s ease;
 }
 
 .loading-subtitle {
   font-size: 12px;
   color: var(--text-soft, #8c827a);
   margin: 0;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
 
-/* 优雅进度条 (Progress Bar) */
+/* 灵动进度条 (Lively Progress Bar) */
 .loading-bar-wrapper {
   width: 100%;
   display: flex;
@@ -723,45 +790,78 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
 
 .loading-bar-track {
   flex: 1;
-  height: 6px;
+  height: 7px;
   background: var(--line-soft, rgba(122, 95, 65, 0.12));
   border-radius: 999px;
   overflow: hidden;
   position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .loading-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #c63c2e, #e06d53);
+  background: linear-gradient(90deg, #B23023, #C63C2E, #E06D53);
   border-radius: 999px;
-  transition: width 0.18s ease-out;
+  transition: width 0.15s cubic-bezier(0.2, 0.8, 0.4, 1);
   position: relative;
+  overflow: visible;
 }
 
-.loading-bar-glow {
+/* 永不停歇的水波流光 (Continuous Liquid Stream) */
+.loading-bar-liquid {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: 18px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85));
-  animation: bar-glow-shimmer 1s infinite;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 45%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(255, 255, 255, 0.4) 55%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: liquid-sweep 1.6s infinite linear;
+}
+
+@keyframes liquid-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* 前端脉动水滴光晕 (Leading Head Droplet) */
+.loading-bar-head {
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 8px #C63C2E, 0 0 12px rgba(255, 255, 255, 0.8);
+  animation: head-pulse 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes head-pulse {
+  0% { transform: translateY(-50%) scale(0.85); opacity: 0.7; }
+  100% { transform: translateY(-50%) scale(1.25); opacity: 1; }
 }
 
 .loading-bar-percent {
-  font-size: 12px;
+  font-size: 12.5px;
   font-family: monospace;
-  font-weight: 600;
-  color: var(--text-soft, #666);
-  min-width: 34px;
+  font-weight: 700;
+  color: var(--text-main, #241a10);
+  min-width: 36px;
   text-align: right;
+  letter-spacing: 0.02em;
 }
 
 .loading-tip {
-  margin-top: 14px;
-  padding: 5px 12px;
+  margin-top: 15px;
+  padding: 6px 12px;
   border-radius: 8px;
-  background: rgba(198, 60, 46, 0.07);
+  background: rgba(198, 60, 46, 0.08);
   color: var(--color-accent, #c63c2e);
   font-size: 11.5px;
   display: flex;
@@ -773,22 +873,6 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
 @keyframes ring-rotate-clockwise {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-@keyframes ring-rotate-counter {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes seal-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.85; }
-  50% { transform: scale(1.1); opacity: 1; }
-}
-
-@keyframes bar-glow-shimmer {
-  0% { opacity: 0.3; }
-  50% { opacity: 1; }
-  100% { opacity: 0.3; }
 }
 
 @keyframes tip-fade-in {
