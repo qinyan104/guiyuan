@@ -95,6 +95,8 @@ function mountLargeCanvas() {
 describe('PublicationCanvas', () => {
   beforeEach(() => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null)
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1280)
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(720)
   })
 
   it('anchors the camera at the center of the canvas viewport', () => {
@@ -118,11 +120,16 @@ describe('PublicationCanvas', () => {
     await nextTick()
 
     const svg = wrapper.get('.publication-svg')
-    expect(Number(svg.attributes('width'))).toBeLessThan(10_000)
+    expect(Number(svg.attributes('width'))).toBeLessThanOrEqual(3840)
     expect(svg.attributes('viewBox')).not.toBe('0 0 400000 20000')
+    expect(svg.attributes('style')).toContain('overflow: hidden')
 
     const cameraStyle = wrapper.get('.canvas-camera').attributes('style')
     expect(cameraStyle).toContain('will-change: auto')
     expect(cameraStyle).not.toContain('translate3d')
+
+    await (wrapper.vm as unknown as { prepareForExport: () => Promise<void> }).prepareForExport()
+    expect(wrapper.get('.publication-svg').attributes('viewBox')).toBe('0 0 400000 20000')
+    expect(Number(wrapper.get('.publication-svg').attributes('width'))).toBe(400_000)
   })
 })

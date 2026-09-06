@@ -41,7 +41,8 @@ const renderAllForExport = ref(false)
 const renderPanX = ref(props.panX)
 const renderPanY = ref(props.panY)
 const renderZoom = ref(props.settings.zoom)
-const shouldCull = computed(() => props.layout.cards.length >= LARGE_TREE_THRESHOLD && !renderAllForExport.value)
+const isLargeTree = computed(() => props.layout.cards.length >= LARGE_TREE_THRESHOLD)
+const shouldCull = computed(() => isLargeTree.value && !renderAllForExport.value)
 const renderBounds = computed(() => {
   const zoom = Math.max(0.1, renderZoom.value)
   const overscanX = viewportWidth.value
@@ -53,6 +54,23 @@ const renderBounds = computed(() => {
     bottom: props.layout.height / 2 + (viewportHeight.value / 2 - renderPanY.value + overscanY) / zoom,
   }
 })
+const svgViewport = computed(() => {
+  if (!shouldCull.value) {
+    return { left: 0, top: 0, width: props.layout.width, height: props.layout.height }
+  }
+
+  const bounds = renderBounds.value
+  const left = Math.min(props.layout.width, Math.max(0, bounds.left))
+  const top = Math.min(props.layout.height, Math.max(0, bounds.top))
+  const right = Math.min(props.layout.width, Math.max(left, bounds.right))
+  const bottom = Math.min(props.layout.height, Math.max(top, bounds.bottom))
+  return { left, top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) }
+})
+const svgStyle = computed(() => ({
+  left: `${svgViewport.value.left * renderedZoom.value}px`,
+  top: `${svgViewport.value.top * renderedZoom.value}px`,
+  overflow: shouldCull.value ? 'hidden' : 'visible',
+}))
 const renderedCards = computed(() => {
   if (!shouldCull.value) return props.layout.cards
   const bounds = renderBounds.value
@@ -161,7 +179,8 @@ const junctions = computed(() => {
 
 
 function cameraTransform(x: number, y: number) {
-  return `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0)`
+  const translate = `calc(-50% + ${x}px), calc(-50% + ${y}px)`
+  return isLargeTree.value ? `translate(${translate})` : `translate3d(${translate}, 0)`
 }
 
 let localPanX = props.panX
@@ -263,6 +282,7 @@ const cameraStyle = computed(() => ({
   left: '50%',
   top: '50%',
   transform: cameraTransform(props.panX, props.panY),
+  willChange: isLargeTree.value ? 'auto' : 'transform',
 }))
 
 watch(
@@ -628,9 +648,10 @@ function resetView() {
           ref="svgRef"
           class="publication-svg"
           xmlns="http://www.w3.org/2000/svg"
-          :viewBox="`0 0 ${layout.width} ${layout.height}`"
-          :width="layout.width * renderedZoom"
-          :height="layout.height * renderedZoom"
+          :viewBox="`${svgViewport.left} ${svgViewport.top} ${svgViewport.width} ${svgViewport.height}`"
+          :width="svgViewport.width * renderedZoom"
+          :height="svgViewport.height * renderedZoom"
+          :style="svgStyle"
         >
           <defs>
             <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="160%">
@@ -738,8 +759,8 @@ function resetView() {
 }
 
 .publication-svg {
+  position: absolute;
   display: block;
-  overflow: visible;
   user-select: none;
   -webkit-user-select: none;
 }
