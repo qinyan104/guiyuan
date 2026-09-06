@@ -243,4 +243,31 @@ describe('PublicationLayout conflict handling', () => {
     expect(wrapper.find('.loading-bar-track').exists()).toBe(true)
     expect(wrapper.find('.loading-title').text()).toContain('正在读取宗谱档案')
   })
+
+  it('renders actual response download progress instead of simulated progress', async () => {
+    vi.mocked(getPublication).mockReturnValue(new Promise(() => {}))
+
+    const wrapper = mount(PublicationLayout, {
+      global: { stubs: { RouterView: true } },
+    })
+    const [, reportProgress] = vi.mocked(getPublication).mock.calls[0] as unknown as [
+      number,
+      ((event: { loaded: number; total?: number }) => void)?,
+    ]
+
+    expect(reportProgress).toBeTypeOf('function')
+    reportProgress?.({ loaded: 512, total: 1024 })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.loading-title').text()).toContain('512 B / 1 KB')
+    expect(wrapper.find('.loading-bar-fill').attributes('style')).toContain('width: 40%')
+    expect(wrapper.find('.loading-bar-percent').text()).toBe('40%')
+
+    reportProgress?.({ loaded: 2048 })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.loading-title').text()).toContain('已接收 2 KB')
+    expect(wrapper.find('.loading-bar-fill').classes()).toContain('loading-bar-fill--indeterminate')
+    expect(wrapper.find('.loading-bar-percent').text()).toBe('2 KB')
+  })
 })
