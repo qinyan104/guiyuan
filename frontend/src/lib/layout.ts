@@ -69,15 +69,16 @@ function buildTreeNode(
   visited = new Set<string>(),
   entryPersonId?: string,
   outMarriageEntryPersonId?: string,
+  globalVisited = new Set<string>(),
 ): TreeNode {
   const family = data.families[familyId]
   const familyAdults = family?.adults.filter(isPersonId) ?? []
   const branchMode = family ? resolveFamilyBranchMode(data, familyId, childPersonIds) : undefined
 
-  if (!family) {
+  if (!family || globalVisited.has(familyId)) {
     return {
-      id: `missing:${familyId}`,
-      adults: [],
+      id: !family ? `missing:${familyId}` : `cross:${familyId}`,
+      adults: family ? familyAdults : [],
       branchMode,
       entryPersonId,
       outMarriageEntryPersonId,
@@ -93,20 +94,21 @@ function buildTreeNode(
     }
   }
 
+  globalVisited.add(familyId)
   const nextVisited = new Set(visited)
   nextVisited.add(familyId)
 
   const children = family.children.map((childId) => {
     const childFamilyId = adultFamilyMap.get(childId)
-    if (childFamilyId && !nextVisited.has(childFamilyId)) {
+    if (childFamilyId && !nextVisited.has(childFamilyId) && !globalVisited.has(childFamilyId)) {
       const branchMode = resolveFamilyBranchMode(data, childFamilyId, childPersonIds)
       if (branchMode === 'married-out') {
-        const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, nextVisited, childId, childId)
+        const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, nextVisited, childId, childId, globalVisited)
         node.inLawAdultIds = node.adults.filter((adultId) => adultId !== childId)
         return node
       }
 
-      const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, nextVisited, childId)
+      const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, nextVisited, childId, undefined, globalVisited)
       if (branchMode === 'uxorilocal') {
         node.inLawAdultIds = node.adults.filter((adultId) => adultId !== childId)
       }

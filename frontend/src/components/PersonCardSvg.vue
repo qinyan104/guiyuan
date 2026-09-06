@@ -12,6 +12,7 @@ const props = defineProps<{
   hovered?: boolean
   subdued?: boolean
   kinshipNote?: string | null // 当前查看者与此人的亲属关系称谓
+  hasShadow?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -209,11 +210,13 @@ function handleMouseLeave() {
     <path
       v-if="settings.showCard && isSu"
       class="person-card__panel"
+      :filter="hasShadow ? 'url(#cardShadow)' : undefined"
       :d="octagonalPath"
     />
     <rect
       v-if="settings.showCard && !isSu"
       class="person-card__panel"
+      :filter="hasShadow ? 'url(#cardShadow)' : undefined"
       :width="card.width"
       :height="card.height"
       :rx="settings.cardRadius"

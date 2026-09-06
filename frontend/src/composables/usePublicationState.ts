@@ -1,4 +1,4 @@
-﻿import { computed, markRaw, reactive, ref } from 'vue'
+import { computed, markRaw, reactive, ref } from 'vue'
 
 import type {
   FamilyBranchMode,
@@ -29,14 +29,21 @@ export function usePublicationState(
   const _viewerPersonId = ref<string | null>(viewerPersonId ?? null)
   const audit = useDevAudit('usePublicationState')
 
-  function freezePeople(pub: PublicationData): void {
-    for (const id of Object.keys(pub.people)) {
-      pub.people[id] = markRaw(pub.people[id] as object) as typeof pub.people[string]
+  function freezePublication(pub: PublicationData): void {
+    if (pub.people) {
+      for (const id of Object.keys(pub.people)) {
+        pub.people[id] = markRaw(pub.people[id] as object) as typeof pub.people[string]
+      }
+    }
+    if (pub.families) {
+      for (const id of Object.keys(pub.families)) {
+        pub.families[id] = markRaw(pub.families[id] as object) as typeof pub.families[string]
+      }
     }
   }
 
   const cloned = structuredClone(initialPublication)
-  freezePeople(cloned)
+  freezePublication(cloned)
   const publication = reactive<PublicationData>(cloned)
   const settings = reactive<PublicationSettings>(structuredClone(initialSettings))
   const selectedPersonId = ref(
@@ -49,8 +56,8 @@ export function usePublicationState(
     Object.keys(target).forEach((key) => {
       delete (target as Record<string, unknown>)[key]
     })
-    if ('people' in source) {
-      freezePeople(source as unknown as PublicationData)
+    if ('people' in source || 'families' in source) {
+      freezePublication(source as unknown as PublicationData)
     }
     Object.assign(target, source)
     timer.end({ targetKeys: Object.keys(target).length })

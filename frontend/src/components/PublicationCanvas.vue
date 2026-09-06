@@ -240,6 +240,9 @@ onMounted(() => {
     resizeObserver = new ResizeObserver(updateViewportSize)
     resizeObserver.observe(viewportRef.value)
   }
+  if (props.panX === 0 && props.panY === 0 && props.layout.cards.length > 0) {
+    resetView()
+  }
 })
 
 const DRAG_SELECT_THRESHOLD = 5
@@ -283,7 +286,15 @@ watch(
   },
 )
 
-watch(() => props.layout, () => refreshRenderWindow(true))
+watch(
+  () => props.layout,
+  (newLayout, oldLayout) => {
+    refreshRenderWindow(true)
+    if (props.panX === 0 && props.panY === 0 && (!oldLayout || oldLayout.cards.length === 0) && newLayout.cards.length > 0) {
+      resetView()
+    }
+  },
+)
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -657,7 +668,7 @@ function resetView() {
             />
           </g>
 
-          <g :filter="isCanvasMoving || settings.cardShadowOpacity <= 0 ? undefined : 'url(#cardShadow)'">
+          <g class="person-cards">
             <PersonCardSvg
               v-for="card in renderedCards"
               :key="card.personId"
@@ -669,6 +680,7 @@ function resetView() {
               :hovered="card.personId === hoveredPersonId"
               :subdued="Boolean(hoveredPersonId && card.personId !== selectedPersonId && card.personId !== hoveredPersonId)"
               :kinshipNote="card.personId === hoveredPersonId && relationshipToSelected ? relationshipToSelected.term + (relationshipToSelected.description ? ' · ' + relationshipToSelected.description : '') : kinshipNotes?.[card.personId] ?? null"
+              :hasShadow="!isCanvasMoving && settings.cardShadowOpacity > 0"
               @select="handleSelect"
               @hover="handleHoverPerson"
             />
@@ -723,7 +735,6 @@ function resetView() {
   border-radius: 8px;
   filter: var(--filter-paper);
   transform-origin: center;
-  will-change: transform;
 }
 
 .publication-svg {
