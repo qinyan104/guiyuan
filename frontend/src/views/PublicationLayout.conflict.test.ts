@@ -270,4 +270,20 @@ describe('PublicationLayout conflict handling', () => {
     expect(wrapper.find('.loading-bar-fill').classes()).toContain('loading-bar-fill--indeterminate')
     expect(wrapper.find('.loading-bar-percent').text()).toBe('2 KB')
   })
+
+  it('keeps the loader visible when the publication response is immediate', async () => {
+    vi.useFakeTimers()
+    const wrapper = mount(PublicationLayout, {
+      global: { stubs: { RouterView: true } },
+    })
+
+    await flushPromises()
+    expect(wrapper.find('.loading-card').exists()).toBe(true)
+
+    await vi.advanceTimersByTimeAsync(240)
+    await flushPromises()
+    expect(wrapper.find('.loading-card').exists()).toBe(false)
+
+    vi.useRealTimers()
+  })
 })
