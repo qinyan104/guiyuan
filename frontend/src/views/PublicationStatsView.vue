@@ -15,7 +15,6 @@ const totalCount = computed(() => people.value.length)
 
 // ── 性别与在世统计 ──
 const maleCount = computed(() => people.value.filter((p) => p.gender === 'male').length)
-const femaleCount = computed(() => people.value.filter((p) => p.gender === 'female').length)
 const deceasedCount = computed(() => people.value.filter((p) => p.deceased).length)
 const aliveCount = computed(() => totalCount.value - deceasedCount.value)
 const malePercent = computed(() => totalCount.value ? Math.round((maleCount.value / totalCount.value) * 100) : 0)
@@ -262,7 +261,7 @@ function goPerson(personId: string) {
       <!-- Standard Topbar -->
       <header class="topbar">
         <div class="topbar-left">
-          <button class="back-btn" type="button" @click="goBack" title="返回画布">
+          <button class="back-btn" type="button" title="返回画布" @click="goBack">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12" />
               <polyline points="12 19 5 12 12 5" />
@@ -288,8 +287,8 @@ function goPerson(personId: string) {
         <div class="hero-center">
           <div class="hero-eyebrow">宗族洞察</div>
           <h1>{{ pubData.title || '未命名族谱' }}</h1>
-          <p class="hero-narrative" v-if="narrativeSummary">{{ narrativeSummary }}</p>
-          <p class="hero-sub" v-if="pubData.subtitle">{{ pubData.subtitle }}</p>
+          <p v-if="narrativeSummary" class="hero-narrative">{{ narrativeSummary }}</p>
+          <p v-if="pubData.subtitle" class="hero-sub">{{ pubData.subtitle }}</p>
         </div>
 
         <!-- 堂号印章卡片 -->
@@ -318,11 +317,11 @@ function goPerson(personId: string) {
           <span class="metric-num">{{ malePercent }}<small>%</small></span>
           <span class="metric-label">男丁比例 ({{ maleCount }}人)</span>
         </div>
-        <div class="metric-item" v-if="timelineSpan !== null">
+        <div v-if="timelineSpan !== null" class="metric-item">
           <span class="metric-num">{{ timelineSpan }}<small> 年</small></span>
           <span class="metric-label">历代跨度</span>
         </div>
-        <div class="metric-item" v-if="avgLifespan !== null">
+        <div v-if="avgLifespan !== null" class="metric-item">
           <span class="metric-num">{{ avgLifespan }}<small> 岁</small></span>
           <span class="metric-label">族人平均寿数</span>
         </div>
@@ -388,7 +387,7 @@ function goPerson(personId: string) {
                 <p class="panel-subtitle">有生卒年记载之先祖享寿分布</p>
               </div>
             </div>
-            <span class="panel-chip" v-if="avgLifespan !== null">均寿 {{ avgLifespan }} 岁</span>
+            <span v-if="avgLifespan !== null" class="panel-chip">均寿 {{ avgLifespan }} 岁</span>
           </div>
 
           <div v-if="lifespans.length === 0" class="empty">补充生卒年数据后将在此展现寿数分布</div>

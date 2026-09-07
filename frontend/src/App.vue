@@ -19,8 +19,9 @@ function handleReload() {
 }
 
 onMounted(async () => {
-  browserWindow.addEventListener('concurrency-conflict', (e: any) => {
-    conflictMessage.value = e.detail?.message || '数据已被他人修改。'
+  browserWindow.addEventListener('concurrency-conflict', (event: Event) => {
+    const conflictEvent = event as CustomEvent<{ message?: string }>
+    conflictMessage.value = conflictEvent.detail?.message || '数据已被他人修改。'
   })
 
   const sessionTokenAtStart = getAccessToken()
@@ -56,7 +57,7 @@ onMounted(async () => {
   <CommandKPalette />
 
   <!-- 并发冲突弹窗 -->
-  <BaseDialog :visible="!!conflictMessage" title="数据版本冲突" z-index="var(--z-critical)" @update:visible="conflictMessage = null">
+  <BaseDialog :visible="!!conflictMessage" title="数据版本冲突" zIndex="var(--z-critical)" @update:visible="conflictMessage = null">
     <p style="color: var(--color-neutral-7); margin: 0 0 16px; text-align: center;">{{ conflictMessage }}</p>
     <template #footer>
       <button class="btn btn--primary" @click="handleReload">立即刷新</button>

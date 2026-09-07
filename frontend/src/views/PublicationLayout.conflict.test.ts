@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import type { PublicationLoadResult } from '../api/publication'
+import type { PublicationState } from '../composables/usePublicationState'
 import { defaultSettings } from '../data/sampleFamily'
 
 // Mock vue-router
@@ -21,6 +22,15 @@ vi.mock('../api/publication', () => ({
 import { getPublication, updatePublication } from '../api/publication'
 import { getConflictDraft, saveConflictDraft } from '../features/conflict/conflictDraft'
 import PublicationLayout from './PublicationLayout.vue'
+
+type PublicationLayoutVm = {
+  pub: PublicationState
+  saveToServer: () => Promise<void>
+}
+
+function getLayoutVm(wrapper: { vm: unknown }): PublicationLayoutVm {
+  return wrapper.vm as PublicationLayoutVm
+}
 
 const mockPublicationData: PublicationLoadResult = {
   id: 7,
@@ -79,7 +89,7 @@ describe('PublicationLayout conflict handling', () => {
 
     await waitForLoadBaseline()
 
-    const publicationContext = (wrapper.vm as any).pub
+    const publicationContext = getLayoutVm(wrapper).pub
     publicationContext.publication.title = 'Changed title'
     await wrapper.vm.$nextTick()
 
@@ -87,7 +97,7 @@ describe('PublicationLayout conflict handling', () => {
     // (avoids waiting for the 3000ms autosave debounce timer)
     // The throw is expected — direct callers
     // receive it so they can react to the conflict
-    await (wrapper.vm as any).saveToServer().catch(() => {})
+    await getLayoutVm(wrapper).saveToServer().catch(() => {})
 
     // Check conflict banner is shown — this string comes from the
     // 409 response data.message rendered in the sync-conflict-banner
@@ -101,7 +111,7 @@ describe('PublicationLayout conflict handling', () => {
     // Verify autosave is paused: calling saveToServer again should bail
     // due to syncStatus === 'conflict' guard (won't call updatePublication again)
     vi.mocked(updatePublication).mockClear()
-    await (wrapper.vm as any).saveToServer().catch(() => {})
+    await getLayoutVm(wrapper).saveToServer().catch(() => {})
     expect(vi.mocked(updatePublication)).not.toHaveBeenCalled()
 
     vi.useRealTimers()
@@ -117,7 +127,7 @@ describe('PublicationLayout conflict handling', () => {
 
     await waitForLoadBaseline()
 
-    const publicationContext = (wrapper.vm as any).pub
+    const publicationContext = getLayoutVm(wrapper).pub
     publicationContext.publication.title = 'Changed title'
 
     await wrapper.vm.$nextTick()
@@ -153,7 +163,7 @@ describe('PublicationLayout conflict handling', () => {
 
     await waitForLoadBaseline()
 
-    const publicationContext = (wrapper.vm as any).pub
+    const publicationContext = getLayoutVm(wrapper).pub
     publicationContext.publication.title = 'Changed title'
 
     await wrapper.vm.$nextTick()
@@ -225,7 +235,7 @@ describe('PublicationLayout conflict handling', () => {
     await wrapper.find('[data-testid="restore-conflict-draft"]').trigger('click')
     await wrapper.vm.$nextTick()
 
-    const publicationContext = (wrapper.vm as any).pub
+    const publicationContext = getLayoutVm(wrapper).pub
     expect(publicationContext.publication.title).toBe('Unsynced local title')
     expect(publicationContext.settings.showAge).toBe(true)
     expect(getConflictDraft(7)).toBeNull()
@@ -299,7 +309,7 @@ describe('PublicationLayout conflict handling', () => {
     vi.clearAllTimers()
     vi.mocked(updatePublication).mockClear()
 
-    const publicationContext = (wrapper.vm as any).pub
+    const publicationContext = getLayoutVm(wrapper).pub
     publicationContext.publication.people.p1 = {
       id: 'p1',
       name: 'Changed person',

@@ -147,7 +147,7 @@ const pathNodes = computed(() => {
   }
   if (ip) {
     const spouseSet = new Set(ip.spousesUsed)
-    return ip.path.map((id, idx) => ({
+    return ip.path.map((id) => ({
       id,
       person: personById(id),
       isEndpoint: id === selectedA.value || id === selectedB.value,
@@ -242,7 +242,7 @@ function avatarLetter(name: string): string {
             <h2>亲属称谓推算</h2>
             <p class="kinship-dialog__subtitle">指定两位族人，推算宗法世系亲疏、辈分代差与准确称谓</p>
           </div>
-          <button class="kinship-dialog__close" type="button" @click="emit('close')" aria-label="关闭">
+          <button class="kinship-dialog__close" type="button" aria-label="关闭" @click="emit('close')">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -286,7 +286,7 @@ function avatarLetter(name: string): string {
                 </div>
               </template>
               <template v-else>
-                <div class="kinship-selected-person" @click="selectedA = ''; searchA = ''" title="点击更换人物">
+                <div class="kinship-selected-person" title="点击更换人物" @click="selectedA = ''; searchA = ''">
                   <span class="kinship-selected-person__avatar" :class="personById(selectedA)?.gender === 'female' ? 'avatar--female' : 'avatar--male'">
                     {{ avatarLetter(personById(selectedA)?.name ?? '?') }}
                   </span>
@@ -303,7 +303,7 @@ function avatarLetter(name: string): string {
             </div>
 
             <!-- Swap Button -->
-            <button class="kinship-swap" type="button" @click="swap" title="交换 A/B">
+            <button class="kinship-swap" type="button" title="交换 A/B" @click="swap">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="7 17 3 13 7 9" /><polyline points="17 7 21 11 17 15" />
                 <line x1="3" y1="13" x2="21" y2="13" /><line x1="21" y1="11" x2="3" y2="11" />
@@ -344,7 +344,7 @@ function avatarLetter(name: string): string {
                 </div>
               </template>
               <template v-else>
-                <div class="kinship-selected-person" @click="selectedB = ''; searchB = ''" title="点击更换人物">
+                <div class="kinship-selected-person" title="点击更换人物" @click="selectedB = ''; searchB = ''">
                   <span class="kinship-selected-person__avatar" :class="personById(selectedB)?.gender === 'female' ? 'avatar--female' : 'avatar--male'">
                     {{ avatarLetter(personById(selectedB)?.name ?? '?') }}
                   </span>

@@ -4,12 +4,16 @@ import { useRoute, useRouter } from 'vue-router'
 import DarkModeToggle from './DarkModeToggle.vue'
 import UserAvatar from './UserAvatar.vue'
 import { getRole } from '../api/auth'
-import { PUBLICATION_CONTEXT_KEY } from '../types/family'
+import { PUBLICATION_CONTEXT_KEY, type PublicationContext } from '../types/family'
 import CollaboratorManager from './CollaboratorManager.vue'
 import ExportDialog from '../features/export/ExportDialog.vue'
 import type { ThemeMode } from '../features/export/exportTheme'
 import type { PngExportQuality } from '../features/export/publicationExport'
 import GedcomImportDialog from '../features/gedcom/GedcomImportDialog.vue'
+
+type WorkbenchHeaderContext = PublicationContext & {
+  currentAccessRole?: { value?: 'OWNER' | 'EDITOR' | 'VIEWER' | string | null }
+}
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const showExportDialog = ref(false)
@@ -19,7 +23,7 @@ const headerRoot = ref<HTMLElement | null>(null)
 const activeMenu = ref<'research' | 'export' | null>(null)
 
 const route = useRoute(); const router = useRouter()
-const context = inject(PUBLICATION_CONTEXT_KEY) as any
+const context = inject<WorkbenchHeaderContext | null>(PUBLICATION_CONTEXT_KEY, null)
 
 const isOwner = computed(() => context?.currentAccessRole?.value === 'OWNER')
 const publicationTitle = computed(() => {
@@ -207,11 +211,11 @@ onBeforeUnmount(() => {
     <div class="topbar__actions" aria-label="工作台操作">
       <div class="topbar__action-strip">
         <div class="topbar__primary-tools" role="group" aria-label="谱系工具">
-          <button class="btn btn--secondary" type="button" @click="emit('view-stats')" title="家族统计">
+          <button class="btn btn--secondary" type="button" title="家族统计" @click="emit('view-stats')">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" /></svg>
             统计
           </button>
-          <button class="btn btn--secondary" type="button" @click="emit('view-timeline')" title="家族时间线">
+          <button class="btn btn--secondary" type="button" title="家族时间线" @click="emit('view-timeline')">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
             时间线
           </button>

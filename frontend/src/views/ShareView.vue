@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import DarkModeToggle from '../components/DarkModeToggle.vue'
 import { useRoute } from 'vue-router'
 import { getSharePublication, getShareMeta, getSharePhotoUrl } from '../api/share'
+import { getUserErrorMessage } from '../api/http'
 import { usePublicationState } from '../composables/usePublicationState'
 import PublicationCanvas from '../components/PublicationCanvas.vue'
 import type { PublicationData, PublicationSettings } from '../types/family'
@@ -81,15 +82,17 @@ async function load() {
     pub.replaceReactiveObject(pub.publication, publicationData)
     pub.replaceReactiveObject(pub.settings, settingsData)
     pub.selectedPersonId.value = pub.getDefaultSelectedPersonId(publicationData)
-  } catch (err: any) {
-    const status = err.response?.status
+  } catch (err: unknown) {
+    const status = typeof err === 'object' && err !== null && 'response' in err
+      ? (err as { response?: { status?: number } }).response?.status
+      : undefined
     errorCode.value = status ?? null
     if (status === 404) {
       error.value = '分享链接不存在或已失效。'
     } else if (status === 410) {
       error.value = '分享链接已过期或已被撤销。'
     } else {
-      error.value = err.message || '加载失败，请稍后重试。'
+      error.value = getUserErrorMessage(err, '加载失败，请稍后重试。')
     }
   } finally {
     loading.value = false

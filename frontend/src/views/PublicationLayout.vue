@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { getPublication, updatePublication, type PublicationDownloadProgress } from '../api/publication'
+import { getUserErrorMessage } from '../api/http'
 import { listAccounts } from '../api/account'
 import { getUsername } from '../api/tokenStore'
 import { useFeedback } from '../composables/useFeedback'
@@ -19,7 +20,7 @@ import {
 } from '../features/conflict/conflictDraft'
 import { useEditorHistory } from '../features/history/useEditorHistory'
 import { serializeTrackedState, type EditorSnapshot } from '../features/history/historyCore'
-import { PUBLICATION_CONTEXT_KEY, type PublicationContext, type PublicationData, type PublicationSettings } from '../types/family'
+import { PUBLICATION_CONTEXT_KEY, type PublicationData, type PublicationSettings } from '../types/family'
 import { layoutPublication } from '../lib/layout'
 
 const route = useRoute()
@@ -206,7 +207,7 @@ async function saveToServer() {
       conflictMessage.value = conflict.message
       feedback.errorMessage.value = conflict.message
       clearScheduledSave()
-      throw new Error(conflict.message, { cause: conflict })
+      throw new Error(conflict.message, { cause: err })
     }
 
     syncStatus.value = 'error'
@@ -501,16 +502,19 @@ async function load(force = false) {
     isOverlayVisible.value = false
     loading.value = false
     markOpenPerformance('first-screen-ready')
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Don't show error for stale requests
     if (myGeneration !== loadGeneration) return
     isOverlayVisible.value = false
     loading.value = false
     markOpenPerformance('load-error')
-    if (err?.response?.status === 403) {
+    const status = typeof err === 'object' && err !== null && 'response' in err
+      ? (err as { response?: { status?: number } }).response?.status
+      : undefined
+    if (status === 403) {
       loadError.value = '你无权访问此家谱，请联系管理员将你添加为协作者'
     } else {
-      loadError.value = err?.response?.data?.message || err?.message || '加载族谱失败'
+      loadError.value = getUserErrorMessage(err, '加载族谱失败')
     }
     feedback.setError(loadError.value)
   }
@@ -739,8 +743,8 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
           <span class="loading-bar-percent">{{ loadingProgressLabel }}</span>
         </div>
 
-        <div class="loading-tip" v-if="isLargeDataDetected">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div v-if="isLargeDataDetected" class="loading-tip">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
           <span>当前族谱数据量较大，正按实际阶段装载与渲染</span>
         </div>
       </div>

@@ -149,7 +149,9 @@ export function useFileOperations(deps: FileOperationsDeps) {
     try {
       const uiStore = useUiStore()
       if (uiStore?.currentTheme) return uiStore.currentTheme
-    } catch {}
+    } catch {
+      // Pinia may be unavailable in isolated tests; fall back to the DOM theme below.
+    }
     if (typeof document !== 'undefined') {
       const attr = document.documentElement.getAttribute('data-theme') as ThemeMode
       if (attr) return attr

@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 
 import { login, type LoginRequest } from '../api/auth'
+import { getUserErrorMessage } from '../api/http'
 
 const emit = defineEmits<{
   (e: 'success', username: string): void
@@ -20,8 +21,8 @@ async function onSubmit() {
   try {
     const data = await login(form)
     emit('success', data.username)
-  } catch (error: any) {
-    errorMsg.value = error?.message || '登录失败，请稍后重试'
+  } catch (error: unknown) {
+    errorMsg.value = getUserErrorMessage(error, '登录失败，请稍后重试')
   } finally {
     loading.value = false
   }

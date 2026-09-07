@@ -3,7 +3,7 @@ import { defineComponent } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { PublicationLoadResult } from '../api/publication'
-import type { PublicationSettings } from '../types/family'
+import type { Person, PublicationSettings } from '../types/family'
 import { defaultSettings } from '../data/sampleFamily'
 
 const { mockGetPublication } = vi.hoisted(() => ({
@@ -59,7 +59,7 @@ const mockPublication: PublicationLoadResult = {
         name: 'Root Person',
         gender: 'male',
         dbId: 101,
-      } as any,
+      } as Person & { dbId: number },
     },
     families: {
       f1: {

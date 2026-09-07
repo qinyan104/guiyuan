@@ -335,7 +335,7 @@ watch(
           <button class="lp-reset-btn" type="button" title="恢复为推荐的标准版式参数" @click="resetLayoutSettings">
             恢复默认
           </button>
-          <button class="floating-panel__close" type="button" @click="$emit('close-layout')" aria-label="关闭">
+          <button class="floating-panel__close" type="button" aria-label="关闭" @click="$emit('close-layout')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
@@ -548,7 +548,7 @@ watch(
     <section v-if="historyOpen" class="history-panel floating-panel--left" @mousedown.stop>
       <div class="floating-panel__header">
         <h2 class="hp-panel-title">操作历史</h2>
-        <button class="floating-panel__close" type="button" @click="$emit('close-history')" aria-label="关闭">
+        <button class="floating-panel__close" type="button" aria-label="关闭" @click="$emit('close-history')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
       </div>
@@ -648,7 +648,7 @@ watch(
               <h2 id="validation-dialog-title">数据质量校验</h2>
               <p class="validation-dialog-subtitle">排查世系断层、生卒逻辑冲突或重名问题</p>
             </div>
-            <button class="validation-dialog-close" type="button" @click="closeValidationDialog" aria-label="关闭">
+            <button class="validation-dialog-close" type="button" aria-label="关闭" @click="closeValidationDialog">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>
           </div>

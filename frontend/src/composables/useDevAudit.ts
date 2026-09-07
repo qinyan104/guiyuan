@@ -6,7 +6,7 @@
 //   const audit = useDevAudit("usePublicationState")
 //   audit.track("setViewerPersonId", { from: oldId, to: newId })
 
-import { ref } from "vue"
+import { ref, type Ref } from "vue"
 
 const IS_DEV = import.meta.env.DEV
 
@@ -24,7 +24,7 @@ export interface AuditEntry {
 }
 
 /** 全局日志存储（仅在 dev 模式保留） */
-const auditLog = ref<AuditEntry[]>([])
+const auditLog: Ref<AuditEntry[]> = ref([])
 
 /** 保留最近 N 条，防止内存泄漏 */
 const MAX_ENTRIES = 200
@@ -130,6 +130,12 @@ export function clearGlobalAuditLog(): void {
 }
 
 /** 挂到 window 上方便控制台调试 */
+declare global {
+  interface Window {
+    __auditLog?: Ref<AuditEntry[]>
+  }
+}
+
 if (IS_DEV) {
-  ;(window as any).__auditLog = auditLog
+  window.__auditLog = auditLog
 }

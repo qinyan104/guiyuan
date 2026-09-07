@@ -114,15 +114,6 @@ watch(
   { immediate: true },
 )
 
-// ─── Editor Anchor (card screen position for floating editor) ──
-
-const editorAnchor = computed(() => {
-  const personId = context.pub.selectedPersonId.value
-  if (!personId || !canvasRef.value) return null
-  const pos = canvasRef.value.getCardScreenPosition?.(personId)
-  return pos
-})
-
 // ─── File Operations ────────────────────────────────────────────
 const fileOps = useFileOperations({
   pub: context.pub,

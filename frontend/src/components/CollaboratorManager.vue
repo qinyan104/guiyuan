@@ -316,8 +316,9 @@ function handleSearchInput() {
       const results = await searchUsers(searchQuery.value, searchAbortController.signal)
       const existingUserIds = new Set(records.value.map(r => r.userId))
       searchResults.value = results.filter(u => !existingUserIds.has(u.id))
-    } catch (err: any) {
-      if (err.name === 'CanceledError' || err.name === 'AbortError') return
+    } catch (err: unknown) {
+      const errorName = err instanceof Error ? err.name : ''
+      if (errorName === 'CanceledError' || errorName === 'AbortError') return
     } finally {
       searching.value = false
     }
@@ -503,7 +504,7 @@ onUnmounted(() => {
                 <span class="chip-avatar">{{ avatarLetter(selectedUser.nickname) }}</span>
                 <span class="chip-name">{{ selectedUser.nickname }}</span>
                 <span class="chip-username">@{{ selectedUser.username }}</span>
-                <button class="chip-remove" @click="clearSelectedUser" title="取消选择">&times;</button>
+                <button class="chip-remove" title="取消选择" @click="clearSelectedUser">&times;</button>
               </div>
             </template>
             <template v-else>
@@ -591,7 +592,7 @@ onUnmounted(() => {
               <template v-else>
                 <AppSelect
                   variant="inline"
-                  :model-value="record.role"
+                  :modelValue="record.role"
                   :options="[{value:'EDITOR',label:'编辑者'},{value:'VIEWER',label:'浏览者'}]"
                   @change="(v: string) => requestInlineRoleChange(record, v as 'EDITOR' | 'VIEWER')"
                 />
@@ -618,7 +619,7 @@ onUnmounted(() => {
                   <span>生卒日期</span>
                   <AppSelect
                     variant="privacy"
-                    :model-value="parseProfile(record.redactionProfile).dates"
+                    :modelValue="parseProfile(record.redactionProfile).dates"
                     :options="[{value:'NONE',label:'公开'},{value:'LIVING',label:'隐藏在世'},{value:'ALL',label:'全部隐藏'}]"
                     @change="(v: string) => handleProfileChange(record, 'dates', v)"
                   />
@@ -627,7 +628,7 @@ onUnmounted(() => {
                   <span>个人简介</span>
                   <AppSelect
                     variant="privacy"
-                    :model-value="parseProfile(record.redactionProfile).note"
+                    :modelValue="parseProfile(record.redactionProfile).note"
                     :options="[{value:'NONE',label:'公开'},{value:'LIVING',label:'隐藏在世'},{value:'ALL',label:'全部隐藏'}]"
                     @change="(v: string) => handleProfileChange(record, 'note', v)"
                   />
@@ -636,7 +637,7 @@ onUnmounted(() => {
                   <span>照片</span>
                   <AppSelect
                     variant="privacy"
-                    :model-value="parseProfile(record.redactionProfile).photo"
+                    :modelValue="parseProfile(record.redactionProfile).photo"
                     :options="[{value:'NONE',label:'公开'},{value:'LIVING',label:'隐藏在世'},{value:'ALL',label:'全部隐藏'}]"
                     @change="(v: string) => handleProfileChange(record, 'photo', v)"
                   />
@@ -689,8 +690,8 @@ onUnmounted(() => {
             <div v-for="acc in derivedResult" :key="acc.personDbId" class="derive-row">
               <span class="derive-name">{{ acc.personName }}</span>
               <div class="derive-creds">
-                <code class="creds-item" @click="copyText(acc.username)" title="点击复制用户名">{{ acc.username }}</code>
-                <code class="creds-item creds-pw" @click="copyText(acc.password)" title="点击复制密码">{{ acc.password }}</code>
+                <code class="creds-item" title="点击复制用户名" @click="copyText(acc.username)">{{ acc.username }}</code>
+                <code class="creds-item creds-pw" title="点击复制密码" @click="copyText(acc.password)">{{ acc.password }}</code>
               </div>
             </div>
           </div>
@@ -713,7 +714,7 @@ onUnmounted(() => {
       </div>
 
       <Transition name="fade" mode="out-in">
-        <div v-if="accounts.length > 0" class="account-table" key="table">
+        <div v-if="accounts.length > 0" key="table" class="account-table">
           <!-- Batch action bar -->
           <Transition name="slide">
             <div v-if="selectedAccountIds.size > 0" class="batch-bar">
@@ -822,7 +823,7 @@ onUnmounted(() => {
     <BaseDialog
       :visible="showResetDialog"
       :title="`${resetPersonName} 的新密码`"
-      max-width="420px"
+      maxWidth="420px"
       @update:visible="(v: boolean) => { showResetDialog = v }"
     >
       <div class="reset-pw-body">

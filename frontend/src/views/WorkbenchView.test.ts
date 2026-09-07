@@ -1,11 +1,15 @@
 import { mount } from '@vue/test-utils'
-import { computed, ref } from 'vue'
+import { computed, ref, type ComputedRef } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import WorkbenchView from './WorkbenchView.vue'
 import { defaultSettings } from '../data/sampleFamily'
 import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import type { PublicationContext } from '../types/family'
+import type { EditorHistory } from '../features/history/useEditorHistory'
+import type { PublicationState } from '../composables/usePublicationState'
+
+type WorkbenchVm = { confirmAsync: (message: string) => Promise<boolean> }
 
 // ─── Mock modules ───────────────────────────────────────────────
 
@@ -304,7 +308,7 @@ function createContextStub(
       branchActionLabel: computed(() => '设为当前宗支'),
       focusFamily: computed(() => ({ id: 'f1', adults: [person.id], children: [] })),
       focusLineageCrumbs: computed(() => ['父系主谱', person.name]),
-    } as any,
+    } as unknown as PublicationState,
     history: {
       historyPast: ref([]),
       historyFuture: ref([]),
@@ -317,7 +321,7 @@ function createContextStub(
       undoChange: vi.fn(),
       redoChange: vi.fn(),
       disposeHistory: vi.fn(),
-    } as any,
+    } as unknown as EditorHistory,
     syncStatus: ref(overrides.syncStatus ?? 'saved'),
     saveToServer: vi.fn(() => Promise.resolve()),
     serverPublicationId: ref(1),
@@ -378,7 +382,7 @@ describe('WorkbenchView', () => {
 
     it('does not render PersonEditorDrawer when no person is selected', () => {
       const noPersonCtx = createContextStub()
-      ;(noPersonCtx.pub as any).selectedPerson = computed(() => null)
+      ;(noPersonCtx.pub as unknown as { selectedPerson: ComputedRef<null> }).selectedPerson = computed(() => null)
       const wrapper = mountView(noPersonCtx)
 
       expect(wrapper.find('.mock-drawer').exists()).toBe(false)
@@ -394,7 +398,7 @@ describe('WorkbenchView', () => {
       const wrapper = mountView()
 
       // Access confirmAsync via the private scope
-      const vm = wrapper.vm as any
+      const vm = wrapper.vm as unknown as WorkbenchVm
       const confirmationPromise = vm.confirmAsync('确认删除？')
 
       // Dialog should now be visible
@@ -417,7 +421,7 @@ describe('WorkbenchView', () => {
     it('resolves to false when cancelled', async () => {
       const wrapper = mountView()
 
-      const vm = wrapper.vm as any
+      const vm = wrapper.vm as unknown as WorkbenchVm
       const confirmationPromise = vm.confirmAsync('确认取消？')
 
       await wrapper.vm.$nextTick()
@@ -510,7 +514,7 @@ describe('WorkbenchView', () => {
       await canvas.vm.$emit('hover-person', 'p2')
       await wrapper.vm.$nextTick()
 
-      expect((ctx.pub as any).hoveredPersonId.value).toBe('p2')
+      expect(ctx.pub.hoveredPersonId.value).toBe('p2')
     })
 
     it('selects and centers the person when WorkbenchPanels emits locate-person', async () => {

@@ -12,6 +12,7 @@ const props = withDefaults(defineProps<{
   /** z-index 层级 token 名 */
   zIndex?: string
 }>(), {
+  title: undefined,
   closeOnOverlay: true,
   maxWidth: '520px',
   zIndex: 'var(--z-modal)',

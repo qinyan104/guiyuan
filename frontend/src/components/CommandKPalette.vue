@@ -2,20 +2,39 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePublicationState } from '../composables/usePublicationState'
-import { useUiStore, THEME_PRESETS } from '../stores/ui'
+import { useUiStore, THEME_PRESETS, type ThemeMode } from '../stores/ui'
 
 const router = useRouter()
 
-let uiStore: any = null
+type UiStoreLike = {
+  currentTheme?: string
+  setTheme?: (themeId: ThemeMode) => void
+}
+
+type PublicationCommandSource = {
+  publications?: { value?: PublicationCommandItem[] }
+}
+
+type PublicationCommandItem = {
+  id: string | number
+  title?: string
+  subtitle?: string
+  info?: {
+    hallName?: string
+    ancestralOrigin?: string
+  }
+}
+
+let uiStore: UiStoreLike | null = null
 try {
   uiStore = useUiStore()
 } catch {
-  uiStore = { theme: 'slate', setTheme: () => {} }
+  uiStore = { currentTheme: 'slate', setTheme: () => {} }
 }
 
-let pubState: any = null
+let pubState: PublicationCommandSource | null = null
 try {
-  pubState = (usePublicationState as any)()
+  pubState = usePublicationState(undefined as never, undefined as never) as unknown as PublicationCommandSource
 } catch {
   pubState = { publications: ref([]) }
 }
@@ -85,7 +104,7 @@ const staticCommands = computed<CommandItem[]>(() => [
 const publicationCommands = computed<CommandItem[]>(() => {
   const list = pubState?.publications?.value
   if (!Array.isArray(list)) return []
-  return list.map((pub: any) => ({
+  return list.map((pub) => ({
     id: `pub-${pub.id}`,
     title: pub.title || '未命名宗谱',
     subtitle: [pub.subtitle, pub.info?.hallName, pub.info?.ancestralOrigin].filter(Boolean).join(' · ') || '宗谱归档',
@@ -172,7 +191,7 @@ onUnmounted(() => {
         <div class="command-palette-card">
           <!-- Search Header -->
           <div class="command-search-header">
-            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
             <input
               ref="inputRef"
               v-model="searchQuery"
@@ -201,10 +220,10 @@ onUnmounted(() => {
               @click="item.action()"
             >
               <div class="item-icon">
-                <svg v-if="item.category === 'action'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <svg v-else-if="item.category === 'publication'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <svg v-else-if="item.category === 'theme'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12.5" cy="8.5" r="1.5"/><circle cx="8.5" cy="12.5" r="1.5"/><circle cx="15.5" cy="12.5" r="1.5"/><circle cx="12.5" cy="16.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.92 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9z"/></svg>
-                <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <svg v-if="item.category === 'action'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
+                <svg v-else-if="item.category === 'publication'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                <svg v-else-if="item.category === 'theme'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12.5" cy="8.5" r="1.5" /><circle cx="8.5" cy="12.5" r="1.5" /><circle cx="15.5" cy="12.5" r="1.5" /><circle cx="12.5" cy="16.5" r="1.5" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.92 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9z" /></svg>
+                <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
               </div>
 
               <div class="item-text">
@@ -212,7 +231,7 @@ onUnmounted(() => {
                 <div v-if="item.subtitle" class="item-subtitle">{{ item.subtitle }}</div>
               </div>
 
-              <div class="item-enter-hint" v-if="index === selectedIndex">
+              <div v-if="index === selectedIndex" class="item-enter-hint">
                 <span>跳转</span> ↵
               </div>
             </div>

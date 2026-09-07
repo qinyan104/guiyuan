@@ -1,12 +1,25 @@
-﻿import { describe, expect, it, vi } from 'vitest'
+﻿import { afterEach, describe, expect, it, vi } from 'vitest'
 import { formatHttpError, shouldRetryAuthRefresh } from './http'
+
+type ResponseRejected = (error: unknown) => Promise<unknown>
+type HttpWithInterceptorHandlers = {
+  interceptors: {
+    response: {
+      handlers: Array<{ rejected: ResponseRejected }>
+    }
+  }
+}
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe('shouldRetryAuthRefresh', () => {
   it('skips auth endpoints to avoid refresh loops', () => {
-    expect(shouldRetryAuthRefresh({ url: '/auth/refresh' } as any)).toBe(false)
-    expect(shouldRetryAuthRefresh({ url: '/auth/login' } as any)).toBe(false)
-    expect(shouldRetryAuthRefresh({ url: '/auth/register' } as any)).toBe(false)
-    expect(shouldRetryAuthRefresh({ url: '/publications' } as any)).toBe(true)
+    expect(shouldRetryAuthRefresh({ url: '/auth/refresh' })).toBe(false)
+    expect(shouldRetryAuthRefresh({ url: '/auth/login' })).toBe(false)
+    expect(shouldRetryAuthRefresh({ url: '/auth/register' })).toBe(false)
+    expect(shouldRetryAuthRefresh({ url: '/publications' })).toBe(true)
   })
 })
 
@@ -24,7 +37,7 @@ describe('formatHttpError', () => {
 describe('http interceptors', () => {
   it('dispatches concurrency-conflict event on 409 error', async () => {
     const { default: http } = await import('./http')
-    const axiosMock = (http as any)
+    const axiosMock = http as unknown as HttpWithInterceptorHandlers
     
     // We need to trigger the interceptor. 
     // Since http is the actual axios instance, we might need to mock the response.
@@ -56,7 +69,7 @@ describe('http interceptors', () => {
 
   it('does not dispatch concurrency-conflict for publication save conflicts', async () => {
     const { default: http } = await import('./http')
-    const axiosMock = (http as any)
+    const axiosMock = http as unknown as HttpWithInterceptorHandlers
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
 
     const error = {

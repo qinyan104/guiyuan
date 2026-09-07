@@ -29,8 +29,8 @@ async function handleExport() {
   <button
     class="gedcom-export-btn"
     :disabled="exporting"
-    @click="handleExport"
     title="导出为 GEDCOM 格式（可导入其他族谱软件）"
+    @click="handleExport"
   >
     <span class="btn-icon">📤</span>
     <span class="btn-text">{{ exporting ? '导出中...' : '导出 GEDCOM' }}</span>

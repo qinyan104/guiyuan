@@ -89,15 +89,6 @@ export function buildInfoHeader(pub: PublicationData): string {
   return parts.join('\n')
 }
 
-function buildThemeCss(themeVars: Record<string, string>): string {
-  let css = ':root {\n'
-  for (const [key, val] of Object.entries(themeVars)) {
-    if (val) css += `  ${key}: ${val};\n`
-  }
-  css += '}\n'
-  return css
-}
-
 function buildStatsHtml(pub: PublicationData): string {
   const people = Object.values(pub.people)
   const total = people.length
@@ -1218,9 +1209,14 @@ ${options.script}
 </html>`
 }
 
+function isThemeMode(value: unknown): value is ThemeMode {
+  return typeof value === 'string' && THEME_PRESETS.some((preset) => preset.id === value)
+}
+
 export async function generateShareHtml(options: ShareHtmlOptions): Promise<string> {
   const { publication, settings, standaloneSvg, password, theme, onProgress } = options
-  const activeTheme = theme || (publication as any).theme || 'paper'
+  const publicationTheme = (publication as PublicationData & { theme?: unknown }).theme
+  const activeTheme: ThemeMode = theme ?? (isThemeMode(publicationTheme) ? publicationTheme : 'paper')
 
   onProgress?.('capturing', 25)
 

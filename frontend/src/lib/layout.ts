@@ -446,9 +446,9 @@ export function layoutPublication(data: PublicationData, settings: PublicationSe
   const rootFamilyId = data.families[data.focusFamilyId] ? data.focusFamilyId : Object.keys(data.families)[0]
   const tree = buildTreeNode(rootFamilyId, data, adultFamilyMap, childPersonIds)
 
-  let width = 0
-  let height = 0
-  let generations = 0
+  let width: number
+  let height: number
+  let generations: number
 
   if (settings.layoutMode === 'su') {
     const res = measureNodeSu(tree, settings)

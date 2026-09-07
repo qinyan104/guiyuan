@@ -8,6 +8,7 @@ import { defaultSettings } from '../data/sampleFamily'
 import { PUBLICATION_CONTEXT_KEY } from '../types/family'
 import { usePublicationState } from '../composables/usePublicationState'
 import { createPublication } from '../api/publication'
+import { getUserErrorMessage } from '../api/http'
 
 import PublicationCanvas from '../components/PublicationCanvas.vue'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
@@ -83,8 +84,8 @@ async function handleClone() {
     setTimeout(() => {
       router.push({ name: 'workbench', params: { id } })
     }, 1200)
-  } catch (err: any) {
-    cloneError.value = '创建失败: ' + (err.message || '未知错误')
+  } catch (err: unknown) {
+    cloneError.value = '创建失败: ' + getUserErrorMessage(err, '未知错误')
     feedbackError.value = cloneError.value
   } finally {
     cloning.value = false

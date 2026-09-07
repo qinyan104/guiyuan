@@ -332,7 +332,9 @@ function getCurrentTheme(): ThemeMode {
   try {
     const uiStore = useUiStore()
     if (uiStore?.currentTheme) return uiStore.currentTheme
-  } catch {}
+  } catch {
+    // Store may be unavailable in isolated tests; fall back to DOM theme.
+  }
   if (typeof document !== 'undefined') {
     const theme = document.documentElement.getAttribute('data-theme') as ThemeMode
     if (theme) return theme

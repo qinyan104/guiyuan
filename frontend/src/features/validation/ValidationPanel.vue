@@ -84,7 +84,7 @@ watch(() => props.pubId, runValidation)
         </button>
       </div>
 
-      <button class="vp-refresh-btn" :disabled="loading" type="button" @click="runValidation" title="重新校验数据">
+      <button class="vp-refresh-btn" :disabled="loading" type="button" title="重新校验数据" @click="runValidation">
         <svg :class="{ spinning: loading }" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12a9 9 0 1 1-6.219-8.56" />
           <polyline points="21 3 21 9 15 9" />
@@ -132,8 +132,8 @@ watch(() => props.pubId, runValidation)
           v-if="finding.personId"
           class="finding-locate"
           type="button"
-          @click.stop="locatePerson(finding.personId)"
           title="在画布中定位此人"
+          @click.stop="locatePerson(finding.personId)"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3" />

@@ -108,5 +108,6 @@ defineProps<{
   font-family: var(--font-serif);
   font-style: italic;
   opacity: 0.8;
+  white-space: pre-line;
 }
 </style>

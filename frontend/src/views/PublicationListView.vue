@@ -18,12 +18,13 @@ import FeedbackStrip from '../components/FeedbackStrip.vue'
 import PoeticHeader from '../components/PoeticHeader.vue'
 import AppSelect, { type AppSelectOption } from '../components/AppSelect.vue'
 import { useFeedback } from '../composables/useFeedback'
+import { getUserErrorMessage } from '../api/http'
 
 const router = useRouter()
 const feedback = useFeedback()
 const lexiconStore = useLexiconStore()
 const lexicon = computed(() => lexiconStore.lexicon)
-const publicationsQuote = computed(() => lexicon.value.publications.quote.replace(/\\n/g, '<br/>'))
+const publicationsQuote = computed(() => lexicon.value.publications.quote.replace(/\\n/g, '\n'))
 
 const publications = ref<PublicationSummary[]>([])
 const loading = ref(true)
@@ -215,8 +216,8 @@ async function handleEditSave() {
     await updatePublicationMetadata(editingId.value, editingRevision.value, title, subtitle, info)
     showEditDialog.value = false
     await loadPublications()
-  } catch (err: any) {
-    feedback.setError('保存失败: ' + (err.message || '未知错误'))
+  } catch (err: unknown) {
+    feedback.setError('保存失败: ' + getUserErrorMessage(err, '未知错误'))
   } finally {
     saving.value = false
   }
@@ -261,8 +262,8 @@ async function handleDelete(id: number) {
     await deletePublication(id)
     publications.value = publications.value.filter((p) => p.id !== id)
     deleteConfirmId.value = null
-  } catch (err: any) {
-    feedback.setError('删除失败: ' + (err?.response?.data?.message || err.message || '未知错误'))
+  } catch (err: unknown) {
+    feedback.setError('删除失败: ' + getUserErrorMessage(err, '未知错误'))
   } finally {
     deletingId.value = null
   }
@@ -289,9 +290,9 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
   try {
     const id = await createPublication(sample.publication, defaultSettings, baseTitle + ' (副本)')
     router.push({ name: 'workbench', params: { id } })
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (import.meta.env.DEV) console.error('[template clone] failed:', err)
-    feedback.setError('创建失败: ' + (err?.message || '未知错误'))
+    feedback.setError('创建失败: ' + getUserErrorMessage(err, '未知错误'))
   } finally {
     cloningSampleId.value = null
   }
@@ -305,16 +306,16 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
       <div class="view-top-progress__bar"></div>
     </div>
     <div class="gallery-stage">
-      <FeedbackStrip :status-message="feedback.statusMessage.value" :error-message="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
+      <FeedbackStrip :statusMessage="feedback.statusMessage.value" :errorMessage="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
 
       <!-- Header -->
       <PoeticHeader
         :eyebrow="lexicon.publications.headerEyebrow"
         :title="lexicon.publications.headerTitle"
-        :title-italic="lexicon.publications.headerTitleItalic"
+        :titleItalic="lexicon.publications.headerTitleItalic"
       >
         <template #extra>
-          <p class="poetic-quote" v-html="publicationsQuote"></p>
+          <p class="poetic-quote">{{ publicationsQuote }}</p>
           <button class="btn btn--primary create-hero-btn" @click="showCreateDialog = true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             {{ lexicon.publications.createBtn }}
@@ -337,7 +338,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
             </div>
             <button class="toggle-expand-btn" @click="templatesExpanded = !templatesExpanded">
               <span>{{ templatesExpanded ? '收起范本' : '展开范本' }}</span>
-              <svg :class="{ rotated: !templatesExpanded }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg :class="{ rotated: !templatesExpanded }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9" /></svg>
             </button>
           </div>
 
@@ -366,7 +367,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                   title="浏览世系范本"
                   @click.stop="previewSample(sample.id)"
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                   预览世系
                 </button>
                 <button
@@ -374,7 +375,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                   :disabled="cloningSampleId === sample.id"
                   @click.stop="handleViewSample(sample)"
                 >
-                  <svg v-if="cloningSampleId !== sample.id" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <svg v-if="cloningSampleId !== sample.id" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
                   <span>{{ cloningSampleId === sample.id ? '拓印中...' : '以此建谱' }}</span>
                 </button>
               </div>
@@ -402,15 +403,15 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
             <!-- Toolbar: Search & Sort -->
             <div class="list-toolbar">
               <div class="search-box">
-                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
                 <input
                   v-model="searchQuery"
                   type="text"
                   :placeholder="lexicon.publications.searchPlaceholder"
                   class="search-input"
                 />
-                <button v-if="searchQuery" class="clear-search-btn" @click="searchQuery = ''" title="清除搜索">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <button v-if="searchQuery" class="clear-search-btn" title="清除搜索" @click="searchQuery = ''">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                 </button>
               </div>
 
@@ -437,7 +438,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
           <!-- Search Filter Empty -->
           <div v-if="filteredPublications.length === 0" class="search-empty-state">
             <div class="search-empty-seal">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="8" y1="11" x2="14" y2="11" /></svg>
             </div>
             <h4 class="search-empty-title">未找到与 “{{ searchQuery }}” 相关的族谱</h4>
             <p class="search-empty-desc">建议更换堂号、祖籍或谱名关键词，或者清除筛选条件</p>
@@ -480,7 +481,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                       </span>
                       <span v-if="pub.subtitle" class="meta-dot">·</span>
                       <span class="archive-time-tag" :title="formatDate(pub.updatedAt)">
-                        <svg class="clock-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <svg class="clock-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                         <span>{{ formatRelativeTime(pub.updatedAt) }}</span>
                         <span v-if="pub.lastUpdatedBy" class="archive-author">({{ pub.lastUpdatedBy }})</span>
                       </span>
@@ -499,13 +500,13 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
               </div>
 
               <!-- Tags Row: Hall Name & Ancestral Origin -->
-              <div class="archive-tags" v-if="pub.info?.ancestralOrigin || pub.info?.hallName">
+              <div v-if="pub.info?.ancestralOrigin || pub.info?.hallName" class="archive-tags">
                 <span v-if="pub.info?.ancestralOrigin" class="meta-tag origin-tag">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" /><circle cx="12" cy="10" r="3" /></svg>
                   <span>{{ pub.info.ancestralOrigin }}</span>
                 </span>
                 <span v-if="pub.info?.hallName" class="meta-tag hall-tag">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11"/></svg>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11" /></svg>
                   <span>{{ pub.info.hallName }}</span>
                 </span>
               </div>
@@ -530,7 +531,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                   </svg>
                   <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/>
+                    <rect x="3" y="3" width="18" height="18" rx="2" /><line x1="9" y1="3" x2="9" y2="21" />
                   </svg>
                   <span>{{ openingId === pub.id ? '载入中...' : '进入编撰' }}</span>
                 </button>
@@ -538,13 +539,13 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
                 <div class="archive-actions" @click.stop>
                   <div class="action-btn-cluster" aria-label="典籍工具">
                     <button class="action-btn" title="导出出版数据" @click.stop="openBookEditor(pub.id)">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
                     </button>
                     <button class="action-btn" title="编修历程" @click.stop="openActivity(pub.id)">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                     </button>
                     <button class="action-btn" title="世系统计" @click.stop="openStats(pub.id)">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
                     </button>
                   </div>
 
@@ -590,7 +591,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
             <div class="glass-sheet">
               <header class="sheet-header">
                 <h2 class="sheet-title">{{ lexicon.publications.createModalTitle }}</h2>
-                <button class="sheet-close" @click="showCreateDialog = false" title="关闭">&times;</button>
+                <button class="sheet-close" title="关闭" @click="showCreateDialog = false">&times;</button>
               </header>
               <div class="sheet-body">
                 <div class="glass-input-group">
@@ -616,7 +617,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
             <div class="glass-sheet large">
               <header class="sheet-header">
                 <h2 class="sheet-title">{{ lexicon.publications.editModalTitle }}</h2>
-                <button class="sheet-close" @click="showEditDialog = false" title="关闭">&times;</button>
+                <button class="sheet-close" title="关闭" @click="showEditDialog = false">&times;</button>
               </header>
               <div class="sheet-body grid-form">
                 <div class="glass-input-group">

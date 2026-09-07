@@ -7,6 +7,7 @@ import {
   revokeShareLink,
   type ShareLinkSummary,
 } from '../api/shareManage'
+import { getUserErrorMessage } from '../api/http'
 
 const props = defineProps<{
   publicationId: number
@@ -33,8 +34,8 @@ async function load() {
   error.value = null
   try {
     links.value = await listShareLinks(props.publicationId)
-  } catch (err: any) {
-    error.value = err.message || '加载失败'
+  } catch (err: unknown) {
+    error.value = getUserErrorMessage(err, '加载失败')
   } finally {
     loading.value = false
   }
@@ -51,8 +52,8 @@ async function handleCreate() {
     newToken.value = result.token
     showCreateForm.value = false
     await load()
-  } catch (err: any) {
-    error.value = err.message || '创建失败'
+  } catch (err: unknown) {
+    error.value = getUserErrorMessage(err, '创建失败')
   } finally {
     creating.value = false
   }
@@ -69,8 +70,8 @@ async function confirmRevoke() {
   try {
     await revokeShareLink(props.publicationId, linkId)
     await load()
-  } catch (err: any) {
-    error.value = err.message || '撤销失败'
+  } catch (err: unknown) {
+    error.value = getUserErrorMessage(err, '撤销失败')
   } finally {
     pendingRevokeLinkId.value = null
   }

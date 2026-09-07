@@ -246,7 +246,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
       <!-- Standard Top Navigation Bar -->
       <header class="topbar">
         <div class="topbar-left">
-          <button class="back-btn" type="button" @click="goBack" title="返回画布">
+          <button class="back-btn" type="button" title="返回画布" @click="goBack">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12" />
               <polyline points="12 19 5 12 12 5" />
@@ -295,16 +295,16 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
         <div class="hero-text">
           <div class="hero-eyebrow">宗谱编年史</div>
           <h1>{{ pubData.title || '未命名族谱' }}</h1>
-          <p class="hero-narrative" v-if="earliest && latest">
+          <p v-if="earliest && latest" class="hero-narrative">
             溯古及今，自 <strong>{{ earliest }}</strong> 年至 <strong>{{ latest }}</strong> 年，跨越 <strong>{{ span }}</strong> 载光阴，
             收录 <strong>{{ totalEvents }}</strong> 个纪事节点，汇聚 <strong>{{ distinctPeople }}</strong> 位先祖族人生卒岁华。
           </p>
-          <p class="hero-narrative" v-else>补充人物生卒年份后，编年史将在此徐徐展开。</p>
+          <p v-else class="hero-narrative">补充人物生卒年份后，编年史将在此徐徐展开。</p>
         </div>
       </header>
 
       <!-- Metric Strip -->
-      <section class="metric-strip" v-if="allEvents.length > 0">
+      <section v-if="allEvents.length > 0" class="metric-strip">
         <div class="metric-item">
           <span class="metric-num">{{ totalEvents }}</span>
           <span class="metric-label">纪事节点</span>
@@ -317,7 +317,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
           <span class="metric-num">{{ earliest }}</span>
           <span class="metric-label">肇始之年</span>
         </div>
-        <div class="metric-item" v-if="span !== null">
+        <div v-if="span !== null" class="metric-item">
           <span class="metric-num">{{ span }}<small> 年</small></span>
           <span class="metric-label">时空跨度</span>
         </div>

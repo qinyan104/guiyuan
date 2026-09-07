@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getMyProfile, submitProfileChange, type MyProfile, type MyProfilePerson } from '../api/profile'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PoeticHeader from '../components/PoeticHeader.vue'
@@ -245,7 +245,7 @@ function genderLabel(g: string) {
               </div>
               <div class="field checkbox-field">
                 <label>
-                  <input type="checkbox" v-model="form.deceased" :disabled="profile.hasPendingChanges" />
+                  <input v-model="form.deceased" type="checkbox" :disabled="profile.hasPendingChanges" />
                   <span>已故</span>
                 </label>
               </div>

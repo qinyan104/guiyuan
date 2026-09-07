@@ -3,7 +3,6 @@
  */
 
 import type { PublicationData, Person, Gender, FamilyUnit } from "../types/family"
-import { resolveFamilyBranchMode } from "./familyBranchMode"
 
 export interface KinshipTerm {
   term: string
@@ -189,7 +188,7 @@ function isAllMaleOnPath(path: { personId: string; gender: Gender }[]): boolean 
   return path.every((entry) => entry.gender === "male")
 }
 
-function getConnectorInfo(path: { personId: string; gender: Gender }[], ancestorId: string, personId: string): ConnectorInfo | null {
+function getConnectorInfo(path: { personId: string; gender: Gender }[], ancestorId: string): ConnectorInfo | null {
   const ancestorIdx = path.findIndex((p) => p.personId === ancestorId)
   if (ancestorIdx < 0 || path.length < 2) return null
   const connectorIdx = Math.max(0, ancestorIdx - 1)
@@ -211,8 +210,8 @@ function buildRelationshipPath(
   const alterSidePath = lca.pathB.filter((p) => p.personId !== lca.ancestor && p.personId !== personBId)
   const isFullPatrilineal = isAllMaleOnPath(egoSidePath) && isAllMaleOnPath(alterSidePath)
   const isEgoLinePatrilineal = isAllMaleOnPath(egoSidePath)
-  const egoConnector = getConnectorInfo(lca.pathA, lca.ancestor, personAId)
-  const alterConnector = getConnectorInfo(lca.pathB, lca.ancestor, personBId)
+  const egoConnector = getConnectorInfo(lca.pathA, lca.ancestor)
+  const alterConnector = getConnectorInfo(lca.pathB, lca.ancestor)
   const generationGap = lca.depthB - lca.depthA
   return {
     path: fullPath,

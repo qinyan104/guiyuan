@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { getPublication } from '../api/publication'
+import { getUserErrorMessage } from '../api/http'
 import { defaultSettings } from '../data/sampleFamily'
 import { layoutPublication } from '../lib/layout'
 import type { Person, PublicationData, PublicationSettings } from '../types/family'
@@ -60,8 +61,8 @@ async function loadData() {
     const result = await getPublication(props.publicationId)
     publicationData.value = result.publication
     previewSettings.value = structuredClone(result.settings)
-  } catch (e: any) {
-    error.value = e.message || '加载族谱失败'
+  } catch (e: unknown) {
+    error.value = getUserErrorMessage(e, '加载族谱失败')
   } finally {
     loading.value = false
   }

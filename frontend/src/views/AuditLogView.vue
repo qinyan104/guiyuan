@@ -263,13 +263,13 @@ function handleExportJson() {
       <PoeticHeader
         :eyebrow="lexicon.logs.headerEyebrow"
         :title="lexicon.logs.headerTitle"
-        :title-italic="lexicon.logs.headerTitleItalic"
+        :titleItalic="lexicon.logs.headerTitleItalic"
       >
         <template #extra>
-          <p class="poetic-quote" v-html="lexicon.logs.quote.replace(/\\n/g, '<br/>')"></p>
+          <p class="poetic-quote">{{ lexicon.logs.quote.replace(/\\n/g, '\n') }}</p>
           <div class="header-actions">
             <button class="btn btn--ghost" title="导出当前日志" @click="handleExportJson">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
               导出纪事
             </button>
             <button class="btn btn--ghost" title="刷新记录" @click="loadLogs(true)">
@@ -283,7 +283,7 @@ function handleExportJson() {
       <!-- Control Toolbar: Search & Category Filter -->
       <div class="audit-toolbar">
         <div class="search-bar">
-          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           <input
             v-model="searchQuery"
             type="text"
@@ -330,7 +330,7 @@ function handleExportJson() {
       <!-- Empty State -->
       <div v-else-if="filteredLogs.length === 0 && !errorMsg" class="bento-card panel-glass empty-state">
         <div class="empty-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
         </div>
         <p class="empty-title">{{ searchQuery || activeCategory !== 'all' ? '未找到符合条件的纪事' : '暂无任何操作纪事' }}</p>
         <p class="empty-desc">{{ searchQuery ? '请尝试更换检索关键词或切换分类' : '系统操作日志将自动留痕于此' }}</p>

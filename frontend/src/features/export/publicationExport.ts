@@ -312,7 +312,7 @@ function insertBackground(svg: SVGSVGElement, layout: PublicationLayout, theme: 
   svg.querySelector('#canvas-bg-gradient')?.remove()
 
   const themeVars = getThemeCssVariables(theme)
-  let canvasBg = themeVars['--canvas-bg'] || themeVars['--bg-paper'] || '#FAF9F6'
+  const canvasBg = themeVars['--canvas-bg'] || themeVars['--bg-paper'] || '#FAF9F6'
 
   let fillValue = canvasBg
   if (canvasBg.includes('linear-gradient') || canvasBg.includes('radial-gradient')) {

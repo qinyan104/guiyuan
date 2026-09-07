@@ -33,7 +33,7 @@ const nextDirection = computed(() =>
     <header class="detail-hero">
       <div class="detail-hero__nav">
         <RouterLink class="nav-link" :to="{ name: 'workbench-direction-lab' }">返回总览</RouterLink>
-        <div class="nav-jump" v-if="direction">
+        <div v-if="direction" class="nav-jump">
           <RouterLink
             v-for="item in workbenchDirections"
             :key="item.id"

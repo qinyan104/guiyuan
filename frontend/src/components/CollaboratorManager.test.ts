@@ -80,7 +80,7 @@ describe('CollaboratorManager', () => {
   })
 
   it('requires confirmation before changing a collaborator role', async () => {
-    const wrapper = mount(CollaboratorManager, {
+    mount(CollaboratorManager, {
       attachTo: document.body,
       props: { publicationId: 7 },
       global: {

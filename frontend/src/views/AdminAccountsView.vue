@@ -357,7 +357,7 @@ function genderLabel(g: string) {
       <BaseDialog
         :visible="showResetResult"
         title="密码已重置"
-        max-width="420px"
+        maxWidth="420px"
         @update:visible="(v: boolean) => { if (!v) { showResetResult = false; resetTarget = null } }"
       >
         <div class="reset-result">

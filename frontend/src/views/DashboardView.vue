@@ -10,6 +10,7 @@ import FeedbackStrip from '../components/FeedbackStrip.vue'
 import { useFeedback } from '../composables/useFeedback'
 import UserAvatar from '../components/UserAvatar.vue'
 import { adminListUsers, adminBackupDatabase, type AdminUser } from '../api/admin'
+import { getUserErrorMessage } from '../api/http'
 
 const router = useRouter()
 const lexiconStore = useLexiconStore()
@@ -41,8 +42,8 @@ async function loadDashboard() {
         users.value = []
       }
     }
-  } catch (e: any) {
-    pageError.value = e?.message || '加载失败，请检查后端服务是否正常运行'
+  } catch (e: unknown) {
+    pageError.value = getUserErrorMessage(e, '加载失败，请检查后端服务是否正常运行')
     pubCount.value = 0
   } finally {
     loading.value = false
@@ -60,8 +61,8 @@ async function handleBackup() {
   backupLoading.value = true
   try {
     await adminBackupDatabase()
-  } catch (err: any) {
-    feedback.setError('备份失败: ' + (err.message || '未知错误'))
+  } catch (err: unknown) {
+    feedback.setError('备份失败: ' + getUserErrorMessage(err, '未知错误'))
   } finally {
     backupLoading.value = false
   }
@@ -105,8 +106,8 @@ async function handleCreateFromDashboard() {
   try {
     const id = await createPublication({ ...blankPublication, title, subtitle: newSubtitle.value.trim() }, defaultSettings, title)
     router.push({ name: 'workbench', params: { id } })
-  } catch (err: any) {
-    feedback.setError('创建失败: ' + (err.message || '未知错误'))
+  } catch (err: unknown) {
+    feedback.setError('创建失败: ' + getUserErrorMessage(err, '未知错误'))
   }
 }
 </script>
@@ -114,14 +115,14 @@ async function handleCreateFromDashboard() {
 <template>
   <div class="dashboard-view-root">
     <div class="dashboard-stage">
-      <FeedbackStrip :status-message="feedback.statusMessage.value" :error-message="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
+      <FeedbackStrip :statusMessage="feedback.statusMessage.value" :errorMessage="feedback.errorMessage.value" @dismiss="feedback.dismiss" />
       <PoeticHeader
         :eyebrow="lexicon.dashboard.headerEyebrow"
         :title="lexicon.dashboard.headerTitle"
-        :title-italic="lexicon.dashboard.headerTitleItalic"
+        :titleItalic="lexicon.dashboard.headerTitleItalic"
       >
         <template #extra>
-          <p class="poetic-quote" v-html="lexicon.dashboard.quote.replace(/\\n/g, '<br/>')"></p>
+          <p class="poetic-quote">{{ lexicon.dashboard.quote.replace(/\\n/g, '\n') }}</p>
         </template>
       </PoeticHeader>
 

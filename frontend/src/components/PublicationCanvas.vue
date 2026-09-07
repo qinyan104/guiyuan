@@ -3,9 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { calculateRevealPan, type RevealPersonOptions } from '../lib/canvasViewport'
 import type { KinshipTerm } from '../lib/kinship'
 import type {
-  LineSegment,
   Person,
-  PositionedCard,
   PublicationData,
   PublicationLayout,
   PublicationSettings,
@@ -54,19 +52,19 @@ const isLargeTree = computed(() => props.layout.cards.length >= LARGE_TREE_THRES
 const shouldCull = computed(() => isLargeTree.value && !renderAllForExport.value)
 const SPATIAL_CELL_SIZE = 512
 
-type SpatialBuckets<T> = Map<string, number[]>
+type SpatialBuckets = Map<string, number[]>
 
 interface SpatialIndex {
-  cards: SpatialBuckets<PositionedCard>
-  lines: SpatialBuckets<LineSegment>
+  cards: SpatialBuckets
+  lines: SpatialBuckets
 }
 
 function spatialCellKey(x: number, y: number): string {
   return `${x}:${y}`
 }
 
-function addSpatialItem<T>(
-  buckets: SpatialBuckets<T>,
+function addSpatialItem(
+  buckets: SpatialBuckets,
   index: number,
   minX: number,
   maxX: number,
@@ -88,8 +86,8 @@ function addSpatialItem<T>(
   }
 }
 
-function collectSpatialIndexes<T>(
-  buckets: SpatialBuckets<T>,
+function collectSpatialIndexes(
+  buckets: SpatialBuckets,
   left: number,
   right: number,
   top: number,
@@ -113,8 +111,8 @@ function collectSpatialIndexes<T>(
 }
 
 const spatialIndex = computed<SpatialIndex>(() => {
-  const cards: SpatialBuckets<PositionedCard> = new Map()
-  const lines: SpatialBuckets<LineSegment> = new Map()
+  const cards: SpatialBuckets = new Map()
+  const lines: SpatialBuckets = new Map()
 
   props.layout.cards.forEach((card, index) => {
     addSpatialItem(cards, index, card.x, card.x + card.width, card.y, card.y + card.height)
@@ -778,7 +776,7 @@ function resetView() {
     @touchmove.prevent="handleTouchMove"
   >
     <div ref="cameraRef" class="canvas-camera" :style="cameraStyle">
-      <div ref="stageRef" id="publication-canvas-root" class="publication-stage" :style="stageStyle">
+      <div id="publication-canvas-root" ref="stageRef" class="publication-stage" :style="stageStyle">
         <svg
           ref="svgRef"
           class="publication-svg"

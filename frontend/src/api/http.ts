@@ -1,4 +1,4 @@
-﻿import axios from "axios"
+﻿import axios, { type AxiosRequestConfig } from "axios"
 import { clearSession, getAccessToken, setAccessToken } from "./tokenStore"
 import { classifyError, getUserErrorMessage } from "./errorClassifier"
 import type { ClassifiedError } from "./errorClassifier"
@@ -22,9 +22,18 @@ http.interceptors.request.use((config) => {
 
 let refreshPromise: Promise<string> | null = null
 
-export function shouldRetryAuthRefresh(config: { url?: string }): boolean {
+export function shouldRetryAuthRefresh(config: { url?: string } | AxiosRequestConfig): boolean {
   const url = config.url ?? ""
   return !url.startsWith("/auth/")
+}
+
+function getErrorConfigUrl(error: unknown): string {
+  if (axios.isAxiosError(error)) return error.config?.url ?? ""
+  if (typeof error === "object" && error !== null && "config" in error) {
+    const config = (error as { config?: { url?: unknown } }).config
+    return typeof config?.url === "string" ? config.url : ""
+  }
+  return ""
 }
 
 // ---- 旧版兼容导出（标记为 deprecated，建议用 classifyError） ----
@@ -37,7 +46,7 @@ export function formatHttpError(error: unknown): string {
 /** @deprecated 请使用 classifyError 判断 category === "conflict" 代替 */
 export function isPublicationConflict(error: unknown): boolean {
   const classified = classifyError(error)
-  const url = (error as any)?.config?.url ?? ""
+  const url = getErrorConfigUrl(error)
   return classified.category === "conflict" && typeof url === "string" && url.includes("/publications/")
 }
 
@@ -51,7 +60,7 @@ http.interceptors.response.use(
     // 409 非出版物冲突 → 派发全局事件
     if (
       classified.category === "conflict" &&
-      !((error as any)?.config?.url ?? "").includes("/publications/")
+      !getErrorConfigUrl(error).includes("/publications/")
     ) {
       window.dispatchEvent(
         new CustomEvent("concurrency-conflict", {

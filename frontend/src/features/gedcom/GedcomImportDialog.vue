@@ -115,7 +115,7 @@ function handleClose() {
         <div class="gedcom-dialog">
           <header class="gedcom-dialog__header">
             <h2>导入 GEDCOM 文件</h2>
-            <button class="close-btn" @click="handleClose" aria-label="关闭">×</button>
+            <button class="close-btn" aria-label="关闭" @click="handleClose">×</button>
           </header>
 
           <div class="gedcom-dialog__body">

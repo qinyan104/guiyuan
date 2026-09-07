@@ -182,7 +182,7 @@ function formatTime(t: string | null) {
         >
           <!-- Row header -->
           <div class="review-row" @click="toggleExpand(item.id)">
-            <div class="review-checkbox" v-if="item.status === 'pending'" @click.stop>
+            <div v-if="item.status === 'pending'" class="review-checkbox" @click.stop>
               <input
                 type="checkbox"
                 :checked="selectedIds.has(item.id)"

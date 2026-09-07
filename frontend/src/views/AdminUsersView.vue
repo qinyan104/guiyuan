@@ -22,7 +22,7 @@ import { useToast } from '../composables/useToast'
 
 const { lexicon } = useLexiconStore()
 const { showToast } = useToast()
-const usersQuote = computed(() => lexicon.users.quote.replace(/\\n/g, '<br/>'))
+const usersQuote = computed(() => lexicon.users.quote.replace(/\\n/g, '\n'))
 const users = ref<AdminUser[]>([])
 const loading = ref(true)
 
@@ -242,10 +242,10 @@ function formatDate(dateStr: string) {
       <PoeticHeader
         :eyebrow="lexicon.users.headerEyebrow"
         :title="lexicon.users.headerTitle"
-        :title-italic="lexicon.users.headerTitleItalic"
+        :titleItalic="lexicon.users.headerTitleItalic"
       >
         <template #extra>
-          <p class="poetic-quote" v-html="usersQuote"></p>
+          <p class="poetic-quote">{{ usersQuote }}</p>
           <button class="btn btn--primary" @click="showCreateForm = true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             添加编委
@@ -255,7 +255,7 @@ function formatDate(dateStr: string) {
 
       <!-- Search & Quick Filter -->
       <div class="search-bar">
-        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
         <input
           v-model="searchQuery"
           type="text"
@@ -333,7 +333,7 @@ function formatDate(dateStr: string) {
             <span class="col-role">
               <AppSelect
                 v-if="canManageRoles && !isProtected(user)"
-                :model-value="user.role"
+                :modelValue="user.role"
                 :options="roleOptions"
                 variant="inline"
                 class="role-select"
@@ -381,7 +381,7 @@ function formatDate(dateStr: string) {
       <BaseDialog
         :visible="showCreateForm"
         title="新增编委账号"
-        max-width="720px"
+        maxWidth="720px"
         @update:visible="(v: boolean) => { showCreateForm = v }"
       >
         <AdminUserCreateForm
@@ -394,14 +394,14 @@ function formatDate(dateStr: string) {
       <BaseDialog
         :visible="resetUserId !== null"
         title="重铸编委登录密匙"
-        max-width="440px"
+        maxWidth="440px"
         @update:visible="(v: boolean) => { if (!v) resetUserId = null }"
       >
         <div class="dialog-field">
           <div class="field-label-row">
             <label>为该编委设置新密码</label>
             <button type="button" class="quick-gen-btn" @click="generateRandomPassword">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /></svg>
               随机生成强密码
             </button>
           </div>
@@ -419,8 +419,8 @@ function formatDate(dateStr: string) {
               :title="showPasswordPlain ? '隐藏明文' : '显示明文'"
               @click="showPasswordPlain = !showPasswordPlain"
             >
-              <svg v-if="showPasswordPlain" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg v-if="showPasswordPlain" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
             </button>
           </div>
           <span class="field-hint">重置后该编委账号需使用新密码登录，旧会话将自动失效。</span>

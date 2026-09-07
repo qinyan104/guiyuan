@@ -2,7 +2,6 @@ import { computed, markRaw, reactive, ref, shallowReactive, shallowRef } from 'v
 
 import type {
   FamilyBranchMode,
-  FamilyUnit,
   Gender,
   Person,
   PublicationData,
@@ -73,10 +72,6 @@ export function usePublicationState(
     Object.assign(target, nextSource)
     layoutOverride.value = null
     timer.end({ targetKeys: Object.keys(target).length })
-  }
-
-  function listFamilies(): FamilyUnit[] {
-    return Object.values(publication.families)
   }
 
   // O(1) person→family indexes (built once, reused by all computeds)

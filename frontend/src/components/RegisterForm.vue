@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 
 import { register, type RegisterRequest } from '../api/auth'
+import { getUserErrorMessage } from '../api/http'
 
 const emit = defineEmits<{
   (e: 'success'): void
@@ -56,8 +57,8 @@ async function onSubmit() {
       emit('success')
       emit('switch')
     }, 1200)
-  } catch (error: any) {
-    errorMsg.value = error?.message || '注册失败，请稍后重试'
+  } catch (error: unknown) {
+    errorMsg.value = getUserErrorMessage(error, '注册失败，请稍后重试')
   } finally {
     loading.value = false
   }

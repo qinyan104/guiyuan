@@ -64,7 +64,7 @@ function markdownText(value: string): string {
     .trim()
     .replace(/[\r\n]+/g, " ")
     .replace(/\\/g, "\\\\")
-    .replace(/([#*_`\[\]])/g, "\\$1")
+    .replace(/([#*_`[\]])/g, "\\$1")
 }
 
 function personName(person?: Person): string {
