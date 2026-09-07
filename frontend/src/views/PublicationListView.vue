@@ -537,7 +537,7 @@ async function handleViewSample(sample: typeof builtinSamples[0]) {
 
                 <div class="archive-actions" @click.stop>
                   <div class="action-btn-cluster" aria-label="典籍工具">
-                    <button class="action-btn" title="古籍印制排版" @click.stop="openBookEditor(pub.id)">
+                    <button class="action-btn" title="导出出版数据" @click.stop="openBookEditor(pub.id)">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                     </button>
                     <button class="action-btn" title="编修历程" @click.stop="openActivity(pub.id)">

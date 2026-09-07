@@ -48,8 +48,8 @@ const staticCommands = computed<CommandItem[]>(() => [
   },
   {
     id: 'cmd-book-editor',
-    title: '古籍活字排版编辑器',
-    subtitle: '进入传统排版制作竖排线装书卷 PDF',
+    title: '族谱出版数据',
+    subtitle: '提取族谱元数据并下载 Markdown 文件',
     category: 'tool',
     icon: 'book-open',
     action: () => {

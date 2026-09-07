@@ -145,7 +145,7 @@ describe('PublicationListView', () => {
 
     const actionButtons = wrapper.findAll('.action-btn')
     // Find book editor button
-    const bookBtn = actionButtons.find((btn) => btn.attributes('title') === '古籍印制排版')
+    const bookBtn = actionButtons.find((btn) => btn.attributes('title') === '导出出版数据')
     expect(bookBtn).toBeDefined()
     await bookBtn!.trigger('click')
     expect(push).toHaveBeenCalledWith({ name: 'book-editor-publication', params: { publicationId: 7 } })

@@ -58,12 +58,12 @@ describe('WorkbenchHeader', () => {
     const wrapper = mountHeader()
 
     await wrapper.findAll('.dropdown-trigger')[1].trigger('click')
-    expect(wrapper.text()).toContain('出版排版')
+    expect(wrapper.text()).toContain('出版数据')
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.text()).not.toContain('出版排版')
+    expect(wrapper.text()).not.toContain('出版数据')
   })
 
   it('groups the four primary genealogy tools', () => {

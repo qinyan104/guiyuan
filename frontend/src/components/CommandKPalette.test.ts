@@ -90,11 +90,11 @@ describe('CommandKPalette', () => {
     const input = document.querySelector('.command-input') as HTMLInputElement
     expect(input).not.toBeNull()
 
-    input.value = '古籍'
+    input.value = '出版数据'
     input.dispatchEvent(new Event('input'))
     await flushPromises()
 
-    expect(document.body.textContent).toContain('古籍活字排版编辑器')
+    expect(document.body.textContent).toContain('族谱出版数据')
   })
 
   it('executes command action on click', async () => {

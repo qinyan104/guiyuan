@@ -121,34 +121,9 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/publishing',
-    name: 'publishing-dashboard',
-    component: () => import('../views/PublishingDashboard.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
     path: '/book-editor/publication/:publicationId',
     name: 'book-editor-publication',
     component: () => import('../views/BookEditorView.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/publishing/publication/:publicationId',
-    name: 'publishing-publication',
-    component: () => import('../views/PublishingDashboard.vue'),
-    props: (route) => ({ publicationId: Number(route.params.publicationId) }),
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/publishing/:draftId',
-    name: 'publishing-studio',
-    component: () => import('../views/PublishingStudio.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/publishing/:draftId/biography/:personId',
-    name: 'biography-editor',
-    component: () => import('../views/BiographyEditor.vue'),
     meta: { requiresAuth: true },
   },
   {
