@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -69,6 +71,7 @@ public class PublicationPrivacyIntegrationTest {
         
         publication.put("people", people);
         testData.put("publication", publication);
+        testData.put("revision", 7L);
 
         when(publicationService.loadPublication(1L)).thenReturn(testData);
     }
@@ -100,5 +103,31 @@ public class PublicationPrivacyIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.publication.people.p1.birth", nullValue()));
+    }
+
+    @Test
+    void returnsNotModifiedWhenPublicationRevisionHasNotChanged() throws Exception {
+        PublicationAccess access = new PublicationAccess();
+        access.setRole("OWNER");
+
+        when(authorizationService.getAccess(anyLong(), eq(1L))).thenReturn(Optional.of(access));
+        when(publicationService.getPublicationRevision(1L)).thenReturn(7L);
+
+        var firstResponse = mockMvc.perform(get("/api/publications/1")
+                        .requestAttr("currentUsername", "testuser")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("ETag"))
+                .andExpect(header().string("Server-Timing", containsString("load;dur=")))
+                .andReturn();
+        String etag = firstResponse.getResponse().getHeader("ETag");
+
+        mockMvc.perform(get("/api/publications/1")
+                        .requestAttr("currentUsername", "testuser")
+                        .header("If-None-Match", etag))
+                .andExpect(status().isNotModified())
+                .andExpect(header().string("ETag", etag));
+
+        verify(publicationService, times(1)).loadPublication(1L);
     }
 }

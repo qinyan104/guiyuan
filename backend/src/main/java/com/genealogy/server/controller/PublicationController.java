@@ -16,9 +16,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +36,7 @@ import java.util.Optional;
 @Tag(name = "族谱", description = "族谱 CRUD 操作")
 public class PublicationController {
 
+    private static final Logger log = LoggerFactory.getLogger(PublicationController.class);
     private final PublicationService publicationService;
     private final UserRepository userRepository;
     private final AuditLogRepository auditLogRepository;
@@ -82,24 +91,90 @@ public class PublicationController {
 
     @Operation(summary = "获取族谱详情", description = "根据ID获取族谱详细数据")
     @GetMapping("/{id}")
-    public ApiResponse<Map<String, Object>> get(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> get(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
+        long startedAt = System.nanoTime();
         UserSubject subject = resolveSubject(request);
         authorizationService.require(subject, id, AccessPermission.READ_FULL);
+        long authMs = elapsedMillis(startedAt);
         try {
-            Map<String, Object> data = publicationService.loadPublication(id);
-            
-            // Apply redaction if the user is a VIEWER
             Optional<com.genealogy.server.model.PublicationAccess> access = authorizationService.getAccess(subject.getUserId(), id);
-            
+            String variant = access.filter(item -> "VIEWER".equals(item.getRole()))
+                    .map(item -> "VIEWER:" + item.getRedactionProfile())
+                    .orElse("FULL");
+
+            String ifNoneMatch = request.getHeader("If-None-Match");
+            if (ifNoneMatch != null && !ifNoneMatch.isBlank()) {
+                long revision = publicationService.getPublicationRevision(id);
+                String etag = buildEtag(id, revision, variant);
+                long revisionMs = elapsedMillis(startedAt) - authMs;
+                if (matchesEtag(ifNoneMatch, etag)) {
+                    return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+                            .eTag(etag)
+                            .header("Cache-Control", "private, no-cache")
+                            .header("Server-Timing", serverTiming(authMs, revisionMs, 0, elapsedMillis(startedAt)))
+                            .build();
+                }
+            }
+
+            Map<String, Object> data = publicationService.loadPublication(id);
+            long loadMs = elapsedMillis(startedAt) - authMs;
+            long redactStartedAt = System.nanoTime();
+
+            // Apply redaction if the user is a VIEWER
             if (access.isPresent() && "VIEWER".equals(access.get().getRole())) {
                 data = viewProjector.projectRedacted(data, access.get().getRedactionProfile(), null);
             }
 
-            return ApiResponse.success(data);
+            Object revisionValue = data.get("revision");
+            long revision = revisionValue instanceof Number number
+                    ? number.longValue()
+                    : publicationService.getPublicationRevision(id);
+            String etag = buildEtag(id, revision, variant);
+            long redactMs = elapsedMillis(redactStartedAt);
+            return ResponseEntity.ok()
+                    .eTag(etag)
+                    .header("Cache-Control", "private, no-cache")
+                    .header("Server-Timing", serverTiming(authMs, loadMs, redactMs, elapsedMillis(startedAt)))
+                    .body(ApiResponse.success(data));
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(PublicationController.class).error("获取族谱 {} 失败: {}", id, e.getMessage(), e);
+            log.error("获取族谱 {} 失败: {}", id, e.getMessage(), e);
             throw e;
         }
+    }
+
+    private String buildEtag(Long publicationId, long revision, String variant) {
+        return "\"publication-" + publicationId + "-" + revision + "-" + sha256(variant) + "\"";
+    }
+
+    private boolean matchesEtag(String header, String etag) {
+        for (String candidate : header.split(",")) {
+            String value = candidate.trim();
+            if ("*".equals(value) || etag.equals(value) || ("W/" + etag).equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String sha256(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is unavailable", e);
+        }
+    }
+
+    private String serverTiming(long authMs, long loadMs, long redactMs, long totalMs) {
+        return "auth;dur=" + authMs
+                + ", load;dur=" + loadMs
+                + ", redact;dur=" + redactMs
+                + ", total;dur=" + totalMs;
+    }
+
+    private long elapsedMillis(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000;
     }
 
     @Operation(summary = "创建族谱", description = "创建新的族谱")

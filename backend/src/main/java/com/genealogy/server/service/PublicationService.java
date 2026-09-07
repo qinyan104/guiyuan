@@ -178,14 +178,17 @@ public class PublicationService {
     }
 
     public Map<String, Object> loadPublication(Long publicationId) {
+        long startedAt = System.nanoTime();
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new NotFoundException("Publication not found"));
+        long publicationQueryMs = elapsedMillis(startedAt);
 
         Map<String, Map<String, Object>> people = new LinkedHashMap<>();
         Map<String, Map<String, Object>> families = new LinkedHashMap<>();
         
         // Load federated data (root + linked branches up to depth 3)
         treeLoader.loadFederatedData(publicationId, 3, "", people, families);
+        long treeLoadMs = elapsedMillis(startedAt) - publicationQueryMs;
 
         Map<String, Object> publicationJson = new LinkedHashMap<>();
         publicationJson.put("title", publication.getTitle());
@@ -216,7 +219,25 @@ public class PublicationService {
             response.put("settings", Map.of());
         }
 
+        log.debug("publication.load id={} publicationQueryMs={} treeLoadMs={} assembleMs={} totalMs={} people={} families={}",
+                publicationId,
+                publicationQueryMs,
+                treeLoadMs,
+                elapsedMillis(startedAt) - publicationQueryMs - treeLoadMs,
+                elapsedMillis(startedAt),
+                people.size(),
+                families.size());
         return response;
+    }
+
+    public long getPublicationRevision(Long publicationId) {
+        return publicationRepository.findById(publicationId)
+                .map(Publication::getRevision)
+                .orElseThrow(() -> new NotFoundException("Publication not found"));
+    }
+
+    private long elapsedMillis(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000;
     }
 
     @Transactional
