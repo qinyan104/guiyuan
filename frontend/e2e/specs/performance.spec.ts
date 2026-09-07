@@ -125,10 +125,11 @@ test.describe('Publication browser performance', () => {
   })
 
   test.afterAll(async ({ request }) => {
+    test.setTimeout(120_000)
     if (publicationId && authToken) {
       await authenticatedRequest(request, authToken, `/api/publications/${publicationId}`, { method: 'DELETE' }).catch(() => {})
     }
-  }, { timeout: 120_000 })
+  })
 
   test('reports open, render, and interaction metrics without reducing content', async ({ page, context }, testInfo) => {
     await page.addInitScript(() => {

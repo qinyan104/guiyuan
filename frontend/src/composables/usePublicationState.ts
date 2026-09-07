@@ -1,4 +1,4 @@
-import { computed, markRaw, reactive, ref, shallowRef } from 'vue'
+import { computed, markRaw, reactive, ref, shallowReactive, shallowRef } from 'vue'
 
 import type {
   FamilyBranchMode,
@@ -42,9 +42,17 @@ export function usePublicationState(
     }
   }
 
+  function preparePublicationState(pub: PublicationData): PublicationData {
+    freezePublication(pub)
+    return {
+      ...pub,
+      people: shallowReactive(pub.people),
+      families: shallowReactive(pub.families),
+    }
+  }
+
   const cloned = structuredClone(initialPublication)
-  freezePublication(cloned)
-  const publication = reactive<PublicationData>(cloned)
+  const publication = reactive<PublicationData>(preparePublicationState(cloned))
   const settings = reactive<PublicationSettings>(structuredClone(initialSettings))
   const selectedPersonId = ref(
     publication.families[publication.focusFamilyId]?.adults[0] ?? Object.keys(publication.people)[0] ?? '',
@@ -59,10 +67,10 @@ export function usePublicationState(
     Object.keys(target).forEach((key) => {
       delete (target as Record<string, unknown>)[key]
     })
-    if ('people' in source || 'families' in source) {
-      freezePublication(source as unknown as PublicationData)
-    }
-    Object.assign(target, source)
+    const nextSource = 'people' in source || 'families' in source
+      ? preparePublicationState(source as unknown as PublicationData)
+      : source
+    Object.assign(target, nextSource)
     layoutOverride.value = null
     timer.end({ targetKeys: Object.keys(target).length })
   }

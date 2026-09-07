@@ -1,3 +1,4 @@
+import { computed, markRaw } from 'vue'
 import { describe, expect, it } from 'vitest'
 
 import { defaultSettings, samplePublication } from '../data/sampleFamily'
@@ -52,5 +53,20 @@ describe('usePublicationState', () => {
     state.replaceReactiveObject(state.publication, replacement)
 
     expect(state.publication.people.p1.name).toBe('谢志')
+  })
+
+  it('reacts to replacing a single person without making the person object deeply reactive', () => {
+    const state = usePublicationState(samplePublication, defaultSettings)
+    const selectedName = computed(() => state.selectedPerson.value?.name ?? '')
+
+    state.selectedPersonId.value = 'p1'
+    expect(selectedName.value).toBe(samplePublication.people.p1.name)
+
+    state.publication.people.p1 = markRaw({
+      ...state.publication.people.p1,
+      name: '谢志',
+    })
+
+    expect(selectedName.value).toBe('谢志')
   })
 })
