@@ -29,6 +29,11 @@ type PerfMetrics = {
   apiMs: number
   navigationToResponseMs: number
   firstCardMs: number
+  dragMs: number
+  zoomMs: number
+  editorOpenMs: number
+  editInputMs: number
+  layoutPanelMs: number
   cardNodes: number
   lineNodes: number
   longTasks: Array<{ startTime: number; duration: number; attribution: string[] }>
@@ -204,13 +209,48 @@ test.describe('Publication browser performance', () => {
     const viewport = page.locator('.canvas-viewport')
     const box = await viewport.boundingBox()
     const framePromise = sampleFrames(page, 1000)
+    const dragStartedAt = Date.now()
     if (box) {
       await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.5)
       await page.mouse.down()
       await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.5, { steps: 30 })
       await page.mouse.up()
     }
+    const dragMs = Date.now() - dragStartedAt
     const frames = await framePromise
+
+    const zoomStartedAt = Date.now()
+    if (box) {
+      await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5)
+      for (let index = 0; index < 8; index += 1) {
+        await page.mouse.wheel(0, index % 2 === 0 ? -80 : 80)
+      }
+      await page.waitForTimeout(180)
+    }
+    const zoomMs = Date.now() - zoomStartedAt
+
+    const editorStartedAt = Date.now()
+    const visibleCard = page.locator('.person-card').first()
+    await visibleCard.click()
+    await expect(page.locator('.ped-overlay')).toBeVisible()
+    const editorOpenMs = Date.now() - editorStartedAt
+
+    const editorNameInput = page.locator('.ped-inp--hero')
+    const originalName = await editorNameInput.inputValue()
+    const editStartedAt = Date.now()
+    await editorNameInput.fill(`${originalName}x`)
+    await editorNameInput.fill(originalName)
+    const editInputMs = Date.now() - editStartedAt
+    await page.locator('.ped-close-btn').click()
+    await expect(page.locator('.ped-overlay')).toBeHidden()
+
+    const panelStartedAt = Date.now()
+    const layoutToggle = page.locator('.tool-btn--panel').first()
+    await layoutToggle.click()
+    await expect(page.locator('.layout-panel')).toBeVisible()
+    await page.locator('.layout-panel .floating-panel__close').click()
+    await expect(page.locator('.layout-panel')).toBeHidden()
+    const layoutPanelMs = Date.now() - panelStartedAt
 
     const metrics: PerfMetrics = {
       people,
@@ -219,6 +259,11 @@ test.describe('Publication browser performance', () => {
       apiMs,
       navigationToResponseMs,
       firstCardMs,
+      dragMs,
+      zoomMs,
+      editorOpenMs,
+      editInputMs,
+      layoutPanelMs,
       cardNodes: await page.locator('.person-card').count(),
       lineNodes: await page.locator('.tree-lines path, .tree-lines circle').count(),
       longTasks: await page.evaluate(() => window.__publicationPerf?.longTasks ?? []),
