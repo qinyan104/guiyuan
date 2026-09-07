@@ -414,8 +414,12 @@ function updateViewportSize() {
     return
   }
 
-  viewportWidth.value = viewportRef.value.clientWidth
-  viewportHeight.value = viewportRef.value.clientHeight
+  const nextWidth = viewportRef.value.clientWidth
+  const nextHeight = viewportRef.value.clientHeight
+  if (nextWidth === viewportWidth.value && nextHeight === viewportHeight.value) return
+
+  viewportWidth.value = nextWidth
+  viewportHeight.value = nextHeight
   refreshRenderWindow(true)
 }
 

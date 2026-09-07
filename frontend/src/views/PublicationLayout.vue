@@ -242,6 +242,7 @@ function initializeLargeStateAfterPaint(
     baselineInitTimeout = null
     baselineInitIdleCallback = null
     if (myGeneration !== loadGeneration || loading.value) return
+    markOpenPerformance('background-init-start')
     const signature = serializeTrackedState(publication, settings)
     const revision = serverRevision.value ?? publication.revision
     const zoom = settings.zoom
@@ -260,6 +261,7 @@ function initializeLargeStateAfterPaint(
     })
     baselineReady.value = true
     await detectViewerPerson()
+    markOpenPerformance('background-init-end')
   }
 
   if (typeof window.requestIdleCallback === 'function') {
@@ -331,8 +333,15 @@ const loadingProgressLabel = computed(() => {
 
 const MIN_LOADING_VISIBLE_MS = 240
 const isTestEnv = import.meta.env.MODE === 'test'
+const OPEN_PERF_MARK_PREFIX = 'publication-open:'
 const isOverlayVisible = ref(true)
 let loadingStartedAt = 0
+
+function markOpenPerformance(stage: string) {
+  if (import.meta.env.DEV && typeof performance !== 'undefined') {
+    performance.mark(`${OPEN_PERF_MARK_PREFIX}${stage}`)
+  }
+}
 
 function resetLoadingProgress() {
   loadingProgress.value = 10
@@ -386,6 +395,7 @@ async function load(force = false) {
   resetLoadingProgress()
   loadingStartedAt = Date.now()
   isOverlayVisible.value = true
+  markOpenPerformance('load-start')
 
   try {
     const result = await getPublication(targetId, (event) => {
@@ -393,11 +403,13 @@ async function load(force = false) {
     })
     // Check if a newer load() call has started
     if (myGeneration !== loadGeneration) return
+    markOpenPerformance('response-received')
 
     loadingProgress.value = 70
     loadingStageText.value = '族谱数据接收完成，正在装载人物与家庭...'
     pub.beginLayoutCalculation()
     applyPublicationSnapshot(result.publication, result.settings)
+    markOpenPerformance('snapshot-applied')
 
     if (!pub.selectedPersonId.value || !result.publication.people[pub.selectedPersonId.value]) {
       pub.selectedPersonId.value = Object.keys(result.publication.people)[0] ?? ''
@@ -428,19 +440,25 @@ async function load(force = false) {
     } else {
       loadingStageText.value = '人物与家庭已装载，正在计算世系谱图...'
     }
+    markOpenPerformance('snapshot-render-start')
     await paintLoadingStage()
+    markOpenPerformance('snapshot-render-end')
 
+    markOpenPerformance('layout-start')
     const calculatedLayout = await calculateLayoutInWorker(
       result.publication,
       { ...defaultSettings, ...result.settings },
     )
     if (myGeneration !== loadGeneration) return
     pub.applyCalculatedLayout(calculatedLayout)
+    markOpenPerformance('layout-ready')
 
     const displayedPeople = calculatedLayout.displayedPeople
     loadingProgress.value = 94
     loadingStageText.value = `谱图计算完成，正在渲染 ${displayedPeople} 张人物卡片...`
+    markOpenPerformance('layout-render-start')
     await paintLoadingStage()
+    markOpenPerformance('layout-render-end')
 
     loadingProgress.value = 100
     loadingStageText.value = '族谱首屏已就绪'
@@ -453,11 +471,13 @@ async function load(force = false) {
     if (myGeneration !== loadGeneration) return
     isOverlayVisible.value = false
     loading.value = false
+    markOpenPerformance('first-screen-ready')
   } catch (err: any) {
     // Don't show error for stale requests
     if (myGeneration !== loadGeneration) return
     isOverlayVisible.value = false
     loading.value = false
+    markOpenPerformance('load-error')
     if (err?.response?.status === 403) {
       loadError.value = '你无权访问此家谱，请联系管理员将你添加为协作者'
     } else {

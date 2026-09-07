@@ -1,4 +1,4 @@
-import type { FamilyUnit, Gender, PublicationData } from '../types/family'
+import type { Gender, PublicationData } from '../types/family'
 import { resolveFamilyBranchMode } from './familyBranchMode'
 
 interface LineageEntry {
@@ -7,22 +7,39 @@ interface LineageEntry {
   external: boolean
 }
 
-const ORDINAL_LABELS = ['长', '次', '三', '四', '五', '六', '七', '八', '九', '十']
-
-function listFamilies(publication: PublicationData): FamilyUnit[] {
-  return Object.values(publication.families)
+interface FamilyIndexes {
+  adultToFamily: Map<string, string>
+  childToFamily: Map<string, string>
 }
+
+const ORDINAL_LABELS = ['长', '次', '三', '四', '五', '六', '七', '八', '九', '十']
 
 function isPersonId(value: string | undefined): value is string {
   return typeof value === 'string' && value.length > 0
 }
 
-function findAdultFamilyIdForPerson(publication: PublicationData, personId: string): string | undefined {
-  return listFamilies(publication).find((family) => family.adults.includes(personId))?.id
+function buildFamilyIndexes(publication: PublicationData): FamilyIndexes {
+  const adultToFamily = new Map<string, string>()
+  const childToFamily = new Map<string, string>()
+
+  for (const family of Object.values(publication.families)) {
+    for (const adultId of family.adults) {
+      if (!adultToFamily.has(adultId)) adultToFamily.set(adultId, family.id)
+    }
+    for (const childId of family.children) {
+      if (!childToFamily.has(childId)) childToFamily.set(childId, family.id)
+    }
+  }
+
+  return { adultToFamily, childToFamily }
 }
 
-function findParentFamilyIdForPerson(publication: PublicationData, personId: string): string | undefined {
-  return listFamilies(publication).find((family) => family.children.includes(personId))?.id
+function findAdultFamilyIdForPerson(indexes: FamilyIndexes, personId: string): string | undefined {
+  return indexes.adultToFamily.get(personId)
+}
+
+function findParentFamilyIdForPerson(indexes: FamilyIndexes, personId: string): string | undefined {
+  return indexes.childToFamily.get(personId)
 }
 
 function getOrdinalLabel(index: number): string {
@@ -79,7 +96,7 @@ function getGenerationLabel(depth: number, gender: Gender, ordinal: string, exte
   return ''
 }
 
-function buildLineageEntries(publication: PublicationData): LineageEntry[] {
+function buildLineageEntries(publication: PublicationData, indexes: FamilyIndexes): LineageEntry[] {
   const focusFamily = publication.families[publication.focusFamilyId] ?? Object.values(publication.families)[0]
   if (!focusFamily) {
     return []
@@ -116,7 +133,7 @@ function buildLineageEntries(publication: PublicationData): LineageEntry[] {
 
       appendPerson(childId, childDepth, external)
 
-      const childFamilyId = findAdultFamilyIdForPerson(publication, childId)
+      const childFamilyId = findAdultFamilyIdForPerson(indexes, childId)
       if (!childFamilyId || visitedFamilyIds.has(childFamilyId)) {
         return
       }
@@ -147,9 +164,9 @@ function getOrdinalWithinLineage(publication: PublicationData, entries: LineageE
   return getOrdinalLabel(Math.max(0, index))
 }
 
-function getFallbackChildSuggestion(publication: PublicationData, personId: string): string {
+function getFallbackChildSuggestion(publication: PublicationData, indexes: FamilyIndexes, personId: string): string {
   const person = publication.people[personId]
-  const parentFamilyId = findParentFamilyIdForPerson(publication, personId)
+  const parentFamilyId = findParentFamilyIdForPerson(indexes, personId)
   if (!person || !parentFamilyId) {
     return ''
   }
@@ -166,10 +183,11 @@ export function suggestLineageNote(publication: PublicationData, personId: strin
     return ''
   }
 
-  const entries = buildLineageEntries(publication)
+  const indexes = buildFamilyIndexes(publication)
+  const entries = buildLineageEntries(publication, indexes)
   const target = entries.find((entry) => entry.personId === personId)
   if (!target) {
-    return getFallbackChildSuggestion(publication, personId)
+    return getFallbackChildSuggestion(publication, indexes, personId)
   }
 
   const ordinal = getOrdinalWithinLineage(publication, entries, target)
