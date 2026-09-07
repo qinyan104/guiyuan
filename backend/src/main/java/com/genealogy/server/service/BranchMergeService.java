@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -169,30 +168,33 @@ public class BranchMergeService {
     public SubtreeResult collectSubtreeIds(Long rootPersonDbId) {
         Set<Long> collectedPersonDbIds = new HashSet<>();
         Set<Long> collectedFamilyDbIds = new HashSet<>();
-        LinkedList<Long> queue = new LinkedList<>();
+        Set<Long> frontier = new HashSet<>();
 
-        queue.add(rootPersonDbId);
+        frontier.add(rootPersonDbId);
         collectedPersonDbIds.add(rootPersonDbId);
 
-        while (!queue.isEmpty()) {
-            Long currentPersonDbId = queue.poll();
-            List<FamilyMember> memberships = familyMemberRepository.findByPersonDbId(currentPersonDbId);
+        while (!frontier.isEmpty()) {
+            List<FamilyMember> memberships = familyMemberRepository.findByPersonDbIdIn(frontier);
+            Set<Long> familyDbIds = new HashSet<>();
 
             for (FamilyMember membership : memberships) {
-                if (!"adult".equals(membership.getRole())) {
-                    continue;
-                }
-                if (collectedFamilyDbIds.add(membership.getFamilyDbId())) {
-                    List<FamilyMember> allFamilyMembers = familyMemberRepository
-                            .findByFamilyDbIdOrderBySortOrder(membership.getFamilyDbId());
-                    for (FamilyMember fm : allFamilyMembers) {
-                        boolean added = collectedPersonDbIds.add(fm.getPersonDbId());
-                        if (added && "child".equals(fm.getRole())) {
-                            queue.add(fm.getPersonDbId());
-                        }
-                    }
+                if ("adult".equals(membership.getRole()) && collectedFamilyDbIds.add(membership.getFamilyDbId())) {
+                    familyDbIds.add(membership.getFamilyDbId());
                 }
             }
+
+            if (familyDbIds.isEmpty()) {
+                break;
+            }
+
+            Set<Long> nextFrontier = new HashSet<>();
+            for (FamilyMember fm : familyMemberRepository.findByFamilyDbIdInOrderByFamilyDbIdAscSortOrderAsc(familyDbIds)) {
+                boolean added = collectedPersonDbIds.add(fm.getPersonDbId());
+                if (added && "child".equals(fm.getRole())) {
+                    nextFrontier.add(fm.getPersonDbId());
+                }
+            }
+            frontier = nextFrontier;
         }
         return new SubtreeResult(collectedPersonDbIds, collectedFamilyDbIds);
     }

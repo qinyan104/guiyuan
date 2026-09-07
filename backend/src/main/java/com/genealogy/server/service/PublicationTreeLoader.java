@@ -3,6 +3,7 @@ package com.genealogy.server.service;
 import com.genealogy.server.model.Family;
 import com.genealogy.server.model.FamilyMember;
 import com.genealogy.server.model.Person;
+import com.genealogy.server.model.Publication;
 import com.genealogy.server.repository.FamilyMemberRepository;
 import com.genealogy.server.repository.FamilyRepository;
 import com.genealogy.server.repository.PersonRepository;
@@ -10,9 +11,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class PublicationTreeLoader {
@@ -22,6 +26,8 @@ public class PublicationTreeLoader {
     private final FamilyMemberRepository familyMemberRepository;
     private final com.genealogy.server.repository.PublicationRepository publicationRepository;
     private final BranchMergeService branchMergeService;
+
+    private record LoadKey(Long publicationId, Long rootPersonDbId, String idPrefix) {}
 
     public PublicationTreeLoader(PersonRepository personRepository,
                                  FamilyRepository familyRepository,
@@ -40,7 +46,17 @@ public class PublicationTreeLoader {
                                   String idPrefix, 
                                   Map<String, Map<String, Object>> allPeople, 
                                   Map<String, Map<String, Object>> allFamilies) {
-        loadRecursive(publicationId, null, 0, maxDepth, idPrefix, allPeople, allFamilies);
+        loadRecursive(
+                publicationId,
+                null,
+                0,
+                maxDepth,
+                idPrefix,
+                allPeople,
+                allFamilies,
+                new HashSet<>(),
+                new HashMap<>()
+        );
     }
 
     private void loadRecursive(Long publicationId, 
@@ -49,8 +65,10 @@ public class PublicationTreeLoader {
                                int maxDepth, 
                                String idPrefix, 
                                Map<String, Map<String, Object>> allPeople, 
-                               Map<String, Map<String, Object>> allFamilies) {
-        if (currentDepth > maxDepth) {
+                               Map<String, Map<String, Object>> allFamilies,
+                               Set<LoadKey> loaded,
+                               Map<Long, Optional<String>> publicationTitleCache) {
+        if (currentDepth > maxDepth || !loaded.add(new LoadKey(publicationId, rootPersonDbId, idPrefix))) {
             return;
         }
 
@@ -100,8 +118,9 @@ public class PublicationTreeLoader {
                 if (person.getTargetPublicationId() != null) {
                     Map<String, Object> target = new LinkedHashMap<>();
                     target.put("publicationId", person.getTargetPublicationId());
-                    publicationRepository.findById(person.getTargetPublicationId())
-                        .ifPresent(tp -> target.put("publicationTitle", tp.getTitle()));
+                    publicationTitleCache
+                            .computeIfAbsent(person.getTargetPublicationId(), this::loadPublicationTitle)
+                            .ifPresent(title -> target.put("publicationTitle", title));
                     if (person.getTargetRootPersonId() != null) {
                         target.put("rootPersonId", person.getTargetRootPersonId());
                     }
@@ -109,7 +128,7 @@ public class PublicationTreeLoader {
                     
                     // Recursive load
                     String nextPrefix = idPrefix + "branch_" + person.getTargetPublicationId() + "_";
-                    loadRecursive(person.getTargetPublicationId(), person.getTargetRootPersonId(), currentDepth + 1, maxDepth, nextPrefix, allPeople, allFamilies);
+                    loadRecursive(person.getTargetPublicationId(), person.getTargetRootPersonId(), currentDepth + 1, maxDepth, nextPrefix, allPeople, allFamilies, loaded, publicationTitleCache);
                 }
             }
             allPeople.put(federatedId, personJson);
@@ -138,5 +157,9 @@ public class PublicationTreeLoader {
             
             allFamilies.put(federatedFamilyId, familyJson);
         }
+    }
+
+    private Optional<String> loadPublicationTitle(Long publicationId) {
+        return publicationRepository.findById(publicationId).map(Publication::getTitle);
     }
 }

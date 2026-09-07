@@ -16,6 +16,7 @@ public interface FamilyMemberRepository extends JpaRepository<FamilyMember, Long
     List<FamilyMember> findByFamilyDbIdOrderBySortOrder(Long familyDbId);
     List<FamilyMember> findByFamilyDbIdInOrderByFamilyDbIdAscSortOrderAsc(Collection<Long> familyDbIds);
     List<FamilyMember> findByPersonDbId(Long personDbId);
+    List<FamilyMember> findByPersonDbIdIn(Collection<Long> personDbIds);
     @Modifying
     @Transactional
     @Query("DELETE FROM FamilyMember fm WHERE fm.familyDbId = :familyDbId")

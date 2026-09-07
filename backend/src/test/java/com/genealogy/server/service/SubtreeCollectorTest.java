@@ -12,8 +12,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,15 +61,17 @@ class SubtreeCollectorTest {
         FamilyMember m4f2 = new FamilyMember(); m4f2.setPersonDbId(p4DbId); m4f2.setFamilyDbId(f2DbId); m4f2.setRole("adult");
         FamilyMember m5f2 = new FamilyMember(); m5f2.setPersonDbId(p5DbId); m5f2.setFamilyDbId(f2DbId); m5f2.setRole("child");
 
-        when(familyMemberRepository.findByPersonDbId(p3DbId)).thenReturn(Collections.singletonList(m3f2));
-        when(familyMemberRepository.findByFamilyDbIdOrderBySortOrder(f2DbId)).thenReturn(Arrays.asList(m3f2, m4f2, m5f2));
+        when(familyMemberRepository.findByPersonDbIdIn(Set.of(p3DbId))).thenReturn(Collections.singletonList(m3f2));
+        when(familyMemberRepository.findByFamilyDbIdInOrderByFamilyDbIdAscSortOrderAsc(Set.of(f2DbId))).thenReturn(Arrays.asList(m3f2, m4f2, m5f2));
         
         // P5 has no other families
-        when(familyMemberRepository.findByPersonDbId(p5DbId)).thenReturn(Collections.singletonList(m5f2));
+        when(familyMemberRepository.findByPersonDbIdIn(Set.of(p5DbId))).thenReturn(Collections.singletonList(m5f2));
 
         BranchMergeService.SubtreeResult result = branchMergeService.collectSubtreeIds(p3DbId);
 
         assertThat(result.personDbIds()).containsExactlyInAnyOrder(p3DbId, p4DbId, p5DbId);
         assertThat(result.familyDbIds()).containsExactlyInAnyOrder(f2DbId);
+        verify(familyMemberRepository, never()).findByPersonDbId(p3DbId);
+        verify(familyMemberRepository, never()).findByFamilyDbIdOrderBySortOrder(f2DbId);
     }
 }
