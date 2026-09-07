@@ -43,7 +43,7 @@ describe("BookEditorView", () => {
 
     expect(mocks.getPublication).toHaveBeenCalledWith(7)
     expect(wrapper.find(".markdown-preview").text()).toContain("# 测试族谱")
-    expect(wrapper.find(".markdown-preview").text()).toContain("## 第 1 世")
+    expect(wrapper.find(".markdown-preview").text()).toContain("## 一世")
     expect(wrapper.text()).not.toContain("导出 PDF")
   })
 
