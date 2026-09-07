@@ -24,9 +24,9 @@ class LocalEnvConfigImportTest {
     }
 
     @Test
-    void applicationPropertiesImportsLocalEnvFilesForDevelopmentStartup() throws IOException {
+    void applicationPropertiesExampleImportsLocalEnvFilesForDevelopmentStartup() throws IOException {
         Properties properties = new Properties();
-        properties.load(new ClassPathResource("application.properties").getInputStream());
+        properties.load(new ClassPathResource("application.properties.example").getInputStream());
 
         assertThat(properties)
                 .containsEntry("spring.config.import",

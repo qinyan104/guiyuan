@@ -109,7 +109,9 @@ function familyChildrenFor(personId: string, data: PublicationData, childPersonI
       : [],
   )
   const unique = new Map<string, ChildReference>()
-  references.forEach((reference) => unique.set(reference.personId, unique.get(reference.personId) || reference))
+  references.forEach((reference) => {
+    unique.set(reference.personId, unique.get(reference.personId) || reference)
+  })
   return [...unique.values()]
 }
 
@@ -258,7 +260,9 @@ export function buildPublicationMarkdown(data: PublicationData): string {
   }
   if (remaining.length > 0) {
     sections.push("## 其他人物")
-    remaining.forEach((node) => sections.push(`### ${personName(data.people[node.personId])}`, personMarkdown(node, data, childPersonIds)))
+    remaining.forEach((node) => {
+      sections.push(`### ${personName(data.people[node.personId])}`, personMarkdown(node, data, childPersonIds))
+    })
   }
   return `${sections.join("\n\n").trim()}\n`
 }
