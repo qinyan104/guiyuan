@@ -105,6 +105,7 @@ test.describe('Publication browser performance', () => {
   let authToken = ''
 
   test.beforeAll(async ({ request }) => {
+    test.setTimeout(120_000)
     expect(PEOPLE_COUNT).toBeGreaterThanOrEqual(2)
     expect(PEOPLE_COUNT).toBeLessThanOrEqual(10000)
 

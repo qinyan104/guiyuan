@@ -81,8 +81,6 @@ function buildPersistedSignature() {
   return serializeTrackedState(pub.publication as unknown as PublicationData, pub.settings as PublicationSettings)
 }
 
-const persistedSignature = computed(() => baselineReady.value ? buildPersistedSignature() : lastSyncedSignature.value)
-
 let serverSaveTimeout: ReturnType<typeof setTimeout> | null = null
 let baselineInitTimeout: ReturnType<typeof setTimeout> | null = null
 let baselineInitIdleCallback: number | null = null
@@ -169,13 +167,14 @@ async function saveToServer() {
   }
 
   clearScheduledSave()
-  if (persistedSignature.value === lastSyncedSignature.value) {
+  const persistedSignature = buildPersistedSignature()
+  if (persistedSignature === lastSyncedSignature.value) {
     syncStatus.value = 'saved'
     return
   }
 
   syncStatus.value = 'syncing'
-  const signatureAtSaveStart = persistedSignature.value
+  const signatureAtSaveStart = persistedSignature
 
   try {
     pub.publication.revision = serverRevision.value ?? 0
@@ -217,7 +216,7 @@ async function saveToServer() {
   }
 
   // After successful save:
-  const hasUnsavedChanges = persistedSignature.value !== lastSyncedSignature.value
+  const hasUnsavedChanges = buildPersistedSignature() !== lastSyncedSignature.value
   if (!hasUnsavedChanges) {
     clearRecoveryDraft(currentPublicationId)
     recoveryDraft.value = null
@@ -272,17 +271,47 @@ function initializeLargeStateAfterPaint(
 }
 
 watch(
-  persistedSignature,
-  (nextSignature) => {
+  [
+    () => pub.publication.title,
+    () => pub.publication.subtitle,
+    () => pub.publication.focusFamilyId,
+    () => pub.publication.people,
+    () => pub.publication.families,
+    () => pub.publication.info,
+    () => pub.settings.paper,
+    () => pub.settings.layoutMode,
+    () => pub.settings.cardWidth,
+    () => pub.settings.cardRadius,
+    () => pub.settings.cardShadowOpacity,
+    () => pub.settings.cardBackgroundColor,
+    () => pub.settings.generationGap,
+    () => pub.settings.siblingGap,
+    () => pub.settings.partnerGap,
+    () => pub.settings.fontScale,
+    () => pub.settings.compactNameSize,
+    () => pub.settings.compactNameColor,
+    () => pub.settings.compactLineColor,
+    () => pub.settings.showCard,
+    () => pub.settings.showBirth,
+    () => pub.settings.showDeath,
+    () => pub.settings.showAge,
+    () => pub.settings.showNote,
+    () => pub.settings.showStatus,
+    () => pub.settings.showLineage,
+    () => pub.settings.showPhoto,
+    () => pub.settings.paddingX,
+    () => pub.settings.paddingY,
+  ],
+  () => {
     if (!baselineReady.value) return
-    history.scheduleHistoryCommit(nextSignature)
+    // ponytail: defer the O(n) signature until the debounced history/save boundary.
+    history.scheduleHistoryCommit()
     if (!serverPublicationId.value || loading.value || syncStatus.value === 'conflict') return
-    if (nextSignature === lastSyncedSignature.value) return
 
     syncStatus.value = 'pending'
     scheduleAutosave()
   },
-  { flush: 'post' },
+  { deep: true, flush: 'post' },
 )
 
 async function detectViewerPerson() {

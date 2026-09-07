@@ -54,12 +54,12 @@ describe('PublicationLayout conflict handling', () => {
     vi.useRealTimers()
     vi.resetAllMocks()
     localStorage.clear()
-    vi.mocked(getPublication).mockResolvedValue(mockPublicationData)
+    vi.mocked(getPublication).mockImplementation(async () => structuredClone(mockPublicationData))
   })
 
   async function waitForLoadBaseline() {
     await flushPromises()
-    await vi.advanceTimersByTimeAsync(600)
+    await vi.advanceTimersByTimeAsync(1600)
     await flushPromises()
   }
 
@@ -283,6 +283,35 @@ describe('PublicationLayout conflict handling', () => {
     await vi.advanceTimersByTimeAsync(240)
     await flushPromises()
     expect(wrapper.find('.loading-card').exists()).toBe(false)
+
+    vi.useRealTimers()
+  })
+
+  it('autosaves a person replacement without serializing on every watcher run', async () => {
+    vi.useFakeTimers()
+    vi.mocked(updatePublication).mockResolvedValue(6)
+
+    const wrapper = mount(PublicationLayout, {
+      global: { stubs: { RouterView: true } },
+    })
+
+    await waitForLoadBaseline()
+    vi.clearAllTimers()
+    vi.mocked(updatePublication).mockClear()
+
+    const publicationContext = (wrapper.vm as any).pub
+    publicationContext.publication.people.p1 = {
+      id: 'p1',
+      name: 'Changed person',
+      gender: 'male',
+    }
+
+    await wrapper.vm.$nextTick()
+    await vi.advanceTimersByTimeAsync(3000)
+    await flushPromises()
+
+    expect(vi.mocked(updatePublication)).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(updatePublication).mock.calls[0]?.[1].people.p1.name).toBe('Changed person')
 
     vi.useRealTimers()
   })
