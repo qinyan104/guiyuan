@@ -177,6 +177,7 @@ public class PublicationService {
         }).toList();
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> loadPublication(Long publicationId) {
         long startedAt = System.nanoTime();
         Publication publication = publicationRepository.findById(publicationId)
