@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,7 +78,7 @@ public class BranchMergeService {
             throw new BadRequestException("两位合并人物都已有下游家庭，暂不支持自动合并");
         }
 
-        SubtreeResult result = collectSubtreeIds(rootPerson.getId());
+        SubtreeResult result = collectSubtreeIds(targetPubId, rootPerson.getId());
         List<Person> targetPeople = personRepository.findAllById(result.personDbIds());
         if (targetPeople.stream().anyMatch(person -> Boolean.TRUE.equals(person.getIsMountPoint()))) {
             throw new BadRequestException("合并范围内包含嵌套挂载点，请先处理其挂载关系");
@@ -166,20 +167,39 @@ public class BranchMergeService {
     }
 
     public SubtreeResult collectSubtreeIds(Long rootPersonDbId) {
+        Long publicationId = personRepository.findById(rootPersonDbId)
+                .map(Person::getPublicationId)
+                .orElseThrow(() -> new NotFoundException("Person not found"));
+        return collectSubtreeIds(publicationId, rootPersonDbId);
+    }
+
+    public SubtreeResult collectSubtreeIds(Long publicationId, Long rootPersonDbId) {
         Set<Long> collectedPersonDbIds = new HashSet<>();
         Set<Long> collectedFamilyDbIds = new HashSet<>();
+        Map<Long, List<FamilyMember>> membershipsByPersonId = new HashMap<>();
+        Map<Long, List<FamilyMember>> membershipsByFamilyId = new HashMap<>();
+
+        for (FamilyMember membership : familyMemberRepository
+                .findByPublicationIdOrderByFamilyDbIdAscSortOrderAsc(publicationId)) {
+            membershipsByPersonId.computeIfAbsent(membership.getPersonDbId(), ignored -> new ArrayList<>())
+                    .add(membership);
+            membershipsByFamilyId.computeIfAbsent(membership.getFamilyDbId(), ignored -> new ArrayList<>())
+                    .add(membership);
+        }
+
         Set<Long> frontier = new HashSet<>();
 
         frontier.add(rootPersonDbId);
         collectedPersonDbIds.add(rootPersonDbId);
 
         while (!frontier.isEmpty()) {
-            List<FamilyMember> memberships = familyMemberRepository.findByPersonDbIdIn(frontier);
             Set<Long> familyDbIds = new HashSet<>();
 
-            for (FamilyMember membership : memberships) {
-                if ("adult".equals(membership.getRole()) && collectedFamilyDbIds.add(membership.getFamilyDbId())) {
-                    familyDbIds.add(membership.getFamilyDbId());
+            for (Long personDbId : frontier) {
+                for (FamilyMember membership : membershipsByPersonId.getOrDefault(personDbId, List.of())) {
+                    if ("adult".equals(membership.getRole()) && collectedFamilyDbIds.add(membership.getFamilyDbId())) {
+                        familyDbIds.add(membership.getFamilyDbId());
+                    }
                 }
             }
 
@@ -188,10 +208,12 @@ public class BranchMergeService {
             }
 
             Set<Long> nextFrontier = new HashSet<>();
-            for (FamilyMember fm : familyMemberRepository.findByFamilyDbIdInOrderByFamilyDbIdAscSortOrderAsc(familyDbIds)) {
-                boolean added = collectedPersonDbIds.add(fm.getPersonDbId());
-                if (added && "child".equals(fm.getRole())) {
-                    nextFrontier.add(fm.getPersonDbId());
+            for (Long familyDbId : familyDbIds) {
+                for (FamilyMember fm : membershipsByFamilyId.getOrDefault(familyDbId, List.of())) {
+                    boolean added = collectedPersonDbIds.add(fm.getPersonDbId());
+                    if (added && "child".equals(fm.getRole())) {
+                        nextFrontier.add(fm.getPersonDbId());
+                    }
                 }
             }
             frontier = nextFrontier;

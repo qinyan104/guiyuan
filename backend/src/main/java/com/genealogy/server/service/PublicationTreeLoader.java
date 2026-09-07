@@ -76,7 +76,7 @@ public class PublicationTreeLoader {
         List<Family> familyEntities;
         
         if (rootPersonDbId != null) {
-            BranchMergeService.SubtreeResult subtree = branchMergeService.collectSubtreeIds(rootPersonDbId);
+            BranchMergeService.SubtreeResult subtree = branchMergeService.collectSubtreeIds(publicationId, rootPersonDbId);
             personEntities = personRepository.findAllById(subtree.personDbIds());
             familyEntities = familyRepository.findAllById(subtree.familyDbIds());
         } else {
