@@ -16,12 +16,19 @@ type ApiOptions = {
   headers?: Record<string, string>
 }
 
+const E2E_API_BASE_URL = process.env.E2E_API_BASE_URL?.replace(/\/$/, '')
+
+function resolveApiUrl(url: string): string {
+  if (!E2E_API_BASE_URL || !url.startsWith('/api')) return url
+  return `${E2E_API_BASE_URL}${url.slice('/api'.length)}`
+}
+
 export async function loginViaApi(
   request: APIRequestContext,
   username: string,
   password: string,
 ): Promise<string> {
-  const response = await request.post('/api/auth/login', {
+  const response = await request.post(resolveApiUrl('/api/auth/login'), {
     data: { username, password },
   })
   const body = JSON.parse(await response.text()) as AuthResponse
@@ -87,7 +94,7 @@ export function authenticatedRequest(
   url: string,
   options: ApiOptions = {},
 ) {
-  return request.fetch(url, {
+  return request.fetch(resolveApiUrl(url), {
     ...options,
     headers: {
       ...options.headers,

@@ -2,7 +2,14 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { calculateRevealPan, type RevealPersonOptions } from '../lib/canvasViewport'
 import type { KinshipTerm } from '../lib/kinship'
-import type { Person, PublicationData, PublicationLayout, PublicationSettings } from '../types/family'
+import type {
+  LineSegment,
+  Person,
+  PositionedCard,
+  PublicationData,
+  PublicationLayout,
+  PublicationSettings,
+} from '../types/family'
 import PersonCardSvg from './PersonCardSvg.vue'
 
 const props = defineProps<{
@@ -45,6 +52,87 @@ const renderPanY = ref(props.panY)
 const renderZoom = ref(props.settings.zoom)
 const isLargeTree = computed(() => props.layout.cards.length >= LARGE_TREE_THRESHOLD)
 const shouldCull = computed(() => isLargeTree.value && !renderAllForExport.value)
+const SPATIAL_CELL_SIZE = 512
+
+type SpatialBuckets<T> = Map<string, number[]>
+
+interface SpatialIndex {
+  cards: SpatialBuckets<PositionedCard>
+  lines: SpatialBuckets<LineSegment>
+}
+
+function spatialCellKey(x: number, y: number): string {
+  return `${x}:${y}`
+}
+
+function addSpatialItem<T>(
+  buckets: SpatialBuckets<T>,
+  index: number,
+  minX: number,
+  maxX: number,
+  minY: number,
+  maxY: number,
+) {
+  const startX = Math.floor(minX / SPATIAL_CELL_SIZE)
+  const endX = Math.floor(maxX / SPATIAL_CELL_SIZE)
+  const startY = Math.floor(minY / SPATIAL_CELL_SIZE)
+  const endY = Math.floor(maxY / SPATIAL_CELL_SIZE)
+
+  for (let cellX = startX; cellX <= endX; cellX += 1) {
+    for (let cellY = startY; cellY <= endY; cellY += 1) {
+      const key = spatialCellKey(cellX, cellY)
+      const bucket = buckets.get(key)
+      if (bucket) bucket.push(index)
+      else buckets.set(key, [index])
+    }
+  }
+}
+
+function collectSpatialIndexes<T>(
+  buckets: SpatialBuckets<T>,
+  left: number,
+  right: number,
+  top: number,
+  bottom: number,
+): number[] {
+  const indexes = new Set<number>()
+  const startX = Math.floor(left / SPATIAL_CELL_SIZE)
+  const endX = Math.floor(right / SPATIAL_CELL_SIZE)
+  const startY = Math.floor(top / SPATIAL_CELL_SIZE)
+  const endY = Math.floor(bottom / SPATIAL_CELL_SIZE)
+
+  for (let cellX = startX; cellX <= endX; cellX += 1) {
+    for (let cellY = startY; cellY <= endY; cellY += 1) {
+      for (const index of buckets.get(spatialCellKey(cellX, cellY)) ?? []) {
+        indexes.add(index)
+      }
+    }
+  }
+
+  return [...indexes].sort((leftIndex, rightIndex) => leftIndex - rightIndex)
+}
+
+const spatialIndex = computed<SpatialIndex>(() => {
+  const cards: SpatialBuckets<PositionedCard> = new Map()
+  const lines: SpatialBuckets<LineSegment> = new Map()
+
+  props.layout.cards.forEach((card, index) => {
+    addSpatialItem(cards, index, card.x, card.x + card.width, card.y, card.y + card.height)
+  })
+  props.layout.lines.forEach((line, index) => {
+    addSpatialItem(
+      lines,
+      index,
+      Math.min(line.x1, line.x2),
+      Math.max(line.x1, line.x2),
+      Math.min(line.y1, line.y2),
+      Math.max(line.y1, line.y2),
+    )
+  })
+
+  return { cards, lines }
+})
+
 const renderBounds = computed(() => {
   const zoom = Math.max(0.1, renderZoom.value)
   // Keep the initial SVG mount bounded for very large trees. A full viewport
@@ -78,19 +166,35 @@ const svgStyle = computed(() => ({
 const renderedCards = computed(() => {
   if (!shouldCull.value) return props.layout.cards
   const bounds = renderBounds.value
-  const visibleCards = props.layout.cards.filter((card) =>
-    card.x + card.width >= bounds.left && card.x <= bounds.right &&
-    card.y + card.height >= bounds.top && card.y <= bounds.bottom,
+  const visibleCards = collectSpatialIndexes(
+    spatialIndex.value.cards,
+    bounds.left,
+    bounds.right,
+    bounds.top,
+    bounds.bottom,
   )
+    .map((index) => props.layout.cards[index])
+    .filter((card) =>
+      card.x + card.width >= bounds.left && card.x <= bounds.right &&
+      card.y + card.height >= bounds.top && card.y <= bounds.bottom,
+    )
   return visibleCards.slice(0, renderedCardLimit.value)
 })
 const renderedLines = computed(() => {
   if (!shouldCull.value) return props.layout.lines
   const bounds = renderBounds.value
-  return props.layout.lines.filter((line) =>
-    Math.max(line.x1, line.x2) >= bounds.left && Math.min(line.x1, line.x2) <= bounds.right &&
-    Math.max(line.y1, line.y2) >= bounds.top && Math.min(line.y1, line.y2) <= bounds.bottom,
+  return collectSpatialIndexes(
+    spatialIndex.value.lines,
+    bounds.left,
+    bounds.right,
+    bounds.top,
+    bounds.bottom,
   )
+    .map((index) => props.layout.lines[index])
+    .filter((line) =>
+      Math.max(line.x1, line.x2) >= bounds.left && Math.min(line.x1, line.x2) <= bounds.right &&
+      Math.max(line.y1, line.y2) >= bounds.top && Math.min(line.y1, line.y2) <= bounds.bottom,
+    )
 })
 const renderedLinePaths = computed(() => {
   const regular: string[] = []

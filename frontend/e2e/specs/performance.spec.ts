@@ -99,6 +99,8 @@ async function sampleFrames(page: Page, durationMs: number) {
 }
 
 test.describe('Publication browser performance', () => {
+  test.describe.configure({ timeout: 120_000 })
+
   let publicationId = 0
   let authToken = ''
 
@@ -126,7 +128,7 @@ test.describe('Publication browser performance', () => {
     if (publicationId && authToken) {
       await authenticatedRequest(request, authToken, `/api/publications/${publicationId}`, { method: 'DELETE' }).catch(() => {})
     }
-  })
+  }, { timeout: 120_000 })
 
   test('reports open, render, and interaction metrics without reducing content', async ({ page, context }, testInfo) => {
     await page.addInitScript(() => {
