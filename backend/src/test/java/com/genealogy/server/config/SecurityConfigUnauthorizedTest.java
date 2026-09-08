@@ -37,4 +37,10 @@ class SecurityConfigUnauthorizedTest {
         mockMvc.perform(get("/api/users/search?q=test"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void apiDocsShouldRequireAuthenticationByDefault() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isUnauthorized());
+    }
 }

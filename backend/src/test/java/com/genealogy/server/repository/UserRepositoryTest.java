@@ -1,10 +1,10 @@
 package com.genealogy.server.repository;
 
 import com.genealogy.server.model.User;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
-@Disabled("需要 MySQL 数据库连接，在本地 dev 环境中跳过")
+@ActiveProfiles("test")
 public class UserRepositoryTest {
 
     @Autowired
@@ -45,6 +45,6 @@ public class UserRepositoryTest {
 
         // Search by part of both
         results = userRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase("O", "O");
-        assertThat(results).hasSize(2); // bOb, bObby
+        assertThat(results).hasSize(1); // bobsmith / Bobby is one user row
     }
 }

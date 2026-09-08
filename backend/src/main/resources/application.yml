@@ -38,6 +38,8 @@ server:
   max-http-request-header-size: 64KB
 
 app:
+  api-docs:
+    public: ${APP_API_DOCS_PUBLIC:false}
   jwt:
     secret: ${JWT_SECRET:}
     access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:900000}

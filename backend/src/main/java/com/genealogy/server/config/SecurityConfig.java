@@ -30,13 +30,16 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final LoginRateLimitFilter loginRateLimitFilter;
     private final List<String> allowedOrigins;
+    private final boolean publicApiDocs;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter,
                           LoginRateLimitFilter loginRateLimitFilter,
-                          @Value("${app.cors.allowed-origins}") String allowedOrigins) {
+                          @Value("${app.cors.allowed-origins}") String allowedOrigins,
+                          @Value("${app.api-docs.public:false}") boolean publicApiDocs) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.loginRateLimitFilter = loginRateLimitFilter;
         this.allowedOrigins = List.of(allowedOrigins.split(","));
+        this.publicApiDocs = publicApiDocs;
     }
 
     @Bean
@@ -49,23 +52,23 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(
+            .authorizeHttpRequests(auth -> {
+                auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+                auth.requestMatchers(
                     "/api/auth/login",
                     "/api/auth/register",
                     "/api/auth/refresh",
                     "/api/auth/logout",
                     "/api/health",
-                    "/api/mobile/auth/**",  // 放行小程序认证接口
-                    "/swagger-ui/**",
-                    "/swagger-ui.html",
-                    "/v3/api-docs/**"
-                ).permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/photos/avatars/**").permitAll()
-                .requestMatchers("/api/shares/**").permitAll()
-                .anyRequest().authenticated()
-            )
+                    "/api/mobile/auth/**"
+                ).permitAll();
+                if (publicApiDocs) {
+                    auth.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll();
+                }
+                auth.requestMatchers(HttpMethod.GET, "/api/photos/avatars/**").permitAll();
+                auth.requestMatchers("/api/shares/**").permitAll();
+                auth.anyRequest().authenticated();
+            })
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
