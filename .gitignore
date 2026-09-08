@@ -32,6 +32,9 @@ backend/vrain_py/
 # Docker deployment
 release/.env
 
+# Local deployment bundle
+/guiyuan/
+
 # AI tool artifacts
 .codex/
 .claude/
