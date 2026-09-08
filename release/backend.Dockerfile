@@ -1,3 +1,14 @@
+FROM maven:3.9.9-eclipse-temurin-17-alpine AS build
+
+WORKDIR /build/backend
+
+# Use a public Maven mirror for more reliable Docker builds in restricted networks.
+COPY release/maven-settings.xml /root/.m2/settings.xml
+
+COPY backend/pom.xml ./
+COPY backend/src ./src
+RUN mvn -B -q -DskipTests package
+
 FROM eclipse-temurin:17-jre-alpine
 
 # Runtime dependencies: curl for health checks, mariadb-client for backup/restore commands.
@@ -7,8 +18,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
-# Directly copy pre-built jar from local backend/target (0s download)
-COPY backend/target/*.jar app.jar
+COPY --from=build /build/backend/target/*.jar app.jar
 
 RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app
 

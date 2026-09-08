@@ -109,15 +109,15 @@ onMounted(() => {
       </section>
 
       <!-- 画布预览 -->
-      <section class="sec">
-        <div class="w text-center">
+      <section class="sec preview-sec">
+        <div class="w w-preview text-center">
           <p class="sec-label rv">PREVIEW</p>
           <h2 class="sec-title rv">一幅画布，联结血脉与温情</h2>
           <p class="sec-verse rv no-border">
             横看成岭侧成峰，远近高低各不同。
           </p>
           <div class="shot rv">
-            <img src="/screenshot.png" alt="归源画布预览" />
+            <img src="/workbench-preview.png" alt="归源工作台画布预览" loading="lazy" />
           </div>
         </div>
       </section>
@@ -537,17 +537,31 @@ onMounted(() => {
 }
 
 /* ── 预览卡片 ── */
+.w-preview {
+  max-width: 1080px;
+}
+
 .shot {
   margin-top: 48px;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl, 20px);
   overflow: hidden;
   border: 1px solid var(--color-card-stroke);
-  box-shadow: var(--shadow-whisper);
+  background: var(--color-card-fill);
+  box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.08), 0 2px 10px -2px rgba(0, 0, 0, 0.03);
+  transition: transform var(--duration-normal) var(--ease-spring-gentle),
+              box-shadow var(--duration-normal) var(--ease-spring-gentle);
+}
+
+.shot:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 28px 56px -12px rgba(0, 0, 0, 0.12), 0 4px 16px -2px rgba(0, 0, 0, 0.04);
 }
 
 .shot img {
   width: 100%;
   display: block;
+  height: auto;
+  border-radius: inherit;
 }
 
 /* ── 行动召唤区 ── */
