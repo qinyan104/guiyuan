@@ -109,7 +109,7 @@ public class AdminControllerTest {
         createdUser.setNickname("New User");
         createdUser.setRole("USER");
 
-        when(userService.createUser("newuser", "pass123", "New User", "USER"))
+        when(userService.createUser("newuser", "Strong123", "New User", "USER"))
                 .thenReturn(createdUser);
         doNothing().when(auditLogService).record(anyString(), anyString(), anyString(), any(), any());
 
@@ -119,7 +119,7 @@ public class AdminControllerTest {
                 .content(objectMapper.writeValueAsString(
                         new java.util.LinkedHashMap<>() {{
                             put("username", "newuser");
-                            put("password", "pass123");
+                            put("password", "Strong123");
                             put("nickname", "New User");
                         }}
                 )))
@@ -130,6 +130,19 @@ public class AdminControllerTest {
                 .andExpect(jsonPath("$.data.nickname").value("New User"));
 
         verify(auditLogService).record(eq("admin"), eq("ADMIN_CREATE_USER"), contains("newuser"), eq("user"), eq(3L));
+    }
+
+    @Test
+    public void testCreateUserRejectsWeakPassword() throws Exception {
+        mockMvc.perform(post("/api/admin/users")
+                .requestAttr("currentUsername", "admin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\":\"weakuser\",\"password\":\"1234\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("密码长度需为8-100位")));
+
+        verify(userService, never()).createUser(eq("weakuser"), anyString(), any(), anyString());
     }
 
     @Test
@@ -153,18 +166,31 @@ public class AdminControllerTest {
 
     @Test
     public void testResetPassword() throws Exception {
-        doNothing().when(userService).resetPassword(1L, "new123");
+        doNothing().when(userService).resetPassword(1L, "Strong123");
         doNothing().when(auditLogService).record(anyString(), anyString(), anyString(), any(), any());
 
         mockMvc.perform(put("/api/admin/users/1/password")
                 .requestAttr("currentUsername", "admin")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"newPassword\":\"new123\"}"))
+                .content("{\"newPassword\":\"Strong123\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
-        verify(userService).resetPassword(1L, "new123");
+        verify(userService).resetPassword(1L, "Strong123");
         verify(auditLogService).record(eq("admin"), eq("ADMIN_RESET_PASSWORD"), contains("1"), eq("user"), eq(1L));
+    }
+
+    @Test
+    public void testResetPasswordRejectsWeakPassword() throws Exception {
+        mockMvc.perform(put("/api/admin/users/1/password")
+                .requestAttr("currentUsername", "admin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"newPassword\":\"weak\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("密码长度需为8-100位")));
+
+        verify(userService, never()).resetPassword(eq(1L), anyString());
     }
 
     @Test

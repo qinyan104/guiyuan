@@ -9,7 +9,7 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidPassword {
-    String message() default "密码至少8位，须包含大小写字母和数字";
+    String message() default "密码长度需为8-100位，且须包含大小写字母和数字";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

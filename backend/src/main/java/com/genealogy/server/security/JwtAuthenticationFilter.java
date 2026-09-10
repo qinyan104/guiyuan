@@ -1,9 +1,6 @@
 package com.genealogy.server.security;
 
 import com.genealogy.server.repository.UserRepository;
-import com.genealogy.server.service.RefreshTokenService;
-import com.genealogy.server.model.User;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,22 +15,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String REFRESH_COOKIE_NAME = "refresh_token";
-
     private final JwtService jwtService;
-    private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
 
     public JwtAuthenticationFilter(JwtService jwtService,
-                                   RefreshTokenService refreshTokenService,
                                    UserRepository userRepository) {
         this.jwtService = jwtService;
-        this.refreshTokenService = refreshTokenService;
         this.userRepository = userRepository;
     }
 
@@ -45,10 +36,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             authenticateWithBearerToken(request);
-        }
-
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            authenticateWithRefreshCookie(request);
         }
 
         filterChain.doFilter(request, response);
@@ -72,21 +59,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         });
     }
 
-    private void authenticateWithRefreshCookie(HttpServletRequest request) {
-        String refreshToken = extractCookie(request, REFRESH_COOKIE_NAME);
-        if (refreshToken == null) {
-            return;
-        }
-
-        Optional<Long> userId = refreshTokenService.validateRefreshToken(refreshToken);
-        if (userId.isEmpty()) {
-            return;
-        }
-
-        userRepository.findById(userId.get())
-                .ifPresent(user -> setAuthentication(request, user.getUsername(), user.getRole(), userId.get()));
-    }
-
     private void setAuthentication(HttpServletRequest request, String username, String role, Long userId) {
         if (username == null || SecurityContextHolder.getContext().getAuthentication() != null) {
             return;
@@ -102,18 +74,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 
-    private String extractCookie(HttpServletRequest request, String name) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies == null) {
-            return null;
-        }
-
-        for (Cookie cookie : cookies) {
-            if (name.equals(cookie.getName())) {
-                return cookie.getValue();
-            }
-        }
-
-        return null;
-    }
 }

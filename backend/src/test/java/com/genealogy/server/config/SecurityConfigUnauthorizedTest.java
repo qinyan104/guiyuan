@@ -6,6 +6,7 @@ import com.genealogy.server.security.JwtAuthenticationFilter;
 import com.genealogy.server.security.JwtService;
 import com.genealogy.server.security.LoginRateLimitFilter;
 import com.genealogy.server.service.RefreshTokenService;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -13,6 +14,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -36,6 +39,15 @@ class SecurityConfigUnauthorizedTest {
     void protectedApiShouldReturnUnauthorizedWhenNoTokenIsPresent() throws Exception {
         mockMvc.perform(get("/api/users/search?q=test"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void protectedApiShouldReturnUnauthorizedWhenOnlyRefreshCookieIsPresent() throws Exception {
+        mockMvc.perform(get("/api/users/search?q=test")
+                        .cookie(new Cookie("refresh_token", "refresh-123")))
+                .andExpect(status().isUnauthorized());
+
+        verify(refreshTokenService, never()).validateRefreshToken("refresh-123");
     }
 
     @Test

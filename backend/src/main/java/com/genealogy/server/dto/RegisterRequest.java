@@ -1,5 +1,6 @@
 package com.genealogy.server.dto;
 
+import com.genealogy.server.security.ValidPassword;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -9,7 +10,7 @@ public class RegisterRequest {
     private String username;
 
     @NotBlank(message = "密码不能为空")
-    @Size(min = 4, max = 100, message = "密码长度 4-100 个字符")
+    @ValidPassword
     private String password;
 
     @Size(max = 50, message = "昵称最长 50 个字符")
