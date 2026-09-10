@@ -8,6 +8,7 @@ import com.genealogy.server.security.JwtService;
 import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
+import com.genealogy.server.service.PublicationViewProjector;
 import com.genealogy.server.service.RefreshTokenService;
 import com.genealogy.server.service.ShareLinkService;
 import com.genealogy.server.service.UserService;
@@ -53,12 +54,14 @@ public class MobileController {
     private final AuditLogService auditLogService;
     private final PublicationAuthorizationService authorizationService;
     private final ShareLinkService shareLinkService;
+    private final PublicationViewProjector viewProjector;
 
     public MobileController(UserService userService, JwtService jwtService,
                             RefreshTokenService refreshTokenService,
                             UserRepository userRepository, PublicationService publicationService,
                             AuditLogService auditLogService, PublicationAuthorizationService authorizationService,
-                            ShareLinkService shareLinkService) {
+                            ShareLinkService shareLinkService,
+                            PublicationViewProjector viewProjector) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
@@ -67,6 +70,7 @@ public class MobileController {
         this.auditLogService = auditLogService;
         this.authorizationService = authorizationService;
         this.shareLinkService = shareLinkService;
+        this.viewProjector = viewProjector;
     }
 
     /**
@@ -138,10 +142,12 @@ public class MobileController {
             jakarta.servlet.http.HttpServletRequest request) {
 
         com.genealogy.server.auth.AccessSubject subject;
+        ShareSubject shareSubject = null;
         if (shareToken != null && !shareToken.isBlank()) {
             try {
                 PublicationShareLink shareLink = shareLinkService.validateToken(shareToken);
-                subject = new ShareSubject(shareLink.getId(), shareLink.getPublicationId(), shareLink.isAllowExport(), shareLink.getRedactionProfileJson());
+                shareSubject = new ShareSubject(shareLink.getId(), shareLink.getPublicationId(), shareLink.isAllowExport(), shareLink.getRedactionProfileJson());
+                subject = shareSubject;
             } catch (Exception e) {
                 throw new ForbiddenException("分享链接无效或已过期");
             }
@@ -161,6 +167,9 @@ public class MobileController {
         }
 
         Map<String, Object> data = publicationService.loadPublication(pubId);
+        if (shareSubject != null) {
+            data = viewProjector.projectRedacted(data, shareSubject, shareToken);
+        }
         @SuppressWarnings("unchecked")
         Map<String, Object> pubJson = (Map<String, Object>) data.get("publication");
         @SuppressWarnings("unchecked")
