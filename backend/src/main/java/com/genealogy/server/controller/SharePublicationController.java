@@ -100,6 +100,9 @@ public class SharePublicationController {
         if (person == null || !sharedPubId.equals(person.getPublicationId())) {
             throw new ForbiddenException("无权访问该照片");
         }
+        if (!viewProjector.canExposePhoto(subject.getRedactionProfileJson(), person.getDeceased())) {
+            throw new ForbiddenException("无权访问该照片");
+        }
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, photo.getMimeType())

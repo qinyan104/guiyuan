@@ -94,6 +94,16 @@ public class FieldLevelPrivacyTest {
     }
 
     @Test
+    void testPhotoAccessRule() {
+        assertTrue(viewProjector.canExposePhoto(null, false), "Default profile should allow photos");
+        assertTrue(viewProjector.canExposePhoto("{\"photo\":\"NONE\"}", false), "NONE should allow living photos");
+        assertFalse(viewProjector.canExposePhoto("{\"photo\":\"LIVING\"}", false), "LIVING should hide living photos");
+        assertFalse(viewProjector.canExposePhoto("{\"photo\":\"LIVING\"}", null), "Missing deceased flag should be treated as living");
+        assertTrue(viewProjector.canExposePhoto("{\"photo\":\"LIVING\"}", true), "LIVING should allow deceased photos");
+        assertFalse(viewProjector.canExposePhoto("{\"photo\":\"ALL\"}", true), "ALL should hide all photos");
+    }
+
+    @Test
     void testRedaction_DefaultProfile() {
         // Default is dates: LIVING, note: LIVING
         Map<String, Object> redacted = viewProjector.projectRedacted(testData, (String)null, null);

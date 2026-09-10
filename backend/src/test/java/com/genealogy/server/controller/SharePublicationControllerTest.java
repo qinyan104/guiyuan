@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -190,12 +189,91 @@ public class SharePublicationControllerTest {
         person.setId(5L);
         person.setPublicationId(10L);
         when(personRepository.findById(5L)).thenReturn(Optional.of(person));
+        when(viewProjector.canExposePhoto(null, false)).thenReturn(true);
 
         mockMvc.perform(get("/api/shares/token123/photos/100")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", "image/jpeg"))
                 .andExpect(content().bytes(new byte[]{1, 2, 3}));
+    }
+
+    @Test
+    public void testGetPhotoForbiddenForLivingPersonWhenPhotoLivingRule() throws Exception {
+        ShareSubject subject = new ShareSubject(1L, 10L, false, "{\"photo\":\"LIVING\"}");
+        when(shareTokenResolver.resolveSubject("token123")).thenReturn(subject);
+
+        Photo photo = new Photo();
+        photo.setId(100L);
+        photo.setPersonDbId(5L);
+        photo.setMimeType("image/jpeg");
+        photo.setData(new byte[]{1, 2, 3});
+        when(photoRepository.findById(100L)).thenReturn(Optional.of(photo));
+
+        Person person = new Person();
+        person.setId(5L);
+        person.setPublicationId(10L);
+        person.setDeceased(false);
+        when(personRepository.findById(5L)).thenReturn(Optional.of(person));
+        when(viewProjector.canExposePhoto("{\"photo\":\"LIVING\"}", false)).thenReturn(false);
+
+        mockMvc.perform(get("/api/shares/token123/photos/100")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403))
+                .andExpect(jsonPath("$.message").value("无权访问该照片"));
+    }
+
+    @Test
+    public void testGetPhotoAllowsDeceasedPersonWhenPhotoLivingRule() throws Exception {
+        ShareSubject subject = new ShareSubject(1L, 10L, false, "{\"photo\":\"LIVING\"}");
+        when(shareTokenResolver.resolveSubject("token123")).thenReturn(subject);
+
+        Photo photo = new Photo();
+        photo.setId(100L);
+        photo.setPersonDbId(5L);
+        photo.setMimeType("image/jpeg");
+        photo.setData(new byte[]{1, 2, 3});
+        when(photoRepository.findById(100L)).thenReturn(Optional.of(photo));
+
+        Person person = new Person();
+        person.setId(5L);
+        person.setPublicationId(10L);
+        person.setDeceased(true);
+        when(personRepository.findById(5L)).thenReturn(Optional.of(person));
+        when(viewProjector.canExposePhoto("{\"photo\":\"LIVING\"}", true)).thenReturn(true);
+
+        mockMvc.perform(get("/api/shares/token123/photos/100")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "image/jpeg"))
+                .andExpect(content().bytes(new byte[]{1, 2, 3}));
+    }
+
+    @Test
+    public void testGetPhotoForbiddenWhenPhotoAllRule() throws Exception {
+        ShareSubject subject = new ShareSubject(1L, 10L, false, "{\"photo\":\"ALL\"}");
+        when(shareTokenResolver.resolveSubject("token123")).thenReturn(subject);
+
+        Photo photo = new Photo();
+        photo.setId(100L);
+        photo.setPersonDbId(5L);
+        photo.setMimeType("image/jpeg");
+        photo.setData(new byte[]{1, 2, 3});
+        when(photoRepository.findById(100L)).thenReturn(Optional.of(photo));
+
+        Person person = new Person();
+        person.setId(5L);
+        person.setPublicationId(10L);
+        person.setDeceased(true);
+        when(personRepository.findById(5L)).thenReturn(Optional.of(person));
+        when(viewProjector.canExposePhoto("{\"photo\":\"ALL\"}", true)).thenReturn(false);
+
+        mockMvc.perform(get("/api/shares/token123/photos/100")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403))
+                .andExpect(jsonPath("$.message").value("无权访问该照片"));
     }
 
     @Test

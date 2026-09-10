@@ -114,6 +114,13 @@ public class PublicationViewProjector {
         }
     }
 
+    public boolean canExposePhoto(String profileJson, Boolean deceased) {
+        Map<String, Object> profile = parseProfile(profileJson);
+        String photoRule = getRule(profile, "photo", null, "NONE");
+        boolean isDeceased = Boolean.TRUE.equals(deceased);
+        return !shouldRedact(photoRule, isDeceased);
+    }
+
     private boolean shouldRedact(String rule, boolean isDeceased) {
         if ("ALL".equals(rule)) return true;
         if ("LIVING".equals(rule)) return !isDeceased;
