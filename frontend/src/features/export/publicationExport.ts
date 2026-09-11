@@ -1,5 +1,6 @@
 import type { PublicationLayout, PublicationPaper } from '../../types/family'
 import PERSON_CARD_STYLE from '../../components/PersonCardSvg.style?raw'
+import { fetchBinaryResource } from '../../api/http'
 import {
   DEFAULT_DROP_LINE_PRINT_PROFILE,
   isPrintedNameTooSmall,
@@ -173,7 +174,7 @@ function insertExportTitle(svg: SVGSVGElement, title: string) {
   svg.insertBefore(titleElement, svg.firstChild)
 }
 
-export function getSvgThemeMap(): Record<string, string> {
+function getSvgThemeMap(): Record<string, string> {
   if (typeof window === 'undefined') return {}
   const root = document.documentElement
   const computed = getComputedStyle(root)
@@ -534,9 +535,7 @@ export async function createStandalonePublicationSvg(options: CreateStandaloneSv
       }
 
       try {
-        const response = await fetch(href)
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        const blob = await response.blob()
+        const blob = await fetchBinaryResource(href)
         const reader = new FileReader()
         const base64 = await new Promise<string>(resolve => {
           reader.onloadend = () => resolve(reader.result as string)

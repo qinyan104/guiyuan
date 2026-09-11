@@ -216,10 +216,13 @@ function goPublicationRoute(name: 'publication-stats' | 'publication-timeline') 
 }
 
 // ─── GEDCOM Export ─────────────────────────────────────────────
-function handleExportGedcom() {
+async function handleExportGedcom() {
   const pubId = context.serverPublicationId.value
-  if (pubId) {
-    downloadGedcom(pubId)
+  if (!pubId) return
+  try {
+    await downloadGedcom(pubId)
+  } catch (err: unknown) {
+    feedback.setError(feedback.getErrorMessage(err, 'GEDCOM 导出失败'))
   }
 }
 

@@ -1,20 +1,16 @@
-import http from './http'
+import http, { unwrapApiResponse } from './http'
+import type { ApiResponse } from '../types/api'
 
 export async function uploadPhoto(personId: string, publicationId: number, file: File): Promise<number> {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('personId', personId)
   formData.append('publicationId', String(publicationId))
-  const resp = await http.post<{ code: number; data: { id: number } }>('/photos', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  })
-  return resp.data.data.id
+  // 不手动设置 Content-Type：交给 axios/浏览器生成带 boundary 的 multipart 头。
+  const uploaded = await unwrapApiResponse(http.post<ApiResponse<{ id: number }>>('/photos', formData))
+  return uploaded.id
 }
 
 export function getPhotoUrl(photoId: number): string {
   return `/api/photos/${photoId}`
-}
-
-export async function deletePhoto(photoId: number): Promise<void> {
-  await http.delete(`/photos/${photoId}`)
 }

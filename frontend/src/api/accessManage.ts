@@ -1,4 +1,4 @@
-import http from './http'
+import http, { unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/api'
 
 export interface UserSearchResult {
@@ -18,15 +18,13 @@ export interface AccessRecord {
 }
 
 export async function searchUsers(query: string, signal?: AbortSignal): Promise<UserSearchResult[]> {
-  const resp = await http.get<ApiResponse<UserSearchResult[]>>(`/users/search?q=${encodeURIComponent(query)}`, {
-    signal,
-  })
-  return resp.data.data
+  return unwrapApiResponse(
+    http.get<ApiResponse<UserSearchResult[]>>(`/users/search?q=${encodeURIComponent(query)}`, { signal }),
+  )
 }
 
 export async function listAccessRecords(publicationId: number): Promise<AccessRecord[]> {
-  const resp = await http.get<ApiResponse<AccessRecord[]>>(`/publications/${publicationId}/access`)
-  return resp.data.data
+  return unwrapApiResponse(http.get<ApiResponse<AccessRecord[]>>(`/publications/${publicationId}/access`))
 }
 
 export async function addAccessRecord(
@@ -35,12 +33,13 @@ export async function addAccessRecord(
   role: string,
   redactionProfile?: string,
 ): Promise<{ id: number }> {
-  const resp = await http.post<ApiResponse<{ id: number }>>(`/publications/${publicationId}/access`, {
-    userId,
-    role,
-    redactionProfile,
-  })
-  return resp.data.data
+  return unwrapApiResponse(
+    http.post<ApiResponse<{ id: number }>>(`/publications/${publicationId}/access`, {
+      userId,
+      role,
+      redactionProfile,
+    }),
+  )
 }
 
 export async function updateAccessRole(
@@ -49,13 +48,15 @@ export async function updateAccessRole(
   role: string,
   redactionProfile?: string,
 ): Promise<void> {
-  await http.put(`/publications/${publicationId}/access/${userId}`, { role, redactionProfile })
+  await unwrapApiResponse(
+    http.put<ApiResponse<null>>(`/publications/${publicationId}/access/${userId}`, { role, redactionProfile }),
+  )
 }
 
 export async function removeAccessRecord(publicationId: number, userId: number): Promise<void> {
-  await http.delete(`/publications/${publicationId}/access/${userId}`)
+  await unwrapApiResponse(http.delete<ApiResponse<null>>(`/publications/${publicationId}/access/${userId}`))
 }
 
 export async function mergeBranch(publicationId: number, personId: string): Promise<void> {
-  await http.post(`/publications/${publicationId}/access/${personId}/merge`)
+  await unwrapApiResponse(http.post<ApiResponse<null>>(`/publications/${publicationId}/access/${personId}/merge`))
 }

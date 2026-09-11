@@ -8,7 +8,12 @@ import {
   updateAccessRole,
   type AccessRecord,
 } from '../../api/accessManage'
-import { useCollaborators } from './useCollaborators'
+import {
+  useCollaborators,
+  DEFAULT_REDACTION_PROFILE,
+  FALLBACK_REDACTION_PROFILE,
+  parseRedactionProfile,
+} from './useCollaborators'
 
 vi.mock('../../api/accessManage', () => ({
   addAccessRecord: vi.fn(),
@@ -54,6 +59,18 @@ describe('useCollaborators', () => {
     vi.mocked(addAccessRecord).mockResolvedValue({ id: 3 })
     vi.mocked(updateAccessRole).mockResolvedValue()
     vi.mocked(removeAccessRecord).mockResolvedValue()
+  })
+
+  it('keeps the display fallback in sync with the backend default redaction profile', () => {
+    // 后端 PublicationViewProjector.DEFAULT_REDACTION_PROFILE：dates LIVING / note LIVING / photo NONE。
+    // 缺失 profile 时界面必须显示这份值，否则会谎报“照片已隐藏”。
+    expect(FALLBACK_REDACTION_PROFILE).toEqual({ dates: 'LIVING', note: 'LIVING', photo: 'NONE' })
+    expect(parseRedactionProfile(undefined).photo).toBe('NONE')
+    expect(parseRedactionProfile('not-json').photo).toBe('NONE')
+    expect(parseRedactionProfile('{"photo":"ALL"}').photo).toBe('ALL')
+
+    // 新建 VIEWER 时下发的仍然是更保守的默认值（隐藏在世者照片），不受展示回退影响。
+    expect(DEFAULT_REDACTION_PROFILE.photo).toBe('LIVING')
   })
 
   it('loads collaborators and searches only users that are not already collaborators', async () => {

@@ -1,4 +1,4 @@
-import http from './http'
+import http, { unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/api'
 import {
   getAccessToken,
@@ -21,15 +21,15 @@ export interface RegisterRequest {
 }
 
 export async function login(req: LoginRequest): Promise<{ token: string; username: string; role?: string }> {
-  const resp = await http.post<ApiResponse<{ token: string; username: string; role?: string }>>('/auth/login', req)
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
-  applyAuthenticatedSession(resp.data.data)
-  return resp.data.data
+  const payload = await unwrapApiResponse(
+    http.post<ApiResponse<{ token: string; username: string; role?: string }>>('/auth/login', req),
+  )
+  applyAuthenticatedSession(payload)
+  return payload
 }
 
 export async function register(req: RegisterRequest): Promise<void> {
-  const resp = await http.post<ApiResponse<null>>('/auth/register', req)
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
+  await unwrapApiResponse(http.post<ApiResponse<null>>('/auth/register', req))
 }
 
 export async function logout() {
@@ -44,12 +44,6 @@ export async function logout() {
 
 export function getToken(): string | null {
   return getAccessToken()
-}
-
-export function buildAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
-  const token = getAccessToken()
-  if (!token) return headers
-  return { ...headers, Authorization: `Bearer ${token}` }
 }
 
 export function getUsername(): string | null {

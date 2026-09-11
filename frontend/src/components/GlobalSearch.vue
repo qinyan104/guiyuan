@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchApi, type PublicationHit, type PersonHit, type SearchResult } from '../api/search'
+import { getUserErrorMessage } from '../api/http'
 
 const router = useRouter()
 
@@ -10,6 +11,7 @@ const results = ref<SearchResult>({ publications: [], persons: [] })
 const isOpen = ref(false)
 const isLoading = ref(false)
 const hasSearched = ref(false)
+const searchError = ref<string | null>(null)
 
 const inputRef = ref<HTMLInputElement | null>(null)
 const rootRef = ref<HTMLElement | null>(null)
@@ -24,6 +26,7 @@ function debouncedSearch() {
   if (!trimmed) {
     results.value = { publications: [], persons: [] }
     hasSearched.value = false
+    searchError.value = null
     isLoading.value = false
     return
   }
@@ -32,10 +35,14 @@ function debouncedSearch() {
   debounceTimer = setTimeout(async () => {
     try {
       results.value = await searchApi(trimmed)
+      searchError.value = null
       hasSearched.value = true
       isOpen.value = true
-    } catch {
-      // searchApi handles errors internally and returns empty results
+    } catch (err: unknown) {
+      results.value = { publications: [], persons: [] }
+      searchError.value = getUserErrorMessage(err, '搜索失败，请稍后重试')
+      hasSearched.value = true
+      isOpen.value = true
     } finally {
       isLoading.value = false
     }
@@ -136,6 +143,11 @@ onBeforeUnmount(() => {
         <!-- Loading state -->
         <div v-if="isLoading" class="dropdown-status">
           搜索中...
+        </div>
+
+        <!-- Error state -->
+        <div v-else-if="searchError" class="dropdown-status dropdown-status--error">
+          {{ searchError }}
         </div>
 
         <!-- No results -->
@@ -316,6 +328,10 @@ onBeforeUnmount(() => {
   color: var(--text-soft, var(--color-neutral-5));
   font-weight: 500;
   letter-spacing: 0.02em;
+}
+
+.dropdown-status--error {
+  color: var(--color-error);
 }
 
 /* ── Result Sections ── */

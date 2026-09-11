@@ -1,24 +1,15 @@
-import http from './http'
+import http, { unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/api'
 
 export async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
-  const resp = await http.put<ApiResponse<null>>('/user/password', { oldPassword, newPassword })
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
-}
-
-export async function changeNickname(nickname: string): Promise<void> {
-  const resp = await http.put<ApiResponse<null>>('/user/nickname', { nickname })
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
+  await unwrapApiResponse(http.put<ApiResponse<null>>('/user/password', { oldPassword, newPassword }))
 }
 
 export async function uploadAvatar(file: File): Promise<string> {
   const formData = new FormData()
   formData.append('file', file)
-  const resp = await http.post<ApiResponse<string>>('/user/avatar', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  })
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '头像上传失败')
-  return resp.data.data
+  // 不手动设置 Content-Type：交给 axios/浏览器生成带 boundary 的 multipart 头。
+  return unwrapApiResponse(http.post<ApiResponse<string>>('/user/avatar', formData))
 }
 
 export interface MyProfilePerson {
@@ -39,17 +30,13 @@ export interface MyProfile {
 }
 
 export async function getMyProfile(): Promise<MyProfile> {
-  const resp = await http.get<ApiResponse<MyProfile>>('/profile/me')
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '获取个人信息失败')
-  return resp.data.data
+  return unwrapApiResponse(http.get<ApiResponse<MyProfile>>('/profile/me'))
 }
 
 export async function submitProfileChange(changes: Record<string, unknown>): Promise<void> {
-  const resp = await http.put<ApiResponse<null>>('/profile/me', { changes })
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '提交修改失败')
+  await unwrapApiResponse(http.put<ApiResponse<null>>('/profile/me', { changes }))
 }
 
 export async function updateMyProfileName(name: string): Promise<void> {
-  const resp = await http.put<ApiResponse<null>>('/profile/me/name', { name })
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '姓名修改失败')
+  await unwrapApiResponse(http.put<ApiResponse<null>>('/profile/me/name', { name }))
 }

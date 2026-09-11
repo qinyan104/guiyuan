@@ -73,11 +73,23 @@ interface AxiosLikeError {
   response?: { status?: number; data?: { message?: string; code?: number } }
   config?: { url?: string; method?: string }
   code?: string // "ERR_NETWORK" / "ECONNABORTED" 等
+  isAxiosError?: boolean
   message?: string
 }
 
+/**
+ * 判断是否 axios 错误。
+ *
+ * <p>不能用 `'response' in error` 单独判断：axios 只在有响应时才赋值 `response`，
+ * 网络中断/超时的错误根本没有 `response` 属性，那样会被当成普通 Error，
+ * 用户看到的是 axios 的英文 "Network Error" 而不是中文提示。
+ */
 function isAxiosLike(error: unknown): error is AxiosLikeError {
-  return typeof error === 'object' && error !== null && 'response' in (error as Record<string, unknown>)
+  if (typeof error !== 'object' || error === null) return false
+  const candidate = error as AxiosLikeError
+  return (
+    'response' in error || 'config' in error || candidate.isAxiosError === true || typeof candidate.code === 'string'
+  )
 }
 
 // ============================================================
@@ -148,32 +160,4 @@ export function getUserErrorMessage(error: unknown, fallback?: string): string {
     return fallback
   }
   return classified.userMessage
-}
-
-/** 是否需要弹窗/强提醒 */
-export function isBlockingError(category: ErrorCategory): boolean {
-  return category === 'auth' || category === 'permission' || category === 'conflict'
-}
-
-/** 是否需要静默 toast */
-export function isToastError(category: ErrorCategory): boolean {
-  return category === 'validation' || category === 'not-found' || category === 'network'
-}
-
-/** 将原始 Axios 错误转为可序列化的简要对象（用于日志/审计） */
-export function serializeError(error: unknown): Record<string, unknown> {
-  if (!isAxiosLike(error)) {
-    return {
-      kind: 'native',
-      message: error instanceof Error ? error.message : String(error ?? ''),
-    }
-  }
-  return {
-    kind: 'http',
-    status: error.response?.status,
-    apiCode: error.response?.data?.code,
-    message: error.response?.data?.message || error.message,
-    url: error.config?.url,
-    method: error.config?.method,
-  }
 }

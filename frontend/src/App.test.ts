@@ -22,7 +22,7 @@ const {
   }
   const state = {
     refreshDeferred: createDeferred<{
-      data: { data: { token: string; username: string; role?: string } }
+      data: { code: number; data: { token: string; username: string; role?: string } }
     }>(),
   }
   const routerReplace = vi.fn()
@@ -55,6 +55,11 @@ vi.mock('vue-router', () => ({
 vi.mock('./api/http', () => ({
   default: {
     post: httpPost,
+  },
+  unwrapApiResponse: async (promise: Promise<{ data: { code: number; message?: string; data: unknown } }>) => {
+    const resp = await promise
+    if (resp.data.code !== 200) throw new Error(resp.data.message || '操作失败')
+    return resp.data.data
   },
 }))
 
@@ -107,6 +112,7 @@ describe('App auth bootstrap', () => {
 
     state.refreshDeferred.resolve({
       data: {
+        code: 200,
         data: {
           token: 'restored-token',
           username: 'alice',

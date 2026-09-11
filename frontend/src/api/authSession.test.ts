@@ -14,6 +14,11 @@ vi.mock('./http', () => ({
   default: {
     post: httpPost,
   },
+  unwrapApiResponse: async (promise: Promise<{ data: { code: number; message?: string; data: unknown } }>) => {
+    const resp = await promise
+    if (resp.data.code !== 200) throw new Error(resp.data.message || '操作失败')
+    return resp.data.data
+  },
 }))
 
 vi.mock('./tokenStore', () => ({
@@ -65,6 +70,25 @@ describe('auth session bootstrap', () => {
     expect(tokenStore.username).toBe('alice')
     expect(tokenStore.role).toBe('ADMIN')
     expect(tokenStore.cleared).toBe(0)
+  })
+
+  it('overwrites a stale stored role with the server-authoritative role on bootstrap', async () => {
+    // 本地 role 可能过期或被篡改，bootstrap 必须用服务端返回的角色覆盖它。
+    tokenStore.role = 'SUPER_ADMIN'
+    httpPost.mockResolvedValueOnce({
+      data: {
+        code: 200,
+        data: {
+          token: 'restored-token',
+          username: 'alice',
+          role: 'USER',
+        },
+      },
+    })
+
+    await expect(bootstrapAuthSession()).resolves.toBe(true)
+
+    expect(tokenStore.role).toBe('USER')
   })
 
   it('does not clear a token written by a successful login while startup refresh is still settling', async () => {

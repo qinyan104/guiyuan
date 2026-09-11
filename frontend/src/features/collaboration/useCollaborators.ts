@@ -31,11 +31,24 @@ export const DEFAULT_REDACTION_PROFILE = {
   photo: 'LIVING',
 }
 
+/**
+ * 展示用回退值，必须与后端 {@code PublicationViewProjector.DEFAULT_REDACTION_PROFILE} 一致。
+ *
+ * <p>当某条授权的 profile 缺失/为空时，真正生效的是后端默认值
+ * （`dates: LIVING, note: LIVING, photo: NONE`）。如果这里回退成 `photo: LIVING`，
+ * 界面会声称“在世者照片已隐藏”，而实际上后端正在公开它们。
+ */
+export const FALLBACK_REDACTION_PROFILE = {
+  dates: 'LIVING',
+  note: 'LIVING',
+  photo: 'NONE',
+}
+
 export function parseRedactionProfile(profileStr?: string) {
   try {
-    return profileStr ? JSON.parse(profileStr) : { ...DEFAULT_REDACTION_PROFILE }
+    return profileStr ? JSON.parse(profileStr) : { ...FALLBACK_REDACTION_PROFILE }
   } catch {
-    return { ...DEFAULT_REDACTION_PROFILE }
+    return { ...FALLBACK_REDACTION_PROFILE }
   }
 }
 

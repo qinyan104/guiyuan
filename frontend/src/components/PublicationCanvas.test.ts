@@ -131,5 +131,6 @@ describe('PublicationCanvas', () => {
     await (wrapper.vm as unknown as { prepareForExport: () => Promise<void> }).prepareForExport()
     expect(wrapper.get('.publication-svg').attributes('viewBox')).toBe('0 0 400000 20000')
     expect(Number(wrapper.get('.publication-svg').attributes('width'))).toBe(400_000)
-  })
+    // 2000 人渲染在覆盖率插桩下明显变慢，单独放宽超时（其余用例保持默认 5s）。
+  }, 20_000)
 })

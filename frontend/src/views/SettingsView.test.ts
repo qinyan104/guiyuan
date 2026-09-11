@@ -12,7 +12,6 @@ vi.mock('../api/auth', () => ({
 
 vi.mock('../api/profile', () => ({
   changePassword: vi.fn(),
-  changeNickname: vi.fn(),
   getMyProfile: vi.fn(() =>
     Promise.resolve({
       person: { name: '馆主', gender: 'unknown', deceased: false },

@@ -13,6 +13,11 @@ function removeStoredAccessToken(): void {
 // Access tokens are intentionally memory-only. A refresh-cookie session is
 // restored through /auth/refresh during app bootstrap; keeping bearer tokens in
 // localStorage makes them available to any injected script.
+//
+// username / role 会落到 localStorage，但**只是显示提示**，不是授权依据：
+// 它们只在「刷新页面后、bootstrap 完成前」这段窗口内被 UI 读取，而且每次
+// bootstrap/refresh 都会用服务端返回的 role 覆盖本地值（see applyAuthenticatedSession）。
+// 任何权限判定都必须由后端完成——不要新增只依赖 isAdmin() 的客户端保护。
 removeStoredAccessToken()
 
 let accessToken: string | null = null

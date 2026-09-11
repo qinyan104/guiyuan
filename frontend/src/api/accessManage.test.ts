@@ -10,6 +10,11 @@ vi.mock('./http', () => ({
     put: vi.fn(),
     delete: vi.fn(),
   },
+  unwrapApiResponse: async (promise: Promise<{ data: { code: number; message?: string; data: unknown } }>) => {
+    const resp = await promise
+    if (resp.data.code !== 200) throw new Error(resp.data.message || '操作失败')
+    return resp.data.data
+  },
 }))
 
 describe('accessManage API', () => {
@@ -20,7 +25,7 @@ describe('accessManage API', () => {
 
   describe('addAccessRecord', () => {
     it('sends role and redactionProfile to the server', async () => {
-      vi.mocked(http.post).mockResolvedValue({ data: { data: { id: 101 } } } as never)
+      vi.mocked(http.post).mockResolvedValue({ data: { code: 200, data: { id: 101 } } } as never)
 
       const result = await addAccessRecord(7, 42, 'VIEWER', '{"dates":"ALL"}')
 
@@ -31,11 +36,17 @@ describe('accessManage API', () => {
       })
       expect(result.id).toBe(101)
     })
+
+    it('surfaces business errors instead of returning undefined', async () => {
+      vi.mocked(http.post).mockResolvedValue({ data: { code: 403, message: '没有权限' } } as never)
+
+      await expect(addAccessRecord(7, 42, 'VIEWER')).rejects.toThrow('没有权限')
+    })
   })
 
   describe('updateAccessRole', () => {
     it('sends updated role and redactionProfile to the server', async () => {
-      vi.mocked(http.put).mockResolvedValue({ data: { data: undefined } } as never)
+      vi.mocked(http.put).mockResolvedValue({ data: { code: 200, data: undefined } } as never)
 
       await updateAccessRole(7, 42, 'VIEWER', '{"dates":"LIVING"}')
 
@@ -48,7 +59,7 @@ describe('accessManage API', () => {
 
   describe('mergeBranch', () => {
     beforeEach(() => {
-      vi.mocked(http.post).mockResolvedValue({ data: { data: undefined } } as never)
+      vi.mocked(http.post).mockResolvedValue({ data: { code: 200, data: undefined } } as never)
     })
 
     it('posts to the branch merge endpoint', async () => {

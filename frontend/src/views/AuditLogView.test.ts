@@ -5,7 +5,6 @@ import { listLogs } from '../api/audit'
 
 vi.mock('../api/audit', () => ({
   listLogs: vi.fn(),
-  addLog: vi.fn(),
 }))
 
 const mockLogs = [

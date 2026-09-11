@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { BusinessError, formatHttpError, shouldRetryAuthRefresh, unwrapApiResponse } from './http'
+import http, {
+  BusinessError,
+  fetchBinaryResource,
+  formatHttpError,
+  isSameOriginUrl,
+  shouldRetryAuthRefresh,
+  unwrapApiResponse,
+} from './http'
 
 type ResponseRejected = (error: unknown) => Promise<unknown>
 type RequestFulfilled = (config: { headers?: Record<string, unknown>; skipAuth?: boolean }) => Record<string, unknown>
@@ -16,6 +23,43 @@ type HttpWithInterceptorHandlers = {
 
 afterEach(() => {
   vi.restoreAllMocks()
+})
+
+describe('isSameOriginUrl', () => {
+  it('treats relative paths and same-origin absolute urls as same origin', () => {
+    expect(isSameOriginUrl('/api/photos/1')).toBe(true)
+    expect(isSameOriginUrl(`${window.location.origin}/api/photos/1`)).toBe(true)
+  })
+
+  it('treats other origins as cross-origin', () => {
+    expect(isSameOriginUrl('https://cdn.example.com/a.png')).toBe(false)
+    expect(isSameOriginUrl('http://localhost:9999/a.png')).toBe(false)
+  })
+})
+
+describe('fetchBinaryResource', () => {
+  it('uses the shared http client with credentials for same-origin resources', async () => {
+    const getSpy = vi.spyOn(http, 'get').mockResolvedValue({ data: new Blob(['x']) } as never)
+
+    await fetchBinaryResource('/api/photos/7')
+
+    expect(getSpy).toHaveBeenCalledWith('/api/photos/7', {
+      baseURL: '',
+      responseType: 'blob',
+    })
+  })
+
+  it('skips auth for cross-origin resources so the token is not leaked', async () => {
+    const getSpy = vi.spyOn(http, 'get').mockResolvedValue({ data: new Blob(['x']) } as never)
+
+    await fetchBinaryResource('https://cdn.example.com/a.png')
+
+    expect(getSpy).toHaveBeenCalledWith('https://cdn.example.com/a.png', {
+      baseURL: '',
+      responseType: 'blob',
+      skipAuth: true,
+    })
+  })
 })
 
 describe('shouldRetryAuthRefresh', () => {

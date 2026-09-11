@@ -132,16 +132,6 @@ export function useDevAudit(source: string) {
   return { track, trackTimed, getLog, clearLog }
 }
 
-/** 获取全局审计日志（跨 composable 汇总） */
-export function getGlobalAuditLog(): AuditEntry[] {
-  return auditLog.value
-}
-
-/** 清空全局审计日志 */
-export function clearGlobalAuditLog(): void {
-  auditLog.value = []
-}
-
 /** 挂到 window 上方便控制台调试 */
 declare global {
   interface Window {

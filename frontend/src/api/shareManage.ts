@@ -1,4 +1,5 @@
-import http from './http'
+import http, { unwrapApiResponse } from './http'
+import type { ApiResponse } from '../types/api'
 
 export interface CreateShareLinkOptions {
   allowExport?: boolean
@@ -26,18 +27,13 @@ export async function createShareLink(
   pubId: number,
   options: CreateShareLinkOptions = {},
 ): Promise<CreateShareLinkResult> {
-  const resp = await http.post(`/publications/${pubId}/shares`, options)
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
-  return resp.data.data
+  return unwrapApiResponse(http.post<ApiResponse<CreateShareLinkResult>>(`/publications/${pubId}/shares`, options))
 }
 
 export async function listShareLinks(pubId: number): Promise<ShareLinkSummary[]> {
-  const resp = await http.get(`/publications/${pubId}/shares`)
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
-  return resp.data.data
+  return unwrapApiResponse(http.get<ApiResponse<ShareLinkSummary[]>>(`/publications/${pubId}/shares`))
 }
 
 export async function revokeShareLink(pubId: number, shareId: number): Promise<void> {
-  const resp = await http.delete(`/publications/${pubId}/shares/${shareId}`)
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
+  await unwrapApiResponse(http.delete<ApiResponse<null>>(`/publications/${pubId}/shares/${shareId}`))
 }

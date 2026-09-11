@@ -51,4 +51,16 @@ describe('GlobalSearch', () => {
       query: { personId: 'p9' },
     })
   })
+
+  it('surfaces search failures instead of reporting an empty result set', async () => {
+    searchApi.mockRejectedValue(new Error('服务暂时不可用'))
+
+    const wrapper = mount(GlobalSearch)
+    await wrapper.get('input').setValue('zhao')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('服务暂时不可用')
+    expect(wrapper.text()).not.toContain('无搜索结果')
+  })
 })

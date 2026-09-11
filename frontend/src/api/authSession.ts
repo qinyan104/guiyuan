@@ -1,4 +1,4 @@
-import http from './http'
+import http, { unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/api'
 import { clearSession, getAccessToken, setAccessToken, setRole, setUsername } from './tokenStore'
 
@@ -21,11 +21,9 @@ export function applyAuthenticatedSession(payload: AuthPayload): void {
 }
 
 export async function refreshAuthenticatedSession(): Promise<boolean> {
-  const resp = await http.post<ApiResponse<AuthPayload>>('/auth/refresh')
-  const payload = resp.data.data
-
-  if (resp.data.code !== 200 || !payload?.token || !payload?.username) {
-    throw new Error(resp.data.message || 'No refresh session')
+  const payload = await unwrapApiResponse(http.post<ApiResponse<AuthPayload>>('/auth/refresh'))
+  if (!payload?.token || !payload?.username) {
+    throw new Error('刷新登录状态失败')
   }
 
   applyAuthenticatedSession(payload)

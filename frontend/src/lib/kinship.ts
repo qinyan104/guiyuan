@@ -128,11 +128,6 @@ function getDataFingerprint(pub: PublicationData): string {
   return `${people}|${families}`
 }
 
-export function invalidateKinshipCache(): void {
-  _cachedGraph = null
-  _cachedFingerprint = ''
-}
-
 function getCachedGraph(publication: PublicationData): KinshipGraph {
   const fp = getDataFingerprint(publication)
   if (_cachedGraph && _cachedFingerprint === fp) return _cachedGraph

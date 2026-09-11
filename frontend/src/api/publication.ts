@@ -1,6 +1,6 @@
-import http from './http'
+import http, { unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/api'
-import type { PublicationData, PublicationSettings, PublicationInfo, Person } from '../types/family'
+import type { PublicationData, PublicationSettings, PublicationInfo } from '../types/family'
 
 export interface PublicationSummary {
   id: number
@@ -29,21 +29,19 @@ export interface PublicationDownloadProgress {
 }
 
 export async function listPublications(): Promise<PublicationSummary[]> {
-  const resp = await http.get<ApiResponse<PublicationSummary[]>>('/publications')
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '获取族谱列表失败')
-  return resp.data.data
+  return unwrapApiResponse(http.get<ApiResponse<PublicationSummary[]>>('/publications'))
 }
 
 export async function getPublication(
   id: number,
   onDownloadProgress?: (event: PublicationDownloadProgress) => void,
 ): Promise<PublicationLoadResult> {
-  const resp = await http.get<ApiResponse<PublicationLoadResult>>(
-    `/publications/${id}`,
-    onDownloadProgress ? { onDownloadProgress } : undefined,
+  return unwrapApiResponse(
+    http.get<ApiResponse<PublicationLoadResult>>(
+      `/publications/${id}`,
+      onDownloadProgress ? { onDownloadProgress } : undefined,
+    ),
   )
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '获取族谱失败')
-  return resp.data.data
 }
 
 export async function createPublication(
@@ -51,15 +49,16 @@ export async function createPublication(
   settings: PublicationSettings,
   title?: string,
 ): Promise<number> {
-  const resp = await http.post<ApiResponse<{ id: number }>>('/publications', {
-    title: title || publication.title,
-    subtitle: publication.subtitle,
-    publication,
-    settings,
-    info: publication.info,
-  })
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '创建族谱失败')
-  return resp.data.data.id
+  const created = await unwrapApiResponse(
+    http.post<ApiResponse<{ id: number }>>('/publications', {
+      title: title || publication.title,
+      subtitle: publication.subtitle,
+      publication,
+      settings,
+      info: publication.info,
+    }),
+  )
+  return created.id
 }
 
 export async function updatePublication(
@@ -67,16 +66,17 @@ export async function updatePublication(
   publication: PublicationData,
   settings: PublicationSettings,
 ): Promise<number> {
-  const resp = await http.put<ApiResponse<{ newRevision: number }>>(`/publications/${id}`, {
-    revision: publication.revision,
-    title: publication.title,
-    subtitle: publication.subtitle,
-    publication,
-    settings,
-    info: publication.info,
-  })
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '保存族谱失败')
-  return resp.data.data.newRevision
+  const result = await unwrapApiResponse(
+    http.put<ApiResponse<{ newRevision: number }>>(`/publications/${id}`, {
+      revision: publication.revision,
+      title: publication.title,
+      subtitle: publication.subtitle,
+      publication,
+      settings,
+      info: publication.info,
+    }),
+  )
+  return result.newRevision
 }
 
 export async function updatePublicationMetadata(
@@ -86,40 +86,19 @@ export async function updatePublicationMetadata(
   subtitle: string,
   info: PublicationInfo | null,
 ): Promise<number> {
-  const resp = await http.put<ApiResponse<{ newRevision: number }>>(`/publications/${id}/metadata`, {
-    revision,
-    title,
-    subtitle,
-    info,
-  })
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '更新元数据失败')
-  return resp.data.data.newRevision
-}
-
-export async function updatePerson(
-  pubId: number,
-  personId: string,
-  personData: Partial<Person> & { expectedRevision?: number },
-): Promise<number> {
-  const resp = await http.put<ApiResponse<{ newRevision: number }>>(
-    `/publications/${pubId}/people/${personId}`,
-    personData,
+  const result = await unwrapApiResponse(
+    http.put<ApiResponse<{ newRevision: number }>>(`/publications/${id}/metadata`, {
+      revision,
+      title,
+      subtitle,
+      info,
+    }),
   )
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '更新人物失败')
-  return resp.data.data.newRevision
+  return result.newRevision
 }
 
 export async function deletePublication(id: number): Promise<void> {
-  const resp = await http.delete<ApiResponse<null>>(`/publications/${id}`)
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '删除族谱失败')
-}
-
-export interface PublicationHistoryEntry {
-  id: number
-  username: string
-  action: string
-  detail: string
-  createdAt: string
+  await unwrapApiResponse(http.delete<ApiResponse<null>>(`/publications/${id}`))
 }
 
 export interface ActivityEntry {
@@ -147,12 +126,6 @@ export interface FieldChange {
   new: string
 }
 
-export async function getPublicationHistory(id: number): Promise<PublicationHistoryEntry[]> {
-  const resp = await http.get<ApiResponse<PublicationHistoryEntry[]>>(`/publications/${id}/history`)
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '获取历史记录失败')
-  return resp.data.data
-}
-
 function tryParseDetail(detail: string): PersonChangeEntry[] | null {
   if (!detail || detail === '[]') return null
   try {
@@ -167,20 +140,9 @@ function tryParseDetail(detail: string): PersonChangeEntry[] | null {
 }
 
 export async function getPublicationActivity(id: number): Promise<ParsedActivity[]> {
-  const resp = await http.get<ApiResponse<ActivityEntry[]>>(`/publications/${id}/history`)
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '获取活动记录失败')
-  return (resp.data.data || []).map(entry => ({
+  const entries = await unwrapApiResponse(http.get<ApiResponse<ActivityEntry[]>>(`/publications/${id}/history`))
+  return (entries || []).map(entry => ({
     ...entry,
     parsedDetail: tryParseDetail(entry.detail),
   }))
-}
-
-export async function loadLatestPublication(): Promise<PublicationLoadResult | null> {
-  try {
-    const list = await listPublications()
-    if (list.length === 0) return null
-    return await getPublication(list[0].id)
-  } catch {
-    return null
-  }
 }

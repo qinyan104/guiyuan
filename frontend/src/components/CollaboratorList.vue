@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppSelect from './AppSelect.vue'
 import type { AccessRecord } from '../api/accessManage'
+import { FALLBACK_REDACTION_PROFILE } from '../features/collaboration/useCollaborators'
 
 defineProps<{
   records: AccessRecord[]
@@ -13,21 +14,16 @@ defineEmits<{
   (event: 'remove', record: AccessRecord): void
 }>()
 
-const DEFAULT_PROFILE = {
-  dates: 'LIVING',
-  note: 'LIVING',
-  photo: 'LIVING',
-}
-
 function avatarLetter(name: string | undefined): string {
   return name && name.length > 0 ? name.charAt(0).toUpperCase() : '?'
 }
 
 function parseProfile(profileStr?: string) {
+  // 缺失/损坏时回退到后端真正会用的默认值，避免界面谎报脱敏状态。
   try {
-    return profileStr ? JSON.parse(profileStr) : { ...DEFAULT_PROFILE }
+    return profileStr ? JSON.parse(profileStr) : { ...FALLBACK_REDACTION_PROFILE }
   } catch {
-    return { ...DEFAULT_PROFILE }
+    return { ...FALLBACK_REDACTION_PROFILE }
   }
 }
 </script>

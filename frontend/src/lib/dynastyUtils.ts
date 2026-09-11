@@ -133,7 +133,7 @@ export interface HistoricalDateInfo {
 /**
  * Calculate Sexagenary Cycle (干支) for a given CE year
  */
-export function getGanzhi(year: number): { ganzhi: string; zodiac: string } {
+function getGanzhi(year: number): { ganzhi: string; zodiac: string } {
   const offset = year - 4
   const stemIndex = ((offset % 10) + 10) % 10
   const branchIndex = ((offset % 12) + 12) % 12

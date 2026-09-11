@@ -1,6 +1,6 @@
-import http, { unwrapApiResponse } from './http'
+import http, { unwrapApiEnvelope, unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/api'
-import { getAccessToken } from './tokenStore'
+import { resolveDownloadFilename, triggerBlobDownload } from '../lib/download'
 
 export interface AdminUser {
   id: number
@@ -40,39 +40,25 @@ export async function adminBackupDatabase(): Promise<void> {
   return downloadBackup()
 }
 
+/**
+ * 下载数据库备份。
+ *
+ * 走统一的 `http` 实例（而不是 raw fetch），这样 401 会触发续期、
+ * 错误对象也能被 `classifyError` 分类。响应体是二进制流，不是 ApiResponse，
+ * 因此不做 code 解包。
+ */
 export async function downloadBackup(): Promise<void> {
-  const token = getAccessToken()
-  const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
-  const url = `${baseURL}/admin/backup`
-
-  const resp = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    credentials: 'include',
-  })
-  if (!resp.ok) {
-    const detail = resp.status === 403 ? '无权限，仅超级管理员可操作' : `下载失败 (${resp.status})`
-    throw new Error(detail)
-  }
-  const blob = await resp.blob()
-  const disposition = resp.headers.get('Content-Disposition') || ''
-  const match = disposition.match(/filename="?(.+?)"?$/)
-  const filename = match ? match[1] : 'genealogy_backup.sql'
-  const blobUrl = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = blobUrl
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(blobUrl)
+  const resp = await http.get<Blob>('/admin/backup', { responseType: 'blob' })
+  const filename = resolveDownloadFilename(resp.headers, 'genealogy_backup.sql')
+  triggerBlobDownload(resp.data, filename)
 }
 
 export async function adminRestoreDatabase(file: File): Promise<string> {
   const formData = new FormData()
   formData.append('file', file)
-  const resp = await http.post<ApiResponse<{ filename: string }>>('/admin/restore', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  })
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '数据库还原失败')
-  return resp.data.message || '数据库已还原'
+  // 不手动设置 Content-Type：交给 axios/浏览器生成带 boundary 的 multipart 头。
+  const { message } = await unwrapApiEnvelope(http.post<ApiResponse<{ filename: string }>>('/admin/restore', formData))
+  return message || '数据库已还原'
 }
 
 export interface ConsistencyIssue {
@@ -88,15 +74,11 @@ export interface ConsistencyReport {
 }
 
 export async function adminCheckConsistency(): Promise<ConsistencyReport> {
-  const resp = await http.get<ApiResponse<ConsistencyReport>>('/admin/check-consistency')
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '一致性检查失败')
-  return resp.data.data
+  return unwrapApiResponse(http.get<ApiResponse<ConsistencyReport>>('/admin/check-consistency'))
 }
 
 export async function adminBatchDeleteUsers(ids: number[]): Promise<{ deleted: number; requested: number }> {
-  const resp = await http.post<ApiResponse<{ deleted: number; requested: number }>>('/admin/users/batch-delete', {
-    ids,
-  })
-  if (resp.data.code !== 200) throw new Error(resp.data.message || '批量删除失败')
-  return resp.data.data
+  return unwrapApiResponse(
+    http.post<ApiResponse<{ deleted: number; requested: number }>>('/admin/users/batch-delete', { ids }),
+  )
 }

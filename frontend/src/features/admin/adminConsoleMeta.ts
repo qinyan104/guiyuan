@@ -63,10 +63,6 @@ export function getAdminNavItems(): AdminPageMeta[] {
   return ADMIN_PAGE_META.map(item => ({ ...item }))
 }
 
-export function isAdminOnlyRouteName(routeName: string | null | undefined): boolean {
-  return findAdminPageMeta(routeName)?.adminOnly === true
-}
-
 export function buildAdminBreadcrumb(meta: AdminPageMeta): string {
   return `${meta.sectionTitle} / ${meta.pageTitle}`
 }

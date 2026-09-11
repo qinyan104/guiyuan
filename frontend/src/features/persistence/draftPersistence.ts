@@ -1,4 +1,5 @@
 import { defaultSettings } from '../../data/sampleFamily'
+import { fetchBinaryResource } from '../../api/http'
 import {
   DRAFT_PACKAGE_VERSION,
   type DraftPackage,
@@ -118,10 +119,8 @@ export async function createPortablePublication(publication: PublicationData): P
   const tasks = people.map(async person => {
     if (person.avatarUrl && isPortablePhotoUrl(person.avatarUrl)) {
       try {
-        const response = await fetch(person.avatarUrl)
-        if (!response.ok) return
+        const blob = await fetchBinaryResource(person.avatarUrl)
 
-        const blob = await response.blob()
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader()
           reader.onloadend = () => resolve(reader.result as string)

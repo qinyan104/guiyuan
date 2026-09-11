@@ -2,6 +2,7 @@ import axios, { type AxiosRequestConfig } from 'axios'
 import { clearSession, getAccessToken, setAccessToken } from './tokenStore'
 import { classifyError, getUserErrorMessage } from './errorClassifier'
 import type { ClassifiedError } from './errorClassifier'
+import type { ApiResponse } from '../types/api'
 
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -122,8 +123,7 @@ http.interceptors.response.use(
 // ============================================================
 
 /**
- * 检查 Axios 响应中的 ApiResponse.code 是否为 200。
- * 若非 200，抛出带分类信息的 BusinessError。
+ * 后端返回 `code !== 200` 时抛出的业务错误，携带可分类的错误信息。
  */
 export class BusinessError extends Error {
   public readonly classified: ClassifiedError
@@ -135,15 +135,42 @@ export class BusinessError extends Error {
   }
 }
 
+/** 是否与当前页面同源（相对路径视为同源）。 */
+export function isSameOriginUrl(url: string): boolean {
+  try {
+    return new URL(url, window.location.origin).origin === window.location.origin
+  } catch {
+    return false
+  }
+}
+
 /**
- * 从 Axios 响应中安全提取 data，自动检查 code !== 200。
+ * 获取二进制资源（人物照片、导出需要内嵌的图片等）。
  *
- * @example
- *   const users = await unwrapApiResponse(http.get<ApiResponse<AdminUser[]>>("/admin/users"))
+ * 之前这些地方用的是裸 `fetch`，不会带 Authorization，而 `/api/photos/{id}` 需要
+ * `READ_FULL` 权限，结果静默 401（导出丢图、草稿转 Base64 失败）。
+ * 改走统一的 `http` 实例后，既会带上凭证/401 续期，错误也能被分类。
+ *
+ * 跨域地址不注入凭证，避免把 token 泄露给第三方。
  */
-export async function unwrapApiResponse<T>(
-  promise: Promise<{ data: { code: number; message?: string; data: T } }>,
-): Promise<T> {
+export async function fetchBinaryResource(url: string): Promise<Blob> {
+  const config: PublicRequestConfig = { baseURL: '', responseType: 'blob' }
+  if (!isSameOriginUrl(url)) {
+    config.skipAuth = true
+  }
+  const resp = await http.get<Blob>(url, config)
+  return resp.data
+}
+
+/**
+ * 检查 Axios 响应中的 ApiResponse.code 是否为 200。
+ * 若非 200，抛出带分类信息的 BusinessError；否则返回整个信封。
+ *
+ * 需要同时读取成功文案（如还原成功提示）时用这个，只需要 data 时用 {@link unwrapApiResponse}。
+ */
+export async function unwrapApiEnvelope<T>(
+  promise: Promise<{ data: ApiResponse<T> }>,
+): Promise<{ data: T; message?: string }> {
   const resp = await promise
   if (resp.data.code !== 200) {
     const classified: ClassifiedError = {
@@ -156,7 +183,17 @@ export async function unwrapApiResponse<T>(
     }
     throw new BusinessError(classified)
   }
-  return resp.data.data
+  return { data: resp.data.data, message: resp.data.message }
+}
+
+/**
+ * 从 Axios 响应中安全提取 data，自动检查 code !== 200。
+ *
+ * @example
+ *   const users = await unwrapApiResponse(http.get<ApiResponse<AdminUser[]>>("/admin/users"))
+ */
+export async function unwrapApiResponse<T>(promise: Promise<{ data: ApiResponse<T> }>): Promise<T> {
+  return (await unwrapApiEnvelope(promise)).data
 }
 
 export { classifyError, getUserErrorMessage }

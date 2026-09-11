@@ -1,5 +1,6 @@
-import http from './http'
+import http, { unwrapApiResponse } from './http'
 import type { PublicRequestConfig } from './http'
+import type { ApiResponse } from '../types/api'
 import type { PublicationData, PublicationSettings } from '../types/family'
 
 /**
@@ -27,15 +28,11 @@ export interface ShareMeta {
 }
 
 export async function getSharePublication(token: string): Promise<SharePayload> {
-  const resp = await http.get(`/shares/${token}`, publicRequest)
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
-  return resp.data.data
+  return unwrapApiResponse(http.get<ApiResponse<SharePayload>>(`/shares/${token}`, publicRequest))
 }
 
 export async function getShareMeta(token: string): Promise<ShareMeta> {
-  const resp = await http.get(`/shares/${token}/meta`, publicRequest)
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
-  return resp.data.data
+  return unwrapApiResponse(http.get<ApiResponse<ShareMeta>>(`/shares/${token}/meta`, publicRequest))
 }
 
 export function getSharePhotoUrl(token: string, photoId: number): string {

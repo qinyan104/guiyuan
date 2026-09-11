@@ -52,10 +52,6 @@ export function getPublicationActivityMeta(action?: string | null): ActivityMeta
   return PUBLICATION_ACTIVITY_META[action] ?? { ...DEFAULT_ACTIVITY_META, label: action }
 }
 
-export function getPublicationActivityLabel(action?: string | null): string {
-  return action ? getPublicationActivityMeta(action).label : ''
-}
-
 export function getPublicationActivityCardSummary(username?: string | null, action?: string | null): string {
   const actor = username || '有人'
   const summaries: Record<string, string> = {

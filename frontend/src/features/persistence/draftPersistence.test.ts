@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defaultSettings, samplePublication } from '../../data/sampleFamily'
 import type { PublicationData } from '../../types/family'
 import { DRAFT_PACKAGE_VERSION } from '../../types/family'
+import { fetchBinaryResource } from '../../api/http'
 import {
   createDraftPackage,
   createPortablePublication,
@@ -12,8 +13,12 @@ import {
   serializeLocalDraftState,
 } from './draftPersistence'
 
+// 草稿导出改用带鉴权的 http 客户端（裸 fetch 会 401），因此这里 mock 该客户端。
+vi.mock('../../api/http', () => ({
+  fetchBinaryResource: vi.fn(),
+}))
+
 describe('draft persistence', () => {
-  const originalFetch = globalThis.fetch
   const originalFileReader = globalThis.FileReader
 
   beforeEach(() => {
@@ -39,7 +44,6 @@ describe('draft persistence', () => {
   })
 
   afterEach(() => {
-    globalThis.fetch = originalFetch
     globalThis.FileReader = originalFileReader
     vi.restoreAllMocks()
   })
@@ -88,13 +92,22 @@ describe('draft persistence', () => {
     const publication = structuredClone(samplePublication) as PublicationData
     publication.people.p1.avatarUrl = 'http://localhost:8080/uploads/legacy-person.png'
 
-    globalThis.fetch = vi
-      .fn()
-      .mockResolvedValue(new Response('legacy-image', { status: 200, headers: { 'Content-Type': 'image/png' } }))
+    vi.mocked(fetchBinaryResource).mockResolvedValue(new Blob(['legacy-image'], { type: 'image/png' }))
 
     const portablePublication = await createPortablePublication(publication)
 
-    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:8080/uploads/legacy-person.png')
+    expect(fetchBinaryResource).toHaveBeenCalledWith('http://localhost:8080/uploads/legacy-person.png')
     expect(portablePublication.people.p1.avatarUrl).toMatch(/^data:.+;base64,.+$/)
+  })
+
+  it('keeps the original avatar url when fetching the binary resource fails', async () => {
+    const publication = structuredClone(samplePublication) as PublicationData
+    publication.people.p1.avatarUrl = '/api/photos/42'
+
+    vi.mocked(fetchBinaryResource).mockRejectedValue(new Error('401 Unauthorized'))
+
+    const portablePublication = await createPortablePublication(publication)
+
+    expect(portablePublication.people.p1.avatarUrl).toBe('/api/photos/42')
   })
 })

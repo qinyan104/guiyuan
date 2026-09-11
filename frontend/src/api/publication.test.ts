@@ -2,6 +2,11 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('./http', () => ({
   default: { get: vi.fn() },
+  unwrapApiResponse: async (promise: Promise<{ data: { code: number; message?: string; data: unknown } }>) => {
+    const resp = await promise
+    if (resp.data.code !== 200) throw new Error(resp.data.message || '操作失败')
+    return resp.data.data
+  },
 }))
 
 import http from './http'
