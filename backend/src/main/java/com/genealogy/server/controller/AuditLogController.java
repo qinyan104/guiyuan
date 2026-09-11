@@ -2,6 +2,7 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.dto.AuditLogRequest;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.UnauthorizedException;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
@@ -74,7 +76,7 @@ public class AuditLogController {
 
     @Operation(summary = "添加操作日志", description = "手动添加一条操作日志")
     @PostMapping
-    public ApiResponse<Void> addLog(@RequestBody(required = false) Map<String, String> body, HttpServletRequest request) {
+    public ApiResponse<Void> addLog(@Valid @RequestBody(required = false) AuditLogRequest body, HttpServletRequest request) {
         requireAdmin(request);
         if (body == null) {
             throw new BadRequestException("请求体不能为空");
@@ -82,8 +84,8 @@ public class AuditLogController {
         String username = currentUserResolver.authenticatedUsername(request);
         AuditLog log = new AuditLog();
         log.setUsername(username);
-        log.setAction(body.getOrDefault("action", "UNKNOWN"));
-        log.setDetail(body.get("detail"));
+        log.setAction(body.action() == null || body.action().isBlank() ? "UNKNOWN" : body.action());
+        log.setDetail(body.detail());
         auditLogRepository.save(log);
         return ApiResponse.success("日志已记录", null);
     }
