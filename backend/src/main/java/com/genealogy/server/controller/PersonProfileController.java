@@ -2,6 +2,7 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.service.ProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,10 +33,17 @@ public class PersonProfileController {
 
     @Operation(summary = "提交档案修改", description = "提交人物档案的修改申请，等待管理员审核")
     @PutMapping("/me")
-    public ApiResponse<Void> submitChange(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+    public ApiResponse<Void> submitChange(@RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
         Long userId = currentUserResolver.requireUserId(request);
+        if (body == null) {
+            throw new BadRequestException("请求体不能为空");
+        }
+        Object rawChanges = body.get("changes");
+        if (rawChanges != null && !(rawChanges instanceof Map<?, ?>)) {
+            throw new BadRequestException("修改内容必须是对象");
+        }
         @SuppressWarnings("unchecked")
-        Map<String, Object> changes = (Map<String, Object>) body.get("changes");
+        Map<String, Object> changes = (Map<String, Object>) rawChanges;
         if (changes == null || changes.isEmpty()) {
             return ApiResponse.success("没有需要提交的修改", null);
         }
@@ -45,9 +53,13 @@ public class PersonProfileController {
 
     @Operation(summary = "修改我的姓名", description = "直接修改当前用户关联人物的姓名")
     @PutMapping("/me/name")
-    public ApiResponse<Void> updateMyName(@RequestBody Map<String, String> body, HttpServletRequest request) {
+    public ApiResponse<Void> updateMyName(@RequestBody(required = false) Map<String, String> body, HttpServletRequest request) {
         Long userId = currentUserResolver.requireUserId(request);
-        profileService.updateMyName(userId, body.get("name"));
+        String name = body == null ? null : body.get("name");
+        if (name == null || name.isBlank() || name.length() > 100) {
+            throw new BadRequestException("姓名不能为空且长度不能超过 100 个字符");
+        }
+        profileService.updateMyName(userId, name);
         return ApiResponse.success("姓名已更新", null);
     }
 }

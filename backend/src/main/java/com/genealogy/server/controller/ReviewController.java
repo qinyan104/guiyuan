@@ -4,6 +4,7 @@ import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -69,11 +70,11 @@ public class ReviewController {
     @Operation(summary = "拒绝审核", description = "拒绝指定的审核记录并填写原因")
     @PostMapping("/{id}/reject")
     public ApiResponse<Void> reject(@Parameter(description = "族谱ID") @PathVariable Long pubId, @Parameter(description = "审核记录ID") @PathVariable Long id,
-                                     @RequestBody Map<String, String> body,
+                                     @RequestBody(required = false) Map<String, String> body,
                                      HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
-        String reason = body.get("reason");
+        String reason = body == null ? null : body.get("reason");
         if (reason == null || reason.isBlank()) {
             return ApiResponse.error(400, "拒绝原因不能为空");
         }
@@ -84,19 +85,31 @@ public class ReviewController {
     @Operation(summary = "批量审核操作", description = "批量通过或拒绝审核记录")
     @PostMapping("/batch")
     public ApiResponse<Void> batch(@Parameter(description = "族谱ID") @PathVariable Long pubId,
-                                    @RequestBody Map<String, Object> body,
+                                    @RequestBody(required = false) Map<String, Object> body,
                                     HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
 
-        @SuppressWarnings("unchecked")
-        List<Number> idNumbers = (List<Number>) body.get("ids");
-        if (idNumbers == null || idNumbers.isEmpty()) {
-            return ApiResponse.error(400, "请选择要操作的记录");
+        if (body == null) {
+            throw new BadRequestException("请求体不能为空");
         }
-        List<Long> ids = idNumbers.stream().map(Number::longValue).toList();
-        String action = (String) body.get("action");
-        String reason = (String) body.get("reason");
+        Object rawIds = body.get("ids");
+        if (!(rawIds instanceof List<?> idValues) || idValues.isEmpty()
+                || idValues.stream().anyMatch(value -> !(value instanceof Number) || ((Number) value).longValue() <= 0)) {
+            return ApiResponse.error(400, "请选择有效的审核记录");
+        }
+        List<Long> ids = idValues.stream().map(value -> ((Number) value).longValue()).toList();
+        Object rawAction = body.get("action");
+        if (!(rawAction instanceof String action)
+                || !(action.equalsIgnoreCase("approve") || action.equalsIgnoreCase("reject"))) {
+            return ApiResponse.error(400, "审核操作必须是 approve 或 reject");
+        }
+        action = action.toLowerCase(java.util.Locale.ROOT);
+        Object rawReason = body.get("reason");
+        if (rawReason != null && !(rawReason instanceof String)) {
+            throw new BadRequestException("拒绝原因必须是字符串");
+        }
+        String reason = (String) rawReason;
 
         reviewService.batchAction(ids, action, subject.getUserId(), reason);
         return ApiResponse.success("批量操作完成", null);

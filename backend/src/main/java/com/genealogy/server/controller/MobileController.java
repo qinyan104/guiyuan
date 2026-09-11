@@ -16,6 +16,7 @@ import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.ShareSubject;
 import com.genealogy.server.auth.UserSubject;
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -88,8 +89,14 @@ public class MobileController {
      */
     @Operation(summary = "微信登录", description = "使用微信 code 登录或注册")
     @PostMapping("/auth/wechat-login")
-    public ApiResponse<Map<String, Object>> wechatLogin(@RequestBody Map<String, String> body) {
+    public ApiResponse<Map<String, Object>> wechatLogin(@RequestBody(required = false) Map<String, String> body) {
+        if (body == null) {
+            throw new BadRequestException("请求体不能为空");
+        }
         String code = body.get("code");
+        if (code != null && code.length() > 512) {
+            throw new BadRequestException("微信登录 code 长度无效");
+        }
         if (code == null || code.isBlank()) {
             return ApiResponse.error(400, "缺少微信登录 code");
         }

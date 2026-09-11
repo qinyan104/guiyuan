@@ -2,6 +2,7 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.UnauthorizedException;
 import com.genealogy.server.model.AuditLog;
@@ -52,8 +53,11 @@ public class AuditLogController {
             @Parameter(description = "每页条数，最大200") @RequestParam(defaultValue = "50") int size,
             HttpServletRequest request) {
         requireAdmin(request);
+        if (page < 0 || size < 1 || size > 200) {
+            throw new BadRequestException("分页参数无效：页码不能小于 0，每页条数必须为 1～200");
+        }
         Page<AuditLog> logPage = auditLogRepository.findAllByOrderByCreatedAtDesc(
-                PageRequest.of(page, Math.min(size, 200)));
+                PageRequest.of(page, size));
         List<Map<String, Object>> logs = logPage.getContent().stream()
                 .map(log -> {
                     Map<String, Object> m = new java.util.LinkedHashMap<>();
@@ -70,8 +74,11 @@ public class AuditLogController {
 
     @Operation(summary = "添加操作日志", description = "手动添加一条操作日志")
     @PostMapping
-    public ApiResponse<Void> addLog(@RequestBody Map<String, String> body, HttpServletRequest request) {
+    public ApiResponse<Void> addLog(@RequestBody(required = false) Map<String, String> body, HttpServletRequest request) {
         requireAdmin(request);
+        if (body == null) {
+            throw new BadRequestException("请求体不能为空");
+        }
         String username = currentUserResolver.authenticatedUsername(request);
         AuditLog log = new AuditLog();
         log.setUsername(username);

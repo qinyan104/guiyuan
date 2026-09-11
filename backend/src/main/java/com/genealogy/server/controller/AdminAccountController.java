@@ -4,6 +4,7 @@ import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.service.AccountDerivationService;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -96,11 +97,17 @@ public class AdminAccountController {
 
     @Operation(summary = "批量删除账号", description = "批量删除族谱中的多个账号")
     @PostMapping("/batch-delete")
-    public ApiResponse<Map<String, Integer>> batchDeleteAccounts(@Parameter(description = "族谱ID") @PathVariable Long pubId, @RequestBody Map<String, List<Long>> body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Integer>> batchDeleteAccounts(@Parameter(description = "族谱ID") @PathVariable Long pubId, @RequestBody(required = false) Map<String, List<Long>> body, HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
+        if (body == null) {
+            throw new BadRequestException("请求体不能为空");
+        }
         List<Long> ids = body.get("personDbIds");
         if (ids == null || ids.isEmpty()) return ApiResponse.success(Map.of("deleted", 0));
+        if (ids.stream().anyMatch(id -> id == null || id <= 0)) {
+            throw new BadRequestException("人物 ID 必须为正数");
+        }
         int count = 0;
         for (Long personDbId : ids) {
             try {
