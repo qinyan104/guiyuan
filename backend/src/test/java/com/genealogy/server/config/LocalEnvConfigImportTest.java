@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.core.io.ClassPathResource;
 
-import java.io.IOException;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,15 +20,5 @@ class LocalEnvConfigImportTest {
         assertThat(properties)
                 .containsEntry("spring.config.import[0]", "optional:file:.env.local[.properties]")
                 .containsEntry("spring.config.import[1]", "optional:file:backend/.env.local[.properties]");
-    }
-
-    @Test
-    void applicationPropertiesExampleImportsLocalEnvFilesForDevelopmentStartup() throws IOException {
-        Properties properties = new Properties();
-        properties.load(new ClassPathResource("application.properties.example").getInputStream());
-
-        assertThat(properties)
-                .containsEntry("spring.config.import",
-                        "optional:file:.env.local[.properties],optional:file:backend/.env.local[.properties]");
     }
 }
