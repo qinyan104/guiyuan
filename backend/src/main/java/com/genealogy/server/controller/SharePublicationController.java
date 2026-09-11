@@ -18,14 +18,17 @@ import com.genealogy.server.service.ShareLinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
+@Validated
 @RequestMapping("/api/shares/{token}")
 @Tag(name = "分享", description = "族谱公开分享链接")
 public class SharePublicationController {
@@ -88,7 +91,7 @@ public class SharePublicationController {
 
     @Operation(summary = "获取分享照片", description = "通过分享链接获取族谱中的照片")
     @GetMapping("/photos/{photoId}")
-    public ResponseEntity<byte[]> getPhoto(@Parameter(description = "分享令牌") @PathVariable String token, @Parameter(description = "照片ID") @PathVariable Long photoId) {
+    public ResponseEntity<byte[]> getPhoto(@Parameter(description = "分享令牌") @PathVariable String token, @Parameter(description = "照片ID") @PathVariable @Positive(message = "照片 ID 必须为正数") Long photoId) {
         ShareSubject subject = shareTokenResolver.resolveSubject(token);
         Long sharedPubId = subject.getSharePublicationId();
 
