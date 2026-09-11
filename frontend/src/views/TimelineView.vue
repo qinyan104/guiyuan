@@ -1,227 +1,37 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { parseExactDate, parseYear } from '../lib/dateUtils'
-import { getHistoricalEra, type HistoricalDateInfo } from '../lib/dynastyUtils'
-import { PUBLICATION_CONTEXT_KEY, type FamilyUnit, type Person, type PublicationData } from '../types/family'
+import { PUBLICATION_CONTEXT_KEY, type PublicationData } from '../types/family'
 import DarkModeToggle from '../components/DarkModeToggle.vue'
+import { useTimelineData } from '../composables/useTimelineData'
 
 const props = defineProps<{ publicationId: number }>()
 const router = useRouter()
 const context = inject(PUBLICATION_CONTEXT_KEY)!
 const pubData = computed<PublicationData>(() => context.pub.publication)
 
-const viewMode = ref<'feed' | 'spectrum'>('feed')
-const filterType = ref<'all' | 'birth' | 'death'>('all')
-const searchQuery = ref('')
-const selectedGeneration = ref<number | null>(null)
-
-interface TimelineEvent {
-  person: Person
-  year: number
-  exactDate: number
-  type: 'birth' | 'death'
-  label: string
-  centuryStart: number
-  era: HistoricalDateInfo
-  generation?: number
-  ageAtDeath?: number
-}
-
-// ── 世代计算 ──
-const families = computed<Record<string, FamilyUnit>>(() => pubData.value.families ?? {})
-const generationMap = computed(() => {
-  const map = new Map<string, number>()
-  const rootId = pubData.value.focusFamilyId
-  const rootFamily = rootId ? families.value[rootId] : Object.values(families.value)[0]
-  if (!rootFamily) return map
-
-  const queue: Array<{ personId: string; generation: number }> = []
-  for (const adultId of rootFamily.adults) {
-    if (adultId && !map.has(adultId)) {
-      map.set(adultId, 1)
-      queue.push({ personId: adultId, generation: 1 })
-    }
-  }
-
-  let head = 0
-  const famList = Object.values(families.value)
-  while (head < queue.length) {
-    const cur = queue[head++]
-    for (const fam of famList) {
-      if (!fam.adults.includes(cur.personId)) continue
-      for (const sid of fam.adults) {
-        if (sid && !map.has(sid)) {
-          map.set(sid, cur.generation)
-          queue.push({ personId: sid, generation: cur.generation })
-        }
-      }
-      for (const cid of fam.children) {
-        if (cid && !map.has(cid)) {
-          map.set(cid, cur.generation + 1)
-          queue.push({ personId: cid, generation: cur.generation + 1 })
-        }
-      }
-    }
-  }
-  return map
-})
-
-const allEvents = computed<TimelineEvent[]>(() => {
-  const list: TimelineEvent[] = []
-  const people = Object.values(pubData.value.people ?? {}) as Person[]
-
-  for (const person of people) {
-    const by = parseYear(person.birth)
-    const dy = parseYear(person.death)
-    const gen = generationMap.value.get(person.id)
-    const age = by !== null && dy !== null && dy >= by ? dy - by : undefined
-
-    if (by !== null) {
-      list.push({
-        person,
-        year: by,
-        exactDate: parseExactDate(person.birth),
-        type: 'birth',
-        label: person.birth || `${by}年`,
-        centuryStart: Math.floor(by / 100) * 100,
-        era: getHistoricalEra(by),
-        generation: gen,
-      })
-    }
-    if (dy !== null) {
-      list.push({
-        person,
-        year: dy,
-        exactDate: parseExactDate(person.death),
-        type: 'death',
-        label: person.death || `${dy}年`,
-        centuryStart: Math.floor(dy / 100) * 100,
-        era: getHistoricalEra(dy),
-        generation: gen,
-        ageAtDeath: age,
-      })
-    }
-  }
-  return list.sort((a, b) => (a.exactDate !== b.exactDate ? a.exactDate - b.exactDate : a.type === 'birth' ? -1 : 1))
-})
-
-const availableGenerations = computed(() => {
-  const gens = new Set<number>()
-  for (const e of allEvents.value) {
-    if (e.generation !== undefined) gens.add(e.generation)
-  }
-  return Array.from(gens).sort((a, b) => a - b)
-})
-
-const filteredEvents = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  return allEvents.value.filter(e => {
-    if (filterType.value !== 'all' && e.type !== filterType.value) return false
-    if (selectedGeneration.value !== null && e.generation !== selectedGeneration.value) return false
-    if (query) {
-      const matchName = e.person.name.toLowerCase().includes(query)
-      const matchYear = String(e.year).includes(query)
-      const matchEra = e.era.fullLabel.toLowerCase().includes(query)
-      const matchDetail = e.label.toLowerCase().includes(query)
-      if (!matchName && !matchYear && !matchEra && !matchDetail) return false
-    }
-    return true
-  })
-})
-
-const centuryGroups = computed(() => {
-  const g = new Map<number, TimelineEvent[]>()
-  for (const e of filteredEvents.value) {
-    if (!g.has(e.centuryStart)) g.set(e.centuryStart, [])
-    g.get(e.centuryStart)!.push(e)
-  }
-  return Array.from(g.entries())
-    .sort((a, b) => a[0] - b[0])
-    .map(([cs, evts]) => {
-      const births = evts.filter(e => e.type === 'birth').length
-      const deaths = evts.filter(e => e.type === 'death').length
-      const people = new Set(evts.map(e => e.person.id)).size
-      const eraName = evts[0]?.era.dynasty ?? ''
-      return { centuryStart: cs, eraName, events: evts, births, deaths, people }
-    })
-})
-
-// ── 生平长河图数据 ──
-interface LifespanItem {
-  person: Person
-  generation?: number
-  birthYear: number
-  deathYear: number | null
-  lifespan: number | null
-  era: HistoricalDateInfo
-}
-
-const lifespanItems = computed<LifespanItem[]>(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  const people = Object.values(pubData.value.people ?? {}) as Person[]
-  const items: LifespanItem[] = []
-
-  for (const person of people) {
-    const by = parseYear(person.birth)
-    if (by === null) continue
-    const dy = parseYear(person.death)
-    const gen = generationMap.value.get(person.id)
-    const lifespan = dy !== null && dy >= by ? dy - by : null
-
-    if (selectedGeneration.value !== null && gen !== selectedGeneration.value) continue
-    if (query) {
-      const matchName = person.name.toLowerCase().includes(query)
-      const matchYear = String(by).includes(query) || (dy !== null && String(dy).includes(query))
-      if (!matchName && !matchYear) continue
-    }
-
-    items.push({
-      person,
-      generation: gen,
-      birthYear: by,
-      deathYear: dy,
-      lifespan,
-      era: getHistoricalEra(by),
-    })
-  }
-
-  return items.sort((a, b) => a.birthYear - b.birthYear)
-})
-
-const minYear = computed(() => {
-  if (allEvents.value.length === 0) return 0
-  return allEvents.value[0].year
-})
-
-const maxYear = computed(() => {
-  if (allEvents.value.length === 0) return 0
-  return allEvents.value[allEvents.value.length - 1].year
-})
-
-const earliest = computed(() => (allEvents.value.length ? allEvents.value[0].year : null))
-const latest = computed(() => (allEvents.value.length ? allEvents.value[allEvents.value.length - 1].year : null))
-const span = computed(() => (earliest.value !== null && latest.value !== null ? latest.value - earliest.value : null))
-const totalEvents = computed(() => allEvents.value.length)
-const distinctPeople = computed(() => new Set(allEvents.value.map(e => e.person.id)).size)
-
-function centuryLabel(cs: number): string {
-  if (cs < 0) return `公元前 ${Math.abs(cs)} 年代`
-  const c = Math.floor(cs / 100) + 1
-  return `公元 ${c} 世纪 (${cs}年代)`
-}
-
-function getLifespanBarLeft(birthYear: number): number {
-  const total = maxYear.value - minYear.value || 1
-  return Math.max(0, Math.min(100, ((birthYear - minYear.value) / total) * 100))
-}
-
-function getLifespanBarWidth(item: LifespanItem): number {
-  const total = maxYear.value - minYear.value || 1
-  const end = item.deathYear ?? item.birthYear + (item.lifespan ?? 60)
-  const len = Math.max(1, end - item.birthYear)
-  return Math.max(1.5, Math.min(100, (len / total) * 100))
-}
+const timeline = useTimelineData(pubData)
+const {
+  viewMode,
+  filterType,
+  searchQuery,
+  selectedGeneration,
+  allEvents,
+  availableGenerations,
+  filteredEvents,
+  centuryGroups,
+  lifespanItems,
+  minYear,
+  maxYear,
+  earliest,
+  latest,
+  span,
+  totalEvents,
+  distinctPeople,
+  centuryLabel,
+  getLifespanBarLeft,
+  getLifespanBarWidth,
+} = timeline
 
 function goBack() {
   router.push({ name: 'workbench', params: { id: props.publicationId } })
