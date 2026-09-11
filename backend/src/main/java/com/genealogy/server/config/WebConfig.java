@@ -33,6 +33,8 @@ public class WebConfig implements WebMvcConfigurer {
                 objectMapper.getFactory().setStreamReadConstraints(
                         StreamReadConstraints.builder()
                                 .maxStringLength(1_000_000) // 1 MB - ample for genealogy data
+                                .maxNestingDepth(100)
+                                .maxNumberLength(100)
                                 .build()
                 )
         );
