@@ -14,6 +14,7 @@ frontend/*.tsbuildinfo
 frontend/e2e/.auth/
 frontend/test-results/
 frontend/playwright-report/
+frontend/coverage/
 
 # Backend build
 backend/target/
