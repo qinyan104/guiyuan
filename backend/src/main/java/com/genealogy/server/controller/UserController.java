@@ -40,6 +40,7 @@ public class UserController {
                     m.put("nickname", user.getNickname() != null ? user.getNickname() : user.getUsername());
                     return m;
                 })
+                .limit(50)
                 .toList();
         return ApiResponse.success(users);
     }
