@@ -7,6 +7,7 @@ import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.dto.PublicationSnapshot;
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.PublicationAuthorizationService;
@@ -275,9 +276,14 @@ public class PublicationController {
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_SHARES);
 
-        boolean allowExport = Boolean.TRUE.equals(body.get("allowExport"));
-        int expiresInDays = resolveExpiresInDays(body);
-        Map<String, Object> redactionProfile = (Map<String, Object>) body.get("redactionProfile");
+        Map<String, Object> payload = body != null ? body : Map.of();
+        boolean allowExport = Boolean.TRUE.equals(payload.get("allowExport"));
+        int expiresInDays = resolveExpiresInDays(payload);
+        Object rawRedactionProfile = payload.get("redactionProfile");
+        if (rawRedactionProfile != null && !(rawRedactionProfile instanceof Map<?, ?>)) {
+            throw new BadRequestException("分享脱敏配置必须是对象");
+        }
+        Map<String, Object> redactionProfile = (Map<String, Object>) rawRedactionProfile;
 
         Map<String, Object> result = shareLinkService.createShareLink(
                 id, subject.getUserId(), allowExport, redactionProfile, Duration.ofDays(expiresInDays));
@@ -314,7 +320,7 @@ public class PublicationController {
      * 避免 {@code null}/非法输入触发 500。
      */
     static int resolveExpiresInDays(Map<String, Object> body) {
-        Object raw = body.get("expiresInDays");
+        Object raw = body == null ? null : body.get("expiresInDays");
         Integer days = null;
         if (raw instanceof Number number) {
             days = number.intValue();

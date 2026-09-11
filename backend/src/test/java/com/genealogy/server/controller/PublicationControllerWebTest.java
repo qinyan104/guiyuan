@@ -123,9 +123,20 @@ class PublicationControllerWebTest {
 
     @Test
     void invalidShareLinkTtlFallsBackToSafeDefault() {
+        assertEquals(30, PublicationController.resolveExpiresInDays(null));
         assertEquals(30, PublicationController.resolveExpiresInDays(Map.of("expiresInDays", 0)));
         assertEquals(30, PublicationController.resolveExpiresInDays(Map.of("expiresInDays", 366)));
         assertEquals(365, PublicationController.resolveExpiresInDays(Map.of("expiresInDays", "365")));
+    }
+
+    @Test
+    void malformedRedactionProfileReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/publications/100/shares")
+                .requestAttr("currentUsername", "testuser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"redactionProfile\": \"invalid\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value(400));
     }
 
     @Test
