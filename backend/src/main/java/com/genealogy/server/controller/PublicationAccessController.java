@@ -3,7 +3,9 @@ package com.genealogy.server.controller;
 import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
+import com.genealogy.server.dto.AddAccessRequest;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.dto.UpdateAccessRequest;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.PublicationAccess;
@@ -17,6 +19,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -77,21 +80,16 @@ public class PublicationAccessController {
 
     @Operation(summary = "添加协作者", description = "为族谱添加新的协作者")
     @PostMapping
-    public ApiResponse<Map<String, Object>> addAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> addAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @Valid @RequestBody(required = false) AddAccessRequest body, HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
 
-        Object rawUserId = body == null ? null : body.get("userId");
-        if (!(rawUserId instanceof Number)) {
-            throw new BadRequestException("用户 ID 必须是数字");
+        if (body == null) {
+            throw new BadRequestException("请求体不能为空");
         }
-        Long targetUserId = ((Number) rawUserId).longValue();
-        Object rawRole = body.get("role");
-        if (!(rawRole instanceof String)) {
-            throw new BadRequestException("角色不能为空");
-        }
-        String role = (String) rawRole;
+        Long targetUserId = body.userId();
+        String role = body.role();
 
         if (!ALLOWED_ROLES.contains(role)) {
             throw new BadRequestException("角色必须是 EDITOR 或 VIEWER");
@@ -112,11 +110,7 @@ public class PublicationAccessController {
         access.setPublicationId(id);
         access.setUserId(targetUserId);
         access.setRole(role);
-        Object redactionProfile = body.get("redactionProfile");
-        if (redactionProfile != null && !(redactionProfile instanceof String)) {
-            throw new BadRequestException("脱敏配置必须是字符串");
-        }
-        access.setRedactionProfile((String) redactionProfile);
+        access.setRedactionProfile(body.redactionProfile());
         access.setCreatedBy(subject.getUserId());
         access = accessRepository.save(access);
 
@@ -131,16 +125,15 @@ public class PublicationAccessController {
     @Operation(summary = "修改协作者权限", description = "修改协作者的角色和脱敏配置")
     @PutMapping("/{userId}")
     public ApiResponse<Void> updateAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "用户ID") @PathVariable Long userId,
-                                          @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
+                                          @Valid @RequestBody(required = false) UpdateAccessRequest body, HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
 
-        Object rawRole = body == null ? null : body.get("role");
-        if (!(rawRole instanceof String)) {
-            throw new BadRequestException("角色不能为空");
+        if (body == null) {
+            throw new BadRequestException("请求体不能为空");
         }
-        String newRole = (String) rawRole;
+        String newRole = body.role();
         if (!ALLOWED_ROLES.contains(newRole)) {
             throw new BadRequestException("角色必须是 EDITOR 或 VIEWER");
         }
@@ -153,17 +146,13 @@ public class PublicationAccessController {
         }
 
         access.setRole(newRole);
-        if (body.containsKey("redactionProfile")) {
-            Object redactionProfile = body.get("redactionProfile");
-            if (redactionProfile != null && !(redactionProfile instanceof String)) {
-                throw new BadRequestException("脱敏配置必须是字符串");
-            }
-            access.setRedactionProfile((String) redactionProfile);
+        if (body.redactionProfile() != null) {
+            access.setRedactionProfile(body.redactionProfile());
         }
         accessRepository.save(access);
 
         auditLogService.record(username, "UPDATE_COLLABORATOR_ROLE",
-                "修改协作者角色为 " + newRole + (body.containsKey("redactionProfile") ? ", 脱敏配置: " + body.get("redactionProfile") : ""), id);
+                "修改协作者角色为 " + newRole + (body.redactionProfile() != null ? ", 脱敏配置: " + body.redactionProfile() : ""), id);
         return ApiResponse.success("角色及配置已更新", null);
     }
 
