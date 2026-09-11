@@ -5,6 +5,8 @@ import com.genealogy.server.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Size;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@Validated
 @RequestMapping("/api/users")
 @Tag(name = "用户", description = "用户查询")
 public class UserController {
@@ -24,7 +27,7 @@ public class UserController {
 
     @Operation(summary = "搜索用户", description = "根据用户名或昵称搜索用户")
     @GetMapping("/search")
-    public ApiResponse<List<Map<String, Object>>> searchUsers(@Parameter(description = "搜索关键词") @RequestParam String q) {
+    public ApiResponse<List<Map<String, Object>>> searchUsers(@Parameter(description = "搜索关键词") @RequestParam @Size(max = 100, message = "搜索关键词不能超过 100 个字符") String q) {
         if (q == null || q.trim().isEmpty()) {
             return ApiResponse.success(List.of());
         }
