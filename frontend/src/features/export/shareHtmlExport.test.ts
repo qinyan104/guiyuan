@@ -77,6 +77,38 @@ describe('shareHtmlExport helpers', () => {
     expect(html).toContain('\u65cf\u8bad\uff1a\u6566\u4eb2\u7766\u65cf')
   })
 
+  it('escapes publication metadata and person data before embedding share HTML', async () => {
+    const maliciousPublication: PublicationData = {
+      ...samplePublication,
+      title: '</title><img src=x onerror=alert(1)>',
+      subtitle: '<svg onload=alert(1)>副标题</svg>',
+      info: { description: '<img src=x onerror=alert(1)>' },
+      people: {
+        p1: {
+          ...samplePublication.people.p1,
+          name: '<img src=x onerror=alert(1)>',
+          note: '</script><script>alert(1)</script>',
+          avatarUrl: 'javascript:alert(1)',
+        },
+      },
+    }
+
+    const header = buildInfoHeader(maliciousPublication)
+    expect(header).not.toContain('<img src=x onerror=alert(1)>')
+    expect(header).toContain('&lt;img src=x onerror=alert(1)&gt;')
+
+    const html = await generateShareHtml({
+      publication: maliciousPublication,
+      settings: sampleSettings,
+      standaloneSvg: createSvgFixture(),
+    })
+
+    expect(html).not.toContain('</script><script>alert(1)</script>')
+    expect(html).not.toContain('<img src=x onerror=alert(1)>')
+    expect(html).toContain('onerror=alert(1)')
+    expect(() => new DOMParser().parseFromString(html, 'text/html')).not.toThrow()
+  })
+
   it('buildHtmlTemplate renders readable password gate copy', () => {
     const html = buildHtmlTemplate({
       title: '\u4e0d\u5e94\u6cc4\u9732\u7684\u6807\u9898',
