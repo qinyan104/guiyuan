@@ -14,9 +14,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,6 +33,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @RestController
+@Validated
 @RequestMapping("/api")
 @Tag(name = "文件", description = "文件上传管理")
 public class FileController {
@@ -67,7 +70,7 @@ public class FileController {
     @Operation(summary = "上传文件", description = "上传图片或PDF文件")
     @PostMapping("/upload")
     public ApiResponse<String> uploadFile(@Parameter(description = "要上传的文件") @RequestParam("file") MultipartFile file,
-                                          @RequestParam(value = "publicationId", required = false) Long publicationId,
+                                          @RequestParam(value = "publicationId", required = false) @Positive(message = "族谱 ID 必须为正数") Long publicationId,
                                           HttpServletRequest request) {
         if (file.isEmpty()) {
             return ApiResponse.error("文件不能为空");
@@ -131,7 +134,7 @@ public class FileController {
         }
     }
     @GetMapping("/files/{id}")
-    public ResponseEntity<byte[]> download(@PathVariable Long id, HttpServletRequest request) throws IOException {
+    public ResponseEntity<byte[]> download(@PathVariable @Positive(message = "文件 ID 必须为正数") Long id, HttpServletRequest request) throws IOException {
         UserSubject subject = currentUserResolver.requireSubject(request);
         UploadedFile uploadedFile = uploadedFileRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("文件不存在"));
