@@ -124,6 +124,16 @@ class PublicationControllerWebTest {
     }
 
     @Test
+    void nullPublicationPayloadReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/publications")
+                .requestAttr("currentUsername", "testuser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("null"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value(400));
+    }
+
+    @Test
     void malformedPersonRevisionIsRejected() {
         assertEquals(3L, PublicationController.resolveExpectedRevision(Map.of("expectedRevision", "3")));
         assertEquals(null, PublicationController.resolveExpectedRevision(Map.of()));
