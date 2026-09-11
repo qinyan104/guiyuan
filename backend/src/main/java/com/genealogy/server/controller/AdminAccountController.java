@@ -4,6 +4,7 @@ import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.dto.BatchDeleteAccountsRequest;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.service.AccountDerivationService;
 import com.genealogy.server.service.PublicationAuthorizationService;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -98,17 +100,14 @@ public class AdminAccountController {
 
     @Operation(summary = "批量删除账号", description = "批量删除族谱中的多个账号")
     @PostMapping("/batch-delete")
-    public ApiResponse<Map<String, Object>> batchDeleteAccounts(@Parameter(description = "族谱ID") @PathVariable Long pubId, @RequestBody(required = false) Map<String, List<Long>> body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> batchDeleteAccounts(@Parameter(description = "族谱ID") @PathVariable Long pubId, @Valid @RequestBody(required = false) BatchDeleteAccountsRequest body, HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
         if (body == null) {
             throw new BadRequestException("请求体不能为空");
         }
-        List<Long> ids = body.get("personDbIds");
+        List<Long> ids = body.personDbIds();
         if (ids == null || ids.isEmpty()) return ApiResponse.success(Map.of("deleted", 0));
-        if (ids.size() > 500 || ids.stream().anyMatch(id -> id == null || id <= 0)) {
-            throw new BadRequestException("人物 ID 必须为正数且最多 500 个");
-        }
         if (ids.stream().distinct().count() != ids.size()) {
             throw new BadRequestException("人物 ID 不能重复");
         }
