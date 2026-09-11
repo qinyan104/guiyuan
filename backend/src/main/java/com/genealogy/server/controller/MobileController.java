@@ -24,8 +24,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -34,6 +36,7 @@ import java.util.*;
  * 小程序专用 API 端点
  */
 @RestController
+@Validated
 @RequestMapping("/api/mobile")
 @Tag(name = "小程序", description = "微信小程序专用接口")
 public class MobileController {
@@ -145,7 +148,7 @@ public class MobileController {
     @Operation(summary = "搜索人物", description = "按姓名搜索族谱中的成员")
     @GetMapping("/publications/{pubId}/search")
     public ApiResponse<List<Map<String, Object>>> search(
-            @PathVariable Long pubId,
+            @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId,
             @RequestParam String q,
             @RequestParam(required = false) String shareToken,
             jakarta.servlet.http.HttpServletRequest request) {
