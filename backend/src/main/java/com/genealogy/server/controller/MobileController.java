@@ -1,6 +1,7 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.dto.WechatLoginRequest;
 import com.genealogy.server.model.PublicationShareLink;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.UserRepository;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -89,14 +91,11 @@ public class MobileController {
      */
     @Operation(summary = "微信登录", description = "使用微信 code 登录或注册")
     @PostMapping("/auth/wechat-login")
-    public ApiResponse<Map<String, Object>> wechatLogin(@RequestBody(required = false) Map<String, String> body) {
+    public ApiResponse<Map<String, Object>> wechatLogin(@Valid @RequestBody(required = false) WechatLoginRequest body) {
         if (body == null) {
             throw new BadRequestException("请求体不能为空");
         }
-        String code = body.get("code");
-        if (code != null && code.length() > 512) {
-            throw new BadRequestException("微信登录 code 长度无效");
-        }
+        String code = body.code();
         if (code == null || code.isBlank()) {
             return ApiResponse.error(400, "缺少微信登录 code");
         }
