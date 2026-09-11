@@ -26,6 +26,11 @@ class UploadContentValidatorTest {
 
         assertThat(UploadContentValidator.hasValidImageDimensions(output.toByteArray(), "image/png")).isTrue();
         assertThat(UploadContentValidator.hasValidImageDimensions(new byte[]{(byte) 0x89}, "image/png")).isFalse();
+
+        BufferedImage oversized = new BufferedImage(10_001, 1, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream oversizedOutput = new ByteArrayOutputStream();
+        ImageIO.write(oversized, "png", oversizedOutput);
+        assertThat(UploadContentValidator.hasValidImageDimensions(oversizedOutput.toByteArray(), "image/png")).isFalse();
     }
 
     @Test
