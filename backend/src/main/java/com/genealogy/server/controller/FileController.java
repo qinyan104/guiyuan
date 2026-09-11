@@ -67,6 +67,7 @@ public class FileController {
     @Operation(summary = "上传文件", description = "上传图片或PDF文件")
     @PostMapping("/upload")
     public ApiResponse<String> uploadFile(@Parameter(description = "要上传的文件") @RequestParam("file") MultipartFile file,
+                                          @RequestParam(value = "publicationId", required = false) Long publicationId,
                                           HttpServletRequest request) {
         if (file.isEmpty()) {
             return ApiResponse.error("文件不能为空");
@@ -110,12 +111,17 @@ public class FileController {
                 Files.copy(inputStream, path, StandardCopyOption.REPLACE_EXISTING);
             }
 
+            UserSubject subject = currentUserResolver.requireSubject(request);
+            if (publicationId != null) {
+                authorizationService.require(subject, publicationId, AccessPermission.EDIT);
+            }
             UploadedFile uploadedFile = new UploadedFile();
             uploadedFile.setStorageKey(newFilename);
             uploadedFile.setOriginalName(originalFilename);
             uploadedFile.setMimeType(mimeType);
             uploadedFile.setSize(file.getSize());
-            uploadedFile.setOwnerUserId(currentUserResolver.requireUserId(request));
+            uploadedFile.setOwnerUserId(subject.getUserId());
+            uploadedFile.setPublicationId(publicationId);
             uploadedFile = uploadedFileRepository.save(uploadedFile);
             String fileUrl = (publicBaseUrl.isBlank() ? "" : publicBaseUrl) + "/api/files/" + uploadedFile.getId();
             return ApiResponse.success("上传成功", fileUrl);

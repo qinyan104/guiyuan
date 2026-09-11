@@ -2,6 +2,7 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.auth.CurrentUserResolver;
+import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.model.UploadedFile;
 import com.genealogy.server.repository.UploadedFileRepository;
 import com.genealogy.server.repository.UserRepository;
@@ -57,6 +58,7 @@ public class FileControllerTest {
     @BeforeEach
     void setUp() {
         when(currentUserResolver.requireUserId(any())).thenReturn(1L);
+        when(currentUserResolver.requireSubject(any())).thenReturn(new UserSubject(1L, "USER", "testuser"));
         when(uploadedFileRepository.save(any(UploadedFile.class))).thenAnswer(invocation -> {
             UploadedFile file = invocation.getArgument(0);
             file.setId(1L);
