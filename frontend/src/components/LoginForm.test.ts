@@ -7,6 +7,15 @@ vi.mock('../api/auth', () => ({ login }))
 
 import LoginForm from './LoginForm.vue'
 
+const mountLoginForm = () =>
+  mount(LoginForm, {
+    global: {
+      stubs: {
+        RouterLink: { template: '<a><slot /></a>' },
+      },
+    },
+  })
+
 describe('LoginForm', () => {
   beforeEach(() => {
     login.mockReset()
@@ -14,7 +23,7 @@ describe('LoginForm', () => {
 
   it('submits credentials and emits success with the server username', async () => {
     login.mockResolvedValue({ token: 'token-1', username: 'alice' })
-    const wrapper = mount(LoginForm)
+    const wrapper = mountLoginForm()
 
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('alice')
@@ -29,7 +38,7 @@ describe('LoginForm', () => {
 
   it('surfaces the classified server message and does not emit success', async () => {
     login.mockRejectedValue({ response: { status: 401, data: { message: '账号或密码错误' } } })
-    const wrapper = mount(LoginForm)
+    const wrapper = mountLoginForm()
 
     await wrapper.get('form').trigger('submit')
     await flushPromises()
@@ -41,7 +50,7 @@ describe('LoginForm', () => {
   it('falls back to a Chinese message for network failures', async () => {
     // axios 网络错误没有 response 属性，只有 config/code —— 之前会被误判成普通 Error。
     login.mockRejectedValue({ config: { url: '/auth/login' }, code: 'ERR_NETWORK', message: 'Network Error' })
-    const wrapper = mount(LoginForm)
+    const wrapper = mountLoginForm()
 
     await wrapper.get('form').trigger('submit')
     await flushPromises()
@@ -56,7 +65,7 @@ describe('LoginForm', () => {
         resolveLogin = resolve
       }),
     )
-    const wrapper = mount(LoginForm)
+    const wrapper = mountLoginForm()
 
     await wrapper.get('form').trigger('submit')
     await flushPromises()
