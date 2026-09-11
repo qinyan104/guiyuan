@@ -28,6 +28,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -149,8 +150,8 @@ public class MobileController {
     @GetMapping("/publications/{pubId}/search")
     public ApiResponse<List<Map<String, Object>>> search(
             @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId,
-            @RequestParam String q,
-            @RequestParam(required = false) String shareToken,
+            @RequestParam @Size(max = 100, message = "搜索关键词不能超过 100 个字符") String q,
+            @RequestParam(required = false) @Size(max = 512, message = "分享令牌长度无效") String shareToken,
             jakarta.servlet.http.HttpServletRequest request) {
 
         com.genealogy.server.auth.AccessSubject subject;
