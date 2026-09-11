@@ -18,8 +18,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
+@Validated
 @RequestMapping("/api/publications")
 @Tag(name = "族谱", description = "族谱 CRUD 操作")
 public class PublicationController {
@@ -73,7 +76,7 @@ public class PublicationController {
 
     @Operation(summary = "获取族谱详情", description = "根据ID获取族谱详细数据")
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> get(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> get(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id, HttpServletRequest request) {
         long startedAt = System.nanoTime();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.READ_FULL);
@@ -177,7 +180,7 @@ public class PublicationController {
 
     @Operation(summary = "更新族谱", description = "更新族谱数据和设置")
     @PutMapping("/{id}")
-    public ApiResponse<Map<String, Object>> update(@Parameter(description = "族谱ID") @PathVariable Long id, @Valid @RequestBody(required = false) PublicationSnapshot body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> update(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id, @Valid @RequestBody(required = false) PublicationSnapshot body, HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.EDIT);
@@ -199,7 +202,7 @@ public class PublicationController {
 
     @Operation(summary = "更新族谱信息", description = "更新族谱的标题、副标题等元数据")
     @PutMapping("/{id}/metadata")
-    public ApiResponse<Map<String, Object>> updateMetadata(@Parameter(description = "族谱ID") @PathVariable Long id, @Valid @RequestBody(required = false) com.genealogy.server.dto.UpdateMetadataRequest body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> updateMetadata(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id, @Valid @RequestBody(required = false) com.genealogy.server.dto.UpdateMetadataRequest body, HttpServletRequest request) {
         if (body == null) {
             throw new BadRequestException("族谱信息不能为空");
         }
@@ -215,7 +218,7 @@ public class PublicationController {
     @Operation(summary = "更新人物信息", description = "更新族谱中指定人物的详细信息")
     @PutMapping("/{pubId}/people/{personId}")
     public ApiResponse<Map<String, Object>> updatePerson(
-            @Parameter(description = "族谱ID") @PathVariable Long pubId,
+            @Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId,
             @Parameter(description = "人物ID") @PathVariable String personId,
             @RequestBody Map<String, Object> body,
             HttpServletRequest request) {
@@ -239,7 +242,7 @@ public class PublicationController {
 
     @Operation(summary = "删除族谱", description = "删除指定族谱")
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<Void> delete(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id, HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.DELETE);
@@ -250,7 +253,7 @@ public class PublicationController {
 
     @Operation(summary = "获取族谱历史", description = "获取族谱的变更历史记录")
     @GetMapping("/{id}/history")
-    public ApiResponse<List<Map<String, Object>>> history(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<List<Map<String, Object>>> history(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id, HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.HISTORY_READ);
         List<Map<String, Object>> logs = auditLogRepository.findByTargetTypeAndTargetIdOrderByCreatedAtDesc("publication", id)
@@ -273,7 +276,7 @@ public class PublicationController {
     @SuppressWarnings("unchecked")
     @PostMapping("/{id}/shares")
     public ApiResponse<Map<String, Object>> createShareLink(
-            @Parameter(description = "族谱ID") @PathVariable Long id,
+            @Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id,
             @RequestBody Map<String, Object> body,
             HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
@@ -298,7 +301,7 @@ public class PublicationController {
     @Operation(summary = "获取分享链接列表", description = "获取族谱的所有分享链接")
     @GetMapping("/{id}/shares")
     public ApiResponse<List<Map<String, Object>>> listShareLinks(
-            @Parameter(description = "族谱ID") @PathVariable Long id,
+            @Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id,
             HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_SHARES);
@@ -308,8 +311,8 @@ public class PublicationController {
     @Operation(summary = "撤销分享链接", description = "撤销指定的分享链接")
     @DeleteMapping("/{id}/shares/{shareId}")
     public ApiResponse<Void> revokeShareLink(
-            @Parameter(description = "族谱ID") @PathVariable Long id,
-            @Parameter(description = "分享链接ID") @PathVariable Long shareId,
+            @Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id,
+            @Parameter(description = "分享链接ID") @PathVariable @Positive(message = "分享链接 ID 必须为正数") Long shareId,
             HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
