@@ -80,33 +80,69 @@ class BranchMergeTest {
 
     private PublicationService publicationService;
 
-    private PersonDiffService personDiffService;
-    private BranchMergeService branchMergeService;
-
-    @BeforeEach
-    void setUp() {
-        personDiffService = new PersonDiffService(new ObjectMapper());
-        branchMergeService = new BranchMergeService(
-                personRepository, familyRepository, familyMemberRepository,
-                photoService, authorizationService
-        );
-
-        publicationService = new PublicationService(
-                publicationRepository,
-                personRepository,
-                familyRepository,
-                familyMemberRepository,
-                photoRepository,
-                new ObjectMapper(),
-                publicationAccessRepository,
-                shareLinkRepository,
-                auditLogRepository,
-                authorizationService,
-                treeLoader,
-                photoService,
-                personDiffService,
-                branchMergeService
-        );
+    private PersonDiffService personDiffService;
+
+    private BranchMergeService branchMergeService;
+    private PublicationQueryService queryService;
+
+
+
+    @BeforeEach
+
+    void setUp() {
+
+        personDiffService = new PersonDiffService(new ObjectMapper());
+
+        branchMergeService = new BranchMergeService(
+
+                personRepository, familyRepository, familyMemberRepository,
+
+                photoService, authorizationService
+
+        );
+
+        queryService = new PublicationQueryService(
+
+                publicationRepository, publicationAccessRepository,
+
+                auditLogRepository, new ObjectMapper(), treeLoader
+
+        );
+
+
+
+        publicationService = new PublicationService(
+
+                publicationRepository,
+
+                personRepository,
+
+                familyRepository,
+
+                familyMemberRepository,
+
+                photoRepository,
+
+                new ObjectMapper(),
+
+                publicationAccessRepository,
+
+                shareLinkRepository,
+
+                auditLogRepository,
+
+                authorizationService,
+
+                photoService,
+
+                personDiffService,
+
+                branchMergeService,
+
+                queryService
+
+        );
+
     }
 
     @Test

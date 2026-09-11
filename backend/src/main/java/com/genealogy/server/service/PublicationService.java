@@ -1,13 +1,10 @@
 package com.genealogy.server.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ConflictException;
 import com.genealogy.server.exception.NotFoundException;
-import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.Family;
 import com.genealogy.server.model.FamilyMember;
 import com.genealogy.server.model.Person;
@@ -27,25 +24,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 public class PublicationService {
 
     private static final Logger log = LoggerFactory.getLogger(PublicationService.class);
     private static final String FEDERATED_ID_PREFIX = "branch_";
-    private static final List<String> PUBLICATION_MUTATION_ACTIONS = List.of(
-            "CREATE_PUB",
-            "UPDATE_PUB",
-            "UPDATE_PUB_META",
-            "UPDATE_PERSON",
-            "DELETE_PUB"
-    );
 
     private final PublicationRepository publicationRepository;
     private final PersonRepository personRepository;
@@ -57,10 +45,10 @@ public class PublicationService {
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
     private final PublicationAuthorizationService authorizationService;
-    private final PublicationTreeLoader treeLoader;
     private final PhotoService photoService;
     private final PersonDiffService personDiffService;
     private final BranchMergeService branchMergeService;
+    private final PublicationQueryService queryService;
 
     public record SaveResult(Long newRevision, String personDiff) {}
 
@@ -71,10 +59,10 @@ public class PublicationService {
                               PublicationShareLinkRepository shareLinkRepository,
                               AuditLogRepository auditLogRepository,
                               PublicationAuthorizationService authorizationService,
-                              PublicationTreeLoader treeLoader,
                               PhotoService photoService,
                               PersonDiffService personDiffService,
-                              BranchMergeService branchMergeService) {
+                              BranchMergeService branchMergeService,
+                              PublicationQueryService queryService) {
         this.publicationRepository = publicationRepository;
         this.personRepository = personRepository;
         this.familyRepository = familyRepository;
@@ -85,10 +73,10 @@ public class PublicationService {
         this.shareLinkRepository = shareLinkRepository;
         this.auditLogRepository = auditLogRepository;
         this.authorizationService = authorizationService;
-        this.treeLoader = treeLoader;
         this.photoService = photoService;
         this.personDiffService = personDiffService;
         this.branchMergeService = branchMergeService;
+        this.queryService = queryService;
     }
 
     /** @deprecated use {@link SaveResult#personDiff()} from updatePublication/updatePerson instead */
@@ -102,144 +90,27 @@ public class PublicationService {
             throw new ConflictException("数据已过期，请刷新页面。");
         }
     }
-
+    /**
+     * @see PublicationQueryService#listPublications(Long)
+     */
     public List<Map<String, Object>> listPublications(Long userId) {
-        List<PublicationAccess> accessRecords = publicationAccessRepository.findByUserId(userId);
-        Set<Long> accessibleIds = accessRecords.stream()
-                .map(PublicationAccess::getPublicationId)
-                .collect(java.util.stream.Collectors.toSet());
-
-        List<Publication> owned = publicationRepository.findByUserIdOrderByUpdatedAtDesc(userId);
-        for (Publication pub : owned) {
-            accessibleIds.add(pub.getId());
-        }
-
-        if (accessibleIds.isEmpty()) {
-            return List.of();
-        }
-
-        Map<Long, String> roleMap = new HashMap<>();
-        for (PublicationAccess access : accessRecords) {
-            roleMap.put(access.getPublicationId(), access.getRole());
-        }
-        for (Publication pub : owned) {
-            roleMap.putIfAbsent(pub.getId(), "OWNER");
-        }
-
-        List<Publication> publications = new ArrayList<>(publicationRepository.findAllById(accessibleIds));
-        publications.sort(Comparator.comparing(Publication::getUpdatedAt,
-                Comparator.nullsLast(Comparator.reverseOrder())));
-
-        // Batch-fetch latest audit logs instead of N individual queries
-        Map<Long, AuditLog> latestAuditByPubId = new HashMap<>();
-        if (!accessibleIds.isEmpty()) {
-            List<AuditLog> auditLogs = auditLogRepository
-                    .findLatestByTargetIds("publication", accessibleIds, PUBLICATION_MUTATION_ACTIONS);
-            for (AuditLog logEntry : auditLogs) {
-                latestAuditByPubId.merge(logEntry.getTargetId(), logEntry,
-                        (a, b) -> a.getCreatedAt().isAfter(b.getCreatedAt()) ? a : b);
-            }
-        }
-
-        return publications.stream().map(publication -> {
-            Map<String, Object> result = new LinkedHashMap<>();
-            result.put("id", publication.getId());
-            result.put("revision", publication.getRevision());
-            result.put("title", publication.getTitle());
-            result.put("subtitle", publication.getSubtitle());
-            result.put("createdAt", publication.getCreatedAt());
-            result.put("updatedAt", publication.getUpdatedAt());
-            result.put("accessRole", roleMap.getOrDefault(publication.getId(), "OWNER"));
-
-            AuditLog auditLog = latestAuditByPubId.get(publication.getId());
-            if (auditLog != null) {
-                result.put("lastUpdatedBy", auditLog.getUsername());
-                result.put("lastActivityAction", auditLog.getAction());
-            }
-
-            if (publication.getPublicationInfoJson() != null) {
-                try {
-                    Map<String, Object> info = objectMapper.readValue(
-                            publication.getPublicationInfoJson(),
-                            new TypeReference<>() {}
-                    );
-                    result.put("info", info);
-                    Object description = info.get("description");
-                    if (description instanceof String text && !text.isBlank()) {
-                        result.put("description", text.length() > 80 ? text.substring(0, 80) + "..." : text);
-                    }
-                } catch (JsonProcessingException e) {
-                    log.warn("Publication {} info JSON parse failed: {}", publication.getId(), e.getMessage());
-                }
-            }
-
-            return result;
-        }).toList();
+        return queryService.listPublications(userId);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * @see PublicationQueryService#loadPublication(Long)
+     */
     public Map<String, Object> loadPublication(Long publicationId) {
-        long startedAt = System.nanoTime();
-        Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new NotFoundException("Publication not found"));
-        long publicationQueryMs = elapsedMillis(startedAt);
-
-        Map<String, Map<String, Object>> people = new LinkedHashMap<>();
-        Map<String, Map<String, Object>> families = new LinkedHashMap<>();
-        
-        // Load federated data (root + linked branches up to depth 3)
-        treeLoader.loadFederatedData(publicationId, 3, "", people, families);
-        long treeLoadMs = elapsedMillis(startedAt) - publicationQueryMs;
-
-        Map<String, Object> publicationJson = new LinkedHashMap<>();
-        publicationJson.put("title", publication.getTitle());
-        publicationJson.put("subtitle", publication.getSubtitle() != null ? publication.getSubtitle() : "");
-        publicationJson.put("focusFamilyId", publication.getFocusFamilyId() != null ? publication.getFocusFamilyId() : "");
-        publicationJson.put("people", people);
-        publicationJson.put("families", families);
-
-        if (publication.getPublicationInfoJson() != null) {
-            try {
-                publicationJson.put("info", objectMapper.readValue(publication.getPublicationInfoJson(), new TypeReference<>() {}));
-            } catch (JsonProcessingException e) {
-                log.warn("Publication {} info JSON parse failed: {}", publication.getId(), e.getMessage());
-            }
-        }
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("id", publication.getId());
-        response.put("revision", publication.getRevision());
-        response.put("publication", publicationJson);
-        if (publication.getSettingsJson() != null) {
-            try {
-                response.put("settings", objectMapper.readValue(publication.getSettingsJson(), new TypeReference<>() {}));
-            } catch (JsonProcessingException e) {
-                response.put("settings", Map.of());
-            }
-        } else {
-            response.put("settings", Map.of());
-        }
-
-        log.debug("publication.load id={} publicationQueryMs={} treeLoadMs={} assembleMs={} totalMs={} people={} families={}",
-                publicationId,
-                publicationQueryMs,
-                treeLoadMs,
-                elapsedMillis(startedAt) - publicationQueryMs - treeLoadMs,
-                elapsedMillis(startedAt),
-                people.size(),
-                families.size());
-        return response;
+        return queryService.loadPublication(publicationId);
     }
 
+    /**
+     * @see PublicationQueryService#getPublicationRevision(Long)
+     */
     public long getPublicationRevision(Long publicationId) {
-        return publicationRepository.findById(publicationId)
-                .map(Publication::getRevision)
-                .orElseThrow(() -> new NotFoundException("Publication not found"));
+        return queryService.getPublicationRevision(publicationId);
     }
 
-    private long elapsedMillis(long startedAt) {
-        return (System.nanoTime() - startedAt) / 1_000_000;
-    }
 
     @Transactional
     public Long createPublication(Long userId, String title, String subtitle,

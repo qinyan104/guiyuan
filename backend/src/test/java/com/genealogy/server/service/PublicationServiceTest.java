@@ -84,6 +84,7 @@ class PublicationServiceTest {
 
     private PersonDiffService personDiffService;
     private BranchMergeService branchMergeService;
+    private PublicationQueryService queryService;
 
     @BeforeEach
     void setUp() {
@@ -91,6 +92,12 @@ class PublicationServiceTest {
         branchMergeService = new BranchMergeService(
                 personRepository, familyRepository, familyMemberRepository,
                 photoService, authorizationService
+        );
+        // 只读路径已拆到 PublicationQueryService；读取类用例通过委托间接走到这里，
+        // 因此用同一组 mock 构造真实实例，保持原有 stub 生效。
+        queryService = new PublicationQueryService(
+                publicationRepository, publicationAccessRepository,
+                auditLogRepository, new ObjectMapper(), treeLoader
         );
 
         publicationService = new PublicationService(
@@ -104,10 +111,10 @@ class PublicationServiceTest {
                 shareLinkRepository,
                 auditLogRepository,
                 authorizationService,
-                treeLoader,
                 photoService,
                 personDiffService,
-                branchMergeService
+                branchMergeService,
+                queryService
         );
     }
 
