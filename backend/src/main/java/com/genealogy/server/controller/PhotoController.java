@@ -15,10 +15,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 @RestController
+@Validated
 @RequestMapping("/api/photos")
 @Tag(name = "照片", description = "人物照片管理")
 public class PhotoController {
@@ -62,7 +65,7 @@ public class PhotoController {
     @Transactional
     public ApiResponse<Map<String, Object>> upload(@Parameter(description = "照片文件") @RequestParam("file") MultipartFile file,
                                                    @Parameter(description = "人物ID") @RequestParam("personId") String personId,
-                                                   @Parameter(description = "族谱ID") @RequestParam("publicationId") Long publicationId,
+                                                   @Parameter(description = "族谱ID") @RequestParam("publicationId") @Positive(message = "族谱 ID 必须为正数") Long publicationId,
                                                    HttpServletRequest request) throws IOException {
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
@@ -98,7 +101,7 @@ public class PhotoController {
 
     @Operation(summary = "获取照片", description = "根据ID获取照片数据")
     @GetMapping("/{id}")
-    public ResponseEntity<byte[]> get(@Parameter(description = "照片ID") @PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<byte[]> get(@Parameter(description = "照片ID") @PathVariable @Positive(message = "照片 ID 必须为正数") Long id, HttpServletRequest request) {
         Photo photo = photoRepository.findById(id).orElse(null);
         if (photo == null) {
             return ResponseEntity.notFound().build();
@@ -120,7 +123,7 @@ public class PhotoController {
     @Operation(summary = "删除照片", description = "删除指定的人物照片")
     @DeleteMapping("/{id}")
     @Transactional
-    public ApiResponse<Void> delete(@Parameter(description = "照片ID") @PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<Void> delete(@Parameter(description = "照片ID") @PathVariable @Positive(message = "照片 ID 必须为正数") Long id, HttpServletRequest request) {
         Photo photo = photoRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("照片不存在"));
         Person person = personRepository.findById(photo.getPersonDbId())
