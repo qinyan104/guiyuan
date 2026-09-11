@@ -315,17 +315,17 @@ public class PublicationController {
      */
     static int resolveExpiresInDays(Map<String, Object> body) {
         Object raw = body.get("expiresInDays");
+        Integer days = null;
         if (raw instanceof Number number) {
-            return number.intValue();
-        }
-        if (raw instanceof String text && !text.isBlank()) {
+            days = number.intValue();
+        } else if (raw instanceof String text && !text.isBlank()) {
             try {
-                return Integer.parseInt(text.trim());
+                days = Integer.parseInt(text.trim());
             } catch (NumberFormatException ignored) {
                 // 回退到默认值
             }
         }
-        return 30;
+        return days != null && days >= 1 && days <= 365 ? days : 30;
     }
 
     private String serializeSettings(Object settings) {

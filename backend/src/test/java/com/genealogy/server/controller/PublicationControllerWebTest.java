@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -118,6 +119,13 @@ class PublicationControllerWebTest {
         mockMvc.perform(get("/api/publications"))
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.code").value(401));
+    }
+
+    @Test
+    void invalidShareLinkTtlFallsBackToSafeDefault() {
+        assertEquals(30, PublicationController.resolveExpiresInDays(Map.of("expiresInDays", 0)));
+        assertEquals(30, PublicationController.resolveExpiresInDays(Map.of("expiresInDays", 366)));
+        assertEquals(365, PublicationController.resolveExpiresInDays(Map.of("expiresInDays", "365")));
     }
 
     @Test
