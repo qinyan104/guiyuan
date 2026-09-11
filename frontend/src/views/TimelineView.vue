@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { PUBLICATION_CONTEXT_KEY, type PublicationData } from '../types/family'
 import DarkModeToggle from '../components/DarkModeToggle.vue'
 import { useTimelineData } from '../composables/useTimelineData'
+import { useBackToTop } from '../composables/useBackToTop'
 
 const props = defineProps<{ publicationId: number }>()
 const router = useRouter()
@@ -45,17 +46,7 @@ function goPerson(personId: string) {
   })
 }
 
-// ── Back to Top ──
-const showTop = ref(false)
-function onScroll() {
-  showTop.value = window.scrollY > 400
-}
-function toTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
-onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
+const { visible: showTop, scrollToTop: toTop } = useBackToTop()
 </script>
 
 <template>
