@@ -85,6 +85,7 @@ class PublicationServiceTest {
     private PersonDiffService personDiffService;
     private BranchMergeService branchMergeService;
     private PublicationQueryService queryService;
+    private PublicationPersonWriter personWriter;
 
     @BeforeEach
     void setUp() {
@@ -99,6 +100,11 @@ class PublicationServiceTest {
                 publicationRepository, publicationAccessRepository,
                 auditLogRepository, new ObjectMapper(), treeLoader
         );
+        // 人员/家庭持久化已拆到 PublicationPersonWriter；
+        // 相关用例通过委托间接走到这里，因此用同一组 mock 构造真实实例。
+        personWriter = new PublicationPersonWriter(
+                personRepository, familyRepository, familyMemberRepository, photoService
+        );
 
         publicationService = new PublicationService(
                 publicationRepository,
@@ -106,15 +112,13 @@ class PublicationServiceTest {
                 familyRepository,
                 familyMemberRepository,
                 photoRepository,
-                new ObjectMapper(),
                 publicationAccessRepository,
                 shareLinkRepository,
-                auditLogRepository,
-                authorizationService,
                 photoService,
                 personDiffService,
                 branchMergeService,
-                queryService
+                queryService,
+                personWriter
         );
     }
 

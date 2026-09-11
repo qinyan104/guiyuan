@@ -84,6 +84,7 @@ class BranchMergeTest {
 
     private BranchMergeService branchMergeService;
     private PublicationQueryService queryService;
+    private PublicationPersonWriter personWriter;
 
 
 
@@ -109,6 +110,12 @@ class BranchMergeTest {
 
         );
 
+        personWriter = new PublicationPersonWriter(
+
+                personRepository, familyRepository, familyMemberRepository, photoService
+
+        );
+
 
 
         publicationService = new PublicationService(
@@ -123,15 +130,9 @@ class BranchMergeTest {
 
                 photoRepository,
 
-                new ObjectMapper(),
-
                 publicationAccessRepository,
 
                 shareLinkRepository,
-
-                auditLogRepository,
-
-                authorizationService,
 
                 photoService,
 
@@ -139,7 +140,9 @@ class BranchMergeTest {
 
                 branchMergeService,
 
-                queryService
+                queryService,
+
+                personWriter
 
         );
 
