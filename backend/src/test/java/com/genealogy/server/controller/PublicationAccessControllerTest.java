@@ -2,6 +2,7 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.UserSubject;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.model.User;
@@ -47,7 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 SecurityFilterAutoConfiguration.class,
                 UserDetailsServiceAutoConfiguration.class
             })
-@Import(WebConfig.class)
+@Import({ WebConfig.class, CurrentUserResolver.class })
 class PublicationAccessControllerTest {
 
     @Autowired

@@ -6,6 +6,7 @@ import com.genealogy.server.exception.ConflictException;
 import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.GoneException;
 import com.genealogy.server.exception.NotFoundException;
+import com.genealogy.server.exception.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ApiResponse<Void> handleForbidden(ForbiddenException e) {
         return ApiResponse.error(403, e.getMessage());
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiResponse<Void> handleUnauthorized(UnauthorizedException e) {
+        return ApiResponse.error(401, e.getMessage());
     }
 
     @ExceptionHandler(BadRequestException.class)

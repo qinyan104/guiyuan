@@ -1,5 +1,6 @@
 package com.genealogy.server.controller;
 
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.UserRepository;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = ReviewController.class,
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
-@Import(WebConfig.class)
+@Import({ WebConfig.class, CurrentUserResolver.class })
 @WithMockUser
 public class ReviewControllerTest {
 

@@ -1,6 +1,7 @@
 package com.genealogy.server.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.repository.AuditLogRepository;
@@ -35,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = AuditLogController.class,
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
-@Import(WebConfig.class)
+@Import({ WebConfig.class, CurrentUserResolver.class })
 @WithMockUser
 public class AuditLogControllerTest {
 

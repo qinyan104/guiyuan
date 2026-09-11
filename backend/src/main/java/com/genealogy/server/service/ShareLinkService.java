@@ -8,6 +8,8 @@ import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.PublicationShareLink;
 import com.genealogy.server.repository.PublicationShareLinkRepository;
 import com.genealogy.server.util.HashUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class ShareLinkService {
     private static final int MAX_ACTIVE_PER_PUB = 20;
     private static final int TOKEN_BYTES = 32;
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final Logger log = LoggerFactory.getLogger(ShareLinkService.class);
 
     private final PublicationShareLinkRepository shareLinkRepository;
     private final ObjectMapper objectMapper;
@@ -51,12 +54,7 @@ public class ShareLinkService {
         String tokenHash = HashUtils.sha256Hex(plaintextToken);
 
         Map<String, Object> profile = redactionProfile != null ? redactionProfile : PublicationViewProjector.DEFAULT_REDACTION_PROFILE;
-        String profileJson;
-        try {
-            profileJson = objectMapper.writeValueAsString(profile);
-        } catch (JsonProcessingException e) {
-            profileJson = "{}";
-        }
+        String profileJson = serializeProfile(profile);
 
         PublicationShareLink link = new PublicationShareLink();
         link.setPublicationId(publicationId);
@@ -73,6 +71,20 @@ public class ShareLinkService {
         result.put("id", link.getId());
         result.put("expiresAt", link.getExpiresAt().toString());
         return result;
+    }
+
+    /**
+     * 序列化脱敏配置。
+     *
+     * <p>序列化失败时不能静默落库成 {@code "{}"}：那会让调用方选定的规则无声地
+     * 被默认值取代，事后无法从数据里看出发生过降级。这里选择显式失败。
+     */
+    private String serializeProfile(Map<String, Object> profile) {
+        try {
+            return objectMapper.writeValueAsString(profile);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("分享脱敏配置无法序列化，已拒绝创建分享链接", e);
+        }
     }
 
     /**

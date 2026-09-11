@@ -7,8 +7,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.Deque;
 
 /**
  * GEDCOM 5.5 解析器 — 状态机逐行解析

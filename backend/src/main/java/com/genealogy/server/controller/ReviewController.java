@@ -1,11 +1,9 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
-import com.genealogy.server.exception.ForbiddenException;
-import com.genealogy.server.model.User;
-import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,30 +22,14 @@ public class ReviewController {
 
     private final ReviewService reviewService;
     private final PublicationAuthorizationService authorizationService;
-    private final UserRepository userRepository;
+    private final CurrentUserResolver currentUserResolver;
 
     public ReviewController(ReviewService reviewService,
                             PublicationAuthorizationService authorizationService,
-                            UserRepository userRepository) {
+                            CurrentUserResolver currentUserResolver) {
         this.reviewService = reviewService;
         this.authorizationService = authorizationService;
-        this.userRepository = userRepository;
-    }
-
-    private User resolveCachedUser(HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        if (username == null) throw new ForbiddenException("未登录");
-        User cached = (User) request.getAttribute("cachedUser");
-        if (cached != null && username.equals(cached.getUsername())) return cached;
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ForbiddenException("未登录"));
-        request.setAttribute("cachedUser", user);
-        return user;
-    }
-
-    private UserSubject resolveSubject(HttpServletRequest request) {
-        User user = resolveCachedUser(request);
-        return new UserSubject(user.getId(), user.getRole(), user.getUsername());
+        this.currentUserResolver = currentUserResolver;
     }
 
     private void requireOwnerOrSuperAdmin(UserSubject subject, Long pubId) {
@@ -60,7 +42,7 @@ public class ReviewController {
     public ApiResponse<List<Map<String, Object>>> list(@Parameter(description = "族谱ID") @PathVariable Long pubId,
                                                         @Parameter(description = "审核状态筛选") @RequestParam(required = false) String status,
                                                         HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
         return ApiResponse.success(reviewService.listReviews(pubId, status));
     }
@@ -69,7 +51,7 @@ public class ReviewController {
     @GetMapping("/{id}")
     public ApiResponse<Map<String, Object>> detail(@Parameter(description = "族谱ID") @PathVariable Long pubId, @Parameter(description = "审核记录ID") @PathVariable Long id,
                                                     HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
         return ApiResponse.success(reviewService.getReviewDetail(id));
     }
@@ -78,7 +60,7 @@ public class ReviewController {
     @PostMapping("/{id}/approve")
     public ApiResponse<Void> approve(@Parameter(description = "族谱ID") @PathVariable Long pubId, @Parameter(description = "审核记录ID") @PathVariable Long id,
                                       HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
         reviewService.approve(id, subject.getUserId());
         return ApiResponse.success("已通过", null);
@@ -89,7 +71,7 @@ public class ReviewController {
     public ApiResponse<Void> reject(@Parameter(description = "族谱ID") @PathVariable Long pubId, @Parameter(description = "审核记录ID") @PathVariable Long id,
                                      @RequestBody Map<String, String> body,
                                      HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
         String reason = body.get("reason");
         if (reason == null || reason.isBlank()) {
@@ -104,7 +86,7 @@ public class ReviewController {
     public ApiResponse<Void> batch(@Parameter(description = "族谱ID") @PathVariable Long pubId,
                                     @RequestBody Map<String, Object> body,
                                     HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
 
         @SuppressWarnings("unchecked")

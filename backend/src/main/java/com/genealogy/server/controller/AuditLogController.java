@@ -1,7 +1,9 @@
 package com.genealogy.server.controller;
 
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.exception.ForbiddenException;
+import com.genealogy.server.exception.UnauthorizedException;
 import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.repository.AuditLogRepository;
 import com.genealogy.server.service.UserService;
@@ -24,14 +26,20 @@ public class AuditLogController {
 
     private final AuditLogRepository auditLogRepository;
     private final UserService userService;
+    private final CurrentUserResolver currentUserResolver;
 
-    public AuditLogController(AuditLogRepository auditLogRepository, UserService userService) {
+    public AuditLogController(AuditLogRepository auditLogRepository, UserService userService,
+                              CurrentUserResolver currentUserResolver) {
         this.auditLogRepository = auditLogRepository;
         this.userService = userService;
+        this.currentUserResolver = currentUserResolver;
     }
 
     private void requireAdmin(HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
+        String username = currentUserResolver.authenticatedUsername(request);
+        if (username == null) {
+            throw new UnauthorizedException("未登录或登录已过期");
+        }
         if (!userService.isAdmin(username)) {
             throw new ForbiddenException("需要管理员权限");
         }
@@ -64,7 +72,7 @@ public class AuditLogController {
     @PostMapping
     public ApiResponse<Void> addLog(@RequestBody Map<String, String> body, HttpServletRequest request) {
         requireAdmin(request);
-        String username = (String) request.getAttribute("currentUsername");
+        String username = currentUserResolver.authenticatedUsername(request);
         AuditLog log = new AuditLog();
         log.setUsername(username);
         log.setAction(body.getOrDefault("action", "UNKNOWN"));

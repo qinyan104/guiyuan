@@ -1,5 +1,6 @@
 package com.genealogy.server.controller;
 
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.UserRepository;
@@ -39,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = AdminAccountController.class,
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
-@Import(WebConfig.class)
+@Import({ WebConfig.class, CurrentUserResolver.class })
 @WithMockUser
 public class AdminAccountControllerTest {
 
@@ -299,23 +300,23 @@ public class AdminAccountControllerTest {
     }
 
     @Test
-    void missingUsernameShouldReturn403() throws Exception {
+    void missingUsernameShouldReturn401() throws Exception {
         mockMvc.perform(get("/api/publications/1/accounts")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value(403))
-                .andExpect(jsonPath("$.message").value("未登录"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(401))
+                .andExpect(jsonPath("$.message").value("未登录或登录已过期"));
     }
 
     @Test
-    void unknownUsernameShouldReturn403() throws Exception {
+    void unknownUsernameShouldReturn401() throws Exception {
         when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/publications/1/accounts")
                         .requestAttr("currentUsername", "ghost")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value(403))
-                .andExpect(jsonPath("$.message").value("未登录"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(401))
+                .andExpect(jsonPath("$.message").value("登录状态已失效，请重新登录"));
     }
 }

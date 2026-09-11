@@ -2,6 +2,7 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.UserSubject;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.model.Person;
 import com.genealogy.server.model.Photo;
@@ -38,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = PhotoController.class,
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
-@Import(WebConfig.class)
+@Import({ WebConfig.class, CurrentUserResolver.class })
 class PhotoControllerAccessTest {
 
     @Autowired
@@ -78,9 +79,9 @@ class PhotoControllerAccessTest {
         when(personRepository.findById(10L)).thenReturn(Optional.of(person));
 
         mockMvc.perform(get("/api/photos/1"))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value(403))
-                .andExpect(jsonPath("$.message").value("未登录"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(401))
+                .andExpect(jsonPath("$.message").value("未登录或登录已过期"));
     }
 
     @Test

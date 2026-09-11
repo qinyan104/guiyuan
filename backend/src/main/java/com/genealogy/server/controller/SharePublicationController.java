@@ -1,6 +1,5 @@
 package com.genealogy.server.controller;
 
-import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.ShareSubject;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.interceptor.ShareTokenResolver;

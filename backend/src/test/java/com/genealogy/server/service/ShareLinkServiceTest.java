@@ -1,5 +1,6 @@
 package com.genealogy.server.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.GoneException;
@@ -24,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,6 +71,22 @@ class ShareLinkServiceTest {
         assertThatThrownBy(() -> service.createShareLink(1L, 10L, true, Map.of(), Duration.ofDays(7)))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("上限");
+    }
+
+    @Test
+    void createShareLink_profileSerializationFailure_throwsInsteadOfSilentlyDroppingProfile() throws Exception {
+        ObjectMapper failingMapper = mock(ObjectMapper.class);
+        when(failingMapper.writeValueAsString(any()))
+                .thenThrow(new JsonProcessingException("boom") {});
+        ShareLinkService failingService = new ShareLinkService(shareLinkRepository, failingMapper);
+        when(shareLinkRepository.countByPublicationIdAndStatus(1L, "ACTIVE")).thenReturn(0L);
+
+        assertThatThrownBy(() -> failingService.createShareLink(
+                1L, 10L, true, Map.of("dates", "ALL"), Duration.ofDays(7)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("分享脱敏配置无法序列化");
+
+        verify(shareLinkRepository, never()).save(any());
     }
 
     @Test

@@ -5,7 +5,6 @@ import com.genealogy.server.types.Person;
 import com.genealogy.server.types.PublicationData;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 族谱关系图 — 内存中的结构，供校验规则高效查询

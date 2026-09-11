@@ -1,16 +1,14 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
-import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.Person;
 import com.genealogy.server.model.Photo;
-import com.genealogy.server.model.User;
 import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PhotoRepository;
-import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,29 +42,18 @@ public class PhotoController {
 
     private final PhotoRepository photoRepository;
     private final PersonRepository personRepository;
-    private final UserRepository userRepository;
+    private final CurrentUserResolver currentUserResolver;
     private final PublicationAuthorizationService authorizationService;
     private final long maxPhotoSizeBytes;
 
     public PhotoController(PhotoRepository photoRepository, PersonRepository personRepository,
-                           UserRepository userRepository, PublicationAuthorizationService authorizationService,
+                           CurrentUserResolver currentUserResolver, PublicationAuthorizationService authorizationService,
                            @Value("${app.photo.max-file-size-bytes:10485760}") long maxPhotoSizeBytes) {
         this.photoRepository = photoRepository;
         this.personRepository = personRepository;
-        this.userRepository = userRepository;
+        this.currentUserResolver = currentUserResolver;
         this.authorizationService = authorizationService;
         this.maxPhotoSizeBytes = maxPhotoSizeBytes;
-    }
-
-    private UserSubject resolveSubject(HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        if (username == null) {
-            throw new ForbiddenException("未登录");
-        }
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ForbiddenException("未登录"));
-        return new UserSubject(user.getId(), user.getRole(), user.getUsername());
     }
 
     @Operation(summary = "上传照片", description = "为族谱中的人物上传照片")
@@ -85,7 +72,7 @@ public class PhotoController {
             return ApiResponse.error("图片大小不能超过 " + formatMegabytes(maxPhotoSizeBytes));
         }
 
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, publicationId, AccessPermission.EDIT);
 
         Person person = personRepository.findByPublicationIdAndPersonId(publicationId, personId)
@@ -118,7 +105,7 @@ public class PhotoController {
             return ResponseEntity.notFound().build();
         }
 
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, person.getPublicationId(), AccessPermission.READ_FULL);
 
         return ResponseEntity.ok()
@@ -135,7 +122,7 @@ public class PhotoController {
         Person person = personRepository.findById(photo.getPersonDbId())
                 .orElseThrow(() -> new NotFoundException("关联人物不存在"));
 
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, person.getPublicationId(), AccessPermission.EDIT);
 
         if (id.equals(person.getPhotoId())) {

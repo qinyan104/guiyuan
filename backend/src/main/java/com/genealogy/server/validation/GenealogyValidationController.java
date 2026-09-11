@@ -1,10 +1,9 @@
 package com.genealogy.server.validation;
 
 import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
-import com.genealogy.server.model.User;
-import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,23 +23,15 @@ import java.util.Map;
 public class GenealogyValidationController {
 
     private final GenealogyValidationEngine engine;
-    private final UserRepository userRepository;
+    private final CurrentUserResolver currentUserResolver;
     private final PublicationAuthorizationService authorizationService;
 
     public GenealogyValidationController(GenealogyValidationEngine engine,
-                                          UserRepository userRepository,
+                                          CurrentUserResolver currentUserResolver,
                                           PublicationAuthorizationService authorizationService) {
         this.engine = engine;
-        this.userRepository = userRepository;
+        this.currentUserResolver = currentUserResolver;
         this.authorizationService = authorizationService;
-    }
-
-    private UserSubject resolveSubject(HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        if (username == null) throw new RuntimeException("用户不存在");
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
-        return new UserSubject(user.getId(), user.getRole(), user.getUsername());
     }
 
     /**
@@ -52,7 +43,7 @@ public class GenealogyValidationController {
     public ApiResponse<List<ValidationFinding>> validate(
             @Parameter(description = "族谱ID") @PathVariable Long pubId,
             HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, pubId, AccessPermission.READ_FULL);
         return ApiResponse.success(engine.validate(pubId));
     }
@@ -66,7 +57,7 @@ public class GenealogyValidationController {
     public ApiResponse<Map<String, Object>> summary(
             @Parameter(description = "族谱ID") @PathVariable Long pubId,
             HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, pubId, AccessPermission.READ_FULL);
         return ApiResponse.success(engine.getSummary(pubId));
     }
@@ -81,7 +72,7 @@ public class GenealogyValidationController {
             @Parameter(description = "族谱ID") @PathVariable Long pubId,
             @Parameter(description = "人物ID") @PathVariable String personId,
             HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, pubId, AccessPermission.READ_FULL);
         return ApiResponse.success(engine.validatePerson(pubId, personId));
     }
@@ -95,7 +86,7 @@ public class GenealogyValidationController {
     public ApiResponse<List<Map<String, Object>>> listRules(
             @Parameter(description = "族谱ID") @PathVariable Long pubId,
             HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, pubId, AccessPermission.READ_FULL);
         return ApiResponse.success(engine.listRules());
     }

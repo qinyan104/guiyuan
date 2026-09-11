@@ -1,11 +1,11 @@
 package com.genealogy.server.service;
 
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.model.Photo;
 import com.genealogy.server.repository.PhotoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.URI;
@@ -60,51 +60,66 @@ public class PhotoService {
                 });
     }
 
-    public void reassignPhoto(Long personDbId, Long photoId) {
-        photoRepository.findById(photoId).ifPresent(photo -> {
-            photo.setPersonDbId(personDbId);
-            photoRepository.save(photo);
-        });
-    }
-
     private Long handleBase64Avatar(Long personDbId, String base64Url) {
-        try {
-            int commaIndex = base64Url.indexOf(",");
-            if (commaIndex == -1) return null;
-
-            String header = base64Url.substring(0, commaIndex);
-            String mimeType = header.substring(header.indexOf(":") + 1, header.indexOf(";"));
-            String base64Data = base64Url.substring(commaIndex + 1).replaceAll("\\s", "");
-            byte[] dataBytes = Base64.getMimeDecoder().decode(base64Data);
-
-            log.info("正在导入 Base64 头像 (personDbId: {}, mimeType: {}, size: {} bytes)", personDbId, mimeType, dataBytes.length);
-
-            Photo photo = new Photo();
-            photo.setMimeType(mimeType);
-            photo.setData(dataBytes);
-            photo.setPersonDbId(personDbId);
-            photo = photoRepository.save(photo);
-            return photo.getId();
-        } catch (Exception e) {
-            log.error("解析 Base64 头像失败 (personDbId: {}): {}", personDbId, e.getMessage(), e);
-            return null;
+        int commaIndex = base64Url.indexOf(",");
+        if (commaIndex < 0) {
+            throw new BadRequestException("头像 Base64 数据缺少内容分隔符");
         }
+
+        String header = base64Url.substring(0, commaIndex);
+        int mimeStart = header.indexOf(":");
+        int mimeEnd = header.indexOf(";");
+        if (mimeStart < 0 || mimeEnd <= mimeStart) {
+            throw new BadRequestException("头像 Base64 数据缺少有效的 MIME 类型");
+        }
+        String mimeType = header.substring(mimeStart + 1, mimeEnd);
+        String base64Data = base64Url.substring(commaIndex + 1).replaceAll("\\s", "");
+
+        byte[] dataBytes;
+        try {
+            dataBytes = Base64.getMimeDecoder().decode(base64Data);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("头像 Base64 数据无法解码", e);
+        }
+
+        log.info("正在导入 Base64 头像 (personDbId: {}, mimeType: {}, size: {} bytes)", personDbId, mimeType, dataBytes.length);
+
+        Photo photo = new Photo();
+        photo.setMimeType(mimeType);
+        photo.setData(dataBytes);
+        photo.setPersonDbId(personDbId);
+        photo = photoRepository.save(photo);
+        return photo.getId();
     }
 
     private Long handleApiPhotoUrl(Long personDbId, String photoUrl, boolean cloneReferencedPhotos) {
+        Long photoId;
         try {
-            Long photoId = Long.parseLong(photoUrl.substring("/api/photos/".length()));
-            if (cloneReferencedPhotos) {
-                Photo clonedPhoto = clonePhotoForPerson(photoId, personDbId);
-                return clonedPhoto != null ? clonedPhoto.getId() : null;
-            } else {
-                reassignPhoto(personDbId, photoId);
-                return photoId;
-            }
-        } catch (Exception e) {
-            log.warn("导入照片引用失败 (personDbId: {}, photoUrl: {}): {}", personDbId, photoUrl, e.getMessage());
+            photoId = Long.parseLong(photoUrl.substring("/api/photos/".length()));
+        } catch (NumberFormatException e) {
+            log.warn("照片引用格式无效 (personDbId: {}, photoUrl: {})", personDbId, photoUrl);
             return null;
         }
+
+        if (cloneReferencedPhotos) {
+            Photo clonedPhoto = clonePhotoForPerson(photoId, personDbId);
+            return clonedPhoto != null ? clonedPhoto.getId() : null;
+        }
+
+        Photo referenced = photoRepository.findById(photoId).orElse(null);
+        if (referenced == null) {
+            log.warn("Source photo {} was not found for person {}", photoId, personDbId);
+            return null;
+        }
+        if (referenced.getPersonDbId() != null && !referenced.getPersonDbId().equals(personDbId)) {
+            // 引用的是别人（或另一个族谱）的照片：克隆一份，避免把原照片改绑走导致对方丢图。
+            Photo clonedPhoto = clonePhotoForPerson(photoId, personDbId);
+            return clonedPhoto != null ? clonedPhoto.getId() : null;
+        }
+
+        referenced.setPersonDbId(personDbId);
+        photoRepository.save(referenced);
+        return photoId;
     }
 
     private boolean isLegacyUploadAvatarUrl(String avatarUrl) {

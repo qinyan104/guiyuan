@@ -1,6 +1,7 @@
 package com.genealogy.server.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.dto.ConsistencyReport;
 import com.genealogy.server.model.User;
@@ -37,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = AdminController.class,
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
-@Import(WebConfig.class)
+@Import({ WebConfig.class, CurrentUserResolver.class })
 @TestPropertySource(properties = "app.backup.max-restore-size-bytes=3")
 @WithMockUser
 public class AdminControllerTest {

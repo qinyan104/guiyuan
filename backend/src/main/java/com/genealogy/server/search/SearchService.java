@@ -7,8 +7,6 @@ import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PublicationRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.PublicationAuthorizationService;
-import com.genealogy.server.auth.AccessSubject;
-import com.genealogy.server.auth.AccessPermission;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

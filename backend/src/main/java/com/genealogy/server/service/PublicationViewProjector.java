@@ -16,13 +16,18 @@ public class PublicationViewProjector {
 
     private static final Pattern PHOTO_URL_PATTERN = Pattern.compile("/api/photos/(\\d+)");
     
+    /**
+     * 默认脱敏配置。这里只保留 {@code projectRedacted} 真正会读取的键。
+     *
+     * <p>历史上还声明过 {@code hideContactInfo} 与 {@code maxExportDepth}，但二者从未被
+     * 任何代码消费（人物模型也没有联系方式字段），留着会让调用方误以为这两项已受控，
+     * 因此移除。若将来要做，必须先在这里实现规则再恢复配置键。
+     */
     static final Map<String, Object> DEFAULT_REDACTION_PROFILE = Map.of(
             "dates", "LIVING",
             "note", "LIVING",
             "photo", "NONE",
-            "photoProxy", true,
-            "hideContactInfo", true,
-            "maxExportDepth", 2
+            "photoProxy", true
     );
 
     private final ObjectMapper objectMapper;

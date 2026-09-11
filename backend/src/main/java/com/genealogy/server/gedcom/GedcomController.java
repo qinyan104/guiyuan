@@ -1,10 +1,9 @@
 package com.genealogy.server.gedcom;
 
 import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
-import com.genealogy.server.model.User;
-import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,28 +30,20 @@ public class GedcomController {
 
     private final GedcomImportService importService;
     private final GedcomExportService exportService;
-    private final UserRepository userRepository;
+    private final CurrentUserResolver currentUserResolver;
     private final PublicationAuthorizationService authorizationService;
     private final AuditLogService auditLogService;
 
     public GedcomController(GedcomImportService importService,
                             GedcomExportService exportService,
-                            UserRepository userRepository,
+                            CurrentUserResolver currentUserResolver,
                             PublicationAuthorizationService authorizationService,
                             AuditLogService auditLogService) {
         this.importService = importService;
         this.exportService = exportService;
-        this.userRepository = userRepository;
+        this.currentUserResolver = currentUserResolver;
         this.authorizationService = authorizationService;
         this.auditLogService = auditLogService;
-    }
-
-    private UserSubject resolveSubject(HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        if (username == null) throw new RuntimeException("用户不存在");
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
-        return new UserSubject(user.getId(), user.getRole(), user.getUsername());
     }
 
     /**
@@ -66,7 +57,7 @@ public class GedcomController {
             HttpServletRequest request,
             HttpServletResponse response) throws IOException {
 
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, pubId, AccessPermission.READ_FULL);
 
         response.setContentType("text/plain; charset=UTF-8");
@@ -89,7 +80,7 @@ public class GedcomController {
             @RequestParam("file") MultipartFile file,
             HttpServletRequest request) throws IOException {
 
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
 
         if (file.isEmpty()) {
             return ApiResponse.error(400, "请上传 GEDCOM 文件");
@@ -127,7 +118,7 @@ public class GedcomController {
             @RequestParam("file") MultipartFile file,
             HttpServletRequest request) throws IOException {
 
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, pubId, AccessPermission.EDIT);
 
         if (file.isEmpty()) {

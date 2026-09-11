@@ -1,7 +1,6 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.ApiResponse;
-import com.genealogy.server.model.User;
 import com.genealogy.server.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -1,5 +1,6 @@
 package com.genealogy.server.controller;
 
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.exception.ConflictException;
 import com.genealogy.server.model.User;
@@ -24,12 +25,16 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -40,8 +45,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 SecurityFilterAutoConfiguration.class,
                 UserDetailsServiceAutoConfiguration.class
             })
-@Import(WebConfig.class)
-class PublicationControllerConflictTest {
+@Import({ WebConfig.class, CurrentUserResolver.class })
+class PublicationControllerWebTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -106,5 +111,26 @@ class PublicationControllerConflictTest {
                     """))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.code").value(409));
+    }
+
+    @Test
+    void missingAuthenticatedUserReturns401InsteadOf500() throws Exception {
+        mockMvc.perform(get("/api/publications"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value(401));
+    }
+
+    @Test
+    void createShareLinkWithNullExpiresInDaysFallsBackToDefaultTtl() throws Exception {
+        when(shareLinkService.createShareLink(eq(100L), eq(1L), eq(false), any(), eq(Duration.ofDays(30))))
+            .thenReturn(Map.of("token", "plaintext-token", "id", 1L, "expiresAt", "2026-01-01T00:00:00"));
+
+        mockMvc.perform(post("/api/publications/100/shares")
+                .requestAttr("currentUsername", "testuser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"allowExport\": false, \"expiresInDays\": null}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(200))
+            .andExpect(jsonPath("$.data.token").value("plaintext-token"));
     }
 }

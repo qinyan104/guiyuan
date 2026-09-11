@@ -12,11 +12,11 @@ import com.genealogy.server.service.PublicationViewProjector;
 import com.genealogy.server.service.RefreshTokenService;
 import com.genealogy.server.service.ShareLinkService;
 import com.genealogy.server.service.UserService;
+import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.ShareSubject;
 import com.genealogy.server.auth.UserSubject;
-import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.exception.ForbiddenException;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
@@ -55,13 +55,15 @@ public class MobileController {
     private final PublicationAuthorizationService authorizationService;
     private final ShareLinkService shareLinkService;
     private final PublicationViewProjector viewProjector;
+    private final CurrentUserResolver currentUserResolver;
 
     public MobileController(UserService userService, JwtService jwtService,
                             RefreshTokenService refreshTokenService,
                             UserRepository userRepository, PublicationService publicationService,
                             AuditLogService auditLogService, PublicationAuthorizationService authorizationService,
                             ShareLinkService shareLinkService,
-                            PublicationViewProjector viewProjector) {
+                            PublicationViewProjector viewProjector,
+                            CurrentUserResolver currentUserResolver) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
@@ -71,6 +73,7 @@ public class MobileController {
         this.authorizationService = authorizationService;
         this.shareLinkService = shareLinkService;
         this.viewProjector = viewProjector;
+        this.currentUserResolver = currentUserResolver;
     }
 
     /**
@@ -152,12 +155,9 @@ public class MobileController {
                 throw new ForbiddenException("分享链接无效或已过期");
             }
         } else {
-            String username = (String) request.getAttribute("currentUsername");
-            if (username == null) {
-                throw new ForbiddenException("未登录或未提供分享码");
-            }
-            User user = userRepository.findByUsername(username).orElseThrow(() -> new ForbiddenException("用户不存在"));
-            subject = new UserSubject(user.getId(), user.getRole(), username);
+            User user = currentUserResolver.findCurrentUser(request)
+                    .orElseThrow(() -> new ForbiddenException("未登录或未提供分享码"));
+            subject = new UserSubject(user.getId(), user.getRole(), user.getUsername());
         }
 
         // 校验权限：READ_REDACTED (查看) 或 READ_FULL

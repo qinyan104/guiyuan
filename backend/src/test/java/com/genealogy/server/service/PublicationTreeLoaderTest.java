@@ -1,5 +1,7 @@
 package com.genealogy.server.service;
 
+import com.genealogy.server.model.Family;
+import com.genealogy.server.model.FamilyMember;
 import com.genealogy.server.model.Person;
 import com.genealogy.server.model.Publication;
 import com.genealogy.server.repository.FamilyMemberRepository;
@@ -85,6 +87,56 @@ class PublicationTreeLoaderTest {
         assertThat(people.containsKey("P001")).isTrue();
         assertThat(people.containsKey("branch_20_P002")).isTrue();
         assertThat(people.get("branch_20_P002").get("name")).isEqualTo("Target Branch Node");
+    }
+
+    @Test
+    void personAndFamilyPayloadsKeepTheirDocumentedKeyContract() {
+        Person person = new Person();
+        person.setId(1L);
+        person.setPersonId("P001");
+        person.setPublicationId(10L);
+        person.setName("张三");
+        person.setGender("male");
+        person.setBirth("1900-01-01");
+        person.setDeath("1980-01-01");
+        person.setDeceased(true);
+        person.setAge("80");
+        person.setTitleName("族长");
+        person.setClan("太原");
+        person.setNote("备注");
+        person.setHighlightRole("focus");
+        person.setPhotoId(42L);
+
+        Family family = new Family();
+        family.setId(5L);
+        family.setPublicationId(10L);
+        family.setFamilyId("F001");
+        family.setBranchMode("uxorilocal");
+
+        FamilyMember member = new FamilyMember();
+        member.setFamilyDbId(5L);
+        member.setPersonDbId(1L);
+        member.setRole("adult");
+        member.setSortOrder(0);
+
+        when(personRepository.findByPublicationId(10L)).thenReturn(List.of(person));
+        when(familyRepository.findByPublicationId(10L)).thenReturn(List.of(family));
+        when(familyMemberRepository.findByFamilyDbIdInOrderByFamilyDbIdAscSortOrderAsc(List.of(5L)))
+                .thenReturn(List.of(member));
+
+        Map<String, Map<String, Object>> people = new HashMap<>();
+        Map<String, Map<String, Object>> families = new HashMap<>();
+        treeLoader.loadFederatedData(10L, 0, "", people, families);
+
+        // 这些键名就是前端与导出所依赖的线上契约；改名或漏写会让前端静默拿到 undefined。
+        assertThat(people.get("P001")).containsOnlyKeys(
+                "id", "dbId", "name", "gender", "birth", "death", "deceased",
+                "age", "titleName", "clan", "note", "highlightRole", "avatarUrl");
+        assertThat(people.get("P001")).containsEntry("avatarUrl", "/api/photos/42");
+
+        assertThat(families.get("F001")).containsOnlyKeys("id", "adults", "children", "branchMode");
+        assertThat(families.get("F001")).containsEntry("adults", List.of("P001"));
+        assertThat(families.get("F001")).containsEntry("children", List.of());
     }
 
     @Test

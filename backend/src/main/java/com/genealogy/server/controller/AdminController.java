@@ -1,5 +1,6 @@
 package com.genealogy.server.controller;
 
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.dto.ConsistencyReport;
 import com.genealogy.server.dto.CreateUserRequest;
@@ -38,15 +39,18 @@ public class AdminController {
     private final AuditLogService auditLogService;
     private final BackupService backupService;
     private final ConsistencyService consistencyService;
+    private final CurrentUserResolver currentUserResolver;
     private final long maxRestoreSizeBytes;
 
     public AdminController(UserService userService, AuditLogService auditLogService,
                            BackupService backupService, ConsistencyService consistencyService,
+                           CurrentUserResolver currentUserResolver,
                            @Value("${app.backup.max-restore-size-bytes:524288000}") long maxRestoreSizeBytes) {
         this.userService = userService;
         this.auditLogService = auditLogService;
         this.backupService = backupService;
         this.consistencyService = consistencyService;
+        this.currentUserResolver = currentUserResolver;
         this.maxRestoreSizeBytes = maxRestoreSizeBytes;
     }
 
@@ -75,7 +79,7 @@ public class AdminController {
     @PostMapping("/users")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<User> createUser(@Valid @RequestBody CreateUserRequest body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
+        String username = currentUserResolver.authenticatedUsername(request);
         String role = body.getRole() != null ? body.getRole() : "USER";
         User user = userService.createUser(body.getUsername(), body.getPassword(), body.getNickname(), role);
         user.setPassword(null);
@@ -91,7 +95,7 @@ public class AdminController {
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<Void> deleteUser(@Parameter(description = "用户ID") @PathVariable Long id, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
+        String username = currentUserResolver.authenticatedUsername(request);
 
         User user = userService.findById(id).orElse(null);
         auditLogService.record(username, "ADMIN_DELETE_USER",
@@ -106,7 +110,7 @@ public class AdminController {
     @PutMapping("/users/{id}/password")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<Void> resetPassword(@Parameter(description = "用户ID") @PathVariable Long id, @Valid @RequestBody ResetPasswordRequest body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
+        String username = currentUserResolver.authenticatedUsername(request);
 
         userService.resetPassword(id, body.getNewPassword());
         auditLogService.record(username, "ADMIN_RESET_PASSWORD",
@@ -120,7 +124,7 @@ public class AdminController {
     @PutMapping("/users/{id}/role")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<Void> changeRole(@Parameter(description = "用户ID") @PathVariable Long id, @RequestBody Map<String, String> body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
+        String username = currentUserResolver.authenticatedUsername(request);
         String newRole = body.get("role");
         if (newRole == null || newRole.isBlank()) {
             return ApiResponse.error(400, "角色不能为空");
@@ -137,7 +141,7 @@ public class AdminController {
     @PostMapping("/users/batch-delete")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<Map<String, Object>> batchDeleteUsers(@RequestBody Map<String, List<Long>> body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
+        String username = currentUserResolver.authenticatedUsername(request);
         List<Long> ids = body.get("ids");
         if (ids == null || ids.isEmpty()) {
             return ApiResponse.error(400, "请选择要删除的用户 IDs");
@@ -204,7 +208,7 @@ public class AdminController {
             throw new BadRequestException("仅支持 .sql 格式的文件");
         }
 
-        String username = (String) request.getAttribute("currentUsername");
+        String username = currentUserResolver.authenticatedUsername(request);
         try {
             backupService.restoreDatabase(file.getInputStream());
             auditLogService.record(username, "RESTORE_DB", "从文件 " + filename + " 还原数据库", null, null);

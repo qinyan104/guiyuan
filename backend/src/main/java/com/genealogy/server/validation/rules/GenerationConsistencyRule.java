@@ -1,7 +1,6 @@
 package com.genealogy.server.validation.rules;
 
 import com.genealogy.server.validation.*;
-import com.genealogy.server.types.Person;
 
 import java.util.*;
 

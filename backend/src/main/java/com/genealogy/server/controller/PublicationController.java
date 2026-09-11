@@ -1,13 +1,13 @@
 package com.genealogy.server.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.dto.PublicationSnapshot;
-import com.genealogy.server.model.User;
 import com.genealogy.server.repository.AuditLogRepository;
-import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.service.AuditLogService;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.PublicationService;
@@ -38,7 +38,7 @@ public class PublicationController {
 
     private static final Logger log = LoggerFactory.getLogger(PublicationController.class);
     private final PublicationService publicationService;
-    private final UserRepository userRepository;
+    private final CurrentUserResolver currentUserResolver;
     private final AuditLogRepository auditLogRepository;
     private final AuditLogService auditLogService;
     private final ObjectMapper objectMapper;
@@ -46,14 +46,14 @@ public class PublicationController {
     private final ShareLinkService shareLinkService;
     private final com.genealogy.server.service.PublicationViewProjector viewProjector;
 
-    public PublicationController(PublicationService publicationService, UserRepository userRepository,
+    public PublicationController(PublicationService publicationService, CurrentUserResolver currentUserResolver,
                                  AuditLogRepository auditLogRepository,
                                  AuditLogService auditLogService, ObjectMapper objectMapper,
                                  PublicationAuthorizationService authorizationService,
                                  ShareLinkService shareLinkService,
                                  com.genealogy.server.service.PublicationViewProjector viewProjector) {
         this.publicationService = publicationService;
-        this.userRepository = userRepository;
+        this.currentUserResolver = currentUserResolver;
         this.auditLogRepository = auditLogRepository;
         this.auditLogService = auditLogService;
         this.objectMapper = objectMapper;
@@ -62,30 +62,10 @@ public class PublicationController {
         this.viewProjector = viewProjector;
     }
 
-    private User resolveCachedUser(HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        if (username == null) throw new RuntimeException("用户不存在");
-        User cached = (User) request.getAttribute("cachedUser");
-        if (cached != null && username.equals(cached.getUsername())) return cached;
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
-        request.setAttribute("cachedUser", user);
-        return user;
-    }
-
-    private Long resolveUserId(HttpServletRequest request) {
-        return resolveCachedUser(request).getId();
-    }
-
-    private UserSubject resolveSubject(HttpServletRequest request) {
-        User user = resolveCachedUser(request);
-        return new UserSubject(user.getId(), user.getRole(), user.getUsername());
-    }
-
     @Operation(summary = "获取族谱列表", description = "获取当前用户的所有族谱")
     @GetMapping
     public ApiResponse<List<Map<String, Object>>> list(HttpServletRequest request) {
-        Long userId = resolveUserId(request);
+        Long userId = currentUserResolver.requireUserId(request);
         return ApiResponse.success(publicationService.listPublications(userId));
     }
 
@@ -93,7 +73,7 @@ public class PublicationController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> get(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
         long startedAt = System.nanoTime();
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.READ_FULL);
         long authMs = elapsedMillis(startedAt);
         try {
@@ -180,8 +160,8 @@ public class PublicationController {
     @Operation(summary = "创建族谱", description = "创建新的族谱")
     @PostMapping
     public ApiResponse<Map<String, Object>> create(@RequestBody PublicationSnapshot body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        Long userId = resolveUserId(request);
+        String username = currentUserResolver.requireUser(request).getUsername();
+        Long userId = currentUserResolver.requireUserId(request);
         String settingsJson = serializeSettings(body.getSettings());
         String infoJson = serializeSettings(body.getInfo());
         Long pubId = publicationService.createPublication(userId, body.getTitle(), body.getSubtitle(),
@@ -193,8 +173,8 @@ public class PublicationController {
     @Operation(summary = "更新族谱", description = "更新族谱数据和设置")
     @PutMapping("/{id}")
     public ApiResponse<Map<String, Object>> update(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody PublicationSnapshot body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        UserSubject subject = resolveSubject(request);
+        String username = currentUserResolver.requireUser(request).getUsername();
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.EDIT);
         String settingsJson = serializeSettings(body.getSettings());
         String infoJson = serializeSettings(body.getInfo());
@@ -212,8 +192,8 @@ public class PublicationController {
     @Operation(summary = "更新族谱信息", description = "更新族谱的标题、副标题等元数据")
     @PutMapping("/{id}/metadata")
     public ApiResponse<Map<String, Object>> updateMetadata(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody com.genealogy.server.dto.UpdateMetadataRequest body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        UserSubject subject = resolveSubject(request);
+        String username = currentUserResolver.requireUser(request).getUsername();
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.EDIT);
         String infoJson = serializeSettings(body.getInfo());
         Long newRevision = publicationService.updatePublicationMetadata(id, body.getRevision(), body.getTitle(), body.getSubtitle(), infoJson);
@@ -228,8 +208,8 @@ public class PublicationController {
             @Parameter(description = "人物ID") @PathVariable String personId,
             @RequestBody Map<String, Object> body,
             HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        UserSubject subject = resolveSubject(request);
+        String username = currentUserResolver.requireUser(request).getUsername();
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, pubId, AccessPermission.EDIT);
 
         Long expectedRevision = null;
@@ -255,8 +235,8 @@ public class PublicationController {
     @Operation(summary = "删除族谱", description = "删除指定族谱")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        UserSubject subject = resolveSubject(request);
+        String username = currentUserResolver.requireUser(request).getUsername();
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.DELETE);
         publicationService.deletePublication(id);
         auditLogService.record(username, "DELETE_PUB", "删除族谱 #" + id, id);
@@ -266,7 +246,7 @@ public class PublicationController {
     @Operation(summary = "获取族谱历史", description = "获取族谱的变更历史记录")
     @GetMapping("/{id}/history")
     public ApiResponse<List<Map<String, Object>>> history(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.HISTORY_READ);
         List<Map<String, Object>> logs = auditLogRepository.findByTargetTypeAndTargetIdOrderByCreatedAtDesc("publication", id)
                 .stream()
@@ -291,12 +271,12 @@ public class PublicationController {
             @Parameter(description = "族谱ID") @PathVariable Long id,
             @RequestBody Map<String, Object> body,
             HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        UserSubject subject = resolveSubject(request);
+        String username = currentUserResolver.requireUser(request).getUsername();
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_SHARES);
 
         boolean allowExport = Boolean.TRUE.equals(body.get("allowExport"));
-        int expiresInDays = body.containsKey("expiresInDays") ? ((Number) body.get("expiresInDays")).intValue() : 30;
+        int expiresInDays = resolveExpiresInDays(body);
         Map<String, Object> redactionProfile = (Map<String, Object>) body.get("redactionProfile");
 
         Map<String, Object> result = shareLinkService.createShareLink(
@@ -310,7 +290,7 @@ public class PublicationController {
     public ApiResponse<List<Map<String, Object>>> listShareLinks(
             @Parameter(description = "族谱ID") @PathVariable Long id,
             HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_SHARES);
         return ApiResponse.success(shareLinkService.listShareLinks(id));
     }
@@ -321,20 +301,40 @@ public class PublicationController {
             @Parameter(description = "族谱ID") @PathVariable Long id,
             @Parameter(description = "分享链接ID") @PathVariable Long shareId,
             HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        UserSubject subject = resolveSubject(request);
+        String username = currentUserResolver.requireUser(request).getUsername();
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_SHARES);
         shareLinkService.revokeShareLink(shareId, id);
         auditLogService.record(username, "REVOKE_SHARE_LINK", "撤销分享链接 #" + shareId, id);
         return ApiResponse.success("分享链接已撤销", null);
     }
 
+    /**
+     * 解析分享链接有效期（天）。缺失、为 null、空白或非数字时统一回退到 30 天，
+     * 避免 {@code null}/非法输入触发 500。
+     */
+    static int resolveExpiresInDays(Map<String, Object> body) {
+        Object raw = body.get("expiresInDays");
+        if (raw instanceof Number number) {
+            return number.intValue();
+        }
+        if (raw instanceof String text && !text.isBlank()) {
+            try {
+                return Integer.parseInt(text.trim());
+            } catch (NumberFormatException ignored) {
+                // 回退到默认值
+            }
+        }
+        return 30;
+    }
+
     private String serializeSettings(Object settings) {
         if (settings == null) return null;
         try {
             return objectMapper.writeValueAsString(settings);
-        } catch (Exception e) {
-            return null;
+        } catch (JsonProcessingException e) {
+            // 静默返回 null 会让用户提交的设置无声丢失，也无法从日志定位，这里直接失败。
+            throw new IllegalStateException("族谱设置无法序列化为 JSON", e);
         }
     }
 }

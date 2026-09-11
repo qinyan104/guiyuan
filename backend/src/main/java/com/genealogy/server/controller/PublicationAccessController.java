@@ -1,10 +1,10 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
 import com.genealogy.server.exception.BadRequestException;
-import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.PublicationAccess;
 import com.genealogy.server.model.User;
@@ -32,43 +32,30 @@ public class PublicationAccessController {
     private static final Set<String> ALLOWED_ROLES = Set.of("EDITOR", "VIEWER");
 
     private final PublicationAuthorizationService authorizationService;
+    private final CurrentUserResolver currentUserResolver;
     private final PublicationAccessRepository accessRepository;
     private final UserRepository userRepository;
     private final AuditLogService auditLogService;
     private final PublicationService publicationService;
 
     public PublicationAccessController(PublicationAuthorizationService authorizationService,
+                                       CurrentUserResolver currentUserResolver,
                                        PublicationAccessRepository accessRepository,
                                        UserRepository userRepository,
                                        AuditLogService auditLogService,
                                        PublicationService publicationService) {
         this.authorizationService = authorizationService;
+        this.currentUserResolver = currentUserResolver;
         this.accessRepository = accessRepository;
         this.userRepository = userRepository;
         this.auditLogService = auditLogService;
         this.publicationService = publicationService;
     }
 
-    private User resolveCachedUser(HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        if (username == null) throw new ForbiddenException("未登录");
-        User cached = (User) request.getAttribute("cachedUser");
-        if (cached != null && username.equals(cached.getUsername())) return cached;
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ForbiddenException("未登录"));
-        request.setAttribute("cachedUser", user);
-        return user;
-    }
-
-    private UserSubject resolveSubject(HttpServletRequest request) {
-        User user = resolveCachedUser(request);
-        return new UserSubject(user.getId(), user.getRole(), user.getUsername());
-    }
-
     @Operation(summary = "获取协作者列表", description = "获取族谱的所有协作者及其权限")
     @GetMapping
     public ApiResponse<List<Map<String, Object>>> listAccess(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
-        authorizationService.require(resolveSubject(request), id, AccessPermission.MANAGE_ACCESS);
+        authorizationService.require(currentUserResolver.requireSubject(request), id, AccessPermission.MANAGE_ACCESS);
 
         List<Map<String, Object>> result = accessRepository.findByPublicationId(id).stream()
                 .filter(access -> userRepository.findById(access.getUserId()).isPresent())
@@ -91,8 +78,8 @@ public class PublicationAccessController {
     @Operation(summary = "添加协作者", description = "为族谱添加新的协作者")
     @PostMapping
     public ApiResponse<Map<String, Object>> addAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        UserSubject subject = resolveSubject(request);
+        String username = currentUserResolver.requireUser(request).getUsername();
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
 
         Long targetUserId = ((Number) body.get("userId")).longValue();
@@ -133,8 +120,8 @@ public class PublicationAccessController {
     @PutMapping("/{userId}")
     public ApiResponse<Void> updateAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "用户ID") @PathVariable Long userId,
                                           @RequestBody Map<String, Object> body, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        UserSubject subject = resolveSubject(request);
+        String username = currentUserResolver.requireUser(request).getUsername();
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
 
         String newRole = (String) body.get("role");
@@ -163,8 +150,8 @@ public class PublicationAccessController {
     @Operation(summary = "移除协作者", description = "移除族谱的指定协作者")
     @DeleteMapping("/{userId}")
     public ApiResponse<Void> removeAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "用户ID") @PathVariable Long userId, HttpServletRequest request) {
-        String username = (String) request.getAttribute("currentUsername");
-        UserSubject subject = resolveSubject(request);
+        String username = currentUserResolver.requireUser(request).getUsername();
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
 
         PublicationAccess access = accessRepository.findByPublicationIdAndUserId(id, userId)
@@ -188,7 +175,7 @@ public class PublicationAccessController {
     @Operation(summary = "合并分支", description = "将指定人物的分支合并到主干")
     @PostMapping("/{personId}/merge")
     public ApiResponse<Void> mergeBranch(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "人物ID") @PathVariable String personId, HttpServletRequest request) {
-        UserSubject subject = resolveSubject(request);
+        UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
         publicationService.mergeBranch(id, personId, subject);
         return ApiResponse.success("分支已合并", null);

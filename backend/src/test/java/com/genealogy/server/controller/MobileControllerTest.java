@@ -3,6 +3,7 @@ package com.genealogy.server.controller;
 import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.ShareSubject;
 import com.genealogy.server.auth.UserSubject;
+import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.model.PublicationShareLink;
 import com.genealogy.server.model.User;
@@ -40,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = MobileController.class,
         excludeAutoConfiguration = SecurityAutoConfiguration.class)
-@Import(WebConfig.class)
+@Import({ WebConfig.class, CurrentUserResolver.class })
 @WithMockUser
 class MobileControllerTest {
 

@@ -1,7 +1,5 @@
 package com.genealogy.server.gedcom;
 
-import com.genealogy.server.gedcom.GedcomRecord.GedcomFamily;
-import com.genealogy.server.gedcom.GedcomRecord.GedcomPerson;
 import com.genealogy.server.types.FamilyUnit;
 import com.genealogy.server.types.Person;
 import com.genealogy.server.types.PublicationData;
