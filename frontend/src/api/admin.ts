@@ -1,4 +1,4 @@
-import http from './http'
+import http, { unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/api'
 import { getAccessToken } from './tokenStore'
 
@@ -12,29 +12,28 @@ export interface AdminUser {
 }
 
 export async function adminListUsers(): Promise<AdminUser[]> {
-  const resp = await http.get<ApiResponse<AdminUser[]>>('/admin/users')
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
-  return resp.data.data
+  return unwrapApiResponse(http.get<ApiResponse<AdminUser[]>>('/admin/users'))
 }
 
-export async function adminCreateUser(username: string, password: string, nickname?: string, role?: string): Promise<void> {
-  const resp = await http.post<ApiResponse<null>>('/admin/users', { username, password, nickname, role })
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
+export async function adminCreateUser(
+  username: string,
+  password: string,
+  nickname?: string,
+  role?: string,
+): Promise<void> {
+  await unwrapApiResponse(http.post<ApiResponse<null>>('/admin/users', { username, password, nickname, role }))
 }
 
 export async function adminDeleteUser(id: number): Promise<void> {
-  const resp = await http.delete<ApiResponse<null>>(`/admin/users/${id}`)
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
+  await unwrapApiResponse(http.delete<ApiResponse<null>>(`/admin/users/${id}`))
 }
 
 export async function adminResetPassword(id: number, newPassword: string): Promise<void> {
-  const resp = await http.put<ApiResponse<null>>(`/admin/users/${id}/password`, { newPassword })
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
+  await unwrapApiResponse(http.put<ApiResponse<null>>(`/admin/users/${id}/password`, { newPassword }))
 }
 
 export async function adminChangeRole(id: number, role: string): Promise<void> {
-  const resp = await http.put<ApiResponse<null>>(`/admin/users/${id}/role`, { role })
-  if (resp.data.code !== 200) throw new Error(resp.data.message)
+  await unwrapApiResponse(http.put<ApiResponse<null>>(`/admin/users/${id}/role`, { role }))
 }
 
 export async function adminBackupDatabase(): Promise<void> {
@@ -95,7 +94,9 @@ export async function adminCheckConsistency(): Promise<ConsistencyReport> {
 }
 
 export async function adminBatchDeleteUsers(ids: number[]): Promise<{ deleted: number; requested: number }> {
-  const resp = await http.post<ApiResponse<{ deleted: number; requested: number }>>('/admin/users/batch-delete', { ids })
+  const resp = await http.post<ApiResponse<{ deleted: number; requested: number }>>('/admin/users/batch-delete', {
+    ids,
+  })
   if (resp.data.code !== 200) throw new Error(resp.data.message || '批量删除失败')
   return resp.data.data
 }

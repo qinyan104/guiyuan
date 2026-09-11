@@ -6,8 +6,7 @@
       "!!dist/**",
       "!!node_modules/**",
       "!!e2e/**",
-      "!!test-results/**",
-      "!!src/**/*.vue"
+      "!!test-results/**"
     ]
   },
   "formatter": {
@@ -71,11 +70,20 @@
   },
   "overrides": [
     {
-      "includes": ["*.vue"],
+      "includes": [
+        "**/*.vue"
+      ],
+      "linter": {
+        "enabled": false
+      },
+      "formatter": {
+        "enabled": true
+      },
       "javascript": {
         "formatter": {
           "quoteStyle": "single",
-          "semicolons": "asNeeded"
+          "semicolons": "asNeeded",
+          "trailingCommas": "all"
         }
       }
     }
