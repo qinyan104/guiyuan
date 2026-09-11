@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -85,6 +86,7 @@ public class AdminControllerTest {
         user2.setRole("USER");
 
         when(userService.listAllUsers()).thenReturn(List.of(user1, user2));
+        when(userService.getAvatarUrls(anyList())).thenReturn(Map.of());
 
         mockMvc.perform(get("/api/admin/users")
                 .requestAttr("currentUsername", "admin")

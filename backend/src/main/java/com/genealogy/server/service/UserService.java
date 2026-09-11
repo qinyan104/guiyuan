@@ -6,6 +6,7 @@ import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.Person;
+import com.genealogy.server.model.PersonAccount;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.PersonAccountRepository;
 import com.genealogy.server.repository.PersonRepository;
@@ -16,7 +17,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -188,35 +192,36 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public String getAvatarUrl(Long userId) {
-        return personAccountRepository.findByUserId(userId)
-                .flatMap(account -> personRepository.findById(account.getPersonDbId()))
-                .map(Person::getPhotoId)
-                .map(photoId -> "/api/photos/" + photoId)
-                .orElse(null);
-    }
+    /**
+     * 批量读取用户头像，避免管理员用户列表对每个用户执行两次关联查询。
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, String> getAvatarUrls(Collection<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
 
-    public void migrateExistingUsers() {
-        List<User> all = userRepository.findAll();
-        boolean changed = false;
-        boolean first = true;
-        for (User u : all) {
-            if (u.getRole() == null || u.getRole().isEmpty()) {
-                u.setRole(first ? "SUPER_ADMIN" : "ADMIN");
-                first = false;
-                changed = true;
-            }
-            if ("ADMIN".equals(u.getRole()) && first) {
-                u.setRole("SUPER_ADMIN");
-                first = false;
-                changed = true;
-            }
-            if ("SUPER_ADMIN".equals(u.getRole())) {
-                first = false;
+        List<PersonAccount> accounts = personAccountRepository.findByUserIdIn(userIds);
+        Map<Long, Long> personIdByUserId = new HashMap<>();
+        for (var account : accounts) {
+            personIdByUserId.put(account.getUserId(), account.getPersonDbId());
+        }
+
+        List<Long> personIds = personIdByUserId.values().stream().distinct().sorted().toList();
+        Map<Long, String> photoUrlByPersonId = new HashMap<>();
+        for (Person person : personRepository.findAllById(personIds)) {
+            if (person.getPhotoId() != null) {
+                photoUrlByPersonId.put(person.getId(), "/api/photos/" + person.getPhotoId());
             }
         }
-        if (changed) {
-            userRepository.saveAll(all);
-        }
+
+        Map<Long, String> result = new HashMap<>();
+        personIdByUserId.forEach((userId, personId) -> {
+            String avatarUrl = photoUrlByPersonId.get(personId);
+            if (avatarUrl != null) {
+                result.put(userId, avatarUrl);
+            }
+        });
+        return result;
     }
 }

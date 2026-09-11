@@ -60,7 +60,10 @@ public class AdminController {
     @GetMapping("/users")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<List<Map<String, Object>>> listUsers() {
-        List<Map<String, Object>> users = userService.listAllUsers().stream()
+        List<User> allUsers = userService.listAllUsers();
+        Map<Long, String> avatarUrls = userService.getAvatarUrls(
+                allUsers.stream().map(User::getId).toList());
+        List<Map<String, Object>> users = allUsers.stream()
                 .map(u -> {
                     Map<String, Object> m = new java.util.LinkedHashMap<>();
                     m.put("id", u.getId());
@@ -68,7 +71,7 @@ public class AdminController {
                     m.put("nickname", u.getNickname());
                     m.put("role", u.getRole());
                     m.put("createdAt", u.getCreatedAt());
-                    m.put("avatarUrl", userService.getAvatarUrl(u.getId()));
+                    m.put("avatarUrl", avatarUrls.get(u.getId()));
                     return m;
                 })
                 .toList();

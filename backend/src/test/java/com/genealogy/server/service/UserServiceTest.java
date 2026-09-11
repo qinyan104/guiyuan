@@ -5,8 +5,11 @@ import com.genealogy.server.dto.RegisterRequest;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ForbiddenException;
 import com.genealogy.server.exception.NotFoundException;
+import com.genealogy.server.model.Person;
+import com.genealogy.server.model.PersonAccount;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.PersonAccountRepository;
+import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.util.HashUtils;
@@ -21,6 +24,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,6 +37,7 @@ class UserServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private BCryptPasswordEncoder passwordEncoder;
     @Mock private PersonAccountRepository personAccountRepository;
+    @Mock private PersonRepository personRepository;
     @Mock private PublicationAccessRepository publicationAccessRepository;
     @InjectMocks private UserService userService;
 
@@ -564,29 +569,39 @@ class UserServiceTest {
                 () -> userService.changeNickname("ghost", "Nick"));
     }
 
-    // ==================== migrateExistingUsers ====================
+    // ==================== getAvatarUrls ====================
 
     @Test
-    void migrateExistingUsers_setsSuperAdminToFirstUser() {
-        User u1 = makeUser(1L, "a", null);
-        User u2 = makeUser(2L, "b", null);
-        when(userRepository.findAll()).thenReturn(Arrays.asList(u1, u2));
+    void getAvatarUrls_batchesAccountsAndPeopleAndOmitsUsersWithoutPhoto() {
+        PersonAccount firstAccount = new PersonAccount();
+        firstAccount.setUserId(10L);
+        firstAccount.setPersonDbId(100L);
+        PersonAccount secondAccount = new PersonAccount();
+        secondAccount.setUserId(20L);
+        secondAccount.setPersonDbId(200L);
 
-        userService.migrateExistingUsers();
+        Person firstPerson = new Person();
+        firstPerson.setId(100L);
+        firstPerson.setPhotoId(300L);
+        Person secondPerson = new Person();
+        secondPerson.setId(200L);
 
-        assertEquals("SUPER_ADMIN", u1.getRole());
-        assertEquals("ADMIN", u2.getRole());
-        verify(userRepository).saveAll(anyList());
+        when(personAccountRepository.findByUserIdIn(List.of(10L, 20L)))
+                .thenReturn(List.of(firstAccount, secondAccount));
+        when(personRepository.findAllById(List.of(100L, 200L)))
+                .thenReturn(List.of(firstPerson, secondPerson));
+
+        Map<Long, String> result = userService.getAvatarUrls(List.of(10L, 20L));
+
+        assertEquals(Map.of(10L, "/api/photos/300"), result);
+        verify(personAccountRepository).findByUserIdIn(List.of(10L, 20L));
+        verify(personRepository).findAllById(List.of(100L, 200L));
+        verify(personAccountRepository, never()).findByUserId(anyLong());
     }
 
     @Test
-    void migrateExistingUsers_noChange_noSave() {
-        User sa = makeUser(1L, "a", "SUPER_ADMIN");
-        User admin = makeUser(2L, "b", "ADMIN");
-        when(userRepository.findAll()).thenReturn(Arrays.asList(sa, admin));
-
-        userService.migrateExistingUsers();
-
-        verify(userRepository, never()).saveAll(anyList());
+    void getAvatarUrls_emptyInputDoesNotQuery() {
+        assertEquals(Map.of(), userService.getAvatarUrls(List.of()));
+        verifyNoInteractions(personAccountRepository, personRepository);
     }
 }
