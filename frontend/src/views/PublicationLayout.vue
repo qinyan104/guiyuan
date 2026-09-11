@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
-import { getPublication, updatePublication } from '../api/publication'
+import { getPublication } from '../api/publication'
 import { getUserErrorMessage } from '../api/http'
 import { listAccounts } from '../api/account'
 import { getUsername } from '../api/tokenStore'
 import { useFeedback } from '../composables/useFeedback'
 import { usePublicationLoading } from '../composables/usePublicationLoading'
+import { usePublicationPersistence } from '../composables/usePublicationPersistence'
 import { usePublicationState } from '../composables/usePublicationState'
 import { defaultSettings } from '../data/sampleFamily'
 import {
@@ -15,9 +16,7 @@ import {
   getConflictDraft,
   getRecoveryDraft,
   saveConflictDraft,
-  saveRecoveryDraft,
   type ConflictDraft,
-  type RecoveryDraft,
 } from '../features/conflict/conflictDraft'
 import { useEditorHistory } from '../features/history/useEditorHistory'
 import { serializeTrackedState, type EditorSnapshot } from '../features/history/historyCore'
@@ -31,13 +30,7 @@ const publicationId = computed(() => Number(route.params.id))
 const loading = ref(true)
 const loadError = ref('')
 const serverPublicationId = ref<number | null>(null)
-const syncStatus = ref<'saved' | 'pending' | 'syncing' | 'error' | 'conflict'>('saved')
-const conflictMessage = ref('')
-const conflictDraftSaved = ref(false)
-const conflictDraft = ref<ConflictDraft | null>(null)
-const recoveryDraft = ref<RecoveryDraft | null>(null)
 const serverRevision = ref<number | null>(null)
-const lastSyncedSignature = ref('')
 const baselineReady = ref(false)
 
 // Viewport state to persist camera across views
@@ -83,14 +76,32 @@ const history = useEditorHistory({
   restoreSnapshot: restoreEditorSnapshot,
 })
 
-function buildPersistedSignature() {
-  return serializeTrackedState(pub.publication as unknown as PublicationData, pub.settings as PublicationSettings)
-}
+const persistence = usePublicationPersistence({
+  publication: pub.publication as unknown as PublicationData,
+  settings: pub.settings as PublicationSettings,
+  loading,
+  serverPublicationId,
+  serverRevision,
+  baselineReady,
+  feedback,
+})
+const {
+  syncStatus,
+  conflictMessage,
+  conflictDraftSaved,
+  conflictDraft,
+  recoveryDraft,
+  lastSyncedSignature,
+  buildPersistedSignature,
+  clearScheduledSave,
+  scheduleAutosave,
+  saveRecoverySnapshot,
+  saveToServer,
+  dispose: disposePersistence,
+} = persistence
 
-let serverSaveTimeout: ReturnType<typeof setTimeout> | null = null
 let baselineInitTimeout: ReturnType<typeof setTimeout> | null = null
 let baselineInitIdleCallback: number | null = null
-let saveRequestedWhileSyncing = false
 let activeLayoutWorker: Worker | null = null
 
 function stopLayoutWorker() {
@@ -123,13 +134,6 @@ function calculateLayoutInWorker(
   })
 }
 
-function clearScheduledSave() {
-  if (serverSaveTimeout) {
-    clearTimeout(serverSaveTimeout)
-    serverSaveTimeout = null
-  }
-}
-
 function clearBaselineInit() {
   if (baselineInitTimeout) {
     clearTimeout(baselineInitTimeout)
@@ -138,107 +142,6 @@ function clearBaselineInit() {
   if (baselineInitIdleCallback !== null) {
     window.cancelIdleCallback?.(baselineInitIdleCallback)
     baselineInitIdleCallback = null
-  }
-}
-
-function scheduleAutosave(delay = 3000) {
-  clearScheduledSave()
-  serverSaveTimeout = setTimeout(() => {
-    saveToServer().catch(() => {})
-  }, delay)
-}
-
-// ponytail: event-triggered snapshots avoid O(n) storage work per edit; use IndexedDB if continuous crash recovery is needed.
-function saveRecoverySnapshot(message: string) {
-  if (loading.value || !serverPublicationId.value || (syncStatus.value === 'saved' && baselineReady.value)) return true
-  const snapshot = {
-    publicationId: serverPublicationId.value,
-    serverRevision: serverRevision.value,
-    message,
-    publication: pub.publication,
-    settings: pub.settings,
-  }
-  if (syncStatus.value === 'conflict') {
-    const savedDraft = saveConflictDraft({ ...snapshot, message: conflictMessage.value || message })
-    conflictDraftSaved.value = Boolean(savedDraft)
-    conflictDraft.value = savedDraft
-    return Boolean(savedDraft)
-  }
-  return Boolean(saveRecoveryDraft(snapshot))
-}
-
-async function saveToServer() {
-  const currentPublicationId = serverPublicationId.value
-  if (syncStatus.value === 'conflict' || !currentPublicationId) return
-  if (syncStatus.value === 'syncing') {
-    saveRequestedWhileSyncing = true
-    return
-  }
-
-  clearScheduledSave()
-  const persistedSignature = buildPersistedSignature()
-  if (persistedSignature === lastSyncedSignature.value) {
-    syncStatus.value = 'saved'
-    return
-  }
-
-  syncStatus.value = 'syncing'
-  const signatureAtSaveStart = persistedSignature
-
-  try {
-    pub.publication.revision = serverRevision.value ?? 0
-    const newRevision = await updatePublication(currentPublicationId, pub.publication, pub.settings)
-    serverRevision.value = newRevision
-    pub.publication.revision = newRevision
-    lastSyncedSignature.value = signatureAtSaveStart
-    feedback.errorMessage.value = ''
-  } catch (err) {
-    const { asPublicationConflict } = await import('../api/conflict')
-    const conflict = asPublicationConflict(err)
-
-    if (conflict) {
-      const draftPublicationId = conflict.publicationId ?? currentPublicationId
-      if (draftPublicationId) {
-        conflictDraftSaved.value =
-          saveConflictDraft({
-            publicationId: draftPublicationId,
-            serverRevision: serverRevision.value,
-            message: conflict.message,
-            publication: pub.publication,
-            settings: pub.settings,
-          }) !== null
-        if (conflictDraftSaved.value) {
-          clearRecoveryDraft(draftPublicationId)
-          recoveryDraft.value = null
-        }
-      }
-      syncStatus.value = 'conflict'
-      conflictMessage.value = conflict.message
-      feedback.errorMessage.value = conflict.message
-      clearScheduledSave()
-      throw new Error(conflict.message, { cause: err })
-    }
-
-    syncStatus.value = 'error'
-    const recoverySaved = saveRecoverySnapshot('服务器同步失败时保存的本地恢复副本')
-    feedback.setError(
-      recoverySaved ? '同步到服务器失败，本地恢复副本已保留' : '同步失败且无法保存本地副本，请立即导出 JSON 备份',
-    )
-    return
-  }
-
-  // After successful save:
-  const hasUnsavedChanges = buildPersistedSignature() !== lastSyncedSignature.value
-  if (!hasUnsavedChanges) {
-    clearRecoveryDraft(currentPublicationId)
-    recoveryDraft.value = null
-  }
-  if (saveRequestedWhileSyncing || hasUnsavedChanges) {
-    saveRequestedWhileSyncing = false
-    syncStatus.value = 'pending'
-    scheduleAutosave()
-  } else {
-    syncStatus.value = 'saved'
   }
 }
 
@@ -365,8 +268,6 @@ const {
   loadingProgress,
   loadingStageText,
   isLargeDataDetected,
-  downloadedBytes,
-  downloadTotalBytes,
   isDownloadIndeterminate,
   loadingProgressLabel,
   reset: resetLoadingProgress,
@@ -665,6 +566,7 @@ onBeforeUnmount(() => {
   history.disposeHistory()
   clearScheduledSave()
   clearBaselineInit()
+  disposePersistence()
   stopLayoutWorker()
 })
 

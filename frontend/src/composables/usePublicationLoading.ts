@@ -21,9 +21,7 @@ export function usePublicationLoading() {
   const isLargeDataDetected = ref(false)
   const downloadedBytes = ref(0)
   const downloadTotalBytes = ref<number | null>(null)
-  const isDownloadIndeterminate = computed(
-    () => downloadTotalBytes.value === null && loadingProgress.value < 70,
-  )
+  const isDownloadIndeterminate = computed(() => downloadTotalBytes.value === null && loadingProgress.value < 70)
   const loadingProgressLabel = computed(() => {
     if (!isDownloadIndeterminate.value) return `${Math.round(loadingProgress.value)}%`
     return downloadedBytes.value > 0 ? formatBytes(downloadedBytes.value) : '连接中'
