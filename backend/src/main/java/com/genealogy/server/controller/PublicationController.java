@@ -212,17 +212,11 @@ public class PublicationController {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, pubId, AccessPermission.EDIT);
-
-        Long expectedRevision = null;
-        Object rev = body.get("expectedRevision");
-        if (rev instanceof Number num) {
-            expectedRevision = num.longValue();
-        } else if (rev instanceof String s && !s.isBlank()) {
-            try {
-                expectedRevision = Long.parseLong(s);
-            } catch (NumberFormatException ignored) {}
+        if (body == null) {
+            throw new BadRequestException("人物更新内容不能为空");
         }
 
+        Long expectedRevision = resolveExpectedRevision(body);
         var result = publicationService.updatePerson(pubId, expectedRevision, personId, body);
         Long newRevision = result.newRevision();
         String personDiff = result.personDiff();
@@ -319,6 +313,24 @@ public class PublicationController {
      * 解析分享链接有效期（天）。缺失、为 null、空白或非数字时统一回退到 30 天，
      * 避免 {@code null}/非法输入触发 500。
      */
+    static Long resolveExpectedRevision(Map<String, Object> body) {
+        if (body == null || !body.containsKey("expectedRevision") || body.get("expectedRevision") == null) {
+            return null;
+        }
+        Object raw = body.get("expectedRevision");
+        if (raw instanceof Number number) {
+            return number.longValue();
+        }
+        if (raw instanceof String text && !text.isBlank()) {
+            try {
+                return Long.parseLong(text.trim());
+            } catch (NumberFormatException ignored) {
+                // 统一按非法 revision 拒绝请求
+            }
+        }
+        throw new BadRequestException("expectedRevision 必须是整数");
+    }
+
     static int resolveExpiresInDays(Map<String, Object> body) {
         Object raw = body == null ? null : body.get("expiresInDays");
         Integer days = null;

@@ -2,6 +2,7 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.config.WebConfig;
+import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ConflictException;
 import com.genealogy.server.model.User;
 import com.genealogy.server.repository.AuditLogRepository;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -119,6 +121,14 @@ class PublicationControllerWebTest {
         mockMvc.perform(get("/api/publications"))
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.code").value(401));
+    }
+
+    @Test
+    void malformedPersonRevisionIsRejected() {
+        assertEquals(3L, PublicationController.resolveExpectedRevision(Map.of("expectedRevision", "3")));
+        assertEquals(null, PublicationController.resolveExpectedRevision(Map.of()));
+        assertThrows(BadRequestException.class, () ->
+            PublicationController.resolveExpectedRevision(Map.of("expectedRevision", "stale")));
     }
 
     @Test
