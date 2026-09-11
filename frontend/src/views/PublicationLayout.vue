@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
-import { getPublication, updatePublication, type PublicationDownloadProgress } from '../api/publication'
+import { getPublication, updatePublication } from '../api/publication'
 import { getUserErrorMessage } from '../api/http'
 import { listAccounts } from '../api/account'
 import { getUsername } from '../api/tokenStore'
 import { useFeedback } from '../composables/useFeedback'
+import { usePublicationLoading } from '../composables/usePublicationLoading'
 import { usePublicationState } from '../composables/usePublicationState'
 import { defaultSettings } from '../data/sampleFamily'
 import {
@@ -360,26 +361,20 @@ async function detectViewerPerson() {
   }
 }
 
-const loadingProgress = ref(10)
-const loadingStageText = ref('正在读取宗谱档案...')
-const isLargeDataDetected = ref(false)
-const downloadedBytes = ref(0)
-const downloadTotalBytes = ref<number | null>(null)
-const isDownloadIndeterminate = computed(() => downloadTotalBytes.value === null && loadingProgress.value < 70)
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-const loadingProgressLabel = computed(() => {
-  if (!isDownloadIndeterminate.value) return `${Math.round(loadingProgress.value)}%`
-  return downloadedBytes.value > 0 ? formatBytes(downloadedBytes.value) : '连接中'
-})
+const {
+  loadingProgress,
+  loadingStageText,
+  isLargeDataDetected,
+  downloadedBytes,
+  downloadTotalBytes,
+  isDownloadIndeterminate,
+  loadingProgressLabel,
+  reset: resetLoadingProgress,
+  reportDownloadProgress,
+  paintStage: paintLoadingStage,
+} = usePublicationLoading()
 
 const MIN_LOADING_VISIBLE_MS = 240
-const isTestEnv = import.meta.env.MODE === 'test'
 const OPEN_PERF_MARK_PREFIX = 'publication-open:'
 const isOverlayVisible = ref(true)
 let loadingStartedAt = 0
@@ -390,35 +385,7 @@ function markOpenPerformance(stage: string) {
   }
 }
 
-function resetLoadingProgress() {
-  loadingProgress.value = 10
-  loadingStageText.value = '正在读取宗谱档案...'
-  isLargeDataDetected.value = false
-  downloadedBytes.value = 0
-  downloadTotalBytes.value = null
-}
-
-function reportDownloadProgress(event: PublicationDownloadProgress) {
-  downloadedBytes.value = Math.max(0, event.loaded)
-  if (event.total && event.total > 0) {
-    downloadTotalBytes.value = event.total
-    loadingProgress.value = 10 + Math.min(1, event.loaded / event.total) * 60
-    loadingStageText.value = `正在接收族谱数据 ${formatBytes(event.loaded)} / ${formatBytes(event.total)}`
-    isLargeDataDetected.value = event.total >= 1024 * 1024
-  } else {
-    downloadTotalBytes.value = null
-    loadingStageText.value = `已接收 ${formatBytes(event.loaded)}，正在读取族谱数据...`
-    isLargeDataDetected.value = event.loaded >= 1024 * 1024
-  }
-}
-
-async function paintLoadingStage() {
-  await nextTick()
-  if (isOverlayVisible.value && !isTestEnv) {
-    await new Promise<void>(resolve => setTimeout(resolve, 0))
-  }
-}
-
+// 加载进度的计算和阶段文案由 usePublicationLoading 统一维护。
 let loadGeneration = 0
 
 async function load(force = false) {
@@ -491,7 +458,7 @@ async function load(force = false) {
       loadingStageText.value = '人物与家庭已装载，正在计算世系谱图...'
     }
     markOpenPerformance('snapshot-render-start')
-    await paintLoadingStage()
+    await paintLoadingStage(isOverlayVisible)
     markOpenPerformance('snapshot-render-end')
 
     markOpenPerformance('layout-start')
@@ -507,12 +474,12 @@ async function load(force = false) {
     loadingProgress.value = 94
     loadingStageText.value = `谱图计算完成，正在渲染 ${displayedPeople} 张人物卡片...`
     markOpenPerformance('layout-render-start')
-    await paintLoadingStage()
+    await paintLoadingStage(isOverlayVisible)
     markOpenPerformance('layout-render-end')
 
     loadingProgress.value = 100
     loadingStageText.value = '族谱首屏已就绪'
-    await paintLoadingStage()
+    await paintLoadingStage(isOverlayVisible)
     initializeLargeStateAfterPaint(myGeneration, result.publication, { ...defaultSettings, ...result.settings })
     const remainingVisibleMs = MIN_LOADING_VISIBLE_MS - (Date.now() - loadingStartedAt)
     if (remainingVisibleMs > 0) {
