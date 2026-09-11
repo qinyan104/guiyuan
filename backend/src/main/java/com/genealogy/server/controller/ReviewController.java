@@ -4,6 +4,8 @@ import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.dto.ReviewBatchRequest;
+import com.genealogy.server.dto.ReviewRejectRequest;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.service.ReviewService;
@@ -11,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -70,22 +73,21 @@ public class ReviewController {
     @Operation(summary = "拒绝审核", description = "拒绝指定的审核记录并填写原因")
     @PostMapping("/{id}/reject")
     public ApiResponse<Void> reject(@Parameter(description = "族谱ID") @PathVariable Long pubId, @Parameter(description = "审核记录ID") @PathVariable Long id,
-                                     @RequestBody(required = false) Map<String, String> body,
+                                     @RequestBody(required = false) ReviewRejectRequest body,
                                      HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
-        String reason = body == null ? null : body.get("reason");
-        if (reason == null || reason.isBlank()) {
+        if (body == null || body.reason() == null || body.reason().isBlank()) {
             return ApiResponse.error(400, "拒绝原因不能为空");
         }
-        reviewService.reject(id, subject.getUserId(), reason);
+        reviewService.reject(id, subject.getUserId(), body.reason());
         return ApiResponse.success("已拒绝", null);
     }
 
     @Operation(summary = "批量审核操作", description = "批量通过或拒绝审核记录")
     @PostMapping("/batch")
     public ApiResponse<Void> batch(@Parameter(description = "族谱ID") @PathVariable Long pubId,
-                                    @RequestBody(required = false) Map<String, Object> body,
+                                    @Valid @RequestBody(required = false) ReviewBatchRequest body,
                                     HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
@@ -93,29 +95,14 @@ public class ReviewController {
         if (body == null) {
             throw new BadRequestException("请求体不能为空");
         }
-        Object rawIds = body.get("ids");
-        if (!(rawIds instanceof List<?> idValues) || idValues.isEmpty()
-                || idValues.size() > 500
-                || idValues.stream().anyMatch(value -> !(value instanceof Number) || ((Number) value).longValue() <= 0)) {
-            return ApiResponse.error(400, "请选择有效的审核记录（最多 500 条）");
-        }
-        List<Long> ids = idValues.stream().map(value -> ((Number) value).longValue()).toList();
-        if (ids.stream().distinct().count() != ids.size()) {
+        if (body.ids().stream().distinct().count() != body.ids().size()) {
             return ApiResponse.error(400, "审核记录不能重复");
         }
-        Object rawAction = body.get("action");
-        if (!(rawAction instanceof String action)
-                || !(action.equalsIgnoreCase("approve") || action.equalsIgnoreCase("reject"))) {
+        String action = body.action().toLowerCase(java.util.Locale.ROOT);
+        if (!(action.equals("approve") || action.equals("reject"))) {
             return ApiResponse.error(400, "审核操作必须是 approve 或 reject");
         }
-        action = action.toLowerCase(java.util.Locale.ROOT);
-        Object rawReason = body.get("reason");
-        if (rawReason != null && !(rawReason instanceof String)) {
-            throw new BadRequestException("拒绝原因必须是字符串");
-        }
-        String reason = (String) rawReason;
-
-        reviewService.batchAction(ids, action, subject.getUserId(), reason);
+        reviewService.batchAction(body.ids(), action, subject.getUserId(), body.reason());
         return ApiResponse.success("批量操作完成", null);
     }
 }
