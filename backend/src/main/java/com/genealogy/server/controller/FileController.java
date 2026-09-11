@@ -1,6 +1,7 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.util.UploadContentValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -66,6 +67,13 @@ public class FileController {
         String mimeType = file.getContentType();
         if (mimeType == null || !ALLOWED_MIME_TYPES.contains(mimeType)) {
             return ApiResponse.error("不支持的文件格式，仅允许图片和 PDF 文件");
+        }
+        try {
+            if (!UploadContentValidator.hasExpectedSignature(file.getBytes(), mimeType)) {
+                return ApiResponse.error("文件内容与声明的格式不一致");
+            }
+        } catch (IOException e) {
+            return ApiResponse.error("无法读取文件内容");
         }
 
         try {

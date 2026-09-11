@@ -1,6 +1,7 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.util.UploadContentValidator;
 import com.genealogy.server.model.Person;
 import com.genealogy.server.model.PersonAccount;
 import com.genealogy.server.model.Photo;
@@ -110,6 +111,9 @@ public class ProfileController {
         String contentType = file.getContentType();
         if (contentType == null || !Set.of("image/jpeg", "image/png", "image/gif", "image/webp").contains(contentType)) {
             return ApiResponse.error(400, "仅支持图片文件");
+        }
+        if (!UploadContentValidator.hasExpectedSignature(file.getBytes(), contentType)) {
+            return ApiResponse.error(400, "文件内容与声明的格式不一致");
         }
 
         // Ensure upload directory exists

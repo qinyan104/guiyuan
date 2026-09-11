@@ -4,6 +4,7 @@ import com.genealogy.server.auth.AccessPermission;
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.util.UploadContentValidator;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.Person;
 import com.genealogy.server.model.Photo;
@@ -66,6 +67,9 @@ public class PhotoController {
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
             return ApiResponse.error("仅支持 JPG、PNG、GIF、WebP 格式的图片");
+        }
+        if (!UploadContentValidator.hasExpectedSignature(file.getBytes(), contentType)) {
+            return ApiResponse.error("文件内容与声明的格式不一致");
         }
 
         if (file.getSize() > maxPhotoSizeBytes) {

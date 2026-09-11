@@ -97,12 +97,12 @@ class PhotoControllerTest {
         savedPhoto.setId(100L);
         savedPhoto.setPersonDbId(5L);
         savedPhoto.setMimeType("image/jpeg");
-        savedPhoto.setData(new byte[]{1, 2, 3});
+        savedPhoto.setData(new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
         when(photoRepository.save(any(Photo.class))).thenReturn(savedPhoto);
         when(personRepository.save(any(Person.class))).thenReturn(person);
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", new byte[]{1, 2, 3});
+                "file", "photo.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
 
         mockMvc.perform(multipart("/api/photos")
                 .file(file)
@@ -123,7 +123,7 @@ class PhotoControllerTest {
                 .require(any(UserSubject.class), eq(10L), eq(AccessPermission.EDIT));
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.bmp", "image/bmp", new byte[]{1, 2, 3});
+                "file", "photo.bmp", "image/bmp", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
 
         mockMvc.perform(multipart("/api/photos")
                 .file(file)
@@ -140,7 +140,7 @@ class PhotoControllerTest {
     @Test
     void uploadPhotoTooLarge() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", new byte[]{1, 2, 3, 4, 5});
+                "file", "photo.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 1});
 
         mockMvc.perform(multipart("/api/photos")
                 .file(file)
@@ -167,7 +167,7 @@ class PhotoControllerTest {
                 .thenReturn(Optional.empty());
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", new byte[]{1, 2, 3});
+                "file", "photo.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
 
         mockMvc.perform(multipart("/api/photos")
                 .file(file)
@@ -301,7 +301,7 @@ class PhotoControllerTest {
         when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", new byte[]{1, 2, 3});
+                "file", "photo.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
 
         mockMvc.perform(multipart("/api/photos")
                 .file(file)

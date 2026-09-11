@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
 @Import(WebConfig.class)
 @WithMockUser
-@TestPropertySource(properties = "app.upload.max-file-size-bytes=4")
+@TestPropertySource(properties = "app.upload.max-file-size-bytes=8")
 public class FileControllerTest {
 
     @Autowired
@@ -41,7 +41,7 @@ public class FileControllerTest {
     @Test
     public void testUploadFileSuccess() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "test.jpg", "image/jpeg", new byte[]{1, 2, 3, 4});
+                "file", "test.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
 
         mockMvc.perform(multipart("/api/upload").file(file))
                 .andExpect(status().isOk())
@@ -89,7 +89,7 @@ public class FileControllerTest {
     @Test
     public void testUploadFileTooLarge() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "large.jpg", "image/jpeg", new byte[]{1, 2, 3, 4, 5});
+                "file", "large.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 1, 2, 3, 4, 5});
 
         mockMvc.perform(multipart("/api/upload").file(file))
                 .andExpect(status().isOk())
@@ -101,7 +101,7 @@ public class FileControllerTest {
     @Test
     public void testUploadPdfFile() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "document.pdf", "application/pdf", new byte[]{1, 2, 3, 4});
+                "file", "document.pdf", "application/pdf", "%PDF-1.7".getBytes());
 
         mockMvc.perform(multipart("/api/upload").file(file))
                 .andExpect(status().isOk())
@@ -112,7 +112,7 @@ public class FileControllerTest {
     @Test
     public void testUploadPngFile() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "image.png", "image/png", new byte[]{1, 2, 3, 4});
+                "file", "image.png", "image/png", new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
 
         mockMvc.perform(multipart("/api/upload").file(file))
                 .andExpect(status().isOk())
