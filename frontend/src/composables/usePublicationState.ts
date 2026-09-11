@@ -217,7 +217,7 @@ export function usePublicationState(
   const selectedOutMarriedDaughter = computed(() => {
     const person = selectedPerson.value
     const family = selectedAdultFamily.value
-    if (!person || person.gender !== 'female' || !family) return null
+    if (person?.gender !== 'female' || !family) return null
     const hasParentFamily = Boolean(findParentFamilyIdForPerson(person.id))
     const hasSpouse = family.adults.filter(isPersonId).length > 1
     return hasParentFamily && hasSpouse && selectedBranchMode.value === 'married-out' ? person : null
@@ -225,7 +225,7 @@ export function usePublicationState(
 
   const selectedInLawOfOutMarriedDaughter = computed(() => {
     const spouse = selectedSpouse.value
-    if (!spouse || spouse.gender !== 'female') return null
+    if (spouse?.gender !== 'female') return null
     return findParentFamilyIdForPerson(spouse.id) && selectedBranchMode.value === 'married-out' ? spouse : null
   })
 

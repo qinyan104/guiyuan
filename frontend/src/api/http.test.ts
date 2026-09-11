@@ -60,7 +60,9 @@ describe('http interceptors', () => {
     
     // Let's assume we add it to the response interceptors.
     const responseInterceptor = axiosMock.interceptors.response.handlers[0].rejected
-    await responseInterceptor(error).catch(() => {})
+    await responseInterceptor(error).catch(() => {
+      // Expected rejection; this test only asserts emitted global events.
+    })
     
     expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({
       type: 'concurrency-conflict'
@@ -81,7 +83,9 @@ describe('http interceptors', () => {
     }
 
     const responseInterceptor = axiosMock.interceptors.response.handlers[0].rejected
-    await responseInterceptor(error).catch(() => {})
+    await responseInterceptor(error).catch(() => {
+      // Expected rejection; this test only asserts emitted global events.
+    })
 
     // api-error is always dispatched, but concurrency-conflict should not be
     const concurrencyEvents = dispatchSpy.mock.calls.filter(

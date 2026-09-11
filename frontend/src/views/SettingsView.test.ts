@@ -54,7 +54,7 @@ describe('SettingsView', () => {
     await passwordInputs[0].setValue('123456')
     await passwordInputs[1].setValue('weakpass')
     await passwordInputs[2].setValue('weakpass')
-    await wrapper.findAll('button').find((button) => button.text().includes('更新密码'))!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text().includes('更新密码'))?.trigger('click')
 
     expect(changePassword).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('新密码须包含大小写字母和数字')

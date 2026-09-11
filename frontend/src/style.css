@@ -89,7 +89,9 @@ textarea {
   *,
   *::before,
   *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion overrides must win over component animations. */
     animation: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion overrides must win over component transitions. */
     transition: none !important;
   }
 }
@@ -113,6 +115,7 @@ button:active,
 .action-btn:active,
 .action-icon-btn:active,
 .apple-action-btn:active {
+  /* biome-ignore lint/complexity/noImportantStyles: global pressed feedback must override component transforms. */
   transform: scale(0.96) translateY(1px) !important;
 }
 

@@ -49,7 +49,9 @@ describe("BookEditorView", () => {
 
   it("提供 Markdown 下载入口", async () => {
     vi.stubGlobal("URL", { createObjectURL: vi.fn(() => "blob:test"), revokeObjectURL: vi.fn() })
-    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {})
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {
+      // Prevent jsdom navigation during download assertions.
+    })
     const wrapper = shallowMount(BookEditorView)
     await flushPromises()
 

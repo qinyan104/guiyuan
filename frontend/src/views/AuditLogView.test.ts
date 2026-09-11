@@ -81,7 +81,7 @@ describe('AuditLogView', () => {
     const tabs = wrapper.findAll('.glass-tab')
     const userTab = tabs.find((t) => t.text().includes('编委职官'))
     expect(userTab).toBeDefined()
-    await userTab!.trigger('click')
+    await userTab?.trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('延纳编委')
@@ -103,7 +103,7 @@ describe('AuditLogView', () => {
     // Return a full page of 50 items to enable hasMore
     const fullPage = Array.from({ length: 50 }, (_, i) => ({
       id: i + 1,
-      username: 'user' + i,
+      username: `user${i}`,
       action: 'LOGIN',
       detail: '',
       createdAt: '2026-05-02T10:00:00Z',

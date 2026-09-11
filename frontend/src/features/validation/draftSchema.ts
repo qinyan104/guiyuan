@@ -37,6 +37,14 @@ function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
+function getOrCreateStringList(map: Map<string, string[]>, key: string): string[] {
+  const existing = map.get(key)
+  if (existing) return existing
+  const created: string[] = []
+  map.set(key, created)
+  return created
+}
+
 function validatePerson(personId: string, value: unknown): ValidationIssue[] {
   if (!isRecord(value)) {
     return [issue('invalid-person', `people.${personId}`, `人物 ${personId} 必须是对象。`)]
@@ -193,14 +201,12 @@ export function validatePublicationData(input: unknown): ValidationIssue[] {
   Object.entries(publication.families ?? {}).forEach(([familyId, family]) => {
     if (Array.isArray(family.adults)) {
       family.adults.forEach((memberId: string) => {
-        if (!adultFamilyMap.has(memberId)) adultFamilyMap.set(memberId, [])
-        adultFamilyMap.get(memberId)!.push(familyId)
+        getOrCreateStringList(adultFamilyMap, memberId).push(familyId)
       })
     }
     if (Array.isArray(family.children)) {
       family.children.forEach((memberId: string) => {
-        if (!childFamilyMap.has(memberId)) childFamilyMap.set(memberId, [])
-        childFamilyMap.get(memberId)!.push(familyId)
+        getOrCreateStringList(childFamilyMap, memberId).push(familyId)
       })
     }
   })
@@ -341,12 +347,10 @@ function deduplicateCrossFamily(publication: PublicationData): void {
 
   Object.entries(publication.families).forEach(([familyId, family]) => {
     family.adults?.forEach((pid) => {
-      if (!adultFamilyMap.has(pid)) adultFamilyMap.set(pid, [])
-      adultFamilyMap.get(pid)!.push(familyId)
+      getOrCreateStringList(adultFamilyMap, pid).push(familyId)
     })
     family.children?.forEach((pid) => {
-      if (!childFamilyMap.has(pid)) childFamilyMap.set(pid, [])
-      childFamilyMap.get(pid)!.push(familyId)
+      getOrCreateStringList(childFamilyMap, pid).push(familyId)
     })
   })
 

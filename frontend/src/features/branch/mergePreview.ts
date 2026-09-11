@@ -53,7 +53,8 @@ export function buildBranchMergePreview(
   const includedFamilies = new Set<string>()
   const queue = [rootPersonId]
   while (queue.length) {
-    const personId = queue.shift()!
+    const personId = queue.shift()
+    if (!personId) continue
     for (const family of adultFamilies.get(personId) ?? []) {
       if (includedFamilies.has(family.id)) continue
       includedFamilies.add(family.id)

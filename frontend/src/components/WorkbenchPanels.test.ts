@@ -44,7 +44,7 @@ describe('WorkbenchPanels', () => {
     const field = wrapper.findAll('.lp-field').find((item) => item.text().includes('卡片圆角'))
     expect(field).toBeDefined()
 
-    await field!.get('input[type="range"]').setValue(12)
+    await field?.get('input[type="range"]').setValue(12)
     expect(wrapper.emitted('update-settings')).toContainEqual([{ cardRadius: 12 }])
   })
 

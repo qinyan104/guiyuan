@@ -98,7 +98,7 @@ describe('CollaboratorManager', () => {
     // Open the inline AppSelect inside the collaborator card and pick "浏览者"
     const trigger = document.querySelector('.user-card .app-select__trigger') as HTMLElement | null
     expect(trigger).not.toBeNull()
-    trigger!.click()
+    trigger?.click()
     await flushPromises()
     const options = document.querySelectorAll('.app-select__option')
     const viewerOpt = Array.from(options).find(el => el.textContent === '浏览者')

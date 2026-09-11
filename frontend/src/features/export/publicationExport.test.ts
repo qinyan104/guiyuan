@@ -227,7 +227,9 @@ describe('createPrintLayoutPages', () => {
     const firstRow = pages.filter(({ row }) => row === 0)
 
     expect(firstRow[1].x).toBeLessThan(firstRow[0].x + firstRow[0].width)
-    expect(firstRow.at(-1)!.x + firstRow.at(-1)!.width).toBe(layout.width)
+    const lastInFirstRow = firstRow.at(-1)
+    expect(lastInFirstRow).toBeDefined()
+    expect((lastInFirstRow?.x ?? 0) + (lastInFirstRow?.width ?? 0)).toBe(layout.width)
   })
 
   it('moves a page seam away from a compact person name', () => {

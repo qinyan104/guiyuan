@@ -26,48 +26,48 @@ describe('findRelationshipPath', () => {
   it('parent-child: 朱标(p3) is father of 朱允炆(p7)', () => {
     const path = findRelationshipPath(pub, 'p7', 'p3')
     expect(path).not.toBeNull()
-    expect(path!.upSteps).toBe(1)
-    expect(path!.downSteps).toBe(0)
-    expect(path!.generationGap).toBe(-1) // p7 is younger gen
+    expect(path?.upSteps).toBe(1)
+    expect(path?.downSteps).toBe(0)
+    expect(path?.generationGap).toBe(-1) // p7 is younger gen
   })
 
   it('child-parent: 朱允炆(p7) is son of 朱标(p3)', () => {
     const path = findRelationshipPath(pub, 'p3', 'p7')
     expect(path).not.toBeNull()
-    expect(path!.upSteps).toBe(0)
-    expect(path!.downSteps).toBe(1)
-    expect(path!.generationGap).toBe(1)
+    expect(path?.upSteps).toBe(0)
+    expect(path?.downSteps).toBe(1)
+    expect(path?.generationGap).toBe(1)
   })
 
   it('grandparent-grandchild: 朱元璋(p1) and 朱允炆(p7)', () => {
     const path = findRelationshipPath(pub, 'p7', 'p1')
     expect(path).not.toBeNull()
-    expect(path!.upSteps).toBe(2)
-    expect(path!.downSteps).toBe(0)
-    expect(path!.commonAncestorId).toBe('p1')
+    expect(path?.upSteps).toBe(2)
+    expect(path?.downSteps).toBe(0)
+    expect(path?.commonAncestorId).toBe('p1')
   })
 
   it('siblings: 朱允炆(p7) and 朱雄英(p35) share parents', () => {
     const path = findRelationshipPath(pub, 'p7', 'p35')
     expect(path).not.toBeNull()
-    expect(path!.upSteps).toBe(1)
-    expect(path!.downSteps).toBe(1)
-    expect(path!.generationGap).toBe(0)
-    expect(path!.commonAncestorId).toBe('p3') // same father 朱标
+    expect(path?.upSteps).toBe(1)
+    expect(path?.downSteps).toBe(1)
+    expect(path?.generationGap).toBe(0)
+    expect(path?.commonAncestorId).toBe('p3') // same father 朱标
   })
 
   it('堂兄弟: 朱允炆(p7) and 朱高炽(p10) share 朱元璋(p1)', () => {
     const path = findRelationshipPath(pub, 'p7', 'p10')
     expect(path).not.toBeNull()
-    expect(path!.commonAncestorId).toBe('p1') // 朱元璋
-    expect(path!.generationGap).toBe(0)
-    expect(path!.isPatrilineal).toBe(true)
+    expect(path?.commonAncestorId).toBe('p1') // 朱元璋
+    expect(path?.generationGap).toBe(0)
+    expect(path?.isPatrilineal).toBe(true)
   })
 
   it('外亲: 袁祯(p20) and 朱高炽(p10) — 母系', () => {
     const path = findRelationshipPath(pub, 'p10', 'p20')
     expect(path).not.toBeNull()
-    expect(path!.isPatrilineal).toBe(false) // 通过永安公主(女性)连接
+    expect(path?.isPatrilineal).toBe(false) // 通过永安公主(女性)连接
   })
 
   it('无关联人物返回 null', () => {
@@ -102,7 +102,7 @@ describe('resolveKinshipTerm', () => {
   it('grandfather: 朱允炆(p7) → 朱元璋(p1) = 爷爷', () => {
     const term = resolveKinshipTerm(pub, 'p7', 'p1')
     expect(term?.term).toBe('爷爷')
-    expect(term!.generationGap).toBe(2)
+    expect(term?.generationGap).toBe(2)
   })
 
   it('grandson: 朱元璋(p1) → 朱允炆(p7) = 孙子', () => {
@@ -174,13 +174,13 @@ describe('resolveKinshipTerm', () => {
     // 所以 p1 是 p17 的曾祖父
     const term = resolveKinshipTerm(pub, 'p17', 'p1')
     expect(term?.term).toBe('曾祖父')
-    expect(term!.generationGap).toBe(3)
+    expect(term?.generationGap).toBe(3)
   })
 
   it('曾孙: 朱元璋(p1) → 朱瞻基(p17)', () => {
     const term = resolveKinshipTerm(pub, 'p1', 'p17')
     expect(term?.term).toBe('曾孙')
-    expect(term!.generationGap).toBe(-3)
+    expect(term?.generationGap).toBe(-3)
   })
 })
 

@@ -123,7 +123,9 @@ export function useFileOperations(deps: FileOperationsDeps) {
     for (const [personId, p] of entries) {
       const person = p as Person
       try {
-        const file = base64DataUrlToFile(person.avatarUrl!, `${personId}.jpg`)
+        const avatarUrl = person.avatarUrl
+        if (!avatarUrl?.startsWith('data:')) continue
+        const file = base64DataUrlToFile(avatarUrl, `${personId}.jpg`)
         const photoId = await uploadPhoto(personId, pubId, file)
         person.avatarUrl = getPhotoUrl(photoId)
       } catch (err) {

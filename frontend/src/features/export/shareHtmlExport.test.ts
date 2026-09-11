@@ -126,8 +126,9 @@ describe('shareHtmlExport helpers', () => {
     const dataJsonMatch = html.match(/var DATA_JSON = ("(?:[^"\\]|\\.)*");/)
 
     expect(dataJsonMatch).not.toBeNull()
+    if (!dataJsonMatch) throw new Error('Expected embedded DATA_JSON payload')
 
-    const payloadJson = JSON.parse(dataJsonMatch![1]) as string
+    const payloadJson = JSON.parse(dataJsonMatch[1]) as string
     const payload = JSON.parse(payloadJson) as { svgMarkup: string }
 
     expect(doc.querySelector('#app')).not.toBeNull()

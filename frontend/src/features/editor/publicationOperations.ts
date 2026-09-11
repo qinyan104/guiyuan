@@ -245,7 +245,8 @@ export function summarizeDeleteImpact(publication: PublicationData, personId: st
     return null
   }
 
-  const spouseNames = resolveSpouse(publication, personId) ? [resolveSpouse(publication, personId)!.name] : []
+  const spouse = resolveSpouse(publication, personId)
+  const spouseNames = spouse ? [spouse.name] : []
   const parentNames = resolveParents(publication, personId).map((parent) => parent.name)
   const childNames = resolveChildren(publication, personId).map((child) => child.name)
 
@@ -288,8 +289,8 @@ export function applyRelationshipAction(publication: PublicationData, action: Re
   }
 
   let focusCandidates: Array<string | undefined> = []
-  let selectionCandidates: Array<string | undefined> = []
-  let historyLabel = ''
+  let selectionCandidates: Array<string | undefined>
+  let historyLabel: string
 
   switch (action.type) {
     case 'add-spouse': {
@@ -400,7 +401,7 @@ export function applyRelationshipAction(publication: PublicationData, action: Re
 
       const entryPersonId = findFamilyEntryPersonId(nextPublication, familyId)
       const entryPerson = entryPersonId ? nextPublication.people[entryPersonId] : null
-      if (!entryPerson || entryPerson.gender !== 'female') {
+      if (entryPerson?.gender !== 'female') {
         return fail('personId', '只有女性承支家庭需要区分外嫁或招婿。')
       }
 
@@ -509,6 +510,9 @@ export function applyRelationshipAction(publication: PublicationData, action: Re
       historyLabel = `删除人物 · ${primaryPerson.name}`
       break
     }
+
+    default:
+      return fail('type', '未知编辑操作。')
   }
 
   const nextSelection = syncSelectionAndFocus(nextPublication, {

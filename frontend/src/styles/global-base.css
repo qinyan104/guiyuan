@@ -503,6 +503,7 @@ input[type="radio"] {
   }
 
   .no-print {
+    /* biome-ignore lint/complexity/noImportantStyles: print utility must always hide non-print controls. */
     display: none !important;
   }
 

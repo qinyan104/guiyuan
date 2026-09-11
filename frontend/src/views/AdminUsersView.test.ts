@@ -68,7 +68,7 @@ describe('AdminUsersView', () => {
     const adminOption = [...document.body.querySelectorAll('.app-select__option')]
       .find((option) => option.textContent?.trim() === '协修') as HTMLElement | undefined
     expect(adminOption).not.toBeNull()
-    adminOption!.click()
+    adminOption?.click()
     await flushPromises()
 
     expect(adminChangeRole).not.toHaveBeenCalled()

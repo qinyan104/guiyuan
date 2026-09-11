@@ -9,6 +9,7 @@
 import { ref, type Ref } from "vue"
 
 const IS_DEV = import.meta.env.DEV
+const SHOULD_LOG_TO_CONSOLE = IS_DEV && import.meta.env.MODE !== 'test'
 
 export interface AuditEntry {
   /** 审计目标名称（如 composable 名） */
@@ -39,12 +40,20 @@ export function useDevAudit(source: string) {
   if (!IS_DEV) {
     // 生产模式：所有方法都是 no-op
     return {
-      track(_action: string, _detail?: Record<string, unknown>) {},
+      track(_action: string, _detail?: Record<string, unknown>) {
+        // Intentionally empty in production.
+      },
       trackTimed(_action: string, _detail?: Record<string, unknown>) {
-        return { end: () => {} }
+        return {
+          end: () => {
+            // Intentionally empty in production.
+          },
+        }
       },
       getLog: () => [] as AuditEntry[],
-      clearLog: () => {},
+      clearLog: () => {
+        // Intentionally empty in production.
+      },
     }
   }
 
@@ -66,12 +75,14 @@ export function useDevAudit(source: string) {
           .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
           .join(" ")
       : ""
-    console.debug(
-      `%c[audit]%c ${source}.${action}%c${detailStr}`,
-      "color:#a96e35;font-weight:700",
-      "color:#241a10;font-weight:600",
-      "color:#6b5035",
-    )
+    if (SHOULD_LOG_TO_CONSOLE) {
+      console.debug(
+        `%c[audit]%c ${source}.${action}%c${detailStr}`,
+        "color:#a96e35;font-weight:700",
+        "color:#241a10;font-weight:600",
+        "color:#6b5035",
+      )
+    }
   }
 
   function trackTimed(action: string, detail?: Record<string, unknown>) {
@@ -97,13 +108,15 @@ export function useDevAudit(source: string) {
               .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
               .join(" ")
           : ""
-        console.debug(
-          `%c[audit]%c ${source}.${action} %c${durationMs}ms%c${detailStr}`,
-          "color:#a96e35;font-weight:700",
-          "color:#241a10;font-weight:600",
-          "color:#8a6845",
-          "color:#6b5035",
-        )
+        if (SHOULD_LOG_TO_CONSOLE) {
+          console.debug(
+            `%c[audit]%c ${source}.${action} %c${durationMs}ms%c${detailStr}`,
+            "color:#a96e35;font-weight:700",
+            "color:#241a10;font-weight:600",
+            "color:#8a6845",
+            "color:#6b5035",
+          )
+        }
       },
     }
   }

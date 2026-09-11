@@ -59,7 +59,7 @@ describe('CommandKPalette', () => {
     const item = [...document.querySelectorAll<HTMLElement>('.command-item')]
       .find(element => element.textContent?.includes(`切换为：${name}`))
     expect(item).toBeDefined()
-    item!.click()
+    item?.click()
     await flushPromises()
     expect(mockSetTheme).toHaveBeenCalledWith(id)
   })

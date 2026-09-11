@@ -97,7 +97,9 @@ describe('PublicationLayout conflict handling', () => {
     // (avoids waiting for the 3000ms autosave debounce timer)
     // The throw is expected — direct callers
     // receive it so they can react to the conflict
-    await getLayoutVm(wrapper).saveToServer().catch(() => {})
+    await getLayoutVm(wrapper).saveToServer().catch(() => {
+      // Expected conflict path under direct save invocation.
+    })
 
     // Check conflict banner is shown — this string comes from the
     // 409 response data.message rendered in the sync-conflict-banner
@@ -111,7 +113,9 @@ describe('PublicationLayout conflict handling', () => {
     // Verify autosave is paused: calling saveToServer again should bail
     // due to syncStatus === 'conflict' guard (won't call updatePublication again)
     vi.mocked(updatePublication).mockClear()
-    await getLayoutVm(wrapper).saveToServer().catch(() => {})
+    await getLayoutVm(wrapper).saveToServer().catch(() => {
+      // Expected no-op while already in conflict state.
+    })
     expect(vi.mocked(updatePublication)).not.toHaveBeenCalled()
 
     vi.useRealTimers()
@@ -242,7 +246,9 @@ describe('PublicationLayout conflict handling', () => {
   })
 
   it('renders circular indicator, progress bar and stage text while loading', () => {
-    vi.mocked(getPublication).mockReturnValue(new Promise(() => {}))
+    vi.mocked(getPublication).mockReturnValue(new Promise(() => {
+      // Keep the request pending so loading UI remains visible.
+    }))
 
     const wrapper = mount(PublicationLayout, {
       global: { stubs: { RouterView: true } },
@@ -255,7 +261,9 @@ describe('PublicationLayout conflict handling', () => {
   })
 
   it('renders actual response download progress instead of simulated progress', async () => {
-    vi.mocked(getPublication).mockReturnValue(new Promise(() => {}))
+    vi.mocked(getPublication).mockReturnValue(new Promise(() => {
+      // Keep the request pending so progress can be asserted manually.
+    }))
 
     const wrapper = mount(PublicationLayout, {
       global: { stubs: { RouterView: true } },

@@ -230,12 +230,12 @@ function resolveCssValue(value: string, themeValues: Record<string, string>): st
 function buildExportStyle(pdfFriendly = false, theme: ThemeMode = 'paper'): string {
   const themeCss = buildExportThemeCss(theme)
   if (!pdfFriendly) {
-    return themeCss + '\n' + EXPORT_SVG_STYLE
+    return `${themeCss}\n${EXPORT_SVG_STYLE}`
   }
 
   const themeValues = getThemeCssVariables(theme)
   return resolveCssValue(
-    (themeCss + '\n' + EXPORT_SVG_STYLE).replace(/^\s*@import\s+url\([^)]*\)\s*;\s*/m, '\n')
+    `${themeCss}\n${EXPORT_SVG_STYLE}`.replace(/^\s*@import\s+url\([^)]*\)\s*;\s*/m, '\n')
       .replaceAll("'Noto Serif SC', 'Songti SC', serif", PDF_SERIF_FONT_STACK)
       .replaceAll("'Manrope', sans-serif", PDF_SANS_FONT_STACK),
     themeValues,

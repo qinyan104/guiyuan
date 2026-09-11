@@ -167,7 +167,8 @@ function findLowestCommonAncestor(
 ): { ancestor: string; depthA: number; depthB: number; pathA: { personId: string; gender: Gender }[]; pathB: { personId: string; gender: Gender }[] } | null {
   const ancestorMapA = new Map<string, AncestorEntry>()
   for (const entry of ancestorsA) {
-    if (!ancestorMapA.has(entry.personId) || entry.depth < ancestorMapA.get(entry.personId)!.depth) {
+    const existing = ancestorMapA.get(entry.personId)
+    if (!existing || entry.depth < existing.depth) {
       ancestorMapA.set(entry.personId, entry)
     }
   }
@@ -198,7 +199,6 @@ function getConnectorInfo(path: { personId: string; gender: Gender }[], ancestor
 }
 
 function buildRelationshipPath(
-  graph: KinshipGraph,
   personAId: string,
   personBId: string,
   lca: { ancestor: string; depthA: number; depthB: number; pathA: { personId: string; gender: Gender }[]; pathB: { personId: string; gender: Gender }[] },
@@ -459,7 +459,7 @@ function resolveDirectLine(generationGap: number, alterGender: Gender, isMatrili
   return null
 }
 
-function resolveSameGeneration(graph: KinshipGraph, publication: PublicationData, personAId: string, personBId: string, alterGender: Gender): KinshipTerm | null {
+function resolveSameGeneration(graph: KinshipGraph, personAId: string, personBId: string, alterGender: Gender): KinshipTerm | null {
   if (areSiblings(graph, personAId, personBId)) {
     const older = isOlderSibling(graph, personAId, personBId)
     let ageKey: string
@@ -500,8 +500,6 @@ function resolveElderOneGeneration(
   graph: KinshipGraph,
   publication: PublicationData,
   personAId: string,
-  personBId: string,
-  alterGender: Gender,
   isPatrilineal: boolean,
   alterConnectorGender: Gender,
   alterConnectorId: string | null,
@@ -542,7 +540,7 @@ function resolveElderOneGeneration(
         }
       }
       // Not a direct sibling → 堂姑
-      const entry = ELDER_1_TANG["female"]
+      const entry = ELDER_1_TANG.female
       if (entry) return { term: entry.term, description: entry.description, generationGap: 1, isElder: true }
     }
     return { term: "姑姑", description: "父亲的姐妹", generationGap: 1, isElder: true }
@@ -558,7 +556,7 @@ function resolveElderOneGeneration(
         }
       }
       // Not a direct sibling → 表舅
-      const entry = ELDER_1_BIAO["male"]
+      const entry = ELDER_1_BIAO.male
       if (entry) return { term: entry.term, description: entry.description, generationGap: 1, isElder: true }
     }
     return { term: "舅舅", description: "母亲的兄弟", generationGap: 1, isElder: true }
@@ -573,7 +571,7 @@ function resolveElderOneGeneration(
         }
       }
       // Not a direct sibling → 表姨
-      const entry = ELDER_1_BIAO["female"]
+      const entry = ELDER_1_BIAO.female
       if (entry) return { term: entry.term, description: entry.description, generationGap: 1, isElder: true }
     }
     return { term: "姨妈", description: "母亲的姐妹", generationGap: 1, isElder: true }
@@ -584,9 +582,7 @@ function resolveElderOneGeneration(
 
 function resolveYoungerOneGeneration(
   graph: KinshipGraph,
-  publication: PublicationData,
   personAId: string,
-  personBId: string,
   alterGender: Gender,
   isEgoLinePatrilineal: boolean,
   alterConnectorGender: Gender,
@@ -641,7 +637,7 @@ function resolveElderMultiGeneration(
   return { term: `${lineLabel}祖辈`, description: `${lineLabel}祖辈`, generationGap, isElder: true }
 }
 
-function resolveYoungerMultiGeneration(generationGap: number, alterGender: Gender, isMatrilineal: boolean): KinshipTerm {
+function resolveYoungerMultiGeneration(generationGap: number, isMatrilineal: boolean): KinshipTerm {
   const lineLabel = isMatrilineal ? "外" : ""
   return { term: `${lineLabel}远孙`, description: `${lineLabel}远孙`, generationGap, isElder: false }
 }
@@ -654,7 +650,7 @@ export function findRelationshipPath(publication: PublicationData, personAId: st
   const ancestorsB = findAncestors(graph, personBId)
   const lca = findLowestCommonAncestor(ancestorsA, ancestorsB)
   if (!lca) return null
-  return buildRelationshipPath(graph, personAId, personBId, lca)
+  return buildRelationshipPath(personAId, personBId, lca)
 }
 
 export function resolveKinshipTerm(publication: PublicationData, personAId: string, personBId: string): KinshipTerm | null {
@@ -684,7 +680,7 @@ export function resolveKinshipTerm(publication: PublicationData, personAId: stri
   // Same generation (generationGap == 0)
   if (generationGap === 0) {
     // Check if siblings first
-    const sibling = resolveSameGeneration(graph, publication, personAId, personBId, alterGender)
+    const sibling = resolveSameGeneration(graph, personAId, personBId, alterGender)
     if (sibling) return sibling
 
     // Cousins
@@ -693,18 +689,18 @@ export function resolveKinshipTerm(publication: PublicationData, personAId: stri
 
   // One generation younger (nephew/niece)
   if (generationGap === 1) {
-    const younger = resolveYoungerOneGeneration(graph, publication, personAId, personBId, alterGender, isEgoLinePatrilineal, alterConnectorGender, alterConnectorId, isPatrilineal)
+    const younger = resolveYoungerOneGeneration(graph, personAId, alterGender, isEgoLinePatrilineal, alterConnectorGender, alterConnectorId, isPatrilineal)
     if (younger) return younger
   }
 
   // One generation elder (uncle/aunt)
   if (generationGap === -1) {
-    return resolveElderOneGeneration(graph, publication, personAId, personBId, alterGender, isPatrilineal, alterConnectorGender, alterConnectorId)
+    return resolveElderOneGeneration(graph, publication, personAId, isPatrilineal, alterConnectorGender, alterConnectorId)
   }
 
   // Multi-generational younger
   if (generationGap >= 2) {
-    return resolveYoungerMultiGeneration(generationGap, alterGender, isDirectMatrilineal)
+    return resolveYoungerMultiGeneration(generationGap, isDirectMatrilineal)
   }
 
   // Multi-generational elder
@@ -819,11 +815,11 @@ function classifyInLaw(
     const spouse = publication.people[spouseId]
     if (spouse?.gender === "female") {
       const m = FEMALE_HUSBAND[bloodTerm.term]
-      return { term: m ?? bloodTerm.term + "夫", description: bloodTerm.term + "的丈夫", generationGap: bloodTerm.generationGap, isElder: bloodTerm.isElder }
+      return { term: m ?? `${bloodTerm.term}夫`, description: `${bloodTerm.term}的丈夫`, generationGap: bloodTerm.generationGap, isElder: bloodTerm.isElder }
     }
     if (spouse?.gender === "male") {
       const m = MALE_WIFE[bloodTerm.term]
-      return { term: m ?? bloodTerm.term + "妻", description: bloodTerm.term + "的妻子", generationGap: bloodTerm.generationGap, isElder: bloodTerm.isElder }
+      return { term: m ?? `${bloodTerm.term}妻`, description: `${bloodTerm.term}的妻子`, generationGap: bloodTerm.generationGap, isElder: bloodTerm.isElder }
     }
   }
 
@@ -835,9 +831,9 @@ function classifyInLaw(
     const isWoman = egoGender === "female"
 
     if (relTerm.term === "爸爸" || relTerm.term === "父亲")
-      return { term: isWoman ? "公公" : "岳父", description: (isWoman ? "丈夫" : "妻子") + "的父亲", generationGap: 1, isElder: true }
+      return { term: isWoman ? "公公" : "岳父", description: `${isWoman ? "丈夫" : "妻子"}的父亲`, generationGap: 1, isElder: true }
     if (relTerm.term === "妈妈" || relTerm.term === "母亲")
-      return { term: isWoman ? "婆婆" : "岳母", description: (isWoman ? "丈夫" : "妻子") + "的母亲", generationGap: 1, isElder: true }
+      return { term: isWoman ? "婆婆" : "岳母", description: `${isWoman ? "丈夫" : "妻子"}的母亲`, generationGap: 1, isElder: true }
 
     // Sibling-in-law
     const SIB_MAP: Record<string, { f: string; m: string }> = {
@@ -848,7 +844,7 @@ function classifyInLaw(
     if (sb) return { term: isWoman ? sb.f : sb.m, description: relTerm.description, generationGap: 0, isElder: relTerm.isElder }
 
     // Generic
-    return { term: relTerm.term, description: (isWoman ? "夫家" : "妻家") + "的" + relTerm.term, generationGap: relTerm.generationGap, isElder: relTerm.isElder }
+    return { term: relTerm.term, description: `${isWoman ? "夫家" : "妻家"}的${relTerm.term}`, generationGap: relTerm.generationGap, isElder: relTerm.isElder }
   }
 
   // Case 3: 连襟 (wife's sister's husband) / 妯娌 (brother's wife each other)

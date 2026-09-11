@@ -35,8 +35,13 @@ export function useEditorHistory(input: {
     trackedStateSerialized: string
   }) {
     createBaselineSnapshot = baseline?.createSnapshot ?? null
-    lastHistorySnapshot = baseline ? null : input.createSnapshot()
-    lastTrackedStateSerialized = baseline?.trackedStateSerialized ?? serializeTrackedSnapshot(lastHistorySnapshot!)
+    if (baseline) {
+      lastHistorySnapshot = null
+      lastTrackedStateSerialized = baseline.trackedStateSerialized
+    } else {
+      lastHistorySnapshot = input.createSnapshot()
+      lastTrackedStateSerialized = serializeTrackedSnapshot(lastHistorySnapshot)
+    }
     historyPast.value = []
     historyFuture.value = []
     pendingHistoryLabel = ''
@@ -175,8 +180,12 @@ export function useEditorHistory(input: {
     markHistory,
     undoChange,
     redoChange,
-    disposeHistory,
-  }
-}
-
+    disposeHistory,
+
+  }
+
+}
+
+
+
 export type EditorHistory = ReturnType<typeof useEditorHistory>
