@@ -13,6 +13,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MissingPathVariableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -80,6 +85,19 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleAccessDenied(AccessDeniedException e) {
         log.warn("Access denied: {}", e.getMessage());
         return ApiResponse.error(403, "权限不足");
+    }
+
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
+            MissingPathVariableException.class, MissingServletRequestParameterException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleMalformedRequest(Exception e) {
+        return ApiResponse.error(400, "请求参数格式无效");
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public ApiResponse<Void> handleUploadTooLarge(MaxUploadSizeExceededException e) {
+        return ApiResponse.error(413, "上传内容超过允许大小");
     }
 
     @ExceptionHandler(RuntimeException.class)

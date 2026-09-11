@@ -35,11 +35,14 @@ public class FileController {
 
     private final String uploadDir;
     private final long maxFileSizeBytes;
+    private final String publicBaseUrl;
 
     public FileController(@Value("${app.upload.dir:uploads}") String uploadDir,
-                          @Value("${app.upload.max-file-size-bytes:26214400}") long maxFileSizeBytes) {
+                          @Value("${app.upload.max-file-size-bytes:26214400}") long maxFileSizeBytes,
+                          @Value("${app.public-base-url:}") String publicBaseUrl) {
         this.uploadDir = new File(uploadDir).getAbsolutePath() + File.separator;
         this.maxFileSizeBytes = maxFileSizeBytes;
+        this.publicBaseUrl = publicBaseUrl == null ? "" : publicBaseUrl.replaceAll("/+$", "");
     }
 
     @Operation(summary = "上传文件", description = "上传图片或PDF文件")
@@ -88,9 +91,7 @@ public class FileController {
                 Files.copy(inputStream, path, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            String baseUrl = request.getScheme() + "://" + request.getServerName()
-                    + ":" + request.getServerPort();
-            String fileUrl = baseUrl + "/uploads/" + newFilename;
+            String fileUrl = (publicBaseUrl.isBlank() ? "" : publicBaseUrl) + "/uploads/" + newFilename;
             return ApiResponse.success("上传成功", fileUrl);
 
         } catch (IOException e) {
