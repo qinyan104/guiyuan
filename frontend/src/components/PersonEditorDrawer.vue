@@ -6,6 +6,7 @@ import BranchMountManager from './BranchMountManager.vue'
 import AppSelect from './AppSelect.vue'
 import type { FamilyBranchMode, Gender, Person } from '../types/family'
 import { uploadPhoto, getPhotoUrl } from '../api/photo'
+import { useChildDragAndDrop } from '../composables/useChildDragAndDrop'
 
 interface PersonDetailItem {
   label: string
@@ -102,44 +103,15 @@ async function handleUploadAvatar(event: Event) {
   }
 }
 
-// Child Drag and Drop state
-const draggingChildId = ref<string | null>(null)
-const dragOverChildId = ref<string | null>(null)
-
-function handleChildDragStart(id: string, e: DragEvent) {
-  draggingChildId.value = id
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = 'move'
-  }
-}
-
-function handleChildDragOver(id: string, e: DragEvent) {
-  e.preventDefault()
-  dragOverChildId.value = id
-}
-
-function handleChildDragLeave() {
-  dragOverChildId.value = null
-}
-
-function handleChildDrop(targetId: string, e: DragEvent) {
-  e.preventDefault()
-  const sourceId = draggingChildId.value
-  draggingChildId.value = null
-  dragOverChildId.value = null
-  if (!sourceId || sourceId === targetId) return
-  const si = props.childItems.findIndex(c => c.person.id === sourceId)
-  const ti = props.childItems.findIndex(c => c.person.id === targetId)
-  if (si === -1 || ti === -1) return
-  for (let i = 0; i < Math.abs(ti - si); i++) {
-    emit('move-child', { childId: sourceId, direction: ti > si ? 1 : -1 })
-  }
-}
-
-function handleChildDragEnd() {
-  draggingChildId.value = null
-  dragOverChildId.value = null
-}
+const {
+  draggingChildId,
+  dragOverChildId,
+  handleDragStart: handleChildDragStart,
+  handleDragOver: handleChildDragOver,
+  handleDragLeave: handleChildDragLeave,
+  handleDrop: handleChildDrop,
+  handleDragEnd: handleChildDragEnd,
+} = useChildDragAndDrop(() => props.childItems, payload => emit('move-child', payload))
 
 function getGenderClass(g: Gender) {
   return g === 'male' ? 'is-male' : g === 'female' ? 'is-female' : 'is-unknown'
