@@ -106,8 +106,11 @@ public class AdminAccountController {
         }
         List<Long> ids = body.get("personDbIds");
         if (ids == null || ids.isEmpty()) return ApiResponse.success(Map.of("deleted", 0));
-        if (ids.stream().anyMatch(id -> id == null || id <= 0)) {
-            throw new BadRequestException("人物 ID 必须为正数");
+        if (ids.size() > 500 || ids.stream().anyMatch(id -> id == null || id <= 0)) {
+            throw new BadRequestException("人物 ID 必须为正数且最多 500 个");
+        }
+        if (ids.stream().distinct().count() != ids.size()) {
+            throw new BadRequestException("人物 ID 不能重复");
         }
         int count = 0;
         List<Long> failedIds = new ArrayList<>();

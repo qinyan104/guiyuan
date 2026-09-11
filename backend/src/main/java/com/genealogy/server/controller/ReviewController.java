@@ -95,10 +95,14 @@ public class ReviewController {
         }
         Object rawIds = body.get("ids");
         if (!(rawIds instanceof List<?> idValues) || idValues.isEmpty()
+                || idValues.size() > 500
                 || idValues.stream().anyMatch(value -> !(value instanceof Number) || ((Number) value).longValue() <= 0)) {
-            return ApiResponse.error(400, "请选择有效的审核记录");
+            return ApiResponse.error(400, "请选择有效的审核记录（最多 500 条）");
         }
         List<Long> ids = idValues.stream().map(value -> ((Number) value).longValue()).toList();
+        if (ids.stream().distinct().count() != ids.size()) {
+            return ApiResponse.error(400, "审核记录不能重复");
+        }
         Object rawAction = body.get("action");
         if (!(rawAction instanceof String action)
                 || !(action.equalsIgnoreCase("approve") || action.equalsIgnoreCase("reject"))) {
