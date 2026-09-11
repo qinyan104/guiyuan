@@ -4,6 +4,7 @@ import type { PublicationLayout } from '../../types/family'
 import {
   absolutizeExportResourceUrl,
   createPrintDocument,
+  isSafeExportImageUrl,
   createPrintLayoutPages,
   createPrintPageSvg,
   createStandalonePublicationSvg,
@@ -29,6 +30,14 @@ describe('absolutizeExportResourceUrl', () => {
   it('keeps embedded data URLs unchanged', () => {
     const dataUrl = 'data:image/png;base64,abc123'
     expect(absolutizeExportResourceUrl(dataUrl, 'http://localhost:5173')).toBe(dataUrl)
+  })
+
+  it('accepts image resources but rejects executable URL schemes', () => {
+    expect(isSafeExportImageUrl('data:image/png;base64,abc123')).toBe(true)
+    expect(isSafeExportImageUrl('https://cdn.example.com/avatar.png')).toBe(true)
+    expect(isSafeExportImageUrl('/api/photos/42')).toBe(true)
+    expect(isSafeExportImageUrl('data:text/html;base64,PHNjcmlwdD4=')).toBe(false)
+    expect(isSafeExportImageUrl('javascript:alert(1)')).toBe(false)
   })
 })
 

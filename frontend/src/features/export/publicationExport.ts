@@ -448,8 +448,20 @@ function scopeInternalIds(svg: SVGSVGElement, suffix: string) {
   })
 }
 
+export function isSafeExportImageUrl(href: string): boolean {
+  if (!href) return false
+  if (/^data:image\/(?:png|jpe?g|gif|webp|bmp);base64,/i.test(href)) return true
+  if (/^blob:/i.test(href)) return true
+  if (/^https?:\/\//i.test(href)) return true
+  return !/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(href)
+}
+
 export function absolutizeExportResourceUrl(href: string, baseUrl?: string): string {
   if (!href || href.startsWith('data:') || href.startsWith('blob:')) {
+    return href
+  }
+
+  if (/^https?:\/\//i.test(href)) {
     return href
   }
 
@@ -522,10 +534,12 @@ export async function createStandalonePublicationSvg(options: CreateStandaloneSv
   await Promise.all(
     images.map(async img => {
       const href = img.getAttribute('href') || img.getAttribute('xlink:href')
-      if (!href || href.startsWith('data:')) {
-        if (href) {
-          setImageHref(img, href)
-        }
+      if (!href || !isSafeExportImageUrl(href)) {
+        throw new Error(`导出图片地址不安全：${href || '空地址'}`)
+      }
+
+      if (href.startsWith('data:')) {
+        setImageHref(img, href)
         return
       }
 
