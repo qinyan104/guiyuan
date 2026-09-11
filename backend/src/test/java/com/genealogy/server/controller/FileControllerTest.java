@@ -1,9 +1,14 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.config.WebConfig;
+import com.genealogy.server.auth.CurrentUserResolver;
+import com.genealogy.server.model.UploadedFile;
+import com.genealogy.server.repository.UploadedFileRepository;
 import com.genealogy.server.repository.UserRepository;
+import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.security.JwtService;
 import com.genealogy.server.service.RefreshTokenService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
@@ -15,6 +20,8 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,12 +45,31 @@ public class FileControllerTest {
     @MockBean
     private UserRepository userRepository;
 
+    @MockBean
+    private UploadedFileRepository uploadedFileRepository;
+
+    @MockBean
+    private CurrentUserResolver currentUserResolver;
+
+    @MockBean
+    private PublicationAuthorizationService authorizationService;
+
+    @BeforeEach
+    void setUp() {
+        when(currentUserResolver.requireUserId(any())).thenReturn(1L);
+        when(uploadedFileRepository.save(any(UploadedFile.class))).thenAnswer(invocation -> {
+            UploadedFile file = invocation.getArgument(0);
+            file.setId(1L);
+            return file;
+        });
+    }
+
     @Test
     public void testUploadFileSuccess() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "test.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
 
-        mockMvc.perform(multipart("/api/upload").file(file))
+        mockMvc.perform(multipart("/api/upload").file(file).requestAttr("currentUsername", "testuser"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("上传成功"))
@@ -55,7 +81,7 @@ public class FileControllerTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "empty.jpg", "image/jpeg", new byte[0]);
 
-        mockMvc.perform(multipart("/api/upload").file(file))
+        mockMvc.perform(multipart("/api/upload").file(file).requestAttr("currentUsername", "testuser"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value("文件不能为空"));
@@ -66,7 +92,7 @@ public class FileControllerTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "test.txt", "text/plain", new byte[]{1, 2, 3, 4});
 
-        mockMvc.perform(multipart("/api/upload").file(file))
+        mockMvc.perform(multipart("/api/upload").file(file).requestAttr("currentUsername", "testuser"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value(
@@ -79,7 +105,7 @@ public class FileControllerTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "test.jpg", "application/octet-stream", new byte[]{1, 2, 3});
 
-        mockMvc.perform(multipart("/api/upload").file(file))
+        mockMvc.perform(multipart("/api/upload").file(file).requestAttr("currentUsername", "testuser"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value(
@@ -91,7 +117,7 @@ public class FileControllerTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "large.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 1, 2, 3, 4, 5});
 
-        mockMvc.perform(multipart("/api/upload").file(file))
+        mockMvc.perform(multipart("/api/upload").file(file).requestAttr("currentUsername", "testuser"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value(
@@ -103,7 +129,7 @@ public class FileControllerTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "document.pdf", "application/pdf", "%PDF-1.7".getBytes());
 
-        mockMvc.perform(multipart("/api/upload").file(file))
+        mockMvc.perform(multipart("/api/upload").file(file).requestAttr("currentUsername", "testuser"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("上传成功"));
@@ -114,7 +140,7 @@ public class FileControllerTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "image.png", "image/png", new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
 
-        mockMvc.perform(multipart("/api/upload").file(file))
+        mockMvc.perform(multipart("/api/upload").file(file).requestAttr("currentUsername", "testuser"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("上传成功"));

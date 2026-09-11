@@ -1,12 +1,22 @@
 package com.genealogy.server.controller;
 
+import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.CurrentUserResolver;
+import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.exception.ForbiddenException;
+import com.genealogy.server.exception.NotFoundException;
+import com.genealogy.server.model.UploadedFile;
+import com.genealogy.server.repository.UploadedFileRepository;
+import com.genealogy.server.service.PublicationAuthorizationService;
 import com.genealogy.server.util.UploadContentValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,13 +46,22 @@ public class FileController {
     private final String uploadDir;
     private final long maxFileSizeBytes;
     private final String publicBaseUrl;
+    private final UploadedFileRepository uploadedFileRepository;
+    private final CurrentUserResolver currentUserResolver;
+    private final PublicationAuthorizationService authorizationService;
 
     public FileController(@Value("${app.upload.dir:uploads}") String uploadDir,
                           @Value("${app.upload.max-file-size-bytes:26214400}") long maxFileSizeBytes,
-                          @Value("${app.public-base-url:}") String publicBaseUrl) {
+                          @Value("${app.public-base-url:}") String publicBaseUrl,
+                          UploadedFileRepository uploadedFileRepository,
+                          CurrentUserResolver currentUserResolver,
+                          PublicationAuthorizationService authorizationService) {
         this.uploadDir = new File(uploadDir).getAbsolutePath() + File.separator;
         this.maxFileSizeBytes = maxFileSizeBytes;
         this.publicBaseUrl = publicBaseUrl == null ? "" : publicBaseUrl.replaceAll("/+$", "");
+        this.uploadedFileRepository = uploadedFileRepository;
+        this.currentUserResolver = currentUserResolver;
+        this.authorizationService = authorizationService;
     }
 
     @Operation(summary = "上传文件", description = "上传图片或PDF文件")
@@ -91,13 +110,41 @@ public class FileController {
                 Files.copy(inputStream, path, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            String fileUrl = (publicBaseUrl.isBlank() ? "" : publicBaseUrl) + "/uploads/" + newFilename;
+            UploadedFile uploadedFile = new UploadedFile();
+            uploadedFile.setStorageKey(newFilename);
+            uploadedFile.setOriginalName(originalFilename);
+            uploadedFile.setMimeType(mimeType);
+            uploadedFile.setSize(file.getSize());
+            uploadedFile.setOwnerUserId(currentUserResolver.requireUserId(request));
+            uploadedFile = uploadedFileRepository.save(uploadedFile);
+            String fileUrl = (publicBaseUrl.isBlank() ? "" : publicBaseUrl) + "/api/files/" + uploadedFile.getId();
             return ApiResponse.success("上传成功", fileUrl);
 
         } catch (IOException e) {
             return ApiResponse.error("文件上传失败，请稍后重试");
         }
     }
+    @GetMapping("/files/{id}")
+    public ResponseEntity<byte[]> download(@PathVariable Long id, HttpServletRequest request) throws IOException {
+        UserSubject subject = currentUserResolver.requireSubject(request);
+        UploadedFile uploadedFile = uploadedFileRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("文件不存在"));
+        if (uploadedFile.getPublicationId() != null) {
+            authorizationService.require(subject, uploadedFile.getPublicationId(), AccessPermission.READ_FULL);
+        } else if (!uploadedFile.getOwnerUserId().equals(subject.getUserId())) {
+            throw new ForbiddenException("无权访问该文件");
+        }
+        Path root = Paths.get(uploadDir).normalize();
+        Path path = root.resolve(uploadedFile.getStorageKey()).normalize();
+        if (!path.startsWith(root) || !Files.isRegularFile(path)) {
+            throw new NotFoundException("文件不存在");
+        }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, uploadedFile.getMimeType())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .body(Files.readAllBytes(path));
+    }
+
     private String formatMegabytes(long bytes) {
         long megabytes = Math.max(1, bytes / (1024 * 1024));
         return megabytes + "MB";
