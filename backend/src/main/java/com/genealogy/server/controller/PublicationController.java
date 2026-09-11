@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -160,7 +161,7 @@ public class PublicationController {
 
     @Operation(summary = "创建族谱", description = "创建新的族谱")
     @PostMapping
-    public ApiResponse<Map<String, Object>> create(@RequestBody(required = false) PublicationSnapshot body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> create(@Valid @RequestBody(required = false) PublicationSnapshot body, HttpServletRequest request) {
         if (body == null) {
             throw new BadRequestException("族谱内容不能为空");
         }
@@ -176,7 +177,7 @@ public class PublicationController {
 
     @Operation(summary = "更新族谱", description = "更新族谱数据和设置")
     @PutMapping("/{id}")
-    public ApiResponse<Map<String, Object>> update(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody(required = false) PublicationSnapshot body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> update(@Parameter(description = "族谱ID") @PathVariable Long id, @Valid @RequestBody(required = false) PublicationSnapshot body, HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.EDIT);
@@ -198,7 +199,7 @@ public class PublicationController {
 
     @Operation(summary = "更新族谱信息", description = "更新族谱的标题、副标题等元数据")
     @PutMapping("/{id}/metadata")
-    public ApiResponse<Map<String, Object>> updateMetadata(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody(required = false) com.genealogy.server.dto.UpdateMetadataRequest body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> updateMetadata(@Parameter(description = "族谱ID") @PathVariable Long id, @Valid @RequestBody(required = false) com.genealogy.server.dto.UpdateMetadataRequest body, HttpServletRequest request) {
         if (body == null) {
             throw new BadRequestException("族谱信息不能为空");
         }

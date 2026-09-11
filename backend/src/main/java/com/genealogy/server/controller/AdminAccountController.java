@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -97,7 +98,7 @@ public class AdminAccountController {
 
     @Operation(summary = "批量删除账号", description = "批量删除族谱中的多个账号")
     @PostMapping("/batch-delete")
-    public ApiResponse<Map<String, Integer>> batchDeleteAccounts(@Parameter(description = "族谱ID") @PathVariable Long pubId, @RequestBody(required = false) Map<String, List<Long>> body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> batchDeleteAccounts(@Parameter(description = "族谱ID") @PathVariable Long pubId, @RequestBody(required = false) Map<String, List<Long>> body, HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
         if (body == null) {
@@ -109,15 +110,18 @@ public class AdminAccountController {
             throw new BadRequestException("人物 ID 必须为正数");
         }
         int count = 0;
+        List<Long> failedIds = new ArrayList<>();
         for (Long personDbId : ids) {
             try {
                 accountDerivationService.deleteAccount(pubId, personDbId);
                 count++;
             } catch (Exception e) {
+                failedIds.add(personDbId);
                 log.warn("批量删除跳过 personDbId={}: {}", personDbId, e.getMessage());
             }
         }
-        return ApiResponse.success("已删除 " + count + " 个账号", Map.of("deleted", count));
+        return ApiResponse.success("已删除 " + count + " 个账号",
+                Map.of("deleted", count, "failed", failedIds.size(), "failedIds", failedIds));
     }
 
     @Operation(summary = "清理孤立账号", description = "清理族谱中没有关联人物的空悬账号")

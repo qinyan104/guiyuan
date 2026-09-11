@@ -1,10 +1,16 @@
 package com.genealogy.server.dto;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
+
 import java.util.Map;
 
 public class PublicationSnapshot {
+    @Size(max = 200, message = "族谱标题不能超过 200 个字符")
     private String title;
+    @Size(max = 500, message = "族谱副标题不能超过 500 个字符")
     private String subtitle;
+    @Min(value = 0, message = "版本号不能小于 0")
     private Long revision;
     private Map<String, Object> publication;
     private Map<String, Object> settings;
