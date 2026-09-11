@@ -20,6 +20,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -28,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 
 @RestController
+@Validated
 @RequestMapping("/api/publications/{id}/access")
 @Tag(name = "族谱权限", description = "族谱协作者权限管理")
 public class PublicationAccessController {
@@ -57,7 +60,7 @@ public class PublicationAccessController {
 
     @Operation(summary = "获取协作者列表", description = "获取族谱的所有协作者及其权限")
     @GetMapping
-    public ApiResponse<List<Map<String, Object>>> listAccess(@Parameter(description = "族谱ID") @PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<List<Map<String, Object>>> listAccess(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id, HttpServletRequest request) {
         authorizationService.require(currentUserResolver.requireSubject(request), id, AccessPermission.MANAGE_ACCESS);
 
         List<Map<String, Object>> result = accessRepository.findByPublicationId(id).stream()
@@ -80,7 +83,7 @@ public class PublicationAccessController {
 
     @Operation(summary = "添加协作者", description = "为族谱添加新的协作者")
     @PostMapping
-    public ApiResponse<Map<String, Object>> addAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @Valid @RequestBody(required = false) AddAccessRequest body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> addAccess(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id, @Valid @RequestBody(required = false) AddAccessRequest body, HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
@@ -124,7 +127,7 @@ public class PublicationAccessController {
 
     @Operation(summary = "修改协作者权限", description = "修改协作者的角色和脱敏配置")
     @PutMapping("/{userId}")
-    public ApiResponse<Void> updateAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "用户ID") @PathVariable Long userId,
+    public ApiResponse<Void> updateAccess(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id, @Parameter(description = "用户ID") @PathVariable @Positive(message = "用户 ID 必须为正数") Long userId,
                                           @Valid @RequestBody(required = false) UpdateAccessRequest body, HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
@@ -158,7 +161,7 @@ public class PublicationAccessController {
 
     @Operation(summary = "移除协作者", description = "移除族谱的指定协作者")
     @DeleteMapping("/{userId}")
-    public ApiResponse<Void> removeAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "用户ID") @PathVariable Long userId, HttpServletRequest request) {
+    public ApiResponse<Void> removeAccess(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id, @Parameter(description = "用户ID") @PathVariable @Positive(message = "用户 ID 必须为正数") Long userId, HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
@@ -183,7 +186,7 @@ public class PublicationAccessController {
 
     @Operation(summary = "合并分支", description = "将指定人物的分支合并到主干")
     @PostMapping("/{personId}/merge")
-    public ApiResponse<Void> mergeBranch(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "人物ID") @PathVariable String personId, HttpServletRequest request) {
+    public ApiResponse<Void> mergeBranch(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long id, @Parameter(description = "人物ID") @PathVariable String personId, HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
         publicationService.mergeBranch(id, personId, subject);
