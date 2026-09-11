@@ -50,8 +50,8 @@ function isPersonId(value: string | undefined): value is string {
 function buildAdultFamilyMap(families: Record<string, FamilyUnit>): Map<string, string> {
   const map = new Map<string, string>()
 
-  Object.values(families).forEach((family) => {
-    family.adults.filter(isPersonId).forEach((adultId) => {
+  Object.values(families).forEach(family => {
+    family.adults.filter(isPersonId).forEach(adultId => {
       if (!map.has(adultId)) {
         map.set(adultId, family.id)
       }
@@ -99,19 +99,37 @@ function buildTreeNode(
   // a long lineage quadratic in both allocations and membership work.
   visited.add(familyId)
 
-  const children = family.children.map((childId) => {
+  const children = family.children.map(childId => {
     const childFamilyId = adultFamilyMap.get(childId)
     if (childFamilyId && !visited.has(childFamilyId) && !globalVisited.has(childFamilyId)) {
       const branchMode = resolveFamilyBranchMode(data, childFamilyId, childPersonIds)
       if (branchMode === 'married-out') {
-        const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, visited, childId, childId, globalVisited)
-        node.inLawAdultIds = node.adults.filter((adultId) => adultId !== childId)
+        const node = buildTreeNode(
+          childFamilyId,
+          data,
+          adultFamilyMap,
+          childPersonIds,
+          visited,
+          childId,
+          childId,
+          globalVisited,
+        )
+        node.inLawAdultIds = node.adults.filter(adultId => adultId !== childId)
         return node
       }
 
-      const node = buildTreeNode(childFamilyId, data, adultFamilyMap, childPersonIds, visited, childId, undefined, globalVisited)
+      const node = buildTreeNode(
+        childFamilyId,
+        data,
+        adultFamilyMap,
+        childPersonIds,
+        visited,
+        childId,
+        undefined,
+        globalVisited,
+      )
       if (branchMode === 'uxorilocal') {
-        node.inLawAdultIds = node.adults.filter((adultId) => adultId !== childId)
+        node.inLawAdultIds = node.adults.filter(adultId => adultId !== childId)
       }
 
       return node
@@ -159,13 +177,10 @@ function buildTreeNode(
 
 function measureNodeModern(node: TreeNode, settings: PublicationSettings): { generations: number } {
   const { width: cardWidth, height: cardHeight, partnerGap } = getCardDimensions(settings)
-  node.adultBlockWidth =
-    node.adults.length * cardWidth + Math.max(0, node.adults.length - 1) * partnerGap
+  node.adultBlockWidth = node.adults.length * cardWidth + Math.max(0, node.adults.length - 1) * partnerGap
   const entryAdultIndex = node.entryPersonId ? node.adults.indexOf(node.entryPersonId) : -1
   node.adultAnchorOffset =
-    entryAdultIndex >= 0
-      ? entryAdultIndex * (cardWidth + partnerGap) + cardWidth / 2
-      : node.adultBlockWidth / 2
+    entryAdultIndex >= 0 ? entryAdultIndex * (cardWidth + partnerGap) + cardWidth / 2 : node.adultBlockWidth / 2
 
   if (node.children.length === 0) {
     node.leftExtent = node.adultAnchorOffset
@@ -197,7 +212,10 @@ function measureNodeModern(node: TreeNode, settings: PublicationSettings): { gen
     const childAnchorOffset = node.adultBlockWidth / 2 - node.adultAnchorOffset
 
     node.leftExtent = Math.max(node.adultAnchorOffset, onlyChild.leftExtent - childAnchorOffset)
-    node.rightExtent = Math.max(node.adultBlockWidth - node.adultAnchorOffset, childAnchorOffset + onlyChild.rightExtent)
+    node.rightExtent = Math.max(
+      node.adultBlockWidth - node.adultAnchorOffset,
+      childAnchorOffset + onlyChild.rightExtent,
+    )
   } else {
     const childCenterOffset = node.adultBlockWidth / 2 - node.adultAnchorOffset
 
@@ -277,7 +295,7 @@ function placeNodeModern(
   } else {
     let childStartX = adultCenterX - node.childrenRowWidth / 2
 
-    node.children.forEach((child) => {
+    node.children.forEach(child => {
       const childAnchorX = childStartX + child.leftExtent
       placeNodeModern(child, childAnchorX, childrenY, settings, cards, lines)
       childAnchors.push(childAnchorX)
@@ -306,7 +324,7 @@ function placeNodeModern(
     })
   }
 
-  childAnchors.forEach((childAnchorX) => {
+  childAnchors.forEach(childAnchorX => {
     lines.push({
       x1: childAnchorX,
       y1: childBarY,
@@ -322,8 +340,7 @@ function placeNodeModern(
 
 function measureNodeSu(node: TreeNode, settings: PublicationSettings): { generations: number } {
   const { width: cardWidth, height: cardHeight, partnerGap } = getCardDimensions(settings)
-  node.adultBlockWidth =
-    node.adults.length * cardWidth + Math.max(0, node.adults.length - 1) * partnerGap
+  node.adultBlockWidth = node.adults.length * cardWidth + Math.max(0, node.adults.length - 1) * partnerGap
   node.adultAnchorOffset = 0 // Anchor top-left for Su style
 
   if (node.children.length === 0) {
@@ -336,7 +353,7 @@ function measureNodeSu(node: TreeNode, settings: PublicationSettings): { generat
   let totalHeight = cardHeight + settings.siblingGap // Initial height with gap
   let maxGenerations = 0
 
-  node.children.forEach((child) => {
+  node.children.forEach(child => {
     const { generations } = measureNodeSu(child, settings)
     const indent = cardWidth * 0.75
     maxWidth = Math.max(maxWidth, indent + child.width)
@@ -379,7 +396,7 @@ function placeNodeSu(
       const partnerY = startY + cardHeight / 2
       const leftCardX = startX + i * (cardWidth + partnerGap)
       const rightCardX = leftCardX + cardWidth + partnerGap
-      
+
       lines.push({
         x1: leftCardX + cardWidth,
         y1: partnerY,
@@ -397,14 +414,14 @@ function placeNodeSu(
   node.children.forEach((child, index) => {
     const childX = startX + indent
     const childY = currentY
-    
+
     // Recursive place
     placeNodeSu(child, childX, childY, settings, cards, lines)
 
     // Connector: Parent Spine (Vertical)
     lines.push({
       x1: parentAnchorX,
-      y1: index === 0 ? parentAnchorY : (currentY - settings.siblingGap),
+      y1: index === 0 ? parentAnchorY : currentY - settings.siblingGap,
       x2: parentAnchorX,
       y2: childY + cardHeight / 2,
     })
@@ -442,7 +459,7 @@ export function layoutPublication(data: PublicationData, settings: PublicationSe
   const cards: PositionedCard[] = []
   const lines: LineSegment[] = []
   const adultFamilyMap = buildAdultFamilyMap(data.families)
-  const childPersonIds = new Set(Object.values(data.families).flatMap((family) => family.children))
+  const childPersonIds = new Set(Object.values(data.families).flatMap(family => family.children))
   const rootFamilyId = data.families[data.focusFamilyId] ? data.focusFamilyId : Object.keys(data.families)[0]
   const tree = buildTreeNode(rootFamilyId, data, adultFamilyMap, childPersonIds)
 
@@ -464,7 +481,7 @@ export function layoutPublication(data: PublicationData, settings: PublicationSe
     height = tree.height + settings.paddingY * 2
     const treeX = settings.paddingX + tree.leftExtent
     const treeY = settings.paddingY
-    
+
     if (settings.layoutMode === 'ou') {
       placeNodeOu(tree, treeX, treeY, settings, cards, lines)
     } else {

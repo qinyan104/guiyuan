@@ -1,4 +1,4 @@
-﻿import type { AuditLogEntry } from '../../api/audit'
+import type { AuditLogEntry } from '../../api/audit'
 
 export type AuditTone = 'neutral' | 'info' | 'success' | 'danger'
 
@@ -26,8 +26,8 @@ function getLocalDayKey(value: string | Date) {
 
 export function summarizeAuditLogs(logs: AuditLogEntry[], now = new Date()) {
   const todayKey = getLocalDayKey(now)
-  const todayCount = logs.filter((log) => getLocalDayKey(log.createdAt) === todayKey).length
-  const riskCount = logs.filter((log) => getAuditActionMeta(log.action).tone === 'danger').length
+  const todayCount = logs.filter(log => getLocalDayKey(log.createdAt) === todayKey).length
+  const riskCount = logs.filter(log => getAuditActionMeta(log.action).tone === 'danger').length
   const latestBackupAt = logs.reduce<string | null>((latest, log) => {
     if (log.action !== 'BACKUP') {
       return latest

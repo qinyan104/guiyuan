@@ -1,4 +1,4 @@
-﻿export interface AdminUser {
+export interface AdminUser {
   id: number
   username: string
   nickname?: string
@@ -26,16 +26,16 @@ function hasUserRoleLabel(role: string): role is Exclude<UserRoleTab, 'all'> {
 }
 
 export function buildUserRoleSummary(users: AdminUser[]) {
-  return (['all', 'SUPER_ADMIN', 'ADMIN', 'USER'] as const).map((tab) => ({
+  return (['all', 'SUPER_ADMIN', 'ADMIN', 'USER'] as const).map(tab => ({
     tab,
     label: TAB_LABELS[tab],
-    count: tab === 'all' ? users.length : users.filter((user) => user.role === tab).length,
+    count: tab === 'all' ? users.length : users.filter(user => user.role === tab).length,
   }))
 }
 
 export function filterUsersByRole(users: AdminUser[], activeTab: UserRoleTab) {
   if (activeTab === 'all') return users
-  return users.filter((user) => user.role === activeTab)
+  return users.filter(user => user.role === activeTab)
 }
 
 export function getUserRoleLabel(role: AdminUser['role']) {

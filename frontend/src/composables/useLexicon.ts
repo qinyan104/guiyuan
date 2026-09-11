@@ -13,14 +13,18 @@ try {
   if (stored && LEXICONS[stored as LexiconId]) {
     currentLexiconId.value = stored as LexiconId
   }
-} catch { /* localStorage may be unavailable in private mode */ }
+} catch {
+  /* localStorage may be unavailable in private mode */
+}
 
 export function useLexicon() {
   function setLexicon(id: LexiconId) {
     currentLexiconId.value = id
     try {
       localStorage.setItem(STORAGE_KEY, id)
-    } catch { /* localStorage may be unavailable in private mode */ }
+    } catch {
+      /* localStorage may be unavailable in private mode */
+    }
   }
 
   const lexicon = computed(() => LEXICONS[currentLexiconId.value])
@@ -29,6 +33,6 @@ export function useLexicon() {
     currentLexiconId,
     setLexicon,
     lexicon,
-    lexicons: computed(() => Object.values(LEXICONS))
+    lexicons: computed(() => Object.values(LEXICONS)),
   }
 }

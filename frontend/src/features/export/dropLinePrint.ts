@@ -111,13 +111,11 @@ const PX_PER_MM = 96 / 25.4
 const MIN_PRINTED_NAME_MM = 2.8
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? Math.min(max, Math.max(min, value))
-    : fallback
+  return typeof value === 'number' && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback
 }
 
 function pickChoice<T extends string>(value: unknown, choices: readonly T[], fallback: T): T {
-  return typeof value === 'string' && choices.includes(value as T) ? value as T : fallback
+  return typeof value === 'string' && choices.includes(value as T) ? (value as T) : fallback
 }
 
 function pickColor(value: unknown, fallback: string): string {
@@ -125,9 +123,7 @@ function pickColor(value: unknown, fallback: string): string {
 }
 
 export function normalizeDropLinePrintProfile(input: unknown): DropLinePrintProfile {
-  const value = input && typeof input === 'object' && !Array.isArray(input)
-    ? input as Record<string, unknown>
-    : {}
+  const value = input && typeof input === 'object' && !Array.isArray(input) ? (input as Record<string, unknown>) : {}
   const fallback = DEFAULT_DROP_LINE_PRINT_PROFILE
 
   return {
@@ -177,7 +173,7 @@ export function resolveDropLinePublicationSettings(
 }
 
 export function getPrintedNameSizeMm(nameSizePx: number, renderScale: number): number {
-  return Math.max(0, nameSizePx) * Math.max(0, renderScale) / PX_PER_MM
+  return (Math.max(0, nameSizePx) * Math.max(0, renderScale)) / PX_PER_MM
 }
 
 export function isPrintedNameTooSmall(nameSizePx: number, renderScale: number): boolean {

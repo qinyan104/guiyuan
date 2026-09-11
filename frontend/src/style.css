@@ -5,7 +5,7 @@
  * 组件样式已迁入各自 .vue 的 <style scoped>。
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;500;600;700&display=swap");
 
 /* ═══════════════════════════════════════════════════════════════════════════
    兼容 token 层 — 旧变量名映射到 design-tokens.css
@@ -76,7 +76,6 @@ textarea {
   --feedback-error-color: var(--color-error);
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════════
    减弱动效
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -105,9 +104,10 @@ button,
 .action-btn,
 .action-icon-btn,
 .apple-action-btn {
-  transition: transform var(--duration-fast, 150ms) var(--ease-breath, cubic-bezier(0.16, 1, 0.3, 1)),
-              box-shadow var(--duration-fast, 150ms) var(--ease-breath, cubic-bezier(0.16, 1, 0.3, 1)),
-              background-color var(--duration-fast, 150ms) var(--ease-breath, cubic-bezier(0.16, 1, 0.3, 1));
+  transition:
+    transform var(--duration-fast, 150ms) var(--ease-breath, cubic-bezier(0.16, 1, 0.3, 1)),
+    box-shadow var(--duration-fast, 150ms) var(--ease-breath, cubic-bezier(0.16, 1, 0.3, 1)),
+    background-color var(--duration-fast, 150ms) var(--ease-breath, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
 button:active,
@@ -122,7 +122,9 @@ button:active,
 /* 页面切换 Fade 淡入淡出过渡 */
 .page-fade-enter-active,
 .page-fade-leave-active {
-  transition: opacity 220ms ease, transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 220ms ease,
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .page-fade-enter-from {

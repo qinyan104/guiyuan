@@ -1,4 +1,4 @@
-﻿// ─── 开发期写操作审计 ───
+// ─── 开发期写操作审计 ───
 // 仅在 dev 模式下激活。对关键 composable 的变更自动记录：
 //   触发源 | 变更字段 | 旧值概要 | 新值概要 | 耗时
 //
@@ -6,7 +6,7 @@
 //   const audit = useDevAudit("usePublicationState")
 //   audit.track("setViewerPersonId", { from: oldId, to: newId })
 
-import { ref, type Ref } from "vue"
+import { ref, type Ref } from 'vue'
 
 const IS_DEV = import.meta.env.DEV
 const SHOULD_LOG_TO_CONSOLE = IS_DEV && import.meta.env.MODE !== 'test'
@@ -70,17 +70,17 @@ export function useDevAudit(source: string) {
 
     // 控制台简洁输出
     const detailStr = detail
-      ? " | " +
+      ? ' | ' +
         Object.entries(detail)
           .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
-          .join(" ")
-      : ""
+          .join(' ')
+      : ''
     if (SHOULD_LOG_TO_CONSOLE) {
       console.debug(
         `%c[audit]%c ${source}.${action}%c${detailStr}`,
-        "color:#a96e35;font-weight:700",
-        "color:#241a10;font-weight:600",
-        "color:#6b5035",
+        'color:#a96e35;font-weight:700',
+        'color:#241a10;font-weight:600',
+        'color:#6b5035',
       )
     }
   }
@@ -103,18 +103,18 @@ export function useDevAudit(source: string) {
         prune()
 
         const detailStr = entry.detail
-          ? " | " +
+          ? ' | ' +
             Object.entries(entry.detail)
               .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
-              .join(" ")
-          : ""
+              .join(' ')
+          : ''
         if (SHOULD_LOG_TO_CONSOLE) {
           console.debug(
             `%c[audit]%c ${source}.${action} %c${durationMs}ms%c${detailStr}`,
-            "color:#a96e35;font-weight:700",
-            "color:#241a10;font-weight:600",
-            "color:#8a6845",
-            "color:#6b5035",
+            'color:#a96e35;font-weight:700',
+            'color:#241a10;font-weight:600',
+            'color:#8a6845',
+            'color:#6b5035',
           )
         }
       },

@@ -3,12 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import CollaboratorManager from './CollaboratorManager.vue'
 import AppSelect from './AppSelect.vue'
-import {
-  listAccessRecords,
-  removeAccessRecord,
-  searchUsers,
-  updateAccessRole,
-} from '../api/accessManage'
+import { listAccessRecords, removeAccessRecord, searchUsers, updateAccessRole } from '../api/accessManage'
 
 vi.mock('../api/accessManage', () => ({
   searchUsers: vi.fn(),

@@ -7,11 +7,7 @@ import {
   type DropLinePrintOrientation,
   type DropLinePrintProfile,
 } from './dropLinePrint'
-import {
-  buildExportThemeCss,
-  getThemeCssVariables,
-  type ThemeMode,
-} from './exportTheme'
+import { buildExportThemeCss, getThemeCssVariables, type ThemeMode } from './exportTheme'
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink'
@@ -235,7 +231,8 @@ function buildExportStyle(pdfFriendly = false, theme: ThemeMode = 'paper'): stri
 
   const themeValues = getThemeCssVariables(theme)
   return resolveCssValue(
-    `${themeCss}\n${EXPORT_SVG_STYLE}`.replace(/^\s*@import\s+url\([^)]*\)\s*;\s*/m, '\n')
+    `${themeCss}\n${EXPORT_SVG_STYLE}`
+      .replace(/^\s*@import\s+url\([^)]*\)\s*;\s*/m, '\n')
       .replaceAll("'Noto Serif SC', 'Songti SC', serif", PDF_SERIF_FONT_STACK)
       .replaceAll("'Manrope', sans-serif", PDF_SANS_FONT_STACK),
     themeValues,
@@ -604,19 +601,9 @@ export function getRasterExportSizeForQuality(
   quality: PngExportQuality = 'hd',
 ): RasterExportSize {
   if (quality === 'hd') {
-    return getRasterExportSize(
-      layout,
-      DEFAULT_RASTER_PIXEL_RATIO,
-      MAX_RASTER_SIDE_HD,
-      MAX_RASTER_PIXELS_HD,
-    )
+    return getRasterExportSize(layout, DEFAULT_RASTER_PIXEL_RATIO, MAX_RASTER_SIDE_HD, MAX_RASTER_PIXELS_HD)
   }
-  return getRasterExportSize(
-    layout,
-    1.5,
-    MAX_RASTER_SIDE,
-    MAX_RASTER_PIXELS,
-  )
+  return getRasterExportSize(layout, 1.5, MAX_RASTER_SIDE, MAX_RASTER_PIXELS)
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -638,9 +625,15 @@ export async function rasterizeSvgToPngBlob(
   const customMaxSide = typeof options === 'object' ? options?.maxSide : undefined
   const customMaxPixels = typeof options === 'object' ? options?.maxPixels : undefined
 
-  const size = (customPixelRatio !== undefined || customMaxSide !== undefined || customMaxPixels !== undefined)
-    ? getRasterExportSize(layout, customPixelRatio ?? DEFAULT_RASTER_PIXEL_RATIO, customMaxSide ?? MAX_RASTER_SIDE_HD, customMaxPixels ?? MAX_RASTER_PIXELS_HD)
-    : getRasterExportSizeForQuality(layout, quality)
+  const size =
+    customPixelRatio !== undefined || customMaxSide !== undefined || customMaxPixels !== undefined
+      ? getRasterExportSize(
+          layout,
+          customPixelRatio ?? DEFAULT_RASTER_PIXEL_RATIO,
+          customMaxSide ?? MAX_RASTER_SIDE_HD,
+          customMaxPixels ?? MAX_RASTER_PIXELS_HD,
+        )
+      : getRasterExportSizeForQuality(layout, quality)
   const svgBlob = new Blob([serializeSvg(svg)], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(svgBlob)
 
@@ -715,8 +708,8 @@ function createAxisRanges(
     for (let distance = 0; distance <= Math.ceil(overlap); distance += 1) {
       for (const candidate of distance === 0 ? [0] : [-distance, distance]) {
         if (
-          !boundaryCutsName(left.end + candidate, cards, axis, padding)
-          && !boundaryCutsName(right.start + candidate, cards, axis, padding)
+          !boundaryCutsName(left.end + candidate, cards, axis, padding) &&
+          !boundaryCutsName(right.start + candidate, cards, axis, padding)
         ) {
           offset = candidate
           break
@@ -749,48 +742,49 @@ export function createPrintLayoutPages(
   const paper = getPaperSize(profile.paper, profile.orientation)
   const printableWidthMm = paper.width - profile.marginMm * 2
   const printableHeightMm = paper.height - profile.marginMm * 2
-  const fit = Math.min(
-    printableWidthMm * PX_PER_MM / layout.width,
-    printableHeightMm * PX_PER_MM / layout.height,
-  )
+  const fit = Math.min((printableWidthMm * PX_PER_MM) / layout.width, (printableHeightMm * PX_PER_MM) / layout.height)
 
   if (!isPrintedNameTooSmall(profile.nameSize, fit)) {
-    return [{
-      index: 1,
-      total: 1,
-      row: 0,
-      column: 0,
-      x: 0,
-      y: 0,
-      width: layout.width,
-      height: layout.height,
-      widthMm: layout.width * fit / PX_PER_MM,
-      heightMm: layout.height * fit / PX_PER_MM,
-      scale: fit,
-    }]
+    return [
+      {
+        index: 1,
+        total: 1,
+        row: 0,
+        column: 0,
+        x: 0,
+        y: 0,
+        width: layout.width,
+        height: layout.height,
+        widthMm: (layout.width * fit) / PX_PER_MM,
+        heightMm: (layout.height * fit) / PX_PER_MM,
+        scale: fit,
+      },
+    ]
   }
 
-  const tileWidth = printableWidthMm * PX_PER_MM / profile.scale
-  const tileHeight = printableHeightMm * PX_PER_MM / profile.scale
-  const overlap = profile.overlapMm * PX_PER_MM / profile.scale
+  const tileWidth = (printableWidthMm * PX_PER_MM) / profile.scale
+  const tileHeight = (printableHeightMm * PX_PER_MM) / profile.scale
+  const overlap = (profile.overlapMm * PX_PER_MM) / profile.scale
   const padding = profile.lineWidth / 2
   const columns = createAxisRanges(layout.width, tileWidth, overlap, layout.cards, 'x', padding)
   const rows = createAxisRanges(layout.height, tileHeight, overlap, layout.cards, 'y', padding)
   const nameTooSmall = isPrintedNameTooSmall(profile.nameSize, profile.scale)
-  const pages = rows.flatMap((row, rowIndex) => columns.map((column, columnIndex) => ({
-    index: 0,
-    total: 0,
-    row: rowIndex,
-    column: columnIndex,
-    x: column.start,
-    y: row.start,
-    width: column.end - column.start,
-    height: row.end - row.start,
-    widthMm: (column.end - column.start) * profile.scale / PX_PER_MM,
-    heightMm: (row.end - row.start) * profile.scale / PX_PER_MM,
-    scale: profile.scale,
-    warning: column.warning ?? row.warning ?? (nameTooSmall ? 'name-too-small' as const : undefined),
-  })))
+  const pages = rows.flatMap((row, rowIndex) =>
+    columns.map((column, columnIndex) => ({
+      index: 0,
+      total: 0,
+      row: rowIndex,
+      column: columnIndex,
+      x: column.start,
+      y: row.start,
+      width: column.end - column.start,
+      height: row.end - row.start,
+      widthMm: ((column.end - column.start) * profile.scale) / PX_PER_MM,
+      heightMm: ((row.end - row.start) * profile.scale) / PX_PER_MM,
+      scale: profile.scale,
+      warning: column.warning ?? row.warning ?? (nameTooSmall ? ('name-too-small' as const) : undefined),
+    })),
+  )
 
   return pages.map((page, index) => ({ ...page, index: index + 1, total: pages.length }))
 }

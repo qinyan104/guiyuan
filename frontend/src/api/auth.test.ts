@@ -15,7 +15,7 @@ describe('buildAuthHeaders', () => {
 
     expect(headers).toEqual({
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer token-123',
+      Authorization: 'Bearer token-123',
     })
   })
 

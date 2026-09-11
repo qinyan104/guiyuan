@@ -27,7 +27,7 @@ function getSurnameSeal(title: string): string {
   const shiIndex = clean.indexOf('氏')
   if (shiIndex > 0) return clean.charAt(shiIndex - 1)
   const match = clean.match(/[\u4e00-\u9fa5]/)
-  return match ? match[0] : (clean.charAt(0) || '谱')
+  return match ? match[0] : clean.charAt(0) || '谱'
 }
 
 function getRoleBadge(role: string) {

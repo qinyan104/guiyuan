@@ -18,7 +18,9 @@ export interface AccessRecord {
 }
 
 export async function searchUsers(query: string, signal?: AbortSignal): Promise<UserSearchResult[]> {
-  const resp = await http.get<ApiResponse<UserSearchResult[]>>(`/users/search?q=${encodeURIComponent(query)}`, { signal })
+  const resp = await http.get<ApiResponse<UserSearchResult[]>>(`/users/search?q=${encodeURIComponent(query)}`, {
+    signal,
+  })
   return resp.data.data
 }
 
@@ -27,12 +29,26 @@ export async function listAccessRecords(publicationId: number): Promise<AccessRe
   return resp.data.data
 }
 
-export async function addAccessRecord(publicationId: number, userId: number, role: string, redactionProfile?: string): Promise<{ id: number }> {
-  const resp = await http.post<ApiResponse<{ id: number }>>(`/publications/${publicationId}/access`, { userId, role, redactionProfile })
+export async function addAccessRecord(
+  publicationId: number,
+  userId: number,
+  role: string,
+  redactionProfile?: string,
+): Promise<{ id: number }> {
+  const resp = await http.post<ApiResponse<{ id: number }>>(`/publications/${publicationId}/access`, {
+    userId,
+    role,
+    redactionProfile,
+  })
   return resp.data.data
 }
 
-export async function updateAccessRole(publicationId: number, userId: number, role: string, redactionProfile?: string): Promise<void> {
+export async function updateAccessRole(
+  publicationId: number,
+  userId: number,
+  role: string,
+  redactionProfile?: string,
+): Promise<void> {
   await http.put(`/publications/${publicationId}/access/${userId}`, { role, redactionProfile })
 }
 

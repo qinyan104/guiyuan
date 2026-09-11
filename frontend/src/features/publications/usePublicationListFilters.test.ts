@@ -33,13 +33,13 @@ describe('usePublicationListFilters', () => {
     const { searchQuery, sortBy, filteredPublications } = usePublicationListFilters(source)
 
     searchQuery.value = '陇西'
-    expect(filteredPublications.value.map((pub) => pub.title)).toEqual(['李氏世家'])
+    expect(filteredPublications.value.map(pub => pub.title)).toEqual(['李氏世家'])
 
     searchQuery.value = ''
     sortBy.value = 'revision_desc'
-    expect(filteredPublications.value.map((pub) => pub.title)).toEqual(['李氏世家', '陈氏宗谱'])
+    expect(filteredPublications.value.map(pub => pub.title)).toEqual(['李氏世家', '陈氏宗谱'])
 
     sortBy.value = 'updatedAt_desc'
-    expect(filteredPublications.value.map((pub) => pub.title)).toEqual(['陈氏宗谱', '李氏世家'])
+    expect(filteredPublications.value.map(pub => pub.title)).toEqual(['陈氏宗谱', '李氏世家'])
   })
 })

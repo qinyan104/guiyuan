@@ -88,7 +88,7 @@ const staticCommands = computed<CommandItem[]>(() => [
       isOpen.value = false
     },
   },
-  ...(THEME_PRESETS.map(({ id: themeId, name }) => ({
+  ...THEME_PRESETS.map(({ id: themeId, name }) => ({
     id: `theme-${themeId}`,
     title: `切换为：${name}`,
     subtitle: uiStore?.currentTheme === themeId ? '当前正在使用' : '切换界面配色',
@@ -98,13 +98,13 @@ const staticCommands = computed<CommandItem[]>(() => [
       uiStore?.setTheme?.(themeId)
       isOpen.value = false
     },
-  }))),
+  })),
 ])
 
 const publicationCommands = computed<CommandItem[]>(() => {
   const list = pubState?.publications?.value
   if (!Array.isArray(list)) return []
-  return list.map((pub) => ({
+  return list.map(pub => ({
     id: `pub-${pub.id}`,
     title: pub.title || '未命名宗谱',
     subtitle: [pub.subtitle, pub.info?.hallName, pub.info?.ancestralOrigin].filter(Boolean).join(' · ') || '宗谱归档',
@@ -117,18 +117,13 @@ const publicationCommands = computed<CommandItem[]>(() => {
   }))
 })
 
-const allCommands = computed<CommandItem[]>(() => [
-  ...staticCommands.value,
-  ...publicationCommands.value,
-])
+const allCommands = computed<CommandItem[]>(() => [...staticCommands.value, ...publicationCommands.value])
 
 const filteredCommands = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
   if (!query) return allCommands.value
   return allCommands.value.filter(
-    (cmd) =>
-      cmd.title.toLowerCase().includes(query) ||
-      (cmd.subtitle && cmd.subtitle.toLowerCase().includes(query))
+    cmd => cmd.title.toLowerCase().includes(query) || (cmd.subtitle && cmd.subtitle.toLowerCase().includes(query)),
   )
 })
 
@@ -155,8 +150,7 @@ function handleKeyDown(e: KeyboardEvent) {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       if (filteredCommands.value.length > 0) {
-        selectedIndex.value =
-          (selectedIndex.value - 1 + filteredCommands.value.length) % filteredCommands.value.length
+        selectedIndex.value = (selectedIndex.value - 1 + filteredCommands.value.length) % filteredCommands.value.length
       }
     } else if (e.key === 'Enter') {
       e.preventDefault()

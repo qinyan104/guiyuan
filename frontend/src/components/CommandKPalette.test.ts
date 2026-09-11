@@ -17,8 +17,8 @@ vi.mock('vue-router', () => ({
   }),
 }))
 
-vi.mock('../stores/ui', async (importOriginal) => ({
-  ...await importOriginal<typeof import('../stores/ui')>(),
+vi.mock('../stores/ui', async importOriginal => ({
+  ...(await importOriginal<typeof import('../stores/ui')>()),
   useUiStore: () => ({
     currentTheme: 'slate',
     setTheme: mockSetTheme,
@@ -56,8 +56,9 @@ describe('CommandKPalette', () => {
     mountComponent()
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
     await flushPromises()
-    const item = [...document.querySelectorAll<HTMLElement>('.command-item')]
-      .find(element => element.textContent?.includes(`切换为：${name}`))
+    const item = [...document.querySelectorAll<HTMLElement>('.command-item')].find(element =>
+      element.textContent?.includes(`切换为：${name}`),
+    )
     expect(item).toBeDefined()
     item?.click()
     await flushPromises()
@@ -67,9 +68,7 @@ describe('CommandKPalette', () => {
   it('opens palette when Ctrl+K is pressed', async () => {
     mountComponent()
 
-    window.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })
-    )
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))
     await flushPromises()
 
     const input = document.querySelector('.command-input') as HTMLInputElement
@@ -82,9 +81,7 @@ describe('CommandKPalette', () => {
   it('filters commands when query is typed', async () => {
     mountComponent()
 
-    window.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })
-    )
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))
     await flushPromises()
 
     const input = document.querySelector('.command-input') as HTMLInputElement
@@ -100,9 +97,7 @@ describe('CommandKPalette', () => {
   it('executes command action on click', async () => {
     mountComponent()
 
-    window.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })
-    )
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))
     await flushPromises()
 
     const items = document.querySelectorAll('.command-item')

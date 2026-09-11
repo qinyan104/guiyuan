@@ -1,0 +1,43 @@
+# 统一换行符为 LF，避免 CRLF/LF 混入仓库造成 diff 噪音与工具异常。
+# 注意：本仓库此前未设置 .gitattributes，历史提交中已混入 CRLF，
+# 因此这里显式声明 text=auto 并配合 eol=lf，让后续提交自动规范化。
+* text=auto eol=lf
+
+# 二进制文件不参与换行符转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.jar binary
+
+# 明确各语言文本类型
+*.ts text eol=lf
+*.tsx text eol=lf
+*.vue text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.java text eol=lf
+*.sql text eol=lf
+*.xml text eol=lf
+*.properties text eol=lf
+
+# Windows 脚本保留 CRLF，否则 cmd/PowerShell 可能执行异常
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# 锁文件由工具生成，不参与 diff 统计
+package-lock.json -diff linguist-generated

@@ -17,10 +17,10 @@ describe('getPublication', () => {
     })
     const onDownloadProgress = vi.fn()
 
-    await (getPublication as unknown as (
-      id: number,
-      onProgress: typeof onDownloadProgress,
-    ) => Promise<unknown>)(7, onDownloadProgress)
+    await (getPublication as unknown as (id: number, onProgress: typeof onDownloadProgress) => Promise<unknown>)(
+      7,
+      onDownloadProgress,
+    )
 
     expect(http.get).toHaveBeenCalledWith('/publications/7', { onDownloadProgress })
   })

@@ -40,9 +40,7 @@ describe('publicationActivity helpers', () => {
   })
 
   it('summarizes latest activity, today count, and total count', () => {
-    expect(
-      summarizePublicationActivity(entries, new Date('2026-05-19T12:00:00.000Z')),
-    ).toEqual({
+    expect(summarizePublicationActivity(entries, new Date('2026-05-19T12:00:00.000Z'))).toEqual({
       totalCount: 4,
       todayCount: 2,
       latestUsername: 'alice',

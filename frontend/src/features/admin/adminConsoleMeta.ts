@@ -52,7 +52,7 @@ const ADMIN_PAGE_META: AdminPageMeta[] = [
 const DEFAULT_PAGE_META = ADMIN_PAGE_META[0]
 
 function findAdminPageMeta(routeName: string | null | undefined): AdminPageMeta | undefined {
-  return ADMIN_PAGE_META.find((item) => item.routeName === routeName)
+  return ADMIN_PAGE_META.find(item => item.routeName === routeName)
 }
 
 export function getAdminPageMeta(routeName: string | null | undefined): AdminPageMeta {
@@ -60,7 +60,7 @@ export function getAdminPageMeta(routeName: string | null | undefined): AdminPag
 }
 
 export function getAdminNavItems(): AdminPageMeta[] {
-  return ADMIN_PAGE_META.map((item) => ({ ...item }))
+  return ADMIN_PAGE_META.map(item => ({ ...item }))
 }
 
 export function isAdminOnlyRouteName(routeName: string | null | undefined): boolean {

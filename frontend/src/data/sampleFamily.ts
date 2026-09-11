@@ -145,7 +145,8 @@ export const samplePublication: PublicationData = markHistoricalPublication({
     f19: { id: 'f19', adults: ['p32'], children: ['p51', 'p52', 'p53'] },
   },
   info: {
-    description: '明朝（1368—1644）帝王世系谱系图，涵盖太祖朱元璋至崇祯帝朱由检及其主要后代支系，含南明弘光、永历等关键继承线。',
+    description:
+      '明朝（1368—1644）帝王世系谱系图，涵盖太祖朱元璋至崇祯帝朱由检及其主要后代支系，含南明弘光、永历等关键继承线。',
     ancestralOrigin: '安徽凤阳',
     hallName: '凤阳朱氏 · 明皇室',
     familyMotto: '高瞻祁见祐，厚载翊常由。慈和怡伯仲，简靖迪先猷。',

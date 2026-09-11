@@ -46,7 +46,11 @@ const feedback = useFeedback()
 
 // NOTE: Start empty so the UI does not flash sample data before the real payload loads.
 const viewerPersonId = ref<string | null>(null)
-const pub = usePublicationState({ title: '', subtitle: '', people: {}, families: {}, focusFamilyId: '' }, defaultSettings, viewerPersonId.value)
+const pub = usePublicationState(
+  { title: '', subtitle: '', people: {}, families: {}, focusFamilyId: '' },
+  defaultSettings,
+  viewerPersonId.value,
+)
 
 function createEditorSnapshot(): EditorSnapshot {
   // 使用 JSON 序列化而非 structuredClone:
@@ -93,14 +97,17 @@ function stopLayoutWorker() {
   activeLayoutWorker = null
 }
 
-function calculateLayoutInWorker(publication: PublicationData, settings: PublicationSettings): Promise<ReturnType<typeof layoutPublication>> {
+function calculateLayoutInWorker(
+  publication: PublicationData,
+  settings: PublicationSettings,
+): Promise<ReturnType<typeof layoutPublication>> {
   if (typeof Worker === 'undefined') return Promise.resolve(layoutPublication(publication, settings))
 
   stopLayoutWorker()
   const worker = new Worker(new URL('../workers/publicationLayout.worker.ts', import.meta.url), { type: 'module' })
   activeLayoutWorker = worker
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     worker.onmessage = (event: MessageEvent<ReturnType<typeof layoutPublication>>) => {
       worker.terminate()
       if (activeLayoutWorker === worker) activeLayoutWorker = null
@@ -191,13 +198,14 @@ async function saveToServer() {
     if (conflict) {
       const draftPublicationId = conflict.publicationId ?? currentPublicationId
       if (draftPublicationId) {
-        conflictDraftSaved.value = saveConflictDraft({
-          publicationId: draftPublicationId,
-          serverRevision: serverRevision.value,
-          message: conflict.message,
-          publication: pub.publication,
-          settings: pub.settings,
-        }) !== null
+        conflictDraftSaved.value =
+          saveConflictDraft({
+            publicationId: draftPublicationId,
+            serverRevision: serverRevision.value,
+            message: conflict.message,
+            publication: pub.publication,
+            settings: pub.settings,
+          }) !== null
         if (conflictDraftSaved.value) {
           clearRecoveryDraft(draftPublicationId)
           recoveryDraft.value = null
@@ -212,7 +220,9 @@ async function saveToServer() {
 
     syncStatus.value = 'error'
     const recoverySaved = saveRecoverySnapshot('服务器同步失败时保存的本地恢复副本')
-    feedback.setError(recoverySaved ? '同步到服务器失败，本地恢复副本已保留' : '同步失败且无法保存本地副本，请立即导出 JSON 备份')
+    feedback.setError(
+      recoverySaved ? '同步到服务器失败，本地恢复副本已保留' : '同步失败且无法保存本地副本，请立即导出 JSON 备份',
+    )
     return
   }
 
@@ -265,9 +275,16 @@ function initializeLargeStateAfterPaint(
   }
 
   if (typeof window.requestIdleCallback === 'function') {
-    baselineInitIdleCallback = window.requestIdleCallback(() => { void initialize() }, { timeout: 5000 })
+    baselineInitIdleCallback = window.requestIdleCallback(
+      () => {
+        void initialize()
+      },
+      { timeout: 5000 },
+    )
   } else {
-    baselineInitTimeout = setTimeout(() => { void initialize() }, 1500)
+    baselineInitTimeout = setTimeout(() => {
+      void initialize()
+    }, 1500)
   }
 }
 
@@ -398,7 +415,7 @@ function reportDownloadProgress(event: PublicationDownloadProgress) {
 async function paintLoadingStage() {
   await nextTick()
   if (isOverlayVisible.value && !isTestEnv) {
-    await new Promise<void>((resolve) => setTimeout(resolve, 0))
+    await new Promise<void>(resolve => setTimeout(resolve, 0))
   }
 }
 
@@ -428,7 +445,7 @@ async function load(force = false) {
   markOpenPerformance('load-start')
 
   try {
-    const result = await getPublication(targetId, (event) => {
+    const result = await getPublication(targetId, event => {
       if (myGeneration === loadGeneration) reportDownloadProgress(event)
     })
     // Check if a newer load() call has started
@@ -453,7 +470,10 @@ async function load(force = false) {
     conflictDraftSaved.value = false
     conflictDraft.value = getConflictDraft(result.id)
     const storedRecoveryDraft = getRecoveryDraft(result.id)
-    if (storedRecoveryDraft && serializeTrackedState(storedRecoveryDraft.publication, storedRecoveryDraft.settings) === buildPersistedSignature()) {
+    if (
+      storedRecoveryDraft &&
+      serializeTrackedState(storedRecoveryDraft.publication, storedRecoveryDraft.settings) === buildPersistedSignature()
+    ) {
       clearRecoveryDraft(result.id)
       recoveryDraft.value = null
     } else {
@@ -475,10 +495,10 @@ async function load(force = false) {
     markOpenPerformance('snapshot-render-end')
 
     markOpenPerformance('layout-start')
-    const calculatedLayout = await calculateLayoutInWorker(
-      result.publication,
-      { ...defaultSettings, ...result.settings },
-    )
+    const calculatedLayout = await calculateLayoutInWorker(result.publication, {
+      ...defaultSettings,
+      ...result.settings,
+    })
     if (myGeneration !== loadGeneration) return
     pub.applyCalculatedLayout(calculatedLayout)
     markOpenPerformance('layout-ready')
@@ -496,7 +516,7 @@ async function load(force = false) {
     initializeLargeStateAfterPaint(myGeneration, result.publication, { ...defaultSettings, ...result.settings })
     const remainingVisibleMs = MIN_LOADING_VISIBLE_MS - (Date.now() - loadingStartedAt)
     if (remainingVisibleMs > 0) {
-      await new Promise<void>((resolve) => setTimeout(resolve, remainingVisibleMs))
+      await new Promise<void>(resolve => setTimeout(resolve, remainingVisibleMs))
     }
     if (myGeneration !== loadGeneration) return
     isOverlayVisible.value = false
@@ -508,9 +528,10 @@ async function load(force = false) {
     isOverlayVisible.value = false
     loading.value = false
     markOpenPerformance('load-error')
-    const status = typeof err === 'object' && err !== null && 'response' in err
-      ? (err as { response?: { status?: number } }).response?.status
-      : undefined
+    const status =
+      typeof err === 'object' && err !== null && 'response' in err
+        ? (err as { response?: { status?: number } }).response?.status
+        : undefined
     if (status === 403) {
       loadError.value = '你无权访问此家谱，请联系管理员将你添加为协作者'
     } else {
@@ -520,7 +541,7 @@ async function load(force = false) {
   }
 }
 
-watch(publicationId, (newId) => {
+watch(publicationId, newId => {
   if (newId && newId !== serverPublicationId.value) {
     load()
   }
@@ -589,9 +610,7 @@ function preserveRecoveryWhenHidden() {
 }
 
 onBeforeRouteLeave(confirmLeaveWithUnsavedChanges)
-onBeforeRouteUpdate((to, from) => (
-  to.params.id === from.params.id ? true : confirmLeaveWithUnsavedChanges()
-))
+onBeforeRouteUpdate((to, from) => (to.params.id === from.params.id ? true : confirmLeaveWithUnsavedChanges()))
 
 function applyStoredDraft(draft: ConflictDraft) {
   if (!baselineReady.value) {

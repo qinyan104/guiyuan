@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  buildAdminBreadcrumb,
-  getAdminNavItems,
-  getAdminPageMeta,
-} from './adminConsoleMeta'
+import { buildAdminBreadcrumb, getAdminNavItems, getAdminPageMeta } from './adminConsoleMeta'
 
 describe('adminConsoleMeta', () => {
   it('returns dashboard metadata for known routes', () => {

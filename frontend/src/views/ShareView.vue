@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import DarkModeToggle from '../components/DarkModeToggle.vue'
 import { useRoute } from 'vue-router'
@@ -61,10 +61,7 @@ async function load() {
   error.value = null
   errorCode.value = null
   try {
-    const [data, metaData] = await Promise.all([
-      getSharePublication(token.value),
-      getShareMeta(token.value),
-    ])
+    const [data, metaData] = await Promise.all([getSharePublication(token.value), getShareMeta(token.value)])
     meta.value = metaData
     const publicationData = data.publication as PublicationData
     const settingsData = { ...DEFAULT_SETTINGS, ...(data.settings || {}) } as PublicationSettings
@@ -83,9 +80,10 @@ async function load() {
     pub.replaceReactiveObject(pub.settings, settingsData)
     pub.selectedPersonId.value = pub.getDefaultSelectedPersonId(publicationData)
   } catch (err: unknown) {
-    const status = typeof err === 'object' && err !== null && 'response' in err
-      ? (err as { response?: { status?: number } }).response?.status
-      : undefined
+    const status =
+      typeof err === 'object' && err !== null && 'response' in err
+        ? (err as { response?: { status?: number } }).response?.status
+        : undefined
     errorCode.value = status ?? null
     if (status === 404) {
       error.value = '分享链接不存在或已失效。'

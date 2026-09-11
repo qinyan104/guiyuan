@@ -7,23 +7,26 @@ export interface AppSelectOption {
   disabled?: boolean
 }
 
-const props = withDefaults(defineProps<{
-  modelValue?: string
-  options?: (string | AppSelectOption)[]
-  placeholder?: string
-  disabled?: boolean
-  variant?: 'default' | 'compact' | 'inline' | 'privacy'
-}>(), {
-  modelValue: '',
-  options: () => [],
-  placeholder: '请选择',
-  disabled: false,
-  variant: 'default',
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string
+    options?: (string | AppSelectOption)[]
+    placeholder?: string
+    disabled?: boolean
+    variant?: 'default' | 'compact' | 'inline' | 'privacy'
+  }>(),
+  {
+    modelValue: '',
+    options: () => [],
+    placeholder: '请选择',
+    disabled: false,
+    variant: 'default',
+  },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  'change': [value: string]
+  change: [value: string]
 }>()
 
 const isOpen = ref(false)
@@ -34,11 +37,7 @@ const highlightIndex = ref(-1)
 const dropdownStyle = ref<Record<string, string>>({})
 
 const normalizedOptions = computed<AppSelectOption[]>(() =>
-  props.options.map(opt =>
-    typeof opt === 'string'
-      ? { value: opt, label: opt, disabled: false }
-      : opt
-  )
+  props.options.map(opt => (typeof opt === 'string' ? { value: opt, label: opt, disabled: false } : opt)),
 )
 
 const selectedLabel = computed(() => {
@@ -123,15 +122,19 @@ function handleScroll() {
   if (isOpen.value) updatePosition()
 }
 
-watch(highlightIndex, (idx) => {
+watch(highlightIndex, idx => {
   if (idx < 0) return
   nextTick(() => {
     const opt = dropdownRef.value?.querySelectorAll('.app-select__option')[idx] as HTMLElement | undefined
-    try { opt?.scrollIntoView({ block: 'nearest' }) } catch { /* noop */ }
+    try {
+      opt?.scrollIntoView({ block: 'nearest' })
+    } catch {
+      /* noop */
+    }
   })
 })
 
-watch(isOpen, (v) => {
+watch(isOpen, v => {
   if (v) {
     window.addEventListener('scroll', handleScroll, true)
     window.addEventListener('resize', handleScroll)

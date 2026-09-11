@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { getMyProfile, submitProfileChange, type MyProfile, type MyProfilePerson } from '../api/profile'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
@@ -82,12 +82,14 @@ function handleAvatarChange(e: Event) {
     alert('图片大小不能超过 5MB')
     return
   }
-  compressImage(file).then((blob) => {
-    avatarFile.value = new File([blob], file.name, { type: 'image/jpeg' })
-    avatarPreview.value = URL.createObjectURL(blob)
-  }).catch((err) => {
-    alert(err.message || '图片处理失败')
-  })
+  compressImage(file)
+    .then(blob => {
+      avatarFile.value = new File([blob], file.name, { type: 'image/jpeg' })
+      avatarPreview.value = URL.createObjectURL(blob)
+    })
+    .catch(err => {
+      alert(err.message || '图片处理失败')
+    })
 }
 
 async function compressImage(file: File): Promise<Blob> {
@@ -114,18 +116,33 @@ async function compressImage(file: File): Promise<Blob> {
         let w = img.width
         let h = img.height
         if (w > maxSize || h > maxSize) {
-          if (w > h) { h = Math.round(h * maxSize / w); w = maxSize }
-          else { w = Math.round(w * maxSize / h); h = maxSize }
+          if (w > h) {
+            h = Math.round((h * maxSize) / w)
+            w = maxSize
+          } else {
+            w = Math.round((w * maxSize) / h)
+            h = maxSize
+          }
         }
         canvas.width = w
         canvas.height = h
         const ctx = canvas.getContext('2d')
-        if (!ctx) { reject(new Error('Canvas 不可用')); return }
+        if (!ctx) {
+          reject(new Error('Canvas 不可用'))
+          return
+        }
         ctx.drawImage(img, 0, 0, w, h)
-        canvas.toBlob((blob) => {
-          if (!blob) { reject(new Error('图片压缩失败')); return }
-          resolve(blob)
-        }, 'image/jpeg', 0.85)
+        canvas.toBlob(
+          blob => {
+            if (!blob) {
+              reject(new Error('图片压缩失败'))
+              return
+            }
+            resolve(blob)
+          },
+          'image/jpeg',
+          0.85,
+        )
       } catch (e) {
         reject(e)
       }
@@ -154,7 +171,7 @@ async function confirmSubmit() {
     if ((form.value.note || '') !== (p.note || '')) changes.note = form.value.note || null
     if (avatarFile.value) {
       const reader = new FileReader()
-      const base64 = await new Promise<string>((resolve) => {
+      const base64 = await new Promise<string>(resolve => {
         reader.onload = () => resolve(reader.result as string)
         reader.readAsDataURL(avatarFile.value!)
       })

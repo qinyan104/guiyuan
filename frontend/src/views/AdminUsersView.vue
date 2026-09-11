@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import {
   adminListUsers,
@@ -47,12 +47,10 @@ const batchDeleting = ref(false)
 
 const canManageRoles = computed(() => isSuperAdmin())
 
-const selectableUsers = computed(() =>
-  filteredUsers.value.filter(u => !isProtected(u))
-)
+const selectableUsers = computed(() => filteredUsers.value.filter(u => !isProtected(u)))
 
-const isAllSelected = computed(() =>
-  selectableUsers.value.length > 0 && selectableUsers.value.every(u => selectedUserIds.value.has(u.id))
+const isAllSelected = computed(
+  () => selectableUsers.value.length > 0 && selectableUsers.value.every(u => selectedUserIds.value.has(u.id)),
 )
 
 const roleConfig: Record<string, { label: string }> = {
@@ -75,14 +73,14 @@ type CreateUserPayload = {
 
 const tabCounts = computed(() => ({
   all: users.value.length,
-  SUPER_ADMIN: users.value.filter((u) => u.role === 'SUPER_ADMIN').length,
-  ADMIN: users.value.filter((u) => u.role === 'ADMIN').length,
-  USER: users.value.filter((u) => u.role === 'USER').length,
+  SUPER_ADMIN: users.value.filter(u => u.role === 'SUPER_ADMIN').length,
+  ADMIN: users.value.filter(u => u.role === 'ADMIN').length,
+  USER: users.value.filter(u => u.role === 'USER').length,
 }))
 
 const filteredUsers = computed(() => {
   if (activeTab.value === 'all') return users.value
-  return users.value.filter((u) => u.role === activeTab.value)
+  return users.value.filter(u => u.role === activeTab.value)
 })
 
 const showPasswordPlain = ref(false)
@@ -100,12 +98,13 @@ function generateRandomPassword() {
 const displayedUsers = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   if (!q) return filteredUsers.value
-  return filteredUsers.value.filter(u =>
-    u.username.toLowerCase().includes(q) ||
-    (u.nickname && u.nickname.toLowerCase().includes(q)) ||
-    String(u.id).includes(q) ||
-    String(u.id).padStart(4, '0').includes(q) ||
-    (roleConfig[u.role]?.label && roleConfig[u.role].label.toLowerCase().includes(q))
+  return filteredUsers.value.filter(
+    u =>
+      u.username.toLowerCase().includes(q) ||
+      (u.nickname && u.nickname.toLowerCase().includes(q)) ||
+      String(u.id).includes(q) ||
+      String(u.id).padStart(4, '0').includes(q) ||
+      (roleConfig[u.role]?.label && roleConfig[u.role].label.toLowerCase().includes(q)),
   )
 })
 

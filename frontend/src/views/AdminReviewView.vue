@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { listReviews, approveReview, rejectReview, batchReview, type ReviewItem } from '../api/review'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
@@ -125,8 +125,13 @@ function statusLabel(s: string) {
 
 function fieldLabel(f: string) {
   const map: Record<string, string> = {
-    name: '姓名', gender: '性别', birth: '出生', death: '逝世',
-    deceased: '在世状态', note: '注记', avatar: '头像',
+    name: '姓名',
+    gender: '性别',
+    birth: '出生',
+    death: '逝世',
+    deceased: '在世状态',
+    note: '注记',
+    avatar: '头像',
   }
   return map[f] || f
 }

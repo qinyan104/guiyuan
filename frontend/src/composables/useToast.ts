@@ -14,7 +14,9 @@ export function useToast() {
   function showToast(message: string, type: ToastType = 'success') {
     if (toastTimer) clearTimeout(toastTimer)
     toast.value = { message, type }
-    toastTimer = setTimeout(() => { toast.value = null }, 2800)
+    toastTimer = setTimeout(() => {
+      toast.value = null
+    }, 2800)
   }
 
   return {

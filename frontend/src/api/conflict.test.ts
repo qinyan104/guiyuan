@@ -20,10 +20,12 @@ describe('asPublicationConflict', () => {
   })
 
   it('returns null for non-publication URLs', () => {
-    expect(asPublicationConflict({
-      response: { status: 409 },
-      config: { url: '/auth/login' },
-    })).toBeNull()
+    expect(
+      asPublicationConflict({
+        response: { status: 409 },
+        config: { url: '/auth/login' },
+      }),
+    ).toBeNull()
   })
 
   it('returns null for malformed errors', () => {

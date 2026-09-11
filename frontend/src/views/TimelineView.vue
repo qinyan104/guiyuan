@@ -51,10 +51,16 @@ const generationMap = computed(() => {
     for (const fam of famList) {
       if (!fam.adults.includes(cur.personId)) continue
       for (const sid of fam.adults) {
-        if (sid && !map.has(sid)) { map.set(sid, cur.generation); queue.push({ personId: sid, generation: cur.generation }) }
+        if (sid && !map.has(sid)) {
+          map.set(sid, cur.generation)
+          queue.push({ personId: sid, generation: cur.generation })
+        }
       }
       for (const cid of fam.children) {
-        if (cid && !map.has(cid)) { map.set(cid, cur.generation + 1); queue.push({ personId: cid, generation: cur.generation + 1 }) }
+        if (cid && !map.has(cid)) {
+          map.set(cid, cur.generation + 1)
+          queue.push({ personId: cid, generation: cur.generation + 1 })
+        }
       }
     }
   }
@@ -97,7 +103,7 @@ const allEvents = computed<TimelineEvent[]>(() => {
       })
     }
   }
-  return list.sort((a, b) => a.exactDate !== b.exactDate ? a.exactDate - b.exactDate : a.type === 'birth' ? -1 : 1)
+  return list.sort((a, b) => (a.exactDate !== b.exactDate ? a.exactDate - b.exactDate : a.type === 'birth' ? -1 : 1))
 })
 
 const availableGenerations = computed(() => {
@@ -110,7 +116,7 @@ const availableGenerations = computed(() => {
 
 const filteredEvents = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
-  return allEvents.value.filter((e) => {
+  return allEvents.value.filter(e => {
     if (filterType.value !== 'all' && e.type !== filterType.value) return false
     if (selectedGeneration.value !== null && e.generation !== selectedGeneration.value) return false
     if (query) {
@@ -130,13 +136,15 @@ const centuryGroups = computed(() => {
     if (!g.has(e.centuryStart)) g.set(e.centuryStart, [])
     g.get(e.centuryStart)!.push(e)
   }
-  return Array.from(g.entries()).sort((a, b) => a[0] - b[0]).map(([cs, evts]) => {
-    const births = evts.filter((e) => e.type === 'birth').length
-    const deaths = evts.filter((e) => e.type === 'death').length
-    const people = new Set(evts.map((e) => e.person.id)).size
-    const eraName = evts[0]?.era.dynasty ?? ''
-    return { centuryStart: cs, eraName, events: evts, births, deaths, people }
-  })
+  return Array.from(g.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([cs, evts]) => {
+      const births = evts.filter(e => e.type === 'birth').length
+      const deaths = evts.filter(e => e.type === 'death').length
+      const people = new Set(evts.map(e => e.person.id)).size
+      const eraName = evts[0]?.era.dynasty ?? ''
+      return { centuryStart: cs, eraName, events: evts, births, deaths, people }
+    })
 })
 
 // ── 生平长河图数据 ──
@@ -195,7 +203,7 @@ const earliest = computed(() => (allEvents.value.length ? allEvents.value[0].yea
 const latest = computed(() => (allEvents.value.length ? allEvents.value[allEvents.value.length - 1].year : null))
 const span = computed(() => (earliest.value !== null && latest.value !== null ? latest.value - earliest.value : null))
 const totalEvents = computed(() => allEvents.value.length)
-const distinctPeople = computed(() => new Set(allEvents.value.map((e) => e.person.id)).size)
+const distinctPeople = computed(() => new Set(allEvents.value.map(e => e.person.id)).size)
 
 function centuryLabel(cs: number): string {
   if (cs < 0) return `公元前 ${Math.abs(cs)} 年代`
@@ -204,13 +212,13 @@ function centuryLabel(cs: number): string {
 }
 
 function getLifespanBarLeft(birthYear: number): number {
-  const total = (maxYear.value - minYear.value) || 1
+  const total = maxYear.value - minYear.value || 1
   return Math.max(0, Math.min(100, ((birthYear - minYear.value) / total) * 100))
 }
 
 function getLifespanBarWidth(item: LifespanItem): number {
-  const total = (maxYear.value - minYear.value) || 1
-  const end = item.deathYear ?? (item.birthYear + (item.lifespan ?? 60))
+  const total = maxYear.value - minYear.value || 1
+  const end = item.deathYear ?? item.birthYear + (item.lifespan ?? 60)
   const len = Math.max(1, end - item.birthYear)
   return Math.max(1.5, Math.min(100, (len / total) * 100))
 }

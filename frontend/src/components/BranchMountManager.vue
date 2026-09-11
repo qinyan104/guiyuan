@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { useFeedback } from '../composables/useFeedback'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 
@@ -41,9 +41,7 @@ const previewLayout = computed(() => {
 const canExecuteMerge = computed(() => Boolean(mergePreview.value && mergePreview.value.blockers.length === 0))
 
 const availablePublications = computed(() =>
-  publications.value.filter(
-    (item) => item.id !== props.publicationId && item.accessRole !== 'VIEWER',
-  ),
+  publications.value.filter(item => item.id !== props.publicationId && item.accessRole !== 'VIEWER'),
 )
 
 const groupedPublications = computed(() => {
@@ -51,7 +49,7 @@ const groupedPublications = computed(() => {
     OWNER: [],
     EDITOR: [],
   }
-  availablePublications.value.forEach((pub) => {
+  availablePublications.value.forEach(pub => {
     if (groups[pub.accessRole]) {
       groups[pub.accessRole].push(pub)
     } else {
@@ -62,8 +60,8 @@ const groupedPublications = computed(() => {
   return groups
 })
 
-const selectedTarget = computed(() =>
-  availablePublications.value.find((item) => String(item.id) === selectedTargetId.value) ?? null,
+const selectedTarget = computed(
+  () => availablePublications.value.find(item => String(item.id) === selectedTargetId.value) ?? null,
 )
 const mountPointTarget = computed<MountPointTarget | null>(() => props.person.mountPointTarget ?? null)
 const rootPersonName = computed(() => mountPointTarget.value?.rootPersonName ?? '')
@@ -87,7 +85,7 @@ function clearSelection() {
 
 watch(
   () => props.person.mountPointTarget?.publicationId,
-  (nextId) => {
+  nextId => {
     selectedTargetId.value = nextId ? String(nextId) : ''
   },
   { immediate: true },
@@ -232,7 +230,14 @@ function confirmPreviewMerge() {
 }
 
 async function executeMerge() {
-  if (!context || !canExecuteMerge.value || !props.publicationId || !props.person.isMountPoint || !props.person.mountPointTarget?.publicationId) return
+  if (
+    !context ||
+    !canExecuteMerge.value ||
+    !props.publicationId ||
+    !props.person.isMountPoint ||
+    !props.person.mountPointTarget?.publicationId
+  )
+    return
 
   showMergeConfirm.value = false
   mergePending.value = true

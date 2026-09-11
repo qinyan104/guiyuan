@@ -41,7 +41,7 @@ describe('WorkbenchPanels', () => {
     const wrapper = mountPanels()
     await wrapper.setProps({ layoutPanelOpen: true })
 
-    const field = wrapper.findAll('.lp-field').find((item) => item.text().includes('卡片圆角'))
+    const field = wrapper.findAll('.lp-field').find(item => item.text().includes('卡片圆角'))
     expect(field).toBeDefined()
 
     await field?.get('input[type="range"]').setValue(12)

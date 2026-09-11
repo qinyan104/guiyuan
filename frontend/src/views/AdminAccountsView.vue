@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import {
   deriveAccounts,
@@ -41,8 +41,8 @@ const batchDeleting = ref(false)
 const showCleanupConfirm = ref(false)
 const cleaningOrphans = ref(false)
 
-const isAllSelected = computed(() =>
-  accounts.value.length > 0 && selectedAccountIds.value.size === accounts.value.length
+const isAllSelected = computed(
+  () => accounts.value.length > 0 && selectedAccountIds.value.size === accounts.value.length,
 )
 
 function toggleSelectAll() {

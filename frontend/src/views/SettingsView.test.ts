@@ -13,12 +13,14 @@ vi.mock('../api/auth', () => ({
 vi.mock('../api/profile', () => ({
   changePassword: vi.fn(),
   changeNickname: vi.fn(),
-  getMyProfile: vi.fn(() => Promise.resolve({
-    person: { name: '馆主', gender: 'unknown', deceased: false },
-    publication: { id: 1, title: '测试族谱' },
-    hasPendingChanges: false,
-    personDbId: 1,
-  })),
+  getMyProfile: vi.fn(() =>
+    Promise.resolve({
+      person: { name: '馆主', gender: 'unknown', deceased: false },
+      publication: { id: 1, title: '测试族谱' },
+      hasPendingChanges: false,
+      personDbId: 1,
+    }),
+  ),
   updateMyProfileName: vi.fn(),
   uploadAvatar: vi.fn(),
 }))
@@ -54,7 +56,10 @@ describe('SettingsView', () => {
     await passwordInputs[0].setValue('123456')
     await passwordInputs[1].setValue('weakpass')
     await passwordInputs[2].setValue('weakpass')
-    await wrapper.findAll('button').find((button) => button.text().includes('更新密码'))?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find(button => button.text().includes('更新密码'))
+      ?.trigger('click')
 
     expect(changePassword).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('新密码须包含大小写字母和数字')

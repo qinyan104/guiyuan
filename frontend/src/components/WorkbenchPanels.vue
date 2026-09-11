@@ -58,7 +58,12 @@ const emit = defineEmits<{
 function onClickOutside(e: MouseEvent) {
   const target = e.target as Element | null
   if (!target) return
-  if (target.closest('.layout-panel') || target.closest('.history-panel') || target.closest('.validation-dialog-window') || target.closest('.tool-btn--panel')) {
+  if (
+    target.closest('.layout-panel') ||
+    target.closest('.history-panel') ||
+    target.closest('.validation-dialog-window') ||
+    target.closest('.tool-btn--panel')
+  ) {
     return
   }
   if (props.layoutPanelOpen) emit('close-layout')
@@ -76,7 +81,7 @@ onBeforeUnmount(() => {
 
 watch(
   () => props.validationOpen,
-  (open) => {
+  open => {
     document.body.style.overflow = open ? 'hidden' : ''
   },
   { immediate: true },

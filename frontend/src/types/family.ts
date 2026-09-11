@@ -168,14 +168,9 @@ export interface PublicationOperationPayload {
 
 export type PublicationOperationResult = ValidationResult<PublicationOperationPayload>
 
-
-
 // ─── Dependency Injection ─────────────────────────────────────
 
-
-
 export interface PublicationContext {
-
   pub: PublicationState
 
   history: EditorHistory
@@ -189,12 +184,6 @@ export interface PublicationContext {
   serverPublicationId: Ref<number | null>
 
   viewportPan: Ref<{ x: number; y: number }>
-
 }
 
-
-
-export const PUBLICATION_CONTEXT_KEY: InjectionKey<PublicationContext> =
-
-  Symbol('publication-context')
-
+export const PUBLICATION_CONTEXT_KEY: InjectionKey<PublicationContext> = Symbol('publication-context')

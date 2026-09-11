@@ -10,7 +10,7 @@ interface HttpConflictLike {
 }
 
 function asHttpConflictLike(error: unknown): HttpConflictLike {
-  return typeof error === 'object' && error !== null ? error as HttpConflictLike : {}
+  return typeof error === 'object' && error !== null ? (error as HttpConflictLike) : {}
 }
 
 export function asPublicationConflict(error: unknown): PublicationConflict | null {

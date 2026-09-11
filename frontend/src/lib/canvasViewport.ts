@@ -38,7 +38,14 @@ function resolveSafeRange(size: number, startInset: number, endInset: number, pa
   }
 }
 
-function shiftAxis(start: number, end: number, safeStart: number, safeEnd: number, safeCenter: number, safeSpan: number) {
+function shiftAxis(
+  start: number,
+  end: number,
+  safeStart: number,
+  safeEnd: number,
+  safeCenter: number,
+  safeSpan: number,
+) {
   const span = end - start
   if (span > safeSpan) {
     return safeCenter - (start + end) / 2
@@ -78,8 +85,12 @@ export function calculateRevealPan(input: CalculateRevealPanInput): RevealPanRes
   const cardBottom = cardTop + input.card.height * input.zoom
   const cardCenterX = (cardLeft + cardRight) / 2
   const cardCenterY = (cardTop + cardBottom) / 2
-  const deltaX = input.center ? input.viewportWidth / 2 - cardCenterX : shiftAxis(cardLeft, cardRight, safeX.start, safeX.end, safeX.center, safeX.span)
-  const deltaY = input.center ? input.viewportHeight / 2 - cardCenterY : shiftAxis(cardTop, cardBottom, safeY.start, safeY.end, safeY.center, safeY.span)
+  const deltaX = input.center
+    ? input.viewportWidth / 2 - cardCenterX
+    : shiftAxis(cardLeft, cardRight, safeX.start, safeX.end, safeX.center, safeX.span)
+  const deltaY = input.center
+    ? input.viewportHeight / 2 - cardCenterY
+    : shiftAxis(cardTop, cardBottom, safeY.start, safeY.end, safeY.center, safeY.span)
 
   return {
     panX: input.panX + deltaX,

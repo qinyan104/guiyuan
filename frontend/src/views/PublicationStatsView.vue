@@ -14,10 +14,10 @@ const people = computed<Person[]>(() => Object.values(pubData.value.people ?? {}
 const totalCount = computed(() => people.value.length)
 
 // ── 性别与在世统计 ──
-const maleCount = computed(() => people.value.filter((p) => p.gender === 'male').length)
-const deceasedCount = computed(() => people.value.filter((p) => p.deceased).length)
+const maleCount = computed(() => people.value.filter(p => p.gender === 'male').length)
+const deceasedCount = computed(() => people.value.filter(p => p.deceased).length)
 const aliveCount = computed(() => totalCount.value - deceasedCount.value)
-const malePercent = computed(() => totalCount.value ? Math.round((maleCount.value / totalCount.value) * 100) : 0)
+const malePercent = computed(() => (totalCount.value ? Math.round((maleCount.value / totalCount.value) * 100) : 0))
 
 // ── 堂号与修谱信息 ──
 const clanHallInfo = computed(() => {
@@ -53,10 +53,16 @@ const generationMap = computed(() => {
     for (const fam of famList) {
       if (!fam.adults.includes(cur.personId)) continue
       for (const sid of fam.adults) {
-        if (sid && !map.has(sid)) { map.set(sid, cur.generation); queue.push({ personId: sid, generation: cur.generation }) }
+        if (sid && !map.has(sid)) {
+          map.set(sid, cur.generation)
+          queue.push({ personId: sid, generation: cur.generation })
+        }
       }
       for (const cid of fam.children) {
-        if (cid && !map.has(cid)) { map.set(cid, cur.generation + 1); queue.push({ personId: cid, generation: cur.generation + 1 }) }
+        if (cid && !map.has(cid)) {
+          map.set(cid, cur.generation + 1)
+          queue.push({ personId: cid, generation: cur.generation + 1 })
+        }
       }
     }
   }
@@ -81,7 +87,7 @@ const maxGenCount = computed(() => {
 })
 
 const generationCount = computed(() => {
-  const gens = generationDistribution.value.map(([g]) => g).filter((g) => g > 0)
+  const gens = generationDistribution.value.map(([g]) => g).filter(g => g > 0)
   return gens.length ? Math.max(...gens) : 0
 })
 
@@ -99,9 +105,9 @@ const peakGeneration = computed(() => {
 
 const generationDetails = computed(() => {
   return generationDistribution.value.map(([g, c]) => {
-    const pInGen = people.value.filter((p) => (generationMap.value.get(p.id) ?? 0) === g)
-    const m = pInGen.filter((p) => p.gender === 'male').length
-    const f = pInGen.filter((p) => p.gender === 'female').length
+    const pInGen = people.value.filter(p => (generationMap.value.get(p.id) ?? 0) === g)
+    const m = pInGen.filter(p => p.gender === 'male').length
+    const f = pInGen.filter(p => p.gender === 'female').length
     return { generation: g, count: c, male: m, female: f }
   })
 })
@@ -140,7 +146,9 @@ const oldestPerson = computed(() => {
       }
     }
   }
-  return target ? { id: target.person.id, name: target.person.name, years: target.years, birth: target.birth, death: target.death } : null
+  return target
+    ? { id: target.person.id, name: target.person.name, years: target.years, birth: target.birth, death: target.death }
+    : null
 })
 
 const lifespanBuckets = computed(() => {
@@ -159,7 +167,7 @@ const lifespanBuckets = computed(() => {
       }
     }
   }
-  return buckets.map((b) => [b.label, b.count] as [string, number])
+  return buckets.map(b => [b.label, b.count] as [string, number])
 })
 
 const maxBucket = computed(() => {
@@ -219,7 +227,9 @@ const surnameDist = computed(() => {
       counts.set(s, (counts.get(s) ?? 0) + 1)
     }
   }
-  return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8)
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
 })
 
 const maxSurname = computed(() => {

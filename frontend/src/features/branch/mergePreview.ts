@@ -39,7 +39,7 @@ export function buildBranchMergePreview(
   )
   localPeople[mountPersonId] = { ...localPeople[mountPersonId], isMountPoint: false, mountPointTarget: undefined }
 
-  const targetFamilies = Object.values(target.families).filter((family) => !isFederatedId(family.id))
+  const targetFamilies = Object.values(target.families).filter(family => !isFederatedId(family.id))
   const adultFamilies = new Map<string, FamilyUnit[]>()
   for (const family of targetFamilies) {
     for (const adultId of family.adults) {
@@ -58,7 +58,7 @@ export function buildBranchMergePreview(
     for (const family of adultFamilies.get(personId) ?? []) {
       if (includedFamilies.has(family.id)) continue
       includedFamilies.add(family.id)
-      family.adults.forEach((id) => {
+      family.adults.forEach(id => {
         includedPeople.add(id)
       })
       for (const childId of family.children) {
@@ -78,10 +78,14 @@ export function buildBranchMergePreview(
   if (targetPerson.isMountPoint) {
     blockers.push('目标合并人物本身仍是挂载点，请先处理其挂载关系')
   }
-  if ([...includedPeople].some((id) => id !== rootPersonId && target.people[id]?.isMountPoint)) {
+  if ([...includedPeople].some(id => id !== rootPersonId && target.people[id]?.isMountPoint)) {
     blockers.push('合并范围内包含嵌套挂载点，请先处理其挂载关系')
   }
-  if (mountPerson.gender !== 'unknown' && targetPerson.gender !== 'unknown' && mountPerson.gender !== targetPerson.gender) {
+  if (
+    mountPerson.gender !== 'unknown' &&
+    targetPerson.gender !== 'unknown' &&
+    mountPerson.gender !== targetPerson.gender
+  ) {
     warnings.push('两位人物的性别记录不一致')
   }
   for (const [label, left, right] of [
@@ -92,9 +96,9 @@ export function buildBranchMergePreview(
       warnings.push(`${label}记录不一致：${left} / ${right}`)
     }
   }
-  const masterHasAdultFamily = Object.values(localFamilies).some((family) => family.adults.includes(mountPersonId))
+  const masterHasAdultFamily = Object.values(localFamilies).some(family => family.adults.includes(mountPersonId))
   const targetHasAdultFamily = targetFamilies.some(
-    (family) => includedFamilies.has(family.id) && family.adults.includes(rootPersonId),
+    family => includedFamilies.has(family.id) && family.adults.includes(rootPersonId),
   )
   if (masterHasAdultFamily && targetHasAdultFamily) {
     blockers.push('两位人物都已有下游家庭，暂不支持自动合并')
@@ -129,8 +133,8 @@ export function buildBranchMergePreview(
     localFamilies[mergedId] = {
       ...family,
       id: mergedId,
-      adults: family.adults.map((id) => mappedPersonIds.get(id)).filter((id): id is string => Boolean(id)),
-      children: family.children.map((id) => mappedPersonIds.get(id)).filter((id): id is string => Boolean(id)),
+      adults: family.adults.map(id => mappedPersonIds.get(id)).filter((id): id is string => Boolean(id)),
+      children: family.children.map(id => mappedPersonIds.get(id)).filter((id): id is string => Boolean(id)),
     }
     addedFamilies++
   }

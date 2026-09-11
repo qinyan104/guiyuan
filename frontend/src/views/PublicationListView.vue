@@ -149,11 +149,7 @@ async function handleCreate() {
   const title = newTitle.value.trim() || '未命名族谱'
   const subtitle = newSubtitle.value.trim()
   try {
-    const id = await createPublication(
-      { ...blankPublication, title, subtitle },
-      defaultSettings,
-      title,
-    )
+    const id = await createPublication({ ...blankPublication, title, subtitle }, defaultSettings, title)
     showCreateDialog.value = false
     newTitle.value = ''
     newSubtitle.value = ''
@@ -180,7 +176,7 @@ async function handleDelete(id: number) {
   deletingId.value = id
   try {
     await deletePublication(id)
-    publications.value = publications.value.filter((p) => p.id !== id)
+    publications.value = publications.value.filter(p => p.id !== id)
     deleteConfirmId.value = null
   } catch (err: unknown) {
     feedback.setError('删除失败: ' + getUserErrorMessage(err, '未知错误'))
@@ -191,7 +187,7 @@ async function handleDelete(id: number) {
 
 const cloningSampleId = ref<string | null>(null)
 
-async function handleViewSample(sample: typeof builtinSamples[0]) {
+async function handleViewSample(sample: (typeof builtinSamples)[0]) {
   if (cloningSampleId.value) return
   cloningSampleId.value = sample.id
 

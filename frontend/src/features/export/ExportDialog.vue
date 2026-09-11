@@ -346,7 +346,7 @@ const selectedTheme = ref<ThemeMode>(getCurrentTheme())
 
 watch(
   () => props.modelValue,
-  (visible) => {
+  visible => {
     if (visible) {
       selectedTheme.value = getCurrentTheme()
     }

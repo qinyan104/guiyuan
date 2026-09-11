@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from "vue"
-import { useFeedback } from "../composables/useFeedback"
-import FeedbackStrip from "../components/FeedbackStrip.vue"
-import BranchMountManager from "./BranchMountManager.vue"
-import AppSelect from "./AppSelect.vue"
-import type { FamilyBranchMode, Gender, Person } from "../types/family"
-import { uploadPhoto, getPhotoUrl } from "../api/photo"
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useFeedback } from '../composables/useFeedback'
+import FeedbackStrip from '../components/FeedbackStrip.vue'
+import BranchMountManager from './BranchMountManager.vue'
+import AppSelect from './AppSelect.vue'
+import type { FamilyBranchMode, Gender, Person } from '../types/family'
+import { uploadPhoto, getPhotoUrl } from '../api/photo'
 
 interface PersonDetailItem {
   label: string
@@ -19,7 +19,7 @@ interface ChildOrderItem {
   isLast: boolean
 }
 
-type EditablePersonField = "name" | "birth" | "death" | "age" | "titleName" | "clan" | "note" | "avatarUrl"
+type EditablePersonField = 'name' | 'birth' | 'death' | 'age' | 'titleName' | 'clan' | 'note' | 'avatarUrl'
 
 const feedback = useFeedback()
 
@@ -39,37 +39,37 @@ const props = defineProps<{
   canSwapAdults: boolean
   isSelectedBranchFocused: boolean
   canSetBranchMode: boolean
-  branchMode: FamilyBranchMode | ""
+  branchMode: FamilyBranchMode | ''
   parentActionLabel: string
   branchActionLabel: string
   kinshipLabel?: string | null
 }>()
 
 const emit = defineEmits<{
-  (e: "close"): void
-  (e: "select-person", id: string): void
-  (e: "add-spouse"): void
-  (e: "add-child", g: Gender): void
-  (e: "add-parents"): void
-  (e: "remove-spouse"): void
-  (e: "remove-parents"): void
-  (e: "focus-branch"): void
-  (e: "update-branch-mode", m: FamilyBranchMode): void
-  (e: "swap-partners"): void
-  (e: "move-child", p: { childId: string; direction: -1 | 1 }): void
-  (e: "update-person-field", p: { field: EditablePersonField; value: string }): void
-  (e: "update-person-gender", g: Gender): void
-  (e: "apply-note-suggestion", v: string): void
-  (e: "delete-person"): void
+  (e: 'close'): void
+  (e: 'select-person', id: string): void
+  (e: 'add-spouse'): void
+  (e: 'add-child', g: Gender): void
+  (e: 'add-parents'): void
+  (e: 'remove-spouse'): void
+  (e: 'remove-parents'): void
+  (e: 'focus-branch'): void
+  (e: 'update-branch-mode', m: FamilyBranchMode): void
+  (e: 'swap-partners'): void
+  (e: 'move-child', p: { childId: string; direction: -1 | 1 }): void
+  (e: 'update-person-field', p: { field: EditablePersonField; value: string }): void
+  (e: 'update-person-gender', g: Gender): void
+  (e: 'apply-note-suggestion', v: string): void
+  (e: 'delete-person'): void
 }>()
 
 function updatePersonField(field: EditablePersonField, event: Event) {
   const target = event.target as HTMLInputElement
-  emit("update-person-field", { field, value: target.value })
+  emit('update-person-field', { field, value: target.value })
 }
 
 function updatePersonGender(genderVal: string) {
-  emit("update-person-gender", genderVal as Gender)
+  emit('update-person-gender', genderVal as Gender)
 }
 
 function handleUploadAvatarClick(e: MouseEvent) {
@@ -83,22 +83,22 @@ async function handleUploadAvatar(event: Event) {
   if (!input.files?.length) return
   const file = input.files[0]
   if (file.size > 5 * 1024 * 1024) {
-    feedback.errorMessage.value = "照片过大，请上传 5MB 以内的文件"
+    feedback.errorMessage.value = '照片过大，请上传 5MB 以内的文件'
     return
   }
-  if (!file.type.startsWith("image/")) {
-    feedback.errorMessage.value = "仅支持图片文件"
+  if (!file.type.startsWith('image/')) {
+    feedback.errorMessage.value = '仅支持图片文件'
     return
   }
   if (!props.publicationId) {
-    feedback.errorMessage.value = "请先保存族谱到服务器后再上传照片"
+    feedback.errorMessage.value = '请先保存族谱到服务器后再上传照片'
     return
   }
   try {
     const pid = await uploadPhoto(props.person.id, props.publicationId, file)
-    emit("update-person-field", { field: "avatarUrl", value: getPhotoUrl(pid) })
+    emit('update-person-field', { field: 'avatarUrl', value: getPhotoUrl(pid) })
   } catch {
-    feedback.errorMessage.value = "上传失败"
+    feedback.errorMessage.value = '上传失败'
   }
 }
 
@@ -109,7 +109,7 @@ const dragOverChildId = ref<string | null>(null)
 function handleChildDragStart(id: string, e: DragEvent) {
   draggingChildId.value = id
   if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = "move"
+    e.dataTransfer.effectAllowed = 'move'
   }
 }
 
@@ -128,11 +128,11 @@ function handleChildDrop(targetId: string, e: DragEvent) {
   draggingChildId.value = null
   dragOverChildId.value = null
   if (!sourceId || sourceId === targetId) return
-  const si = props.childItems.findIndex((c) => c.person.id === sourceId)
-  const ti = props.childItems.findIndex((c) => c.person.id === targetId)
+  const si = props.childItems.findIndex(c => c.person.id === sourceId)
+  const ti = props.childItems.findIndex(c => c.person.id === targetId)
   if (si === -1 || ti === -1) return
   for (let i = 0; i < Math.abs(ti - si); i++) {
-    emit("move-child", { childId: sourceId, direction: ti > si ? 1 : -1 })
+    emit('move-child', { childId: sourceId, direction: ti > si ? 1 : -1 })
   }
 }
 
@@ -142,7 +142,7 @@ function handleChildDragEnd() {
 }
 
 function getGenderClass(g: Gender) {
-  return g === "male" ? "is-male" : g === "female" ? "is-female" : "is-unknown"
+  return g === 'male' ? 'is-male' : g === 'female' ? 'is-female' : 'is-unknown'
 }
 
 function extractYear(s: string | undefined): number | null {
@@ -151,12 +151,12 @@ function extractYear(s: string | undefined): number | null {
   return m ? parseInt(m[1]) : null
 }
 
-const autoAge = ref<string>("")
+const autoAge = ref<string>('')
 
 const genderOptions = [
-  { value: "male", label: "男" },
-  { value: "female", label: "女" },
-  { value: "unknown", label: "未知" },
+  { value: 'male', label: '男' },
+  { value: 'female', label: '女' },
+  { value: 'unknown', label: '未知' },
 ]
 
 watch(
@@ -164,34 +164,34 @@ watch(
   ([b, d]) => {
     const by = extractYear(b)
     if (!by) {
-      autoAge.value = ""
+      autoAge.value = ''
       return
     }
     const dy = extractYear(d)
     if (dy && dy > by && dy - by < 150) {
       autoAge.value = String(dy - by)
-      emit("update-person-field", { field: "age", value: String(dy - by) })
+      emit('update-person-field', { field: 'age', value: String(dy - by) })
     } else if (!d || !dy) {
       autoAge.value = String(new Date().getFullYear() - by)
     } else {
-      autoAge.value = ""
+      autoAge.value = ''
     }
   },
   { immediate: true },
 )
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === "Escape" && props.open) {
-    emit("close")
+  if (e.key === 'Escape' && props.open) {
+    emit('close')
   }
 }
 
 onMounted(() => {
-  window.addEventListener("keydown", onKeydown)
+  window.addEventListener('keydown', onKeydown)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener("keydown", onKeydown)
+  window.removeEventListener('keydown', onKeydown)
 })
 </script>
 

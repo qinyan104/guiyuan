@@ -23,12 +23,13 @@ describe('draft persistence', () => {
       onerror: ((error: unknown) => void) | null = null
 
       readAsDataURL(blob: Blob) {
-        blob.arrayBuffer()
-          .then((buffer) => {
+        blob
+          .arrayBuffer()
+          .then(buffer => {
             this.result = `data:${blob.type};base64,${Buffer.from(buffer).toString('base64')}`
             this.onloadend?.()
           })
-          .catch((error) => {
+          .catch(error => {
             this.onerror?.(error)
           })
       }
@@ -87,9 +88,9 @@ describe('draft persistence', () => {
     const publication = structuredClone(samplePublication) as PublicationData
     publication.people.p1.avatarUrl = 'http://localhost:8080/uploads/legacy-person.png'
 
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response('legacy-image', { status: 200, headers: { 'Content-Type': 'image/png' } }),
-    )
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response('legacy-image', { status: 200, headers: { 'Content-Type': 'image/png' } }))
 
     const portablePublication = await createPortablePublication(publication)
 

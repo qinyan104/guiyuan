@@ -67,18 +67,14 @@ describe('validatePublicationData', () => {
   it('rejects an empty title', () => {
     const broken = { ...samplePublication, title: '   ' }
     expect(validatePublicationData(broken)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'invalid-root', path: 'title' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ code: 'invalid-root', path: 'title' })]),
     )
   })
 
   it('rejects an empty subtitle', () => {
     const broken = { ...samplePublication, subtitle: '' }
     expect(validatePublicationData(broken)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'invalid-root', path: 'subtitle' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ code: 'invalid-root', path: 'subtitle' })]),
     )
   })
 })
@@ -91,36 +87,28 @@ describe('validateSettings', () => {
   it('rejects a negative cardWidth', () => {
     const bad = { ...defaultSettings, cardWidth: -10 }
     expect(validateSettings(bad)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'invalid-settings', path: 'settings.cardWidth' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ code: 'invalid-settings', path: 'settings.cardWidth' })]),
     )
   })
 
   it('rejects a zoom below minimum', () => {
     const bad = { ...defaultSettings, zoom: 0.05 }
     expect(validateSettings(bad)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'invalid-settings', path: 'settings.zoom' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ code: 'invalid-settings', path: 'settings.zoom' })]),
     )
   })
 
   it('rejects a zoom above maximum', () => {
     const bad = { ...defaultSettings, zoom: 2.0 }
     expect(validateSettings(bad)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'invalid-settings', path: 'settings.zoom' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ code: 'invalid-settings', path: 'settings.zoom' })]),
     )
   })
 
   it('rejects Infinity values', () => {
     const bad = { ...defaultSettings, paddingX: Infinity }
     expect(validateSettings(bad)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'invalid-settings', path: 'settings.paddingX' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ code: 'invalid-settings', path: 'settings.paddingX' })]),
     )
   })
 
@@ -139,7 +127,7 @@ describe('normalizeSettings', () => {
     const raw = { ...defaultSettings, zoom: 0.01, cardWidth: 999, compactNameSize: 99, paddingY: -50 }
     const result = normalizeSettings(raw)
 
-    expect(result.zoom).toBe(0.10)
+    expect(result.zoom).toBe(0.1)
     expect(result.cardWidth).toBe(176)
     expect(result.compactNameSize).toBe(36)
     expect(result.paddingY).toBe(48)

@@ -21,7 +21,7 @@ describe('lexicon store', () => {
 
   it('switches lexicon and updates computed lexicon reactively', async () => {
     const store = useLexiconStore()
-    
+
     store.setLexicon('archive')
     await nextTick()
     expect(store.currentLexiconId).toBe('archive')

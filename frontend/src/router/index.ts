@@ -1,4 +1,4 @@
-﻿import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { getToken, isAdmin } from '../api/auth'
 import { bootstrapAuthSession } from '../api/authSession'
 import AdminLayout from '../views/AdminLayout.vue'
@@ -108,14 +108,14 @@ const routes: RouteRecordRaw[] = [
         path: 'admin/publications/:pubId/accounts',
         name: 'admin-accounts',
         component: () => import('../views/AdminAccountsView.vue'),
-        props: (route) => ({ pubId: Number(route.params.pubId) }),
+        props: route => ({ pubId: Number(route.params.pubId) }),
         meta: { admin: true },
       },
       {
         path: 'admin/publications/:pubId/reviews',
         name: 'admin-reviews',
         component: () => import('../views/AdminReviewView.vue'),
-        props: (route) => ({ pubId: Number(route.params.pubId) }),
+        props: route => ({ pubId: Number(route.params.pubId) }),
         meta: { admin: true },
       },
     ],
@@ -134,25 +134,25 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'workbench',
         component: () => import('../views/WorkbenchView.vue'),
-        props: (route) => ({ publicationId: Number(route.params.id) }),
+        props: route => ({ publicationId: Number(route.params.id) }),
       },
       {
         path: 'stats',
         name: 'publication-stats',
         component: () => import('../views/PublicationStatsView.vue'),
-        props: (route) => ({ publicationId: Number(route.params.id) }),
+        props: route => ({ publicationId: Number(route.params.id) }),
       },
       {
         path: 'activity',
         name: 'publication-activity',
         component: () => import('../views/PublicationActivityView.vue'),
-        props: (route) => ({ publicationId: Number(route.params.id) }),
+        props: route => ({ publicationId: Number(route.params.id) }),
       },
       {
         path: 'timeline',
         name: 'publication-timeline',
         component: () => import('../views/TimelineView.vue'),
-        props: (route) => ({ publicationId: Number(route.params.id) }),
+        props: route => ({ publicationId: Number(route.params.id) }),
       },
     ],
   },
@@ -169,7 +169,7 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach(async (to) => {
+router.beforeEach(async to => {
   let loggedIn = !!getToken()
 
   if (!loggedIn && (!to.meta.public || to.name === 'login')) {

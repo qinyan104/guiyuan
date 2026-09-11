@@ -2,12 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { calculateRevealPan, type RevealPersonOptions } from '../lib/canvasViewport'
 import type { KinshipTerm } from '../lib/kinship'
-import type {
-  Person,
-  PublicationData,
-  PublicationLayout,
-  PublicationSettings,
-} from '../types/family'
+import type { Person, PublicationData, PublicationLayout, PublicationSettings } from '../types/family'
 import PersonCardSvg from './PersonCardSvg.vue'
 
 const props = defineProps<{
@@ -171,27 +166,27 @@ const renderedCards = computed(() => {
     bounds.top,
     bounds.bottom,
   )
-    .map((index) => props.layout.cards[index])
-    .filter((card) =>
-      card.x + card.width >= bounds.left && card.x <= bounds.right &&
-      card.y + card.height >= bounds.top && card.y <= bounds.bottom,
+    .map(index => props.layout.cards[index])
+    .filter(
+      card =>
+        card.x + card.width >= bounds.left &&
+        card.x <= bounds.right &&
+        card.y + card.height >= bounds.top &&
+        card.y <= bounds.bottom,
     )
   return visibleCards.slice(0, renderedCardLimit.value)
 })
 const renderedLines = computed(() => {
   if (!shouldCull.value) return props.layout.lines
   const bounds = renderBounds.value
-  return collectSpatialIndexes(
-    spatialIndex.value.lines,
-    bounds.left,
-    bounds.right,
-    bounds.top,
-    bounds.bottom,
-  )
-    .map((index) => props.layout.lines[index])
-    .filter((line) =>
-      Math.max(line.x1, line.x2) >= bounds.left && Math.min(line.x1, line.x2) <= bounds.right &&
-      Math.max(line.y1, line.y2) >= bounds.top && Math.min(line.y1, line.y2) <= bounds.bottom,
+  return collectSpatialIndexes(spatialIndex.value.lines, bounds.left, bounds.right, bounds.top, bounds.bottom)
+    .map(index => props.layout.lines[index])
+    .filter(
+      line =>
+        Math.max(line.x1, line.x2) >= bounds.left &&
+        Math.min(line.x1, line.x2) <= bounds.right &&
+        Math.max(line.y1, line.y2) >= bounds.top &&
+        Math.min(line.y1, line.y2) <= bounds.bottom,
     )
 })
 const renderedLinePaths = computed(() => {
@@ -263,7 +258,10 @@ const junctions = computed(() => {
         const horizontals = horizontalByY.get(p.y)
         if (horizontals) {
           for (const h of horizontals) {
-            if (p.x > h.x1 && p.x < h.x2) { junctionPoints.add(key); break }
+            if (p.x > h.x1 && p.x < h.x2) {
+              junctionPoints.add(key)
+              break
+            }
           }
         }
       } else if (line.y1 === line.y2) {
@@ -271,7 +269,10 @@ const junctions = computed(() => {
         const verticals = verticalByX.get(p.x)
         if (verticals) {
           for (const v of verticals) {
-            if (p.y > v.y1 && p.y < v.y2) { junctionPoints.add(key); break }
+            if (p.y > v.y1 && p.y < v.y2) {
+              junctionPoints.add(key)
+              break
+            }
           }
         }
       }
@@ -283,7 +284,6 @@ const junctions = computed(() => {
     return { x, y }
   })
 })
-
 
 function cameraTransform(x: number, y: number) {
   const translate = `calc(-50% + ${x}px), calc(-50% + ${y}px)`
@@ -302,8 +302,10 @@ function refreshRenderWindow(force = false) {
     !force &&
     Math.abs(localPanX - renderPanX.value) < panThresholdX &&
     Math.abs(localPanY - renderPanY.value) < panThresholdY &&
-    zoomRatio > 0.67 && zoomRatio < 1.5
-  ) return
+    zoomRatio > 0.67 &&
+    zoomRatio < 1.5
+  )
+    return
 
   renderPanX.value = localPanX
   renderPanY.value = localPanY
@@ -354,7 +356,10 @@ let pinchMidX = 0
 let pinchMidY = 0
 
 onBeforeUnmount(() => {
-  if (inertiaRafId !== null) { cancelAnimationFrame(inertiaRafId); inertiaRafId = null }
+  if (inertiaRafId !== null) {
+    cancelAnimationFrame(inertiaRafId)
+    inertiaRafId = null
+  }
   if (panRafId !== null) cancelAnimationFrame(panRafId)
   if (zoomIdleTimer !== null) clearTimeout(zoomIdleTimer)
   if (renderBatchRafId !== null) cancelAnimationFrame(renderBatchRafId)
@@ -425,7 +430,7 @@ watch(
 
 watch(
   () => props.settings.zoom,
-  (zoom) => {
+  zoom => {
     if (zoom === localZoom) return
     localZoom = zoom
     beginZoomInteraction()
@@ -439,7 +444,12 @@ watch(
   (newLayout, oldLayout) => {
     startProgressiveCardMount(newLayout.cards.length)
     refreshRenderWindow(true)
-    if (props.panX === 0 && props.panY === 0 && (!oldLayout || oldLayout.cards.length === 0) && newLayout.cards.length > 0) {
+    if (
+      props.panX === 0 &&
+      props.panY === 0 &&
+      (!oldLayout || oldLayout.cards.length === 0) &&
+      newLayout.cards.length > 0
+    ) {
       resetView()
     }
   },
@@ -464,7 +474,7 @@ function resolvePerson(personId: string): Person {
 const CARD_TO_SCREEN_RATIO = 1
 
 function getCardScreenPosition(personId: string) {
-  const card = props.layout.cards.find((item) => item.personId === personId)
+  const card = props.layout.cards.find(item => item.personId === personId)
   if (!card) return null
   return {
     x: (card.x + card.width / 2) * localZoom * CARD_TO_SCREEN_RATIO + localPanX,
@@ -473,7 +483,7 @@ function getCardScreenPosition(personId: string) {
 }
 
 function revealPerson(personId: string, options: RevealPersonOptions = {}) {
-  const card = props.layout.cards.find((item) => item.personId === personId)
+  const card = props.layout.cards.find(item => item.personId === personId)
   if (!card || !viewportRef.value) return false
 
   const result = calculateRevealPan({
@@ -675,7 +685,7 @@ function handleWheel(event: WheelEvent) {
   }
 
   const currentZoom = localZoom
-  const nextZoom = clamp(Number((currentZoom * Math.exp(-event.deltaY * 0.0016)).toFixed(2)), 0.10, 1.35)
+  const nextZoom = clamp(Number((currentZoom * Math.exp(-event.deltaY * 0.0016)).toFixed(2)), 0.1, 1.35)
 
   if (nextZoom === currentZoom) {
     return
@@ -715,7 +725,7 @@ function handleTouchMove(event: TouchEvent) {
     const dy = event.touches[0].clientY - event.touches[1].clientY
     const dist = Math.hypot(dx, dy)
     const scale = dist / pinchStartDist
-    const nextZoom = clamp(Number((pinchStartZoom * scale).toFixed(2)), 0.10, 1.35)
+    const nextZoom = clamp(Number((pinchStartZoom * scale).toFixed(2)), 0.1, 1.35)
 
     if (nextZoom === localZoom || !viewportRef.value) return
 
@@ -741,22 +751,17 @@ function resetView() {
     return
   }
   const focusFamily = props.publication.families[props.publication.focusFamilyId]
-  const rootPersonId = focusFamily?.adults.find((adultId) => Boolean(adultId))
+  const rootPersonId = focusFamily?.adults.find(adultId => Boolean(adultId))
   const rootCard =
-    (rootPersonId ? props.layout.cards.find((card) => card.personId === rootPersonId) : undefined) ??
+    (rootPersonId ? props.layout.cards.find(card => card.personId === rootPersonId) : undefined) ??
     props.layout.cards.reduce((min, card) => {
       if (card.y !== min.y) return card.y < min.y ? card : min
       return card.x < min.x ? card : min
     })
   const cx = rootCard.x + rootCard.width / 2
   const cy = rootCard.y + rootCard.height / 2
-  setPan(
-    (props.layout.width / 2 - cx) * localZoom,
-    (props.layout.height / 2 - cy) * localZoom,
-    true,
-  )
+  setPan((props.layout.width / 2 - cx) * localZoom, (props.layout.height / 2 - cy) * localZoom, true)
 }
-
 </script>
 
 <template>

@@ -43,8 +43,22 @@ export interface LexiconConfig {
     editModalTitle: string
     editModalSubmit: string
   }
-  users: { label: string; soul: string; headerEyebrow: string; headerTitle: string; headerTitleItalic: string; quote: string }
-  logs: { label: string; soul: string; headerEyebrow: string; headerTitle: string; headerTitleItalic: string; quote: string }
+  users: {
+    label: string
+    soul: string
+    headerEyebrow: string
+    headerTitle: string
+    headerTitleItalic: string
+    quote: string
+  }
+  logs: {
+    label: string
+    soul: string
+    headerEyebrow: string
+    headerTitle: string
+    headerTitleItalic: string
+    quote: string
+  }
   settings: { soul: string }
 }
 
@@ -68,7 +82,7 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       recentActivityTitle: '最近编辑',
       backupTitle: '数据备份',
       welcomeTitle: '欢迎使用归源家谱管理系统',
-      welcomeDesc: '创建您的第一部族谱，轻松整理家族脉络与档案数据。'
+      welcomeDesc: '创建您的第一部族谱，轻松整理家族脉络与档案数据。',
     },
     publications: {
       label: '我的族谱',
@@ -87,11 +101,25 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       createModalTitle: '新建族谱',
       createModalSubmit: '立即创建',
       editModalTitle: '编辑族谱信息',
-      editModalSubmit: '保存修改'
+      editModalSubmit: '保存修改',
     },
-    users: { label: '用户管理', soul: '户', headerEyebrow: '账号权限', headerTitle: '用户管理', headerTitleItalic: '名录', quote: '管理系统成员账号与权限角色，协同维护宗谱档案。' },
-    logs: { label: '操作日志', soul: '志', headerEyebrow: '审计日志', headerTitle: '操作日志', headerTitleItalic: '审计', quote: '详细记录系统每一次操作与变更，保障档案安全可追溯。' },
-    settings: { soul: '设' }
+    users: {
+      label: '用户管理',
+      soul: '户',
+      headerEyebrow: '账号权限',
+      headerTitle: '用户管理',
+      headerTitleItalic: '名录',
+      quote: '管理系统成员账号与权限角色，协同维护宗谱档案。',
+    },
+    logs: {
+      label: '操作日志',
+      soul: '志',
+      headerEyebrow: '审计日志',
+      headerTitle: '操作日志',
+      headerTitleItalic: '审计',
+      quote: '详细记录系统每一次操作与变更，保障档案安全可追溯。',
+    },
+    settings: { soul: '设' },
   },
   archive: {
     id: 'archive',
@@ -112,7 +140,7 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       recentActivityTitle: '近期活跃',
       backupTitle: '数据归档',
       welcomeTitle: '欢迎来到数字档案馆',
-      welcomeDesc: '创建您的第一个族谱，开启家族编修之旅。'
+      welcomeDesc: '创建您的第一个族谱，开启家族编修之旅。',
     },
     publications: {
       label: '典藏',
@@ -131,11 +159,25 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       createModalTitle: '开宗立派',
       createModalSubmit: '建档立案',
       editModalTitle: '修缮档案属性',
-      editModalSubmit: '封装保存'
+      editModalSubmit: '封装保存',
     },
-    users: { label: '守藏', soul: '司', headerEyebrow: '卷之三 · 职官', headerTitle: '守藏', headerTitleItalic: '名录', quote: '修谱者，续宗支、识尊卑，\\n功在当代，利在千秋。' },
-    logs: { label: '流年', soul: '岁', headerEyebrow: '卷之四 · 纪事', headerTitle: '流年', headerTitleItalic: '纪事', quote: '笔墨之间，见微知著；\\n行止之处，皆有回响。' },
-    settings: { soul: '枢' }
+    users: {
+      label: '守藏',
+      soul: '司',
+      headerEyebrow: '卷之三 · 职官',
+      headerTitle: '守藏',
+      headerTitleItalic: '名录',
+      quote: '修谱者，续宗支、识尊卑，\\n功在当代，利在千秋。',
+    },
+    logs: {
+      label: '流年',
+      soul: '岁',
+      headerEyebrow: '卷之四 · 纪事',
+      headerTitle: '流年',
+      headerTitleItalic: '纪事',
+      quote: '笔墨之间，见微知著；\\n行止之处，皆有回响。',
+    },
+    settings: { soul: '枢' },
   },
   shrine: {
     id: 'shrine',
@@ -156,7 +198,7 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       recentActivityTitle: '堂志留痕',
       backupTitle: '谱牒封存',
       welcomeTitle: '欢迎归于宗族明堂',
-      welcomeDesc: '敬宗收族，修谱以纪世代昭穆尊卑。'
+      welcomeDesc: '敬宗收族，修谱以纪世代昭穆尊卑。',
     },
     publications: {
       label: '谱箧',
@@ -175,11 +217,25 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       createModalTitle: '立宗建牒',
       createModalSubmit: '敬告立牒',
       editModalTitle: '校勘谱牒纪略',
-      editModalSubmit: '敬谨存录'
+      editModalSubmit: '敬谨存录',
     },
-    users: { label: '执事', soul: '执', headerEyebrow: '东厢 · 司理', headerTitle: '执事', headerTitleItalic: '名录', quote: '敬长尊贤，敦宗睦族；\\n各秉其职，代代相继。' },
-    logs: { label: '堂志', soul: '志', headerEyebrow: '回廊 · 留痕', headerTitle: '宗祠', headerTitleItalic: '堂志', quote: '堂前燕去燕又回，\\n阶下阶前印苍苔。' },
-    settings: { soul: '理' }
+    users: {
+      label: '执事',
+      soul: '执',
+      headerEyebrow: '东厢 · 司理',
+      headerTitle: '执事',
+      headerTitleItalic: '名录',
+      quote: '敬长尊贤，敦宗睦族；\\n各秉其职，代代相继。',
+    },
+    logs: {
+      label: '堂志',
+      soul: '志',
+      headerEyebrow: '回廊 · 留痕',
+      headerTitle: '宗祠',
+      headerTitleItalic: '堂志',
+      quote: '堂前燕去燕又回，\\n阶下阶前印苍苔。',
+    },
+    settings: { soul: '理' },
   },
   poetic: {
     id: 'poetic',
@@ -200,7 +256,7 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       recentActivityTitle: '韶华纪事',
       backupTitle: '典藏封缄',
       welcomeTitle: '欢迎开启寻根溯源之旅',
-      welcomeDesc: '树高千丈，落叶归根；万物逆旅，百代过客。'
+      welcomeDesc: '树高千丈，落叶归根；万物逆旅，百代过客。',
     },
     publications: {
       label: '琅嬛',
@@ -219,12 +275,26 @@ export const LEXICONS: Record<LexiconId, LexiconConfig> = {
       createModalTitle: '开轩挥墨',
       createModalSubmit: '落笔成篇',
       editModalTitle: '润色宗卷谱序',
-      editModalSubmit: '钤印定稿'
+      editModalSubmit: '钤印定稿',
     },
-    users: { label: '同道', soul: '契', headerEyebrow: '三篇 · 结契', headerTitle: '同道', headerTitleItalic: '中人', quote: '岂曰无衣，与子同袍；\\n岂曰无谱，与子同抄。' },
-    logs: { label: '流年', soul: '光', headerEyebrow: '末章 · 韶华', headerTitle: '岁月', headerTitleItalic: '流年', quote: '万物逆旅，百代过客；\\n浮生若梦，为欢几何。' },
-    settings: { soul: '镜' }
-  }
+    users: {
+      label: '同道',
+      soul: '契',
+      headerEyebrow: '三篇 · 结契',
+      headerTitle: '同道',
+      headerTitleItalic: '中人',
+      quote: '岂曰无衣，与子同袍；\\n岂曰无谱，与子同抄。',
+    },
+    logs: {
+      label: '流年',
+      soul: '光',
+      headerEyebrow: '末章 · 韶华',
+      headerTitle: '岁月',
+      headerTitleItalic: '流年',
+      quote: '万物逆旅，百代过客；\\n浮生若梦，为欢几何。',
+    },
+    settings: { soul: '镜' },
+  },
 }
 
 const STORAGE_KEY = 'genealogy-lexicon-theme'
@@ -237,13 +307,17 @@ export const useLexiconStore = defineStore('lexicon', () => {
     if (stored && LEXICONS[stored as LexiconId]) {
       currentLexiconId.value = stored as LexiconId
     }
-  } catch { /* localStorage may be unavailable in private mode */ }
+  } catch {
+    /* localStorage may be unavailable in private mode */
+  }
 
   function setLexicon(id: LexiconId) {
     currentLexiconId.value = id
     try {
       localStorage.setItem(STORAGE_KEY, id)
-    } catch { /* localStorage may be unavailable in private mode */ }
+    } catch {
+      /* localStorage may be unavailable in private mode */
+    }
   }
 
   const lexicon = computed(() => LEXICONS[currentLexiconId.value])
@@ -253,6 +327,6 @@ export const useLexiconStore = defineStore('lexicon', () => {
     currentLexiconId,
     setLexicon,
     lexicon,
-    lexicons
+    lexicons,
   }
 })

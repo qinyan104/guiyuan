@@ -41,7 +41,7 @@ it('renders the list after clicking the canvas title, including a second round t
   await router.isReady()
   const wrapper = mount(App, {
     global: {
-      config: { warnHandler: (message) => console.warn(message) },
+      config: { warnHandler: message => console.warn(message) },
       plugins: [router],
       stubs: {
         // Keep Vue's actual transition: the default test stub hides the blank-page regression.

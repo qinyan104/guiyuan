@@ -68,9 +68,7 @@ describe('useCollaborators', () => {
     await vi.runAllTimersAsync()
 
     expect(searchUsers).toHaveBeenCalledWith('view', expect.any(AbortSignal))
-    expect(collaborators.searchResults.value).toEqual([
-      { id: 12, username: 'viewer', nickname: 'Viewer' },
-    ])
+    expect(collaborators.searchResults.value).toEqual([{ id: 12, username: 'viewer', nickname: 'Viewer' }])
 
     vi.useRealTimers()
   })
@@ -82,12 +80,7 @@ describe('useCollaborators', () => {
 
     await collaborators.handleAdd()
 
-    expect(addAccessRecord).toHaveBeenCalledWith(
-      7,
-      12,
-      'VIEWER',
-      '{"dates":"LIVING","note":"LIVING","photo":"LIVING"}',
-    )
+    expect(addAccessRecord).toHaveBeenCalledWith(7, 12, 'VIEWER', '{"dates":"LIVING","note":"LIVING","photo":"LIVING"}')
     expect(collaborators.selectedUser.value).toBeNull()
     expect(listAccessRecords).toHaveBeenCalledWith(7)
   })

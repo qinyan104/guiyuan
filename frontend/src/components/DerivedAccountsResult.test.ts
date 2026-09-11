@@ -28,8 +28,14 @@ describe('DerivedAccountsResult', () => {
     expect(wrapper.text()).toContain('liming')
     expect(wrapper.text()).toContain('secret-1')
 
-    await wrapper.findAll('code').find(node => node.text() === 'liming')?.trigger('click')
-    await wrapper.findAll('button').find(button => button.text() === '导出 Excel')?.trigger('click')
+    await wrapper
+      .findAll('code')
+      .find(node => node.text() === 'liming')
+      ?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find(button => button.text() === '导出 Excel')
+      ?.trigger('click')
     await wrapper.get('.derive-dismiss').trigger('click')
 
     expect(wrapper.emitted('copy')?.[0]).toEqual(['liming'])

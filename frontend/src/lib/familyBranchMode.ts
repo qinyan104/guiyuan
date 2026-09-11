@@ -9,7 +9,7 @@ function listFamilies(publication: PublicationData): FamilyUnit[] {
 }
 
 function findParentFamilyIdForPerson(publication: PublicationData, personId: string): string | undefined {
-  return listFamilies(publication).find((family) => family.children.includes(personId))?.id
+  return listFamilies(publication).find(family => family.children.includes(personId))?.id
 }
 
 export function findFamilyEntryPersonId(
@@ -22,8 +22,10 @@ export function findFamilyEntryPersonId(
     return undefined
   }
 
-  return family.adults.find((adultId) =>
-    isPersonId(adultId) && (childPersonIds?.has(adultId) ?? Boolean(findParentFamilyIdForPerson(publication, adultId))),
+  return family.adults.find(
+    adultId =>
+      isPersonId(adultId) &&
+      (childPersonIds?.has(adultId) ?? Boolean(findParentFamilyIdForPerson(publication, adultId))),
   )
 }
 

@@ -1,11 +1,6 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import {
-  buildUserRoleSummary,
-  filterUsersByRole,
-  getUserRoleLabel,
-  isProtectedUser,
-} from './userDirectory'
+import { buildUserRoleSummary, filterUsersByRole, getUserRoleLabel, isProtectedUser } from './userDirectory'
 
 const users = [
   { id: 1, username: 'root', nickname: '馆主', role: 'SUPER_ADMIN', createdAt: '2026-05-01T00:00:00Z' },
@@ -24,11 +19,11 @@ describe('userDirectory helpers', () => {
   })
 
   it('filters by active role tab', () => {
-    expect(filterUsersByRole(users, 'ADMIN').map((user) => user.username)).toEqual(['editor'])
+    expect(filterUsersByRole(users, 'ADMIN').map(user => user.username)).toEqual(['editor'])
   })
 
   it('returns all users for the all tab', () => {
-    expect(filterUsersByRole(users, 'all').map((user) => user.username)).toEqual(['root', 'editor', 'viewer'])
+    expect(filterUsersByRole(users, 'all').map(user => user.username)).toEqual(['root', 'editor', 'viewer'])
   })
 
   it('protects super admin rows', () => {

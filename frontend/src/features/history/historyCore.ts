@@ -37,7 +37,11 @@ export function serializeTrackedState(publication: PublicationData, settings: Pu
   })
 }
 
-export function inferHistoryLabel(previousSnapshot: EditorSnapshot, currentSnapshot: EditorSnapshot, pendingLabel = ''): string {
+export function inferHistoryLabel(
+  previousSnapshot: EditorSnapshot,
+  currentSnapshot: EditorSnapshot,
+  pendingLabel = '',
+): string {
   if (pendingLabel) {
     return pendingLabel
   }

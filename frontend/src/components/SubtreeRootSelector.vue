@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { getPublication } from '../api/publication'
 import { getUserErrorMessage } from '../api/http'

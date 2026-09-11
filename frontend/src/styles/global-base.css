@@ -40,7 +40,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-img, svg, canvas {
+img,
+svg,
+canvas {
   display: block;
   max-width: 100%;
 }
@@ -63,7 +65,9 @@ button {
   font-size: inherit;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
@@ -72,7 +76,8 @@ input, textarea, select {
   background: none;
 }
 
-ul, ol {
+ul,
+ol {
   list-style: none;
 }
 
@@ -80,33 +85,50 @@ ul, ol {
    排版
    ═══════════════════════════════════════════════════════════════════════════ */
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-serif);
-  font-weight: 500;   /* CJK 禁止 700 bold */
+  font-weight: 500; /* CJK 禁止 700 bold */
   color: var(--color-neutral-10);
   line-height: var(--leading-title);
 }
 
-h1 { font-size: var(--text-display-36); }
-h2 { font-size: var(--text-title-28); }
-h3 { font-size: var(--text-title-24); }
-h4 { font-size: var(--text-title-20); }
+h1 {
+  font-size: var(--text-display-36);
+}
+h2 {
+  font-size: var(--text-title-28);
+}
+h3 {
+  font-size: var(--text-title-24);
+}
+h4 {
+  font-size: var(--text-title-20);
+}
 
 p {
   margin-bottom: 0.75em;
 }
 
 /* CJK 强制：禁止仿粗体 */
-strong, b {
+strong,
+b {
   font-weight: 500;
 }
 
-em, i, cite {
+em,
+i,
+cite {
   font-family: var(--font-serif);
   font-style: italic;
 }
 
-small, .text-small {
+small,
+.text-small {
   font-size: var(--text-label-12);
   color: var(--color-neutral-7);
 }
@@ -197,8 +219,9 @@ select {
   background-color: var(--color-neutral-1);
   border: 1px solid var(--color-neutral-5);
   border-radius: var(--radius-md);
-  transition: border-color var(--duration-fast) var(--ease-breath),
-              box-shadow var(--duration-fast) var(--ease-breath);
+  transition:
+    border-color var(--duration-fast) var(--ease-breath),
+    box-shadow var(--duration-fast) var(--ease-breath);
 }
 
 input:focus,
@@ -245,8 +268,9 @@ input[type="radio"] {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-whisper);
   border: 1px solid var(--color-card-stroke);
-  transition: box-shadow var(--duration-normal) var(--ease-spring-gentle),
-              transform var(--duration-normal) var(--ease-spring-gentle);
+  transition:
+    box-shadow var(--duration-normal) var(--ease-spring-gentle),
+    transform var(--duration-normal) var(--ease-spring-gentle);
 }
 
 .card:hover {
@@ -404,8 +428,12 @@ input[type="radio"] {
 }
 
 @keyframes skeleton-shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* 空状态 */
@@ -555,7 +583,6 @@ input[type="radio"] {
   }
 }
 
-
 /* ═══════════════════════════════════════════════════════════
    琉璃质感 (Glass Surfaces)
    暖纸底上的通透层叠 — 克制、有深度、不轻浮
@@ -573,8 +600,9 @@ input[type="radio"] {
     0 2px 8px var(--color-glass-shadow-soft);
   backdrop-filter: blur(18px) saturate(120%);
   -webkit-backdrop-filter: blur(18px) saturate(120%);
-  transition: box-shadow var(--duration-normal) var(--ease-spring-gentle),
-              transform var(--duration-normal) var(--ease-spring-gentle);
+  transition:
+    box-shadow var(--duration-normal) var(--ease-spring-gentle),
+    transform var(--duration-normal) var(--ease-spring-gentle);
 }
 
 .card-glass:hover {

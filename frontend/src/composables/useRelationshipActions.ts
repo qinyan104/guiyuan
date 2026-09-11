@@ -1,7 +1,11 @@
 import { nextTick, type Ref } from 'vue'
 
 import type { FamilyBranchMode, Gender } from '../types/family'
-import { applyRelationshipAction, summarizeDeleteImpact, type RelationshipAction } from '../features/editor/publicationOperations'
+import {
+  applyRelationshipAction,
+  summarizeDeleteImpact,
+  type RelationshipAction,
+} from '../features/editor/publicationOperations'
 import { formatValidationIssues } from '../features/validation/draftSchema'
 import { blankPublication, defaultSettings } from '../data/sampleFamily'
 
@@ -158,7 +162,7 @@ export function useRelationshipActions(deps: RelationshipActionsDeps) {
     if (!person || !selectedParents.value.length) return
     await applyEditorAction(
       { type: 'remove-parents', personId: person.id },
-      `将解除 ${person.name} 与 ${selectedParents.value.map((parent) => parent.name).join('、')} 的父母关系，是否继续？`,
+      `将解除 ${person.name} 与 ${selectedParents.value.map(parent => parent.name).join('、')} 的父母关系，是否继续？`,
     )
   }
 

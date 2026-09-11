@@ -115,7 +115,7 @@ function buildLineageEntries(publication: PublicationData, indexes: FamilyIndexe
     entries.push({ personId, depth, external })
   }
 
-  focusFamily.adults.filter(isPersonId).forEach((adultId) => {
+  focusFamily.adults.filter(isPersonId).forEach(adultId => {
     appendPerson(adultId, 1, false)
   })
 
@@ -125,7 +125,7 @@ function buildLineageEntries(publication: PublicationData, indexes: FamilyIndexe
       return
     }
 
-    family.children.forEach((childId) => {
+    family.children.forEach(childId => {
       const child = publication.people[childId]
       if (!child) {
         return
@@ -155,12 +155,12 @@ function getOrdinalWithinLineage(publication: PublicationData, entries: LineageE
     return ''
   }
 
-  const matchingEntries = entries.filter((entry) => {
+  const matchingEntries = entries.filter(entry => {
     const entryPerson = publication.people[entry.personId]
     return entry.depth === target.depth && entry.external === target.external && entryPerson?.gender === person.gender
   })
 
-  const index = matchingEntries.findIndex((entry) => entry.personId === target.personId)
+  const index = matchingEntries.findIndex(entry => entry.personId === target.personId)
   return getOrdinalLabel(Math.max(0, index))
 }
 
@@ -172,7 +172,7 @@ function getFallbackChildSuggestion(publication: PublicationData, indexes: Famil
   }
 
   const family = publication.families[parentFamilyId]
-  const sameGenderChildren = family.children.filter((childId) => publication.people[childId]?.gender === person.gender)
+  const sameGenderChildren = family.children.filter(childId => publication.people[childId]?.gender === person.gender)
   const index = sameGenderChildren.indexOf(personId)
   return getDirectChildLabel(person.gender, getOrdinalLabel(Math.max(0, index)))
 }
@@ -185,7 +185,7 @@ export function suggestLineageNote(publication: PublicationData, personId: strin
 
   const indexes = buildFamilyIndexes(publication)
   const entries = buildLineageEntries(publication, indexes)
-  const target = entries.find((entry) => entry.personId === personId)
+  const target = entries.find(entry => entry.personId === personId)
   if (!target) {
     return getFallbackChildSuggestion(publication, indexes, personId)
   }

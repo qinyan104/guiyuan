@@ -21,22 +21,52 @@ const ACTION_METAS: Record<string, ActionMeta> = {
   DELETE_PUB: { category: 'publication', label: '废除宗谱', narrative: '将谱牒档案移出馆藏并封存', tone: 'danger' },
   UPDATE_PERSON: { category: 'publication', label: '辑录人物', narrative: '修订录入了世系人物纪略', tone: 'primary' },
   GEDCOM_EXPORT: { category: 'publication', label: '传拓输出', narrative: '传拓导出了 GEDCOM 标准谱牒', tone: 'info' },
-  GEDCOM_IMPORT: { category: 'publication', label: '录入外卷', narrative: '融贯导入了外部 GEDCOM 档案', tone: 'success' },
+  GEDCOM_IMPORT: {
+    category: 'publication',
+    label: '录入外卷',
+    narrative: '融贯导入了外部 GEDCOM 档案',
+    tone: 'success',
+  },
   GEDCOM_MERGE: { category: 'publication', label: '汇融世系', narrative: '校对合并了 GEDCOM 家族脉络', tone: 'info' },
 
   // 协修与分享
   ADD_COLLABORATOR: { category: 'collaboration', label: '延揽同修', narrative: '邀请延揽了协修成员', tone: 'success' },
-  UPDATE_COLLABORATOR_ROLE: { category: 'collaboration', label: '调整职分', narrative: '调整了修谱成员的协作权限', tone: 'info' },
-  REMOVE_COLLABORATOR: { category: 'collaboration', label: '解任修撰', narrative: '解任移出了修谱成员', tone: 'warning' },
-  CREATE_SHARE_LINK: { category: 'collaboration', label: '颁赐符印', narrative: '铸造颁发了公开阅览符印', tone: 'info' },
-  REVOKE_SHARE_LINK: { category: 'collaboration', label: '收回符印', narrative: '收回废止了公开阅览符印', tone: 'neutral' },
+  UPDATE_COLLABORATOR_ROLE: {
+    category: 'collaboration',
+    label: '调整职分',
+    narrative: '调整了修谱成员的协作权限',
+    tone: 'info',
+  },
+  REMOVE_COLLABORATOR: {
+    category: 'collaboration',
+    label: '解任修撰',
+    narrative: '解任移出了修谱成员',
+    tone: 'warning',
+  },
+  CREATE_SHARE_LINK: {
+    category: 'collaboration',
+    label: '颁赐符印',
+    narrative: '铸造颁发了公开阅览符印',
+    tone: 'info',
+  },
+  REVOKE_SHARE_LINK: {
+    category: 'collaboration',
+    label: '收回符印',
+    narrative: '收回废止了公开阅览符印',
+    tone: 'neutral',
+  },
 
   // 编委与账号
   ADMIN_CREATE_USER: { category: 'user', label: '延纳编委', narrative: '引荐敕设了新编委账号', tone: 'success' },
   CREATE_USER: { category: 'user', label: '新增同道', narrative: '引荐录入了新同道账号', tone: 'success' },
   ADMIN_DELETE_USER: { category: 'user', label: '除名编委', narrative: '将编委账号除名削籍', tone: 'danger' },
   DELETE_USER: { category: 'user', label: '除名账号', narrative: '将账号除名削籍', tone: 'danger' },
-  ADMIN_BATCH_DELETE_USERS: { category: 'user', label: '批量削籍', narrative: '批量除名削籍了多位编委', tone: 'danger' },
+  ADMIN_BATCH_DELETE_USERS: {
+    category: 'user',
+    label: '批量削籍',
+    narrative: '批量除名削籍了多位编委',
+    tone: 'danger',
+  },
   ADMIN_RESET_PASSWORD: { category: 'user', label: '重铸密匙', narrative: '重铸了编委登录密匙', tone: 'warning' },
   RESET_PASSWORD: { category: 'user', label: '重置密码', narrative: '重铸了登录密码', tone: 'warning' },
   ADMIN_CHANGE_ROLE: { category: 'user', label: '更替职官', narrative: '更替了编委后台系统职司', tone: 'info' },
@@ -160,13 +190,13 @@ const filteredLogs = computed(() => {
 
   // Category filter
   if (activeCategory.value !== 'all') {
-    result = result.filter((l) => getActionMeta(l.action).category === activeCategory.value)
+    result = result.filter(l => getActionMeta(l.action).category === activeCategory.value)
   }
 
   // Keyword search
   const q = searchQuery.value.trim().toLowerCase()
   if (q) {
-    result = result.filter((l) => {
+    result = result.filter(l => {
       const meta = getActionMeta(l.action)
       return (
         l.username.toLowerCase().includes(q) ||
@@ -193,7 +223,7 @@ const groupedLogs = computed<DayGroup[]>(() => {
   const groups: Record<string, DayGroup> = {}
   const now = new Date()
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  
+
   const yesterday = new Date(now)
   yesterday.setDate(yesterday.getDate() - 1)
   const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
@@ -201,7 +231,7 @@ const groupedLogs = computed<DayGroup[]>(() => {
   for (const log of filteredLogs.value) {
     const d = new Date(log.createdAt)
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    
+
     if (!groups[key]) {
       let title = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
       let isToday = false
@@ -237,7 +267,7 @@ function handleExportJson() {
     showToast('暂无记录可供导出', 'error')
     return
   }
-  const exportData = filteredLogs.value.map((l) => ({
+  const exportData = filteredLogs.value.map(l => ({
     id: l.id,
     time: l.createdAt,
     operator: l.username,

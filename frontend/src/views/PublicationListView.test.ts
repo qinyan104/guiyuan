@@ -119,23 +119,23 @@ describe('PublicationListView', () => {
     // Open AppSelect and pick "谱名拼音"
     await wrapper.find('.sort-select-wrapper .app-select__trigger').trigger('click')
     const options = wrapper.findAll('.app-select__option')
-    const titleOption = options.find((opt) => opt.text().includes('谱名拼音'))
+    const titleOption = options.find(opt => opt.text().includes('谱名拼音'))
     expect(titleOption).toBeDefined()
     await titleOption?.trigger('click')
     await flushPromises()
 
-    const titles = wrapper.findAll('.archive-title').map((el) => el.text())
+    const titles = wrapper.findAll('.archive-title').map(el => el.text())
     expect(titles).toEqual(['陈氏宗谱', '李氏世家'])
 
     // Open AppSelect and pick "修缮次数"
     await wrapper.find('.sort-select-wrapper .app-select__trigger').trigger('click')
     const optionsAfter = wrapper.findAll('.app-select__option')
-    const revOption = optionsAfter.find((opt) => opt.text().includes('修缮次数'))
+    const revOption = optionsAfter.find(opt => opt.text().includes('修缮次数'))
     expect(revOption).toBeDefined()
     await revOption?.trigger('click')
     await flushPromises()
 
-    const revTitles = wrapper.findAll('.archive-title').map((el) => el.text())
+    const revTitles = wrapper.findAll('.archive-title').map(el => el.text())
     expect(revTitles).toEqual(['李氏世家', '陈氏宗谱'])
   })
 
@@ -145,19 +145,19 @@ describe('PublicationListView', () => {
 
     const actionButtons = wrapper.findAll('.action-btn')
     // Find book editor button
-    const bookBtn = actionButtons.find((btn) => btn.attributes('title') === '导出出版数据')
+    const bookBtn = actionButtons.find(btn => btn.attributes('title') === '导出出版数据')
     expect(bookBtn).toBeDefined()
     await bookBtn?.trigger('click')
     expect(push).toHaveBeenCalledWith({ name: 'book-editor-publication', params: { publicationId: 7 } })
 
     // Find activity button
-    const actBtn = actionButtons.find((btn) => btn.attributes('title') === '编修历程')
+    const actBtn = actionButtons.find(btn => btn.attributes('title') === '编修历程')
     expect(actBtn).toBeDefined()
     await actBtn?.trigger('click')
     expect(push).toHaveBeenCalledWith({ name: 'publication-activity', params: { id: 7 } })
 
     // Find stats button
-    const statsBtn = actionButtons.find((btn) => btn.attributes('title') === '世系统计')
+    const statsBtn = actionButtons.find(btn => btn.attributes('title') === '世系统计')
     expect(statsBtn).toBeDefined()
     await statsBtn?.trigger('click')
     expect(push).toHaveBeenCalledWith({ name: 'publication-stats', params: { id: 7 } })

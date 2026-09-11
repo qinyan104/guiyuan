@@ -331,7 +331,7 @@ export function useFileOperations(deps: FileOperationsDeps) {
 
   function downloadPng(options?: ThemeMode | { theme?: ThemeMode; quality?: PngExportQuality }) {
     const targetTheme = typeof options === 'string' ? options : options?.theme
-    const quality = (typeof options === 'object' && options?.quality) ? options.quality : 'hd'
+    const quality = typeof options === 'object' && options?.quality ? options.quality : 'hd'
     const activeTheme = getActiveTheme(targetTheme)
 
     return runCanvasExport('导出 PNG 失败。', async () => {

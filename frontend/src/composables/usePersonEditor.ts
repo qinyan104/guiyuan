@@ -104,13 +104,19 @@ export function usePersonEditor(pub: PublicationStateReturn, onMutate?: () => vo
     if (selectedOutMarriedDaughter.value) {
       return [
         ...selectedPersonDetails.value,
-        { label: '谱系提示', value: isSelectedBranchFocused.value ? '当前查看外嫁支系' : '父系主谱会继续显示其配偶与子女' },
+        {
+          label: '谱系提示',
+          value: isSelectedBranchFocused.value ? '当前查看外嫁支系' : '父系主谱会继续显示其配偶与子女',
+        },
       ]
     }
     if (selectedInLawOfOutMarriedDaughter.value) {
       return [
         ...selectedPersonDetails.value,
-        { label: '谱系提示', value: isSelectedBranchFocused.value ? '当前查看外嫁支系' : '父系主谱中作为婿/配偶显示，并保留后代' },
+        {
+          label: '谱系提示',
+          value: isSelectedBranchFocused.value ? '当前查看外嫁支系' : '父系主谱中作为婿/配偶显示，并保留后代',
+        },
       ]
     }
     return selectedPersonDetails.value

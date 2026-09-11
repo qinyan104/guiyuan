@@ -4,10 +4,13 @@ import DarkModeToggle from '../components/DarkModeToggle.vue'
 
 onMounted(() => {
   const ob = new IntersectionObserver(
-    (es) => es.forEach((e) => { if (e.isIntersecting) e.target.classList.add('on') }),
-    { threshold: 0.1 }
+    es =>
+      es.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('on')
+      }),
+    { threshold: 0.1 },
   )
-  document.querySelectorAll('.rv').forEach((el) => {
+  document.querySelectorAll('.rv').forEach(el => {
     ob.observe(el)
   })
 })

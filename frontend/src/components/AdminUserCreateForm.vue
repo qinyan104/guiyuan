@@ -8,11 +8,14 @@ type CreateUserPayload = {
   role: 'ADMIN' | 'USER'
 }
 
-const props = withDefaults(defineProps<{
-  creating?: boolean
-}>(), {
-  creating: false,
-})
+const props = withDefaults(
+  defineProps<{
+    creating?: boolean
+  }>(),
+  {
+    creating: false,
+  },
+)
 
 const emit = defineEmits<{
   submit: [payload: CreateUserPayload]

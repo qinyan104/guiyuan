@@ -106,10 +106,7 @@ vi.mock('../components/WorkbenchHeader.vue', () => ({
   default: {
     name: 'WorkbenchHeader',
     template: '<div class="mock-header" />',
-    props: [
-      'fileName', 'dirty', 'nativeFileAccess', 'currentTheme',
-      'currentUsername', 'syncStatus', 'exporting',
-    ],
+    props: ['fileName', 'dirty', 'nativeFileAccess', 'currentTheme', 'currentUsername', 'syncStatus', 'exporting'],
   },
 }))
 
@@ -126,11 +123,22 @@ vi.mock('../components/WorkbenchPanels.vue', () => ({
     name: 'WorkbenchPanels',
     template: '<div class="mock-panels"><slot /></div>',
     props: [
-      'layoutPanelOpen', 'historyOpen', 'focusFamilyLabel',
-      'canReturnToMainBranch', 'canUndo', 'canRedo', 'zoom',
-      'hasSelectedPerson', 'selectedPersonName', 'selectedPersonMeta', 'relationshipToSelected',
-      'canFocusSelectedBranch', 'settings',
-      'historyPastCount', 'historyFutureCount', 'visibleHistoryEntries',
+      'layoutPanelOpen',
+      'historyOpen',
+      'focusFamilyLabel',
+      'canReturnToMainBranch',
+      'canUndo',
+      'canRedo',
+      'zoom',
+      'hasSelectedPerson',
+      'selectedPersonName',
+      'selectedPersonMeta',
+      'relationshipToSelected',
+      'canFocusSelectedBranch',
+      'settings',
+      'historyPastCount',
+      'historyFutureCount',
+      'visibleHistoryEntries',
     ],
   },
 }))
@@ -144,10 +152,7 @@ vi.mock('../components/PublicationCanvas.vue', () => ({
       return { revealPerson }
     },
     template: '<div class="mock-canvas" @keydown.prevent="$emit(\'keydown\', $event)"><slot /></div>',
-    props: [
-      'publication', 'settings', 'layout', 'selectedPersonId',
-      'panX', 'panY', 'modelValue',
-    ],
+    props: ['publication', 'settings', 'layout', 'selectedPersonId', 'panX', 'panY', 'modelValue'],
     emits: ['update:panX', 'update:panY', 'update-zoom', 'select-person', 'hover-person', 'keydown'],
   },
 }))
@@ -157,17 +162,41 @@ vi.mock('../components/PersonEditorDrawer.vue', () => ({
     name: 'PersonEditorDrawer',
     template: '<div v-if="open" class="mock-drawer"><slot /></div>',
     props: [
-      'open', 'person', 'publicationId', 'suggestion', 'lineageSuggestion',
-      'details', 'spouse', 'parents', 'children', 'childItems',
-      'canAddSpouse', 'hasCompleteParents', 'canSwapAdults',
-      'isSelectedBranchFocused', 'canSetBranchMode', 'branchMode',
-      'parentActionLabel', 'branchActionLabel',
+      'open',
+      'person',
+      'publicationId',
+      'suggestion',
+      'lineageSuggestion',
+      'details',
+      'spouse',
+      'parents',
+      'children',
+      'childItems',
+      'canAddSpouse',
+      'hasCompleteParents',
+      'canSwapAdults',
+      'isSelectedBranchFocused',
+      'canSetBranchMode',
+      'branchMode',
+      'parentActionLabel',
+      'branchActionLabel',
     ],
     emits: [
-      'close', 'select-person', 'add-spouse', 'add-child', 'add-parents',
-      'remove-spouse', 'remove-parents', 'focus-branch', 'update-branch-mode',
-      'swap-partners', 'move-child', 'update-person-field',
-      'update-person-gender', 'apply-note-suggestion', 'delete-person',
+      'close',
+      'select-person',
+      'add-spouse',
+      'add-child',
+      'add-parents',
+      'remove-spouse',
+      'remove-parents',
+      'focus-branch',
+      'update-branch-mode',
+      'swap-partners',
+      'move-child',
+      'update-person-field',
+      'update-person-gender',
+      'apply-note-suggestion',
+      'delete-person',
     ],
   },
 }))
@@ -446,11 +475,14 @@ describe('WorkbenchView', () => {
       const wrapper = mountView()
 
       const canvas = wrapper.findComponent({ name: 'PublicationCanvas' })
-      await canvas.vm.$emit('keydown', new KeyboardEvent('keydown', {
-        key: '=',
-        ctrlKey: true,
-        bubbles: true,
-      }))
+      await canvas.vm.$emit(
+        'keydown',
+        new KeyboardEvent('keydown', {
+          key: '=',
+          ctrlKey: true,
+          bubbles: true,
+        }),
+      )
 
       // Note: The zoom is adjusted via the adjustZoom function which is not
       // directly bound to a keydown listener on PublicationCanvas in the template.
@@ -528,10 +560,7 @@ describe('WorkbenchView', () => {
       await wrapper.vm.$nextTick()
 
       expect(ctx.pub.selectedPersonId.value).toBe('p2')
-      expect(canvas.vm.revealPerson).toHaveBeenCalledWith(
-        'p2',
-        expect.objectContaining({ center: true }),
-      )
+      expect(canvas.vm.revealPerson).toHaveBeenCalledWith('p2', expect.objectContaining({ center: true }))
     })
 
     it('centers the selected person when WorkbenchPanels emits reveal-selected-person', async () => {
@@ -544,10 +573,7 @@ describe('WorkbenchView', () => {
       await wrapper.vm.$nextTick()
       await wrapper.vm.$nextTick()
 
-      expect(canvas.vm.revealPerson).toHaveBeenCalledWith(
-        'p1',
-        expect.objectContaining({ center: true }),
-      )
+      expect(canvas.vm.revealPerson).toHaveBeenCalledWith('p1', expect.objectContaining({ center: true }))
     })
   })
 })

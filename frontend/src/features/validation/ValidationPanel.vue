@@ -18,13 +18,13 @@ const activeSeverity = ref<Severity | 'ALL'>('ALL')
 
 const filteredFindings = computed(() => {
   if (activeSeverity.value === 'ALL') return findings.value
-  return findings.value.filter((f) => f.severity === activeSeverity.value)
+  return findings.value.filter(f => f.severity === activeSeverity.value)
 })
 
 const counts = computed(() => ({
-  ERROR: findings.value.filter((f) => f.severity === 'ERROR').length,
-  WARNING: findings.value.filter((f) => f.severity === 'WARNING').length,
-  INFO: findings.value.filter((f) => f.severity === 'INFO').length,
+  ERROR: findings.value.filter(f => f.severity === 'ERROR').length,
+  WARNING: findings.value.filter(f => f.severity === 'WARNING').length,
+  INFO: findings.value.filter(f => f.severity === 'INFO').length,
   total: findings.value.length,
 }))
 

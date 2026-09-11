@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
-import { useRoute, useRouter } from "vue-router"
-import DarkModeToggle from "../components/DarkModeToggle.vue"
-import { getPublication } from "../api/publication"
-import { buildPublicationMarkdown } from "../features/book-editor/bookPublicationExport"
-import type { PublicationData } from "../types/family"
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import DarkModeToggle from '../components/DarkModeToggle.vue'
+import { getPublication } from '../api/publication'
+import { buildPublicationMarkdown } from '../features/book-editor/bookPublicationExport'
+import type { PublicationData } from '../types/family'
 
 const route = useRoute()
 const router = useRouter()
 const publicationId = computed(() => Number(route.params.publicationId))
 
 const loading = ref(true)
-const error = ref("")
-const message = ref("")
+const error = ref('')
+const message = ref('')
 const publication = ref<PublicationData | null>(null)
 
-const markdown = computed(() => publication.value ? buildPublicationMarkdown(publication.value) : "")
+const markdown = computed(() => (publication.value ? buildPublicationMarkdown(publication.value) : ''))
 const markdownPreview = computed(() => markdown.value.slice(0, 6000))
 const peopleCount = computed(() => Object.keys(publication.value?.people ?? {}).length)
 const familyCount = computed(() => Object.keys(publication.value?.families ?? {}).length)
@@ -24,7 +24,7 @@ onMounted(async () => {
   try {
     publication.value = (await getPublication(publicationId.value)).publication
   } catch (e) {
-    error.value = e instanceof Error ? e.message : "族谱数据加载失败"
+    error.value = e instanceof Error ? e.message : '族谱数据加载失败'
   } finally {
     loading.value = false
   }
@@ -35,12 +35,12 @@ function back() {
 }
 
 function sanitizeFileName(value: string): string {
-  return value.replace(/[\\/:*?"<>|]/g, "-").trim() || "族谱"
+  return value.replace(/[\\/:*?"<>|]/g, '-').trim() || '族谱'
 }
 
 function downloadTextFile(fileName: string, content: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type }))
-  const link = window.document.createElement("a")
+  const link = window.document.createElement('a')
   link.href = url
   link.download = fileName
   window.document.body.appendChild(link)
@@ -51,11 +51,10 @@ function downloadTextFile(fileName: string, content: string, type: string) {
 
 function exportMarkdown() {
   if (!publication.value) return
-  downloadTextFile(`${sanitizeFileName(publication.value.title)}.md`, markdown.value, "text/markdown;charset=utf-8")
-  message.value = "Markdown 文件已下载"
-  error.value = ""
+  downloadTextFile(`${sanitizeFileName(publication.value.title)}.md`, markdown.value, 'text/markdown;charset=utf-8')
+  message.value = 'Markdown 文件已下载'
+  error.value = ''
 }
-
 </script>
 
 <template>

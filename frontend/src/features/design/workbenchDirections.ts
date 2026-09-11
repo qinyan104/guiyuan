@@ -20,8 +20,7 @@ export const workbenchDirections: WorkbenchDirection[] = [
     label: '方向 A',
     title: '典藏长卷',
     subtitle: '像在整理一份可编修的馆藏文献',
-    summary:
-      '强调文献感、留白和卷宗秩序，画布像被摊开的谱牒长页，工具感退后，仪式感最强。',
+    summary: '强调文献感、留白和卷宗秩序，画布像被摊开的谱牒长页，工具感退后，仪式感最强。',
     fit: '适合品牌首页气质、重要演示场景，以及高端文化定位。',
     risk: '如果直接作为主工作台，编辑效率会被稀释。',
     bullets: ['纸面层次更强', '顶部动作更克制', '人物信息以边注形式出现'],
@@ -41,8 +40,7 @@ export const workbenchDirections: WorkbenchDirection[] = [
     label: '方向 B',
     title: '专业修谱台',
     subtitle: '像真正拿来长期工作的专业工具',
-    summary:
-      '让画布成为唯一主角，工具栏和抽屉都服务于编辑效率，看起来专业但不行政后台。',
+    summary: '让画布成为唯一主角，工具栏和抽屉都服务于编辑效率，看起来专业但不行政后台。',
     fit: '最适合作为现在的正式实现方向，短期能把核心产品做扎实。',
     risk: '如果处理不好，会滑向普通管理系统，所以要用材质和字体把气质拉回来。',
     recommended: true,
@@ -63,8 +61,7 @@ export const workbenchDirections: WorkbenchDirection[] = [
     label: '方向 C',
     title: '家族共修台',
     subtitle: '像一个多人共同编修的家族工作现场',
-    summary:
-      '把协作者、动态、批注和分工可视化，表达“这不是单人画图工具，而是家族共修平台”。',
+    summary: '把协作者、动态、批注和分工可视化，表达“这不是单人画图工具，而是家族共修平台”。',
     fit: '很适合长期商业化和会员体系，但现在不宜压过单人编辑主流程。',
     risk: '前期做得太重，容易把工作台做成协作后台。',
     bullets: ['协作者存在感更强', '活动流更突出', '局部讨论和待处理事项前置'],
@@ -82,5 +79,5 @@ export const workbenchDirections: WorkbenchDirection[] = [
 ]
 
 export function getWorkbenchDirection(directionId: string | undefined) {
-  return workbenchDirections.find((direction) => direction.id === directionId)
+  return workbenchDirections.find(direction => direction.id === directionId)
 }

@@ -27,9 +27,7 @@ export async function searchApi(query: string): Promise<SearchResult> {
   if (!query.trim()) return emptyResult
 
   try {
-    const resp = await http.get<{ code: number; data: SearchResult }>(
-      `/search?q=${encodeURIComponent(query)}`,
-    )
+    const resp = await http.get<{ code: number; data: SearchResult }>(`/search?q=${encodeURIComponent(query)}`)
     return resp.data.data ?? emptyResult
   } catch {
     return emptyResult

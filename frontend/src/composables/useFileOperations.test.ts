@@ -54,7 +54,7 @@ function createOperations() {
     } as never,
     statusMessage,
     errorMessage,
-    getErrorMessage: (error) => error instanceof Error ? error.message : '导出失败',
+    getErrorMessage: error => (error instanceof Error ? error.message : '导出失败'),
     initializeHistoryBaseline: vi.fn(),
     markHistory: vi.fn(),
     canvasRef: ref({
@@ -89,7 +89,11 @@ afterEach(() => {
 describe('useFileOperations exports', () => {
   it('tracks export progress and ignores a concurrent export', async () => {
     let finish!: (svg: SVGSVGElement) => void
-    mocks.createStandalonePublicationSvg.mockReturnValue(new Promise((resolve) => { finish = resolve }))
+    mocks.createStandalonePublicationSvg.mockReturnValue(
+      new Promise(resolve => {
+        finish = resolve
+      }),
+    )
     const { operations } = createOperations()
 
     const first = operations.downloadSvg()

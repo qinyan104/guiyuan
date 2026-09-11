@@ -29,7 +29,9 @@ onMounted(async () => {
     if (profile.person?.avatarUrl) {
       avatarUrl.value = profile.person.avatarUrl
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 })
 
 const avatarTimestamp = ref(0)
@@ -38,23 +40,36 @@ async function handleAvatarUpload(event: Event) {
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
   const file = input.files[0]
-  if (!file.type.startsWith('image/')) { feedback.errorMessage.value = '仅支持图片文件'; return }
-  if (file.size > 5 * 1024 * 1024) { feedback.errorMessage.value = '图片大小不能超过 5MB'; return }
+  if (!file.type.startsWith('image/')) {
+    feedback.errorMessage.value = '仅支持图片文件'
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    feedback.errorMessage.value = '图片大小不能超过 5MB'
+    return
+  }
   avatarUploading.value = true
   try {
     const url = await uploadAvatar(file)
     avatarUrl.value = url
     avatarTimestamp.value = Date.now()
     feedback.statusMessage.value = '头像已更新'
+  } catch (err: unknown) {
+    feedback.errorMessage.value = getUserErrorMessage(err, '头像上传失败')
+  } finally {
+    avatarUploading.value = false
+    input.value = ''
   }
-  catch (err: unknown) { feedback.errorMessage.value = getUserErrorMessage(err, '头像上传失败') }
-  finally { avatarUploading.value = false; input.value = '' }
 }
 
-const avatarName = computed(() => profileNameDraft.value.trim() || originalProfileName.value.trim() || currentUsername.value)
-const avatarSrc = computed(() => avatarUrl.value ? avatarUrl.value + (avatarTimestamp.value ? '?t=' + avatarTimestamp.value : '') : '')
+const avatarName = computed(
+  () => profileNameDraft.value.trim() || originalProfileName.value.trim() || currentUsername.value,
+)
+const avatarSrc = computed(() =>
+  avatarUrl.value ? avatarUrl.value + (avatarTimestamp.value ? '?t=' + avatarTimestamp.value : '') : '',
+)
 const roleTone = computed(() => currentRole.value.toLowerCase())
-const roleLabel = computed(() => currentRole.value === 'SUPER_ADMIN' ? '超级管理员' : '编委')
+const roleLabel = computed(() => (currentRole.value === 'SUPER_ADMIN' ? '超级管理员' : '编委'))
 
 // ── Name ──
 const nameMsg = ref('')
@@ -65,19 +80,26 @@ async function handleChangeName() {
   nameMsg.value = ''
   nameError.value = false
   const nextName = profileNameDraft.value.trim()
-  if (!nextName) { nameMsg.value = '姓名不能为空'; nameError.value = true; return }
-  if (nextName === originalProfileName.value) { nameMsg.value = '姓名未修改'; return }
+  if (!nextName) {
+    nameMsg.value = '姓名不能为空'
+    nameError.value = true
+    return
+  }
+  if (nextName === originalProfileName.value) {
+    nameMsg.value = '姓名未修改'
+    return
+  }
   nameLoading.value = true
   try {
     await updateMyProfileName(nextName)
     originalProfileName.value = nextName
     nameMsg.value = '已更新'
-  }
-  catch (err: unknown) {
+  } catch (err: unknown) {
     nameError.value = true
     nameMsg.value = getUserErrorMessage(err, '提交失败')
+  } finally {
+    nameLoading.value = false
   }
-  finally { nameLoading.value = false }
 }
 
 // ── Password ──
@@ -89,21 +111,36 @@ const passwordError = ref('')
 const passwordLoading = ref(false)
 
 async function handleChangePassword() {
-  passwordMsg.value = ''; passwordError.value = ''
-  if (!oldPassword.value.trim()) { passwordError.value = '请输入当前密码'; return }
-  if (newPassword.value.length < 8) { passwordError.value = '新密码至少8个字符'; return }
+  passwordMsg.value = ''
+  passwordError.value = ''
+  if (!oldPassword.value.trim()) {
+    passwordError.value = '请输入当前密码'
+    return
+  }
+  if (newPassword.value.length < 8) {
+    passwordError.value = '新密码至少8个字符'
+    return
+  }
   if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/.test(newPassword.value)) {
     passwordError.value = '新密码须包含大小写字母和数字'
     return
   }
-  if (newPassword.value !== confirmPassword.value) { passwordError.value = '两次输入不一致'; return }
+  if (newPassword.value !== confirmPassword.value) {
+    passwordError.value = '两次输入不一致'
+    return
+  }
   passwordLoading.value = true
   try {
     await changePassword(oldPassword.value, newPassword.value)
     passwordMsg.value = '已更新'
-    oldPassword.value = ''; newPassword.value = ''; confirmPassword.value = ''
-  } catch (err: unknown) { passwordError.value = getUserErrorMessage(err, '修改失败') }
-  finally { passwordLoading.value = false }
+    oldPassword.value = ''
+    newPassword.value = ''
+    confirmPassword.value = ''
+  } catch (err: unknown) {
+    passwordError.value = getUserErrorMessage(err, '修改失败')
+  } finally {
+    passwordLoading.value = false
+  }
 }
 
 // ── Admin ──
@@ -114,19 +151,34 @@ const restorePending = ref(false)
 const showRestoreConfirm = ref(false)
 
 async function handleBackup() {
-  backupError.value = ''; backupLoading.value = true
-  try { await downloadBackup() } catch (err: unknown) { backupError.value = getUserErrorMessage(err, '备份失败') }
-  finally { backupLoading.value = false }
+  backupError.value = ''
+  backupLoading.value = true
+  try {
+    await downloadBackup()
+  } catch (err: unknown) {
+    backupError.value = getUserErrorMessage(err, '备份失败')
+  } finally {
+    backupLoading.value = false
+  }
 }
 
-function onFileSelected(e: Event) { const t = e.target as HTMLInputElement; if (t.files?.length) restoreFile.value = t.files[0] }
+function onFileSelected(e: Event) {
+  const t = e.target as HTMLInputElement
+  if (t.files?.length) restoreFile.value = t.files[0]
+}
 
 async function handleRestore() {
   if (!restoreFile.value) return
   restorePending.value = true
-  try { const msg = await adminRestoreDatabase(restoreFile.value); feedback.statusMessage.value = msg; window.location.reload() }
-  catch (e: unknown) { feedback.errorMessage.value = getUserErrorMessage(e, '数据库还原失败') }
-  finally { restorePending.value = false }
+  try {
+    const msg = await adminRestoreDatabase(restoreFile.value)
+    feedback.statusMessage.value = msg
+    window.location.reload()
+  } catch (e: unknown) {
+    feedback.errorMessage.value = getUserErrorMessage(e, '数据库还原失败')
+  } finally {
+    restorePending.value = false
+  }
 }
 </script>
 

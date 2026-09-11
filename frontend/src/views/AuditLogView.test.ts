@@ -79,7 +79,7 @@ describe('AuditLogView', () => {
 
     // Click on "编委职官" tab
     const tabs = wrapper.findAll('.glass-tab')
-    const userTab = tabs.find((t) => t.text().includes('编委职官'))
+    const userTab = tabs.find(t => t.text().includes('编委职官'))
     expect(userTab).toBeDefined()
     await userTab?.trigger('click')
     await flushPromises()

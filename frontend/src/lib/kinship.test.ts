@@ -198,31 +198,31 @@ describe('supported kinship term coverage', () => {
     const terms = getSupportedKinshipTerms()
 
     expect(new Set(terms).size).toBe(terms.length)
-    expect(terms).toEqual(expect.arrayContaining([
-      '爸爸',
-      '外婆',
-      '堂弟',
-      '表妹',
-      '侄女',
-      '外甥女',
-      '婶婶',
-      '公公',
-      '岳母',
-      '亲家母',
-      '连襟',
-      '妯娌',
-    ]))
+    expect(terms).toEqual(
+      expect.arrayContaining([
+        '爸爸',
+        '外婆',
+        '堂弟',
+        '表妹',
+        '侄女',
+        '外甥女',
+        '婶婶',
+        '公公',
+        '岳母',
+        '亲家母',
+        '连襟',
+        '妯娌',
+      ]),
+    )
   })
 
   it('groups supported terms for the relation dialog', () => {
     const groups = getSupportedKinshipTermGroups()
 
-    expect(groups.map((group) => group.label)).toEqual(expect.arrayContaining([
-      '直系长辈',
-      '旁系同辈',
-      '姻亲称谓',
-    ]))
-    expect(groups.flatMap((group) => group.terms)).toEqual(expect.arrayContaining(['外高祖母', '堂侄女', '表侄', '小姨子']))
+    expect(groups.map(group => group.label)).toEqual(expect.arrayContaining(['直系长辈', '旁系同辈', '姻亲称谓']))
+    expect(groups.flatMap(group => group.terms)).toEqual(
+      expect.arrayContaining(['外高祖母', '堂侄女', '表侄', '小姨子']),
+    )
   })
 })
 
@@ -231,7 +231,10 @@ describe('supported kinship term coverage', () => {
 describe('新增称谓：母系直系', () => {
   // 构造一个包含母系关系的小族谱
   const matPub: PublicationData = {
-    title: 'test', subtitle: '', focusFamilyId: 'mf1', revision: 999,
+    title: 'test',
+    subtitle: '',
+    focusFamilyId: 'mf1',
+    revision: 999,
     people: {
       gf: { id: 'gf', name: '外公', gender: 'male' },
       gm: { id: 'gm', name: '外婆', gender: 'female' },

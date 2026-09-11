@@ -38,7 +38,11 @@ describe('publication operations', () => {
 
   it('adds son and daughter with explicit genders', () => {
     const sonResult = applyRelationshipAction(clonePublication(), { type: 'add-child', personId: 'p4', gender: 'male' })
-    const daughterResult = applyRelationshipAction(clonePublication(), { type: 'add-child', personId: 'p4', gender: 'female' })
+    const daughterResult = applyRelationshipAction(clonePublication(), {
+      type: 'add-child',
+      personId: 'p4',
+      gender: 'female',
+    })
 
     expect(sonResult).toEqual({
       ok: true,
@@ -99,7 +103,11 @@ describe('publication operations', () => {
 
   it('can switch a female branch between married-out and uxorilocal', () => {
     const publication = clonePublication()
-    const result = applyRelationshipAction(publication, { type: 'set-branch-mode', personId: 'p18', branchMode: 'uxorilocal' })
+    const result = applyRelationshipAction(publication, {
+      type: 'set-branch-mode',
+      personId: 'p18',
+      branchMode: 'uxorilocal',
+    })
 
     expect(result).toEqual({
       ok: true,

@@ -46,9 +46,18 @@ describe('AccountTable', () => {
     await wrapper.findAll('.account-table-row input[type="checkbox"]')[0].trigger('change')
     expect(wrapper.emitted('toggle-account')?.[0]).toEqual([accounts[0]])
 
-    await wrapper.findAll('button').find(button => button.text() === '重置密码')?.trigger('click')
-    await wrapper.findAll('button').find(button => button.text() === '停用')?.trigger('click')
-    await wrapper.findAll('button').find(button => button.text() === '删除')?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find(button => button.text() === '重置密码')
+      ?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find(button => button.text() === '停用')
+      ?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find(button => button.text() === '删除')
+      ?.trigger('click')
 
     expect(wrapper.emitted('reset-password')?.[0]).toEqual([accounts[0]])
     expect(wrapper.emitted('toggle-status')?.[0]).toEqual([accounts[0]])

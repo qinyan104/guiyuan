@@ -21,40 +21,40 @@
 :root,
 [data-theme="paper"] {
   /* Tier 1 — 表面 */
-  --color-neutral-1: #FAF9F6;   /* 页面底色：生宣纸白 */
-  --color-neutral-2: #F3F1EB;   /* 卡片底色：熟宣棉纸 */
-  --color-neutral-3: #E6E2D8;   /* 悬停表面：熟棉微黄 */
-  --color-neutral-4: #D5CFC2;   /* 强填充 */
+  --color-neutral-1: #faf9f6; /* 页面底色：生宣纸白 */
+  --color-neutral-2: #f3f1eb; /* 卡片底色：熟宣棉纸 */
+  --color-neutral-3: #e6e2d8; /* 悬停表面：熟棉微黄 */
+  --color-neutral-4: #d5cfc2; /* 强填充 */
 
   /* Tier 2 — 边框 / 图标 / 次要文字 */
-  --color-neutral-5: #B0A99A;   /* 边框（禁止用于文字） */
-  --color-neutral-6: #8C8473;   /* 图标 / 极小字号标签：黛褐 */
-  --color-neutral-7: #6B6252;   /* 次要文字、说明：深黛褐 */
+  --color-neutral-5: #b0a99a; /* 边框（禁止用于文字） */
+  --color-neutral-6: #8c8473; /* 图标 / 极小字号标签：黛褐 */
+  --color-neutral-7: #6b6252; /* 次要文字、说明：深黛褐 */
 
   /* Tier 3 — 正文 / 标题 */
-  --color-neutral-8: #463E32;   /* 正文备选、强调次要文字：松烟黑 */
-  --color-neutral-9: #1C1A17;   /* 默认正文色：玄青墨黑 */
-  --color-neutral-10: #0E0D0B;  /* 标题、最强强调：漆黑 */
+  --color-neutral-8: #463e32; /* 正文备选、强调次要文字：松烟黑 */
+  --color-neutral-9: #1c1a17; /* 默认正文色：玄青墨黑 */
+  --color-neutral-10: #0e0d0b; /* 标题、最强强调：漆黑 */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      强调色 — 朱砂 (cinnabar) #C63C2E
      ≤5% 表面覆盖。仅用于：主CTA、聚焦环、品牌标记、引用竖线、链接下划线
      ═══════════════════════════════════════════════════════════════════════════ */
 
-  --color-accent: #C63C2E;
-  --color-accent-light: #E85D4B;   /* 暗色模式下提亮 */
-  --color-accent-deep: #8E251C;    /* 朱砂渐变深端 — 按钮/印章渐变起点 */
-  --color-accent-muted: rgba(198, 60, 46, 0.08);  /* 淡色强调背景 */
+  --color-accent: #c63c2e;
+  --color-accent-light: #e85d4b; /* 暗色模式下提亮 */
+  --color-accent-deep: #8e251c; /* 朱砂渐变深端 — 按钮/印章渐变起点 */
+  --color-accent-muted: rgba(198, 60, 46, 0.08); /* 淡色强调背景 */
   --color-accent-gradient: linear-gradient(145deg, var(--color-accent-deep), var(--color-accent));
 
   /* ═══════════════════════════════════════════════════════════════════════════
      语义色 — 传统国色与和色
      ═══════════════════════════════════════════════════════════════════════════ */
 
-  --color-info: #2E5C8A;      /* 黛蓝 / 縹色 — 信息提示 */
-  --color-success: #3D7F5E;   /* 若竹绿 — 成功状态 */
-  --color-warning: #B48A44;   /* 古銅金 / 朽葉 — 警告状态 */
-  --color-error: #B53D58;     /* 胭脂红 / 蘇芳 — 错误/危险操作 */
+  --color-info: #2e5c8a; /* 黛蓝 / 縹色 — 信息提示 */
+  --color-success: #3d7f5e; /* 若竹绿 — 成功状态 */
+  --color-warning: #b48a44; /* 古銅金 / 朽葉 — 警告状态 */
+  --color-error: #b53d58; /* 胭脂红 / 蘇芳 — 错误/危险操作 */
 
   /* 语义色背景（用于标签/提示条） */
   --color-info-muted: rgba(46, 92, 138, 0.1);
@@ -67,22 +67,22 @@
      ═══════════════════════════════════════════════════════════════════════════ */
 
   /* 性别标识 — 从语义色派生，保持色系一致 */
-  --color-male: #2E5C8A;          /* 男 — 黛蓝色系 */
+  --color-male: #2e5c8a; /* 男 — 黛蓝色系 */
   --color-male-muted: rgba(46, 92, 138, 0.07);
-  --color-female: #B53D58;        /* 女 — 胭脂红系 */
+  --color-female: #b53d58; /* 女 — 胭脂红系 */
   --color-female-muted: rgba(181, 61, 88, 0.07);
 
   /* 生卒状态 */
-  --color-alive: #3D7F5E;         /* 在世 — 若竹 */
-  --color-deceased: #8C8473;      /* 已故 — neutral-6  */
+  --color-alive: #3d7f5e; /* 在世 — 若竹 */
+  --color-deceased: #8c8473; /* 已故 — neutral-6  */
 
   /* 族谱树连线 */
-  --color-tree-line: #000000;    /* 普通连线 */
-  --color-tree-line-selected: #C63C2E;               /* 选中连线 — accent */
+  --color-tree-line: #000000; /* 普通连线 */
+  --color-tree-line-selected: #c63c2e; /* 选中连线 — accent */
 
   /* 卡片系统 */
   --color-card-fill: var(--color-neutral-2);
-  --color-card-stroke: rgba(28, 27, 24, 0.05);     /* 极其细腻的卡片边框 */
+  --color-card-stroke: rgba(28, 27, 24, 0.05); /* 极其细腻的卡片边框 */
   --color-card-hover-fill: var(--color-neutral-1);
   --color-card-selected-stroke: var(--color-accent);
 
@@ -120,29 +120,28 @@
   --color-glass-overlay: rgba(28, 26, 23, 0.25);
 
   /* 场景表面 — 落地页等整页背景（暗色下自动反转，避免穿帮） */
-  --bg-landing-gradient: linear-gradient(180deg, #FAF9F6 0%, #F1EEE5 48%, #EAE5D9 100%);
-  --bg-landing-glow: rgba(198, 60, 46, 0.07);   /* 朱砂径向光 */
+  --bg-landing-gradient: linear-gradient(180deg, #faf9f6 0%, #f1eee5 48%, #eae5d9 100%);
+  --bg-landing-glow: rgba(198, 60, 46, 0.07); /* 朱砂径向光 */
   --bg-landing-vignette: rgba(28, 26, 23, 0.06); /* 暗角色彩平衡 */
-  --bg-landing-grid: rgba(14, 13, 11, 0.015);    /* 纸纹理网格线 */
+  --bg-landing-grid: rgba(14, 13, 11, 0.015); /* 纸纹理网格线 */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      排版
      ═══════════════════════════════════════════════════════════════════════════ */
 
   /* 字体族 - 升级西文 Outfit & Plus Jakarta Sans */
-  --font-sans: 'Outfit', 'Plus Jakarta Sans', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC',
-               'Hiragino Sans GB', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
-                'Songti SC', SimSun, serif;
-  --font-mono: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas',
-               Monaco, 'Courier New', monospace;
+  --font-sans:
+    "Outfit", "Plus Jakarta Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Hiragino Sans GB", system-ui,
+    -apple-system, sans-serif;
+  --font-serif: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+  --font-mono: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", Monaco, "Courier New", monospace;
 
   /* 字号体系 — Geist 风格 role+px（14px 基准）
      禁止使用 text-xs/sm/base/lg/... 裸名，禁止硬编码 text-[Npx] */
   --text-caption-10: 10px;
   --text-label-12: 12px;
   --text-copy-13: 13px;
-  --text-copy-14: 14px;     /* 默认正文基准 */
+  --text-copy-14: 14px; /* 默认正文基准 */
   --text-copy-15: 15px;
   --text-copy-16: 16px;
   --text-title-20: 20px;
@@ -166,7 +165,7 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  --radius-2xl: 24px;       /* 最大圆角上限 — hero 表面专用 */
+  --radius-2xl: 24px; /* 最大圆角上限 — hero 表面专用 */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      阴影 — 只用 ring 或 whisper，禁止硬阴影
@@ -174,38 +173,38 @@
 
   --shadow-whisper: 0 4px 24px rgba(28, 26, 23, 0.04);
   --shadow-ring: 0 0 0 1px rgba(28, 27, 24, 0.05);
-  --shadow-accent: 0 12px 32px rgba(198, 60, 46, 0.15);  /* 朱砂着色阴影 — CTA/印章 */
+  --shadow-accent: 0 12px 32px rgba(198, 60, 46, 0.15); /* 朱砂着色阴影 — CTA/印章 */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      动效 (Spring Curves & Tactile Micro-motion)
      ═══════════════════════════════════════════════════════════════════════════ */
 
   --ease-breath: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-snap: cubic-bezier(0.16, 1, 0.3, 1);    /* 更快的弹性 — 下拉菜单、标签切换 */
+  --ease-snap: cubic-bezier(0.16, 1, 0.3, 1); /* 更快的弹性 — 下拉菜单、标签切换 */
   --ease-spring-gentle: cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹性温和回弹 — 悬停/弹出 */
   --ease-spring-stiff: cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 清脆回弹 — 点击/切换 */
 
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
-  --duration-panel: 260ms;     /* 浮动面板 / 下拉菜单 */
-  --duration-sheet: 280ms;     /* 侧边抽屉 / 底部 sheet */
+  --duration-panel: 260ms; /* 浮动面板 / 下拉菜单 */
+  --duration-sheet: 280ms; /* 侧边抽屉 / 底部 sheet */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      层级 (z-index)
      ═══════════════════════════════════════════════════════════════════════════ */
 
-  --z-popover: 1000;           /* 下拉菜单 / popover */
-  --z-overlay: 1000;           /* 兼容旧名：浮层 / 下拉菜单 / popover */
-  --z-modal: 2000;             /* 模态框 / 弹窗 */
-  --z-critical: 9000;          /* 全局确认框 / 冲突提示 */
-  --z-toast: 9100;             /* 全局轻提示 */
+  --z-popover: 1000; /* 下拉菜单 / popover */
+  --z-overlay: 1000; /* 兼容旧名：浮层 / 下拉菜单 / popover */
+  --z-modal: 2000; /* 模态框 / 弹窗 */
+  --z-critical: 9000; /* 全局确认框 / 冲突提示 */
+  --z-toast: 9100; /* 全局轻提示 */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      交互
      ═══════════════════════════════════════════════════════════════════════════ */
 
-  --opacity-disabled: 0.45;    /* 统一禁用态透明度 */
+  --opacity-disabled: 0.45; /* 统一禁用态透明度 */
   --color-text-on-accent: #fff; /* accent / error / success 按钮上的文字 */
 
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -229,56 +228,56 @@
 
 /* 三套清透浅色主题共用表面规则，保留 pure / slate ID 兼容已保存偏好。 */
 [data-theme="pure"] {
-  --color-neutral-1: #F8F9FA;
-  --color-neutral-2: #FFFFFF;
-  --color-neutral-3: #EFF1F3;
-  --color-neutral-4: #E2E5E8;
-  --color-neutral-5: #B6BCC2;
-  --color-neutral-6: #646B73;
-  --color-neutral-7: #4C535A;
-  --color-neutral-8: #32383E;
-  --color-neutral-9: #1F2327;
+  --color-neutral-1: #f8f9fa;
+  --color-neutral-2: #ffffff;
+  --color-neutral-3: #eff1f3;
+  --color-neutral-4: #e2e5e8;
+  --color-neutral-5: #b6bcc2;
+  --color-neutral-6: #646b73;
+  --color-neutral-7: #4c535a;
+  --color-neutral-8: #32383e;
+  --color-neutral-9: #1f2327;
   --color-neutral-10: #121518;
-  --color-accent: #2C3238;
-  --color-accent-light: #4A535D;
-  --color-accent-deep: #1A1E22;
-  --color-accent-muted: #ECEFF2;
+  --color-accent: #2c3238;
+  --color-accent-light: #4a535d;
+  --color-accent-deep: #1a1e22;
+  --color-accent-muted: #eceff2;
   --shadow-accent: 0 4px 16px rgba(31, 35, 39, 0.12);
 }
 
 [data-theme="slate"] {
-  --color-neutral-1: #F5F7FA;
-  --color-neutral-2: #FFFFFF;
-  --color-neutral-3: #EDF1F6;
-  --color-neutral-4: #DDE3EB;
-  --color-neutral-5: #B7C2D0;
-  --color-neutral-6: #606D7E;
+  --color-neutral-1: #f5f7fa;
+  --color-neutral-2: #ffffff;
+  --color-neutral-3: #edf1f6;
+  --color-neutral-4: #dde3eb;
+  --color-neutral-5: #b7c2d0;
+  --color-neutral-6: #606d7e;
   --color-neutral-7: #526174;
-  --color-neutral-8: #3C4B60;
-  --color-neutral-9: #252D3A;
+  --color-neutral-8: #3c4b60;
+  --color-neutral-9: #252d3a;
   --color-neutral-10: #192231;
-  --color-accent: #405E85;
-  --color-accent-light: #344F72;
-  --color-accent-deep: #293F5C;
-  --color-accent-muted: #EAF0F7;
+  --color-accent: #405e85;
+  --color-accent-light: #344f72;
+  --color-accent-deep: #293f5c;
+  --color-accent-muted: #eaf0f7;
   --shadow-accent: 0 4px 16px rgba(64, 94, 133, 0.18);
 }
 
 [data-theme="pine"] {
-  --color-neutral-1: #F6F7F3;
-  --color-neutral-2: #FFFFFF;
-  --color-neutral-3: #EDF1EB;
-  --color-neutral-4: #DEE5DC;
-  --color-neutral-5: #B8C4B7;
-  --color-neutral-6: #616E62;
+  --color-neutral-1: #f6f7f3;
+  --color-neutral-2: #ffffff;
+  --color-neutral-3: #edf1eb;
+  --color-neutral-4: #dee5dc;
+  --color-neutral-5: #b8c4b7;
+  --color-neutral-6: #616e62;
   --color-neutral-7: #536254;
-  --color-neutral-8: #3E5144;
-  --color-neutral-9: #26332D;
-  --color-neutral-10: #1B2821;
+  --color-neutral-8: #3e5144;
+  --color-neutral-9: #26332d;
+  --color-neutral-10: #1b2821;
   --color-accent: #356451;
-  --color-accent-light: #2B5443;
+  --color-accent-light: #2b5443;
   --color-accent-deep: #224536;
-  --color-accent-muted: #EAF2EC;
+  --color-accent-muted: #eaf2ec;
   --shadow-accent: 0 4px 16px rgba(53, 100, 81, 0.18);
 }
 
@@ -326,29 +325,29 @@
 
 [data-theme="dark"] {
   /* 中性色反转 */
-  --color-neutral-1: #0C0C0B;   /* 页面底色：玄墨深夜 */
-  --color-neutral-2: #161513;   /* 卡片底色：棉墨暗卡 */
-  --color-neutral-3: #242220;   /* 悬停表面 */
-  --color-neutral-4: #383633;   /* 强填充 */
-  --color-neutral-5: #54524F;   /* 边框 */
-  --color-neutral-6: #807E7A;   /* 图标 / 极小字号标签 */
-  --color-neutral-7: #A3A19D;   /* 次要文字、说明 */
-  --color-neutral-8: #C4C2BE;   /* 正文备选 */
-  --color-neutral-9: #E3E1DB;   /* 默认正文色：象牙灰白 */
-  --color-neutral-10: #F3F2EE;  /* 标题、最强强调 */
+  --color-neutral-1: #0c0c0b; /* 页面底色：玄墨深夜 */
+  --color-neutral-2: #161513; /* 卡片底色：棉墨暗卡 */
+  --color-neutral-3: #242220; /* 悬停表面 */
+  --color-neutral-4: #383633; /* 强填充 */
+  --color-neutral-5: #54524f; /* 边框 */
+  --color-neutral-6: #807e7a; /* 图标 / 极小字号标签 */
+  --color-neutral-7: #a3a19d; /* 次要文字、说明 */
+  --color-neutral-8: #c4c2be; /* 正文备选 */
+  --color-neutral-9: #e3e1db; /* 默认正文色：象牙灰白 */
+  --color-neutral-10: #f3f2ee; /* 标题、最强强调 */
 
   /* 强调色 — 星夜霁蓝（玄墨星空深邃蔚蓝） */
-  --color-accent: #437EEB;
-  --color-accent-deep: #254F9E;
-  --color-accent-light: #6A9BF7;
+  --color-accent: #437eeb;
+  --color-accent-deep: #254f9e;
+  --color-accent-light: #6a9bf7;
   --color-accent-muted: rgba(67, 126, 235, 0.16);
   --color-accent-gradient: linear-gradient(145deg, var(--color-accent-deep), var(--color-accent));
 
   /* 语义色 — 各提亮约 15% */
-  --color-info: #578BBF;
-  --color-success: #63B287;
-  --color-warning: #DFB15B;
-  --color-error: #DC6C85;
+  --color-info: #578bbf;
+  --color-success: #63b287;
+  --color-warning: #dfb15b;
+  --color-error: #dc6c85;
 
   /* 语义色背景 — 暗色适配 */
   --color-info-muted: rgba(87, 139, 191, 0.12);
@@ -357,15 +356,15 @@
   --color-error-muted: rgba(220, 108, 133, 0.12);
 
   /* 族谱专用 — 暗色适配 */
-  --color-male: #578BBF;
+  --color-male: #578bbf;
   --color-male-muted: rgba(87, 139, 191, 0.1);
-  --color-female: #DC6C85;
+  --color-female: #dc6c85;
   --color-female-muted: rgba(220, 108, 133, 0.08);
-  --color-alive: #63B287;
-  --color-deceased: #807E7A;
+  --color-alive: #63b287;
+  --color-deceased: #807e7a;
 
   --color-tree-line: rgba(128, 126, 122, 0.5);
-  --color-tree-line-selected: #437EEB;
+  --color-tree-line-selected: #437eeb;
 
   --color-card-fill: var(--color-neutral-2);
   --color-card-stroke: rgba(255, 255, 255, 0.04);
@@ -400,14 +399,14 @@
   --color-glass-overlay: rgba(0, 0, 0, 0.5);
 
   /* 落地页暗色覆写 — 纯灰三段，降朱砂光强度避免暗底过亮 */
-  --bg-landing-gradient: linear-gradient(180deg, #0C0C0B 0%, #151413 48%, #1C1B1A 100%);
+  --bg-landing-gradient: linear-gradient(180deg, #0c0c0b 0%, #151413 48%, #1c1b1a 100%);
   --bg-landing-glow: rgba(67, 126, 235, 0.08);
   --bg-landing-vignette: rgba(0, 0, 0, 0.24);
   --bg-landing-grid: rgba(255, 255, 255, 0.015);
 
   --shadow-whisper: 0 4px 24px rgba(0, 0, 0, 0.25);
   --shadow-ring: 0 0 0 1px rgba(255, 255, 255, 0.06);
-  --shadow-accent: 0 12px 32px rgba(45, 95, 190, 0.22);  /* 星夜霁蓝深邃阴影 */
+  --shadow-accent: 0 12px 32px rgba(45, 95, 190, 0.22); /* 星夜霁蓝深邃阴影 */
 
   color-scheme: dark;
 }

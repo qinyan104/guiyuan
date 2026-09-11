@@ -74,7 +74,9 @@ function loadPreference(): ThemeMode {
     if (oldDarkStored !== null) {
       return oldDarkStored === 'true' ? 'dark' : 'paper'
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   return globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'paper'
 }
@@ -102,7 +104,9 @@ export const useUiStore = defineStore('ui', () => {
     try {
       localStorage.setItem(THEME_STORAGE_KEY, currentTheme.value)
       localStorage.setItem(OLD_DARK_STORAGE_KEY, String(currentTheme.value === 'dark'))
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   })
 
   function setTheme(theme: ThemeMode) {

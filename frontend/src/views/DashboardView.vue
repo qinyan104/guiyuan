@@ -92,7 +92,7 @@ function formatDate(dateStr: string) {
   return `${d.getMonth() + 1}月${d.getDate()}日`
 }
 
-const latestPub = computed(() => recentPubs.value.length > 0 ? recentPubs.value[0] : null)
+const latestPub = computed(() => (recentPubs.value.length > 0 ? recentPubs.value[0] : null))
 const otherRecentPubs = computed(() => recentPubs.value.slice(1))
 const visibleUsers = computed(() => users.value.slice(0, 3))
 const hasMoreUsers = computed(() => users.value.length > visibleUsers.value.length)
@@ -104,7 +104,11 @@ const newSubtitle = ref('')
 async function handleCreateFromDashboard() {
   const title = newTitle.value.trim() || '未命名族谱'
   try {
-    const id = await createPublication({ ...blankPublication, title, subtitle: newSubtitle.value.trim() }, defaultSettings, title)
+    const id = await createPublication(
+      { ...blankPublication, title, subtitle: newSubtitle.value.trim() },
+      defaultSettings,
+      title,
+    )
     router.push({ name: 'workbench', params: { id } })
   } catch (err: unknown) {
     feedback.setError('创建失败: ' + getUserErrorMessage(err, '未知错误'))

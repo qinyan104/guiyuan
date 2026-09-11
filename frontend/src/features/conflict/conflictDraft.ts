@@ -39,7 +39,7 @@ function getDraft(prefix: string, publicationId: number): ConflictDraft | null {
     if (!raw) return null
     const draft = JSON.parse(raw) as Partial<ConflictDraft>
     return draft.publicationId === publicationId && draft.publication && draft.settings && draft.savedAt
-      ? draft as ConflictDraft
+      ? (draft as ConflictDraft)
       : null
   } catch {
     return null

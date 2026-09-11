@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue"
-import type { PublicationData, Person } from "../types/family"
-import {
-  findRelationshipPathExtended,
-  resolveKinshipTermExtended,
-} from "../lib/kinship"
-import type { KinshipPath } from "../lib/kinship"
+import { ref, computed, watch } from 'vue'
+import type { PublicationData, Person } from '../types/family'
+import { findRelationshipPathExtended, resolveKinshipTermExtended } from '../lib/kinship'
+import type { KinshipPath } from '../lib/kinship'
 
 const props = defineProps<{
   publication: PublicationData
@@ -22,9 +19,9 @@ function getInitialCallerId() {
 }
 
 const selectedA = ref(getInitialCallerId())
-const selectedB = ref("")
-const searchA = ref("")
-const searchB = ref("")
+const selectedB = ref('')
+const searchA = ref('')
+const searchB = ref('')
 const showDropdownA = ref(false)
 const showDropdownB = ref(false)
 
@@ -50,7 +47,7 @@ const people = computed(() => {
 function filterPeople(search: string) {
   if (!search.trim()) return people.value
   const q = search.trim().toLowerCase()
-  return people.value.filter((p) => p.name.toLowerCase().includes(q))
+  return people.value.filter(p => p.name.toLowerCase().includes(q))
 }
 
 const filteredA = computed(() => filterPeople(searchA.value))
@@ -67,7 +64,7 @@ const result = computed(() => {
   if (!selectedA.value || !selectedB.value) return null
   if (selectedA.value === selectedB.value) {
     const p = props.publication.people[selectedA.value]
-    return { term: "本人", description: p?.name ?? "", generationGap: 0, isElder: false }
+    return { term: '本人', description: p?.name ?? '', generationGap: 0, isElder: false }
   }
   return resolveKinshipTermExtended(props.publication, selectedA.value, selectedB.value)
 })
@@ -107,25 +104,25 @@ const ageComparison = computed(() => {
   const ya = extractYear(a?.birth)
   const yb = extractYear(b?.birth)
   if (ya !== null && yb !== null) {
-    if (ya < yb) return { older: "A", diff: yb - ya }
-    if (yb < ya) return { older: "B", diff: ya - yb }
+    if (ya < yb) return { older: 'A', diff: yb - ya }
+    if (yb < ya) return { older: 'B', diff: ya - yb }
   }
   return null
 })
 
 const relationshipLineLabel = computed(() => {
   const p = relationshipPath.value
-  if (!p) return ""
-  if (p.isInLaw) return "姻亲关系"
-  if (!p.bloodPath) return "亲属关系"
-  if (p.bloodPath.upSteps === 0 || p.bloodPath.downSteps === 0) return "直系血亲"
-  return p.bloodPath.isPatrilineal ? "父系血亲" : "母系血亲"
+  if (!p) return ''
+  if (p.isInLaw) return '姻亲关系'
+  if (!p.bloodPath) return '亲属关系'
+  if (p.bloodPath.upSteps === 0 || p.bloodPath.downSteps === 0) return '直系血亲'
+  return p.bloodPath.isPatrilineal ? '父系血亲' : '母系血亲'
 })
 
 const generationLabel = computed(() => {
   const term = result.value
-  if (!term) return ""
-  if (term.generationGap === 0) return "同辈"
+  if (!term) return ''
+  if (term.generationGap === 0) return '同辈'
   return `${Math.abs(term.generationGap)}代差`
 })
 
@@ -135,7 +132,7 @@ const pathNodes = computed(() => {
   const bp = p.bloodPath
   const ip = p.inLawPath
   if (bp) {
-    return bp.path.map((id) => ({
+    return bp.path.map(id => ({
       id,
       person: personById(id),
       isEndpoint: id === selectedA.value || id === selectedB.value,
@@ -147,7 +144,7 @@ const pathNodes = computed(() => {
   }
   if (ip) {
     const spouseSet = new Set(ip.spousesUsed)
-    return ip.path.map((id) => ({
+    return ip.path.map(id => ({
       id,
       person: personById(id),
       isEndpoint: id === selectedA.value || id === selectedB.value,
@@ -162,16 +159,16 @@ const pathNodes = computed(() => {
 
 const pathDescription = computed(() => {
   const p = relationshipPath.value
-  if (!p) return ""
-  const aName = personById(selectedA.value)?.name ?? "未知"
-  const bName = personById(selectedB.value)?.name ?? "未知"
+  if (!p) return ''
+  const aName = personById(selectedA.value)?.name ?? '未知'
+  const bName = personById(selectedB.value)?.name ?? '未知'
 
   const bp = p.bloodPath
   const ip = p.inLawPath
 
   if (bp) {
     const ancestor = personById(bp.commonAncestorId)
-    const ancName = ancestor?.name ?? "未知"
+    const ancName = ancestor?.name ?? '未知'
     const upIds = bp.path.slice(1, bp.path.indexOf(bp.commonAncestorId))
     const downIds = bp.path.slice(bp.path.indexOf(bp.commonAncestorId) + 1, -1)
 
@@ -183,8 +180,8 @@ const pathDescription = computed(() => {
     }
 
     let desc = `${aName}`
-    const upNames = upIds.map((id) => personById(id)?.name ?? "未知").join(", ")
-    const downNames = downIds.map((id) => personById(id)?.name ?? "未知").join(", ")
+    const upNames = upIds.map(id => personById(id)?.name ?? '未知').join(', ')
+    const downNames = downIds.map(id => personById(id)?.name ?? '未知').join(', ')
     if (upNames) desc += ` -> ${upNames}`
     desc += ` -> ${ancName}(共同祖先)`
     if (downNames) desc += ` -> ${downNames}`
@@ -193,38 +190,40 @@ const pathDescription = computed(() => {
   }
 
   if (ip) {
-    const pathNames = ip.path.map((id) => {
-      const p = personById(id)
-      const name = p?.name ?? "未知"
-      if (ip.spousesUsed.includes(id)) return `${name}(配偶)`
-      return name
-    }).join(" -> ")
+    const pathNames = ip.path
+      .map(id => {
+        const p = personById(id)
+        const name = p?.name ?? '未知'
+        if (ip.spousesUsed.includes(id)) return `${name}(配偶)`
+        return name
+      })
+      .join(' -> ')
     return `${aName} 与 ${bName} 通过姻亲关系相连：${pathNames}`
   }
 
-  return ""
+  return ''
 })
 
 function selectPersonA(id: string) {
   selectedA.value = id
-  searchA.value = ""
+  searchA.value = ''
   showDropdownA.value = false
 }
 
 function selectPersonB(id: string) {
   selectedB.value = id
-  searchB.value = ""
+  searchB.value = ''
   showDropdownB.value = false
 }
 
 function genderLabel(g: string): string {
-  if (g === "male") return "男"
-  if (g === "female") return "女"
-  return ""
+  if (g === 'male') return '男'
+  if (g === 'female') return '女'
+  return ''
 }
 
 function avatarLetter(name: string): string {
-  return name?.charAt(0) ?? "?"
+  return name?.charAt(0) ?? '?'
 }
 </script>
 <template>

@@ -181,11 +181,7 @@ export function useEditorHistory(input: {
     undoChange,
     redoChange,
     disposeHistory,
-
   }
-
 }
-
-
 
 export type EditorHistory = ReturnType<typeof useEditorHistory>

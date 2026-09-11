@@ -40,7 +40,9 @@ export async function enableAccount(pubId: number, personDbId: number): Promise<
 }
 
 export async function resetAccountPassword(pubId: number, personDbId: number): Promise<string> {
-  const resp = await http.post<ApiResponse<{ newPassword: string }>>(`/publications/${pubId}/accounts/${personDbId}/reset-password`)
+  const resp = await http.post<ApiResponse<{ newPassword: string }>>(
+    `/publications/${pubId}/accounts/${personDbId}/reset-password`,
+  )
   if (resp.data.code !== 200) throw new Error(resp.data.message || '重置密码失败')
   return resp.data.data.newPassword
 }
@@ -57,7 +59,9 @@ export async function cleanupOrphanedAccounts(pubId: number): Promise<number> {
 }
 
 export async function batchDeleteAccounts(pubId: number, personDbIds: number[]): Promise<number> {
-  const resp = await http.post<ApiResponse<{ deleted: number }>>(`/publications/${pubId}/accounts/batch-delete`, { personDbIds })
+  const resp = await http.post<ApiResponse<{ deleted: number }>>(`/publications/${pubId}/accounts/batch-delete`, {
+    personDbIds,
+  })
   if (resp.data.code !== 200) throw new Error(resp.data.message || '批量删除失败')
   return resp.data.data.deleted
 }

@@ -29,5 +29,5 @@ export function parseExactDate(s?: string): number {
       }
     }
   }
-  return year + (month / 100) + (day / 10000)
+  return year + month / 100 + day / 10000
 }

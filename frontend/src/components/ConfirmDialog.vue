@@ -21,12 +21,12 @@ const props = defineProps<{
   message: string
   confirmLabel?: string
   cancelLabel?: string
-  tone?: "danger" | "warning" | "default"
-  size?: "sm" | "md" | "lg"
+  tone?: 'danger' | 'warning' | 'default'
+  size?: 'sm' | 'md' | 'lg'
 }>()
 
 const emit = defineEmits<{
-  "update:modelValue": [value: boolean]
+  'update:modelValue': [value: boolean]
   confirm: []
   cancel: []
 }>()
@@ -37,18 +37,21 @@ const active = toRef(props, 'modelValue')
 useFocusTrap(dialogRef, active, () => onCancel())
 
 function onConfirm() {
-  emit("confirm")
-  emit("update:modelValue", false)
+  emit('confirm')
+  emit('update:modelValue', false)
 }
 
 function onCancel() {
-  emit("cancel")
-  emit("update:modelValue", false)
+  emit('cancel')
+  emit('update:modelValue', false)
 }
 
-watch(() => props.modelValue, (v) => {
-  document.body.style.overflow = v ? 'hidden' : ''
-})
+watch(
+  () => props.modelValue,
+  v => {
+    document.body.style.overflow = v ? 'hidden' : ''
+  },
+)
 </script>
 
 <template>

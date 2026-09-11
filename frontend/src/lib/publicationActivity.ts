@@ -56,10 +56,7 @@ export function getPublicationActivityLabel(action?: string | null): string {
   return action ? getPublicationActivityMeta(action).label : ''
 }
 
-export function getPublicationActivityCardSummary(
-  username?: string | null,
-  action?: string | null,
-): string {
+export function getPublicationActivityCardSummary(username?: string | null, action?: string | null): string {
   const actor = username || '有人'
   const summaries: Record<string, string> = {
     CREATE_PUB: `${actor} 创建了这份族谱`,
@@ -73,24 +70,18 @@ export function getPublicationActivityCardSummary(
     DELETE_PUB: `${actor} 删除了族谱`,
   }
 
-  return action ? summaries[action] ?? `${actor} 更新了这份族谱` : `${actor} 更新了这份族谱`
+  return action ? (summaries[action] ?? `${actor} 更新了这份族谱`) : `${actor} 更新了这份族谱`
 }
 
-export function filterPublicationActivity<T extends ActivityLike>(
-  entries: T[],
-  filter: ActivityCategory,
-): T[] {
+export function filterPublicationActivity<T extends ActivityLike>(entries: T[], filter: ActivityCategory): T[] {
   if (filter === 'all') return entries
-  return entries.filter((entry) => getPublicationActivityMeta(entry.action).category === filter)
+  return entries.filter(entry => getPublicationActivityMeta(entry.action).category === filter)
 }
 
-export function summarizePublicationActivity(
-  entries: ActivityLike[],
-  now = new Date(),
-): ActivitySummary {
+export function summarizePublicationActivity(entries: ActivityLike[], now = new Date()): ActivitySummary {
   const latest = entries[0]
   const todayKey = now.toISOString().slice(0, 10)
-  const todayCount = entries.filter((entry) => entry.createdAt.slice(0, 10) === todayKey).length
+  const todayCount = entries.filter(entry => entry.createdAt.slice(0, 10) === todayKey).length
 
   return {
     totalCount: entries.length,

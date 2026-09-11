@@ -2,12 +2,7 @@ import type { PublicationData, PublicationSettings } from '../../types/family'
 import { escapeHtml, serializeSvg } from './publicationExport'
 import { createPortablePublication } from '../persistence/draftPersistence'
 import { isPersonDeceased } from '../../lib/personStatus'
-import {
-  buildAllExportThemesCss,
-  getThemeCssVariables,
-  THEME_PRESETS,
-  type ThemeMode,
-} from './exportTheme'
+import { buildAllExportThemesCss, getThemeCssVariables, THEME_PRESETS, type ThemeMode } from './exportTheme'
 
 export interface ShareHtmlOptions {
   publication: PublicationData
@@ -1210,7 +1205,7 @@ ${options.script}
 }
 
 function isThemeMode(value: unknown): value is ThemeMode {
-  return typeof value === 'string' && THEME_PRESETS.some((preset) => preset.id === value)
+  return typeof value === 'string' && THEME_PRESETS.some(preset => preset.id === value)
 }
 
 export async function generateShareHtml(options: ShareHtmlOptions): Promise<string> {

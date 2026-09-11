@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import DarkModeToggle from '../components/DarkModeToggle.vue'
@@ -24,10 +24,12 @@ const publicationTitle = computed(() => context.pub.publication.title || '未命
 const publicationSubtitle = computed(() => context.pub.publication.subtitle || '协作记录')
 const summary = computed(() => summarizePublicationActivity(activities.value))
 const filteredActivities = computed(() => filterPublicationActivity(activities.value, activeFilter.value))
-const filterOptions = computed(() => PUBLICATION_ACTIVITY_FILTERS.map((filter) => ({
-  ...filter,
-  count: filterPublicationActivity(activities.value, filter.key).length,
-})))
+const filterOptions = computed(() =>
+  PUBLICATION_ACTIVITY_FILTERS.map(filter => ({
+    ...filter,
+    count: filterPublicationActivity(activities.value, filter.key).length,
+  })),
+)
 
 async function loadActivities() {
   loading.value = true

@@ -19,8 +19,8 @@ describe('layoutPublication', () => {
 
     const spouseId = result.value.selectedPersonId
     const layout = layoutPublication(result.value.publication, defaultSettings)
-    const personCard = layout.cards.find((card) => card.personId === 'p5')
-    const spouseCard = layout.cards.find((card) => card.personId === spouseId)
+    const personCard = layout.cards.find(card => card.personId === 'p5')
+    const spouseCard = layout.cards.find(card => card.personId === spouseId)
 
     expect(personCard).toBeDefined()
     expect(spouseCard).toBeDefined()
@@ -30,7 +30,9 @@ describe('layoutPublication', () => {
     }
 
     const personCenterX = personCard.x + personCard.width / 2
-    const inboundLine = layout.lines.find((line) => line.x1 === line.x2 && line.y2 === personCard.y && line.x1 === personCenterX)
+    const inboundLine = layout.lines.find(
+      line => line.x1 === line.x2 && line.y2 === personCard.y && line.x1 === personCenterX,
+    )
 
     expect(inboundLine).toBeDefined()
     expect(spouseCard.x).toBeGreaterThan(personCard.x)
@@ -48,9 +50,9 @@ describe('layoutPublication', () => {
     }
 
     const layout = layoutPublication(result.value.publication, defaultSettings)
-    const parentLeftCard = layout.cards.find((card) => card.personId === 'p1')
-    const parentRightCard = layout.cards.find((card) => card.personId === 'p2')
-    const childCard = layout.cards.find((card) => card.personId === 'p5')
+    const parentLeftCard = layout.cards.find(card => card.personId === 'p1')
+    const parentRightCard = layout.cards.find(card => card.personId === 'p2')
+    const childCard = layout.cards.find(card => card.personId === 'p5')
 
     expect(parentLeftCard).toBeDefined()
     expect(parentRightCard).toBeDefined()
@@ -60,11 +62,12 @@ describe('layoutPublication', () => {
       return
     }
 
-    const parentCenterX = (parentLeftCard.x + parentLeftCard.width / 2 + parentRightCard.x + parentRightCard.width / 2) / 2
+    const parentCenterX =
+      (parentLeftCard.x + parentLeftCard.width / 2 + parentRightCard.x + parentRightCard.width / 2) / 2
     const childCenterX = childCard.x + childCard.width / 2
     const childBarY = childCard.y - 48
     const bridgeLine = layout.lines.find(
-      (line) =>
+      line =>
         line.y1 === childBarY &&
         line.y2 === childBarY &&
         line.x1 === Math.min(parentCenterX, childCenterX) &&
@@ -107,10 +110,10 @@ describe('layoutPublication', () => {
     }
 
     const layout = layoutPublication(secondChildResult.value.publication, defaultSettings)
-    const spouseCard = layout.cards.find((card) => card.personId === spouseResult.value.selectedPersonId)
-    const personCard = layout.cards.find((card) => card.personId === 'p5')
-    const firstChildCard = layout.cards.find((card) => card.personId === firstChildResult.value.selectedPersonId)
-    const secondChildCard = layout.cards.find((card) => card.personId === secondChildResult.value.selectedPersonId)
+    const spouseCard = layout.cards.find(card => card.personId === spouseResult.value.selectedPersonId)
+    const personCard = layout.cards.find(card => card.personId === 'p5')
+    const firstChildCard = layout.cards.find(card => card.personId === firstChildResult.value.selectedPersonId)
+    const secondChildCard = layout.cards.find(card => card.personId === secondChildResult.value.selectedPersonId)
 
     expect(personCard).toBeDefined()
     expect(spouseCard).toBeDefined()
@@ -122,15 +125,18 @@ describe('layoutPublication', () => {
     }
 
     const coupleCenterX = (personCard.x + personCard.width / 2 + spouseCard.x + spouseCard.width / 2) / 2
-    const leftChildCenterX = Math.min(firstChildCard.x + firstChildCard.width / 2, secondChildCard.x + secondChildCard.width / 2)
-    const rightChildCenterX = Math.max(firstChildCard.x + firstChildCard.width / 2, secondChildCard.x + secondChildCard.width / 2)
+    const leftChildCenterX = Math.min(
+      firstChildCard.x + firstChildCard.width / 2,
+      secondChildCard.x + secondChildCard.width / 2,
+    )
+    const rightChildCenterX = Math.max(
+      firstChildCard.x + firstChildCard.width / 2,
+      secondChildCard.x + secondChildCard.width / 2,
+    )
     const childBarY = firstChildCard.y - 48
     const bridgeLine = layout.lines.find(
-      (line) =>
-        line.y1 === childBarY &&
-        line.y2 === childBarY &&
-        line.x1 === leftChildCenterX &&
-        line.x2 === rightChildCenterX,
+      line =>
+        line.y1 === childBarY && line.y2 === childBarY && line.x1 === leftChildCenterX && line.x2 === rightChildCenterX,
     )
 
     expect((leftChildCenterX + rightChildCenterX) / 2).toBe(coupleCenterX)
@@ -162,28 +168,27 @@ describe('layoutPublication', () => {
     const fatherLinePublication = JSON.parse(JSON.stringify(childResult.value.publication))
     fatherLinePublication.focusFamilyId = 'f1'
     const fatherLineLayout = layoutPublication(fatherLinePublication, defaultSettings)
-    const daughterCard = fatherLineLayout.cards.find((card) => card.personId === 'p5')
-    const spouseCard = fatherLineLayout.cards.find((card) => card.personId === spouseId)
-    const outboundChildCard = fatherLineLayout.cards.find((card) => card.personId === outboundChildId)
+    const daughterCard = fatherLineLayout.cards.find(card => card.personId === 'p5')
+    const spouseCard = fatherLineLayout.cards.find(card => card.personId === spouseId)
+    const outboundChildCard = fatherLineLayout.cards.find(card => card.personId === outboundChildId)
 
     expect(daughterCard).toEqual(expect.objectContaining({ lineageRole: 'married-out' }))
     expect(spouseCard).toEqual(expect.objectContaining({ lineageRole: 'in-law' }))
     expect(outboundChildCard).toBeDefined()
 
     const daughterBranchLayout = layoutPublication(childResult.value.publication, defaultSettings)
-    expect(daughterBranchLayout.cards.find((card) => card.personId === outboundChildId)).toBeDefined()
+    expect(daughterBranchLayout.cards.find(card => card.personId === outboundChildId)).toBeDefined()
   })
 
   it('compresses the layout when showCard is false', () => {
-    const standardSettings = { ...defaultSettings, showCard: true,
-      showBirth: true }
+    const standardSettings = { ...defaultSettings, showCard: true, showBirth: true }
     const compactSettings = { ...defaultSettings, showCard: false }
 
     const standardLayout = layoutPublication(samplePublication, standardSettings)
     const compactLayout = layoutPublication(samplePublication, compactSettings)
 
     // Verify compact card dimensions
-    compactLayout.cards.forEach((card) => {
+    compactLayout.cards.forEach(card => {
       expect(card.width).toBe(32)
       expect(card.height).toBe(110)
     })
@@ -194,9 +199,9 @@ describe('layoutPublication', () => {
 
   it('ships the sample with an out-married daughter branch ready to inspect', () => {
     const rootLayout = layoutPublication(clonePublication(), defaultSettings)
-    const daughterCard = rootLayout.cards.find((card) => card.personId === 'p18')
-    const sonInLawCard = rootLayout.cards.find((card) => card.personId === 'p19')
-    const grandchildCard = rootLayout.cards.find((card) => card.personId === 'p20')
+    const daughterCard = rootLayout.cards.find(card => card.personId === 'p18')
+    const sonInLawCard = rootLayout.cards.find(card => card.personId === 'p19')
+    const grandchildCard = rootLayout.cards.find(card => card.personId === 'p20')
 
     expect(daughterCard).toEqual(expect.objectContaining({ lineageRole: 'married-out' }))
     expect(sonInLawCard).toEqual(expect.objectContaining({ lineageRole: 'in-law' }))
@@ -205,7 +210,7 @@ describe('layoutPublication', () => {
     const daughterBranchPublication = clonePublication()
     daughterBranchPublication.focusFamilyId = 'f6'
     const daughterBranchLayout = layoutPublication(daughterBranchPublication, defaultSettings)
-    expect(daughterBranchLayout.cards.find((card) => card.personId === 'p20')).toBeDefined()
+    expect(daughterBranchLayout.cards.find(card => card.personId === 'p20')).toBeDefined()
   })
 
   it('keeps a recruited son-in-law branch inside the natal lineage', () => {
@@ -213,9 +218,9 @@ describe('layoutPublication', () => {
     publication.families.f6.branchMode = 'uxorilocal'
 
     const layout = layoutPublication(publication, defaultSettings)
-    const daughterCard = layout.cards.find((card) => card.personId === 'p18')
-    const sonInLawCard = layout.cards.find((card) => card.personId === 'p19')
-    const grandchildCard = layout.cards.find((card) => card.personId === 'p20')
+    const daughterCard = layout.cards.find(card => card.personId === 'p18')
+    const sonInLawCard = layout.cards.find(card => card.personId === 'p19')
+    const grandchildCard = layout.cards.find(card => card.personId === 'p20')
 
     expect(daughterCard).toEqual(expect.objectContaining({ lineageRole: 'uxorilocal' }))
     expect(sonInLawCard).toEqual(expect.objectContaining({ lineageRole: 'in-law' }))

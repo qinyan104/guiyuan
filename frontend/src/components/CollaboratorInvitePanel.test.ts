@@ -6,9 +6,7 @@ import AppSelect from './AppSelect.vue'
 import CollaboratorInvitePanel from './CollaboratorInvitePanel.vue'
 import type { UserSearchResult } from '../api/accessManage'
 
-const users: UserSearchResult[] = [
-  { id: 2, username: 'editor', nickname: 'Editor' },
-]
+const users: UserSearchResult[] = [{ id: 2, username: 'editor', nickname: 'Editor' }]
 
 describe('CollaboratorInvitePanel', () => {
   it('delegates search, selection, role and add interactions to its parent', async () => {

@@ -16,18 +16,13 @@ const FOCUSABLE_SELECTOR = [
  * @param active - 控制焦点陷阱是否启用（通常绑定 visible/modelValue）
  * @param onEscape - 按下 Escape 时的回调
  */
-export function useFocusTrap(
-  containerRef: Ref<HTMLElement | null>,
-  active: Ref<boolean>,
-  onEscape?: () => void,
-) {
+export function useFocusTrap(containerRef: Ref<HTMLElement | null>, active: Ref<boolean>, onEscape?: () => void) {
   let previousActiveElement: HTMLElement | null = null
 
   function getFocusableElements(): HTMLElement[] {
     const el = containerRef.value
     if (!el) return []
-    return Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      .filter(item => item.offsetParent !== null) // 排除不可见元素
+    return Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(item => item.offsetParent !== null) // 排除不可见元素
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -80,13 +75,17 @@ export function useFocusTrap(
     }
   }
 
-  watch(active, (isActive) => {
-    if (isActive) {
-      activate()
-    } else {
-      deactivate()
-    }
-  }, { immediate: true })
+  watch(
+    active,
+    isActive => {
+      if (isActive) {
+        activate()
+      } else {
+        deactivate()
+      }
+    },
+    { immediate: true },
+  )
 
   onBeforeUnmount(() => {
     deactivate()

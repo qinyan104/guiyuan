@@ -59,5 +59,4 @@ describe('KinshipCalculatorDialog', () => {
     expect(wrapper.text()).not.toContain('母系亲属')
     expect(wrapper.find('.kinship-path-node--spouse').exists()).toBe(true)
   })
-
 })

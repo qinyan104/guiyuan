@@ -65,7 +65,7 @@ function validatePerson(personId: string, value: unknown): ValidationIssue[] {
     issues.push(issue('invalid-person', `people.${personId}.gender`, `人物 ${personId} 的性别值无效。`))
   }
 
-  ;(['birth', 'death', 'age', 'titleName', 'clan', 'note'] as const).forEach((field) => {
+  ;(['birth', 'death', 'age', 'titleName', 'clan', 'note'] as const).forEach(field => {
     if (!isOptionalString(person[field])) {
       issues.push(issue('invalid-person', `people.${personId}.${field}`, `人物 ${personId} 的 ${field} 必须是字符串。`))
     }
@@ -124,7 +124,10 @@ function validateFamily(familyId: string, value: unknown, people: Record<string,
     issues.push(issue('invalid-family', `families.${familyId}.id`, `家庭 ${familyId} 的 id 必须与键名一致。`))
   }
 
-  if (family.branchMode !== undefined && (!isString(family.branchMode) || !FAMILY_BRANCH_MODES.has(family.branchMode as FamilyBranchMode))) {
+  if (
+    family.branchMode !== undefined &&
+    (!isString(family.branchMode) || !FAMILY_BRANCH_MODES.has(family.branchMode as FamilyBranchMode))
+  ) {
     issues.push(issue('invalid-family', `families.${familyId}.branchMode`, `家庭 ${familyId} 的 branchMode 值无效。`))
   }
 
@@ -132,7 +135,9 @@ function validateFamily(familyId: string, value: unknown, people: Record<string,
   issues.push(...validateMemberIds(familyId, 'children', family.children, people))
 
   if (Array.isArray(family.adults) && Array.isArray(family.children)) {
-    const adults = new Set(family.adults.filter((memberId): memberId is string => isString(memberId) && memberId.length > 0))
+    const adults = new Set(
+      family.adults.filter((memberId): memberId is string => isString(memberId) && memberId.length > 0),
+    )
 
     family.children.forEach((memberId, index) => {
       if (isString(memberId) && adults.has(memberId)) {
@@ -215,18 +220,30 @@ export function validatePublicationData(input: unknown): ValidationIssue[] {
 
   adultFamilyMap.forEach((familyIds, personId) => {
     if (familyIds.length > 1) {
-      familyIds.slice(1).forEach((familyId) => {
+      familyIds.slice(1).forEach(familyId => {
         const idx = (families[familyId]?.adults ?? []).indexOf(personId)
-        issues.push(issue('cross-family-duplicate-adult', `families.${familyId}.adults[${idx}]`, `人物 ${personId} 已在家庭 ${familyIds[0]} 中作为父母，不能同时作为家庭 ${familyId} 的父母。`))
+        issues.push(
+          issue(
+            'cross-family-duplicate-adult',
+            `families.${familyId}.adults[${idx}]`,
+            `人物 ${personId} 已在家庭 ${familyIds[0]} 中作为父母，不能同时作为家庭 ${familyId} 的父母。`,
+          ),
+        )
       })
     }
   })
 
   childFamilyMap.forEach((familyIds, personId) => {
     if (familyIds.length > 1) {
-      familyIds.slice(1).forEach((familyId) => {
+      familyIds.slice(1).forEach(familyId => {
         const idx = (families[familyId]?.children ?? []).indexOf(personId)
-        issues.push(issue('cross-family-duplicate-child', `families.${familyId}.children[${idx}]`, `人物 ${personId} 已在家庭 ${familyIds[0]} 中作为子女，不能同时作为家庭 ${familyId} 的子女。`))
+        issues.push(
+          issue(
+            'cross-family-duplicate-child',
+            `families.${familyId}.children[${idx}]`,
+            `人物 ${personId} 已在家庭 ${familyIds[0]} 中作为子女，不能同时作为家庭 ${familyId} 的子女。`,
+          ),
+        )
       })
     }
   })
@@ -240,11 +257,11 @@ export function normalizePublicationData(publication: PublicationData): Publicat
   // Remove cross-family duplicates before per-family normalization
   deduplicateCrossFamily(next)
 
-  Object.values(next.families).forEach((family) => {
+  Object.values(next.families).forEach(family => {
     const adultIds = new Set<string>()
     const childIds = new Set<string>()
 
-    family.adults = family.adults.filter((personId) => {
+    family.adults = family.adults.filter(personId => {
       if (!next.people[personId] || adultIds.has(personId)) {
         return false
       }
@@ -253,7 +270,7 @@ export function normalizePublicationData(publication: PublicationData): Publicat
       return true
     })
 
-    family.children = family.children.filter((personId) => {
+    family.children = family.children.filter(personId => {
       if (!next.people[personId] || adultIds.has(personId) || childIds.has(personId)) {
         return false
       }
@@ -281,7 +298,7 @@ export function normalizeSettings(settings: PublicationSettings): PublicationSet
     partnerGap: clampNumber(settings.partnerGap, 72, 128),
     fontScale: clampNumber(settings.fontScale, 0.88, 1.18),
     compactNameSize: clampNumber(settings.compactNameSize, 18, 36),
-    zoom: clampNumber(settings.zoom, 0.10, 1.35),
+    zoom: clampNumber(settings.zoom, 0.1, 1.35),
     paddingX: clampNumber(settings.paddingX, 72, 220),
     paddingY: clampNumber(settings.paddingY, 48, 180),
   }
@@ -299,19 +316,21 @@ export function validateSettings(input: unknown): ValidationIssue[] {
     issues.push(issue('invalid-settings', 'settings.paper', '纸张尺寸必须是 A3 或 A4。'))
   }
 
-  ;([
-    ['cardWidth', 142, 176],
-    ['cardRadius', 0, 32],
-    ['cardShadowOpacity', 0, 40],
-    ['generationGap', 120, 220],
-    ['siblingGap', 56, 140],
-    ['partnerGap', 72, 128],
-    ['fontScale', 0.88, 1.18],
-    ['compactNameSize', 18, 36],
-    ['zoom', 0.10, 1.35],
-    ['paddingX', 72, 220],
-    ['paddingY', 48, 180],
-  ] as const).forEach(([field, min, max]) => {
+  ;(
+    [
+      ['cardWidth', 142, 176],
+      ['cardRadius', 0, 32],
+      ['cardShadowOpacity', 0, 40],
+      ['generationGap', 120, 220],
+      ['siblingGap', 56, 140],
+      ['partnerGap', 72, 128],
+      ['fontScale', 0.88, 1.18],
+      ['compactNameSize', 18, 36],
+      ['zoom', 0.1, 1.35],
+      ['paddingX', 72, 220],
+      ['paddingY', 48, 180],
+    ] as const
+  ).forEach(([field, min, max]) => {
     if (typeof settings[field] !== 'number' || !Number.isFinite(settings[field])) {
       issues.push(issue('invalid-settings', `settings.${field}`, `${field} 必须是数字。`))
       return
@@ -322,13 +341,13 @@ export function validateSettings(input: unknown): ValidationIssue[] {
     }
   })
 
-  ;(['showCard', 'showDeath', 'showAge', 'showNote', 'showPhoto'] as const).forEach((field) => {
+  ;(['showCard', 'showDeath', 'showAge', 'showNote', 'showPhoto'] as const).forEach(field => {
     if (typeof settings[field] !== 'boolean') {
       issues.push(issue('invalid-settings', `settings.${field}`, `${field} 必须是布尔值。`))
     }
   })
 
-  ;(['compactNameColor', 'compactLineColor', 'cardBackgroundColor'] as const).forEach((field) => {
+  ;(['compactNameColor', 'compactLineColor', 'cardBackgroundColor'] as const).forEach(field => {
     if (typeof settings[field] !== 'string' || settings[field].trim().length === 0) {
       issues.push(issue('invalid-settings', `settings.${field}`, `${field} must be a non-empty string.`))
     }
@@ -346,31 +365,31 @@ function deduplicateCrossFamily(publication: PublicationData): void {
   const childFamilyMap = new Map<string, string[]>()
 
   Object.entries(publication.families).forEach(([familyId, family]) => {
-    family.adults?.forEach((pid) => {
+    family.adults?.forEach(pid => {
       getOrCreateStringList(adultFamilyMap, pid).push(familyId)
     })
-    family.children?.forEach((pid) => {
+    family.children?.forEach(pid => {
       getOrCreateStringList(childFamilyMap, pid).push(familyId)
     })
   })
 
-  adultFamilyMap.forEach((familyIds) => {
+  adultFamilyMap.forEach(familyIds => {
     if (familyIds.length > 1) {
-      familyIds.slice(1).forEach((familyId) => {
+      familyIds.slice(1).forEach(familyId => {
         const family = publication.families[familyId]
         if (family) {
-          family.adults = family.adults.filter((id) => id !== familyIds[0])
+          family.adults = family.adults.filter(id => id !== familyIds[0])
         }
       })
     }
   })
 
-  childFamilyMap.forEach((familyIds) => {
+  childFamilyMap.forEach(familyIds => {
     if (familyIds.length > 1) {
-      familyIds.slice(1).forEach((familyId) => {
+      familyIds.slice(1).forEach(familyId => {
         const family = publication.families[familyId]
         if (family) {
-          family.children = family.children.filter((id) => id !== familyIds[0])
+          family.children = family.children.filter(id => id !== familyIds[0])
         }
       })
     }
@@ -378,5 +397,5 @@ function deduplicateCrossFamily(publication: PublicationData): void {
 }
 
 export function formatValidationIssues(issues: ValidationIssue[]): string {
-  return issues.map((entry) => `${entry.path}: ${entry.message}`).join('\n')
+  return issues.map(entry => `${entry.path}: ${entry.message}`).join('\n')
 }

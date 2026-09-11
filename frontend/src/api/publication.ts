@@ -101,7 +101,10 @@ export async function updatePerson(
   personId: string,
   personData: Partial<Person> & { expectedRevision?: number },
 ): Promise<number> {
-  const resp = await http.put<ApiResponse<{ newRevision: number }>>(`/publications/${pubId}/people/${personId}`, personData)
+  const resp = await http.put<ApiResponse<{ newRevision: number }>>(
+    `/publications/${pubId}/people/${personId}`,
+    personData,
+  )
   if (resp.data.code !== 200) throw new Error(resp.data.message || '更新人物失败')
   return resp.data.data.newRevision
 }
@@ -166,7 +169,7 @@ function tryParseDetail(detail: string): PersonChangeEntry[] | null {
 export async function getPublicationActivity(id: number): Promise<ParsedActivity[]> {
   const resp = await http.get<ApiResponse<ActivityEntry[]>>(`/publications/${id}/history`)
   if (resp.data.code !== 200) throw new Error(resp.data.message || '获取活动记录失败')
-  return (resp.data.data || []).map((entry) => ({
+  return (resp.data.data || []).map(entry => ({
     ...entry,
     parsedDetail: tryParseDetail(entry.detail),
   }))

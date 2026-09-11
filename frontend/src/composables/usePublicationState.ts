@@ -1,12 +1,6 @@
 import { computed, markRaw, reactive, ref, shallowReactive, shallowRef } from 'vue'
 
-import type {
-  FamilyBranchMode,
-  Gender,
-  Person,
-  PublicationData,
-  PublicationSettings,
-} from '../types/family'
+import type { FamilyBranchMode, Gender, Person, PublicationData, PublicationSettings } from '../types/family'
 import { findFamilyEntryPersonId, resolveFamilyBranchMode } from '../lib/familyBranchMode'
 import { layoutPublication, PAPER_PRESETS } from '../lib/layout'
 import { resolveKinshipTermExtended, getKinshipLabelExtended } from '../lib/kinship'
@@ -31,12 +25,12 @@ export function usePublicationState(
   function freezePublication(pub: PublicationData): void {
     if (pub.people) {
       for (const id of Object.keys(pub.people)) {
-        pub.people[id] = markRaw(pub.people[id] as object) as typeof pub.people[string]
+        pub.people[id] = markRaw(pub.people[id] as object) as (typeof pub.people)[string]
       }
     }
     if (pub.families) {
       for (const id of Object.keys(pub.families)) {
-        pub.families[id] = markRaw(pub.families[id] as object) as typeof pub.families[string]
+        pub.families[id] = markRaw(pub.families[id] as object) as (typeof pub.families)[string]
       }
     }
   }
@@ -63,12 +57,13 @@ export function usePublicationState(
 
   function replaceReactiveObject<T extends object>(target: T, source: T) {
     const timer = audit.trackTimed('replaceReactiveObject', { keys: Object.keys(source).length })
-    Object.keys(target).forEach((key) => {
+    Object.keys(target).forEach(key => {
       delete (target as Record<string, unknown>)[key]
     })
-    const nextSource = 'people' in source || 'families' in source
-      ? preparePublicationState(source as unknown as PublicationData)
-      : source
+    const nextSource =
+      'people' in source || 'families' in source
+        ? preparePublicationState(source as unknown as PublicationData)
+        : source
     Object.assign(target, nextSource)
     layoutOverride.value = null
     timer.end({ targetKeys: Object.keys(target).length })
@@ -123,7 +118,11 @@ export function usePublicationState(
   }
 
   function getDefaultSelectedPersonId(sourcePublication: PublicationData): string {
-    return sourcePublication.families[sourcePublication.focusFamilyId]?.adults[0] ?? Object.keys(sourcePublication.people)[0] ?? ''
+    return (
+      sourcePublication.families[sourcePublication.focusFamilyId]?.adults[0] ??
+      Object.keys(sourcePublication.people)[0] ??
+      ''
+    )
   }
 
   // Core computeds
@@ -154,7 +153,7 @@ export function usePublicationState(
     if (!selected || !hovered || selected === hovered) return null
     return resolveKinshipTermExtended(publication, selected, hovered)
   })
-  const aliveCount = computed(() => peopleList.value.filter((person) => !isPersonDeceased(person)).length)
+  const aliveCount = computed(() => peopleList.value.filter(person => !isPersonDeceased(person)).length)
   const deceasedCount = computed(() => totalPeople.value - aliveCount.value)
 
   // Family computeds
@@ -176,15 +175,15 @@ export function usePublicationState(
     const person = selectedPerson.value
     const family = selectedAdultFamily.value
     if (!person || !family) return null
-    const spouseId = family.adults.find((adultId) => adultId && adultId !== person.id)
-    return spouseId ? publication.people[spouseId] ?? null : null
+    const spouseId = family.adults.find(adultId => adultId && adultId !== person.id)
+    return spouseId ? (publication.people[spouseId] ?? null) : null
   })
 
   const selectedChildren = computed(() => {
     const family = selectedAdultFamily.value
     if (!family) return []
     return family.children
-      .map((childId) => publication.people[childId])
+      .map(childId => publication.people[childId])
       .filter((person): person is Person => Boolean(person))
   })
 
@@ -192,7 +191,7 @@ export function usePublicationState(
     const family = selectedParentFamily.value
     if (!family) return []
     return family.adults
-      .map((adultId) => (adultId ? publication.people[adultId] : null))
+      .map(adultId => (adultId ? publication.people[adultId] : null))
       .filter((person): person is Person => Boolean(person))
   })
 
@@ -201,7 +200,7 @@ export function usePublicationState(
     const family = selectedAdultFamily.value
     if (!family) return null
     const entryPersonId = findFamilyEntryPersonId(publication, family.id)
-    return entryPersonId ? publication.people[entryPersonId] ?? null : null
+    return entryPersonId ? (publication.people[entryPersonId] ?? null) : null
   })
 
   const selectedBranchMode = computed<FamilyBranchMode | ''>(() => {
@@ -294,9 +293,7 @@ export function usePublicationState(
     return Boolean(familyId && familyId === publication.focusFamilyId)
   })
 
-  const branchActionLabel = computed(() =>
-    isSelectedBranchFocused.value ? '已是当前宗支' : '设为当前宗支',
-  )
+  const branchActionLabel = computed(() => (isSelectedBranchFocused.value ? '已是当前宗支' : '设为当前宗支'))
 
   const kinshipNotes = computed(() => {
     if (!_viewerPersonId.value) return null as Record<string, string> | null
@@ -326,13 +323,13 @@ export function usePublicationState(
   }
 
   // Focus family
-  const focusFamily = computed(() =>
-    publication.families[publication.focusFamilyId] ?? Object.values(publication.families)[0],
+  const focusFamily = computed(
+    () => publication.families[publication.focusFamilyId] ?? Object.values(publication.families)[0],
   )
 
   const focusFamilyLabel = computed(() => {
     const adults = focusFamily.value?.adults.filter(isPersonId) ?? []
-    return adults.map((adultId) => publication.people[adultId]?.name ?? adultId).join(' · ') || '未设置宗支'
+    return adults.map(adultId => publication.people[adultId]?.name ?? adultId).join(' · ') || '未设置宗支'
   })
 
   const focusLineageCrumbs = computed(() => {
@@ -428,14 +425,9 @@ export function usePublicationState(
     focusFamily,
     focusFamilyLabel,
     focusLineageCrumbs,
-
   }
-
 }
 
-
-
 export type PublicationState = ReturnType<typeof usePublicationState>
-
 
 export type PublicationStateReturn = ReturnType<typeof usePublicationState>

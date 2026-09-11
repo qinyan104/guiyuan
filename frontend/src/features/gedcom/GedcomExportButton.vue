@@ -20,7 +20,9 @@ async function handleExport() {
   } finally {
     // downloadGedcom is async but fire-and-forget, so we just
     // clear the loading state after a short delay
-    setTimeout(() => { exporting.value = false }, 1500)
+    setTimeout(() => {
+      exporting.value = false
+    }, 1500)
   }
 }
 </script>

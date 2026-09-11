@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, inject, nextTick, onBeforeUnmount, ref, toRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -38,7 +38,7 @@ let confirmResolve: ((value: boolean) => void) | null = null
 
 async function confirmAsync(message: string): Promise<boolean> {
   confirmMessage.value = message
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     confirmResolve = resolve
   })
 }
@@ -97,7 +97,7 @@ function resetCanvasView() {
 
 function adjustZoom(delta: number) {
   const nextValue = Number((context.pub.settings.zoom + delta).toFixed(2))
-  context.pub.settings.zoom = Math.min(1.35, Math.max(0.10, nextValue))
+  context.pub.settings.zoom = Math.min(1.35, Math.max(0.1, nextValue))
   fileOps.hasUnsavedFileChanges.value = true
 }
 
@@ -105,7 +105,7 @@ let egoScrolled = false
 let egoScrollTimer: ReturnType<typeof setTimeout> | null = null
 watch(
   () => context.pub.viewerPersonId?.value,
-  (egoId) => {
+  egoId => {
     if (egoId && !egoScrolled) {
       egoScrolled = true
       egoScrollTimer = setTimeout(() => revealPersonInCanvas(egoId), 600)
@@ -237,7 +237,7 @@ useWorkbenchRouteFocus({
 // ─── Watchers ───────────────────────────────────────────────────
 watch(
   () => context.pub.selectedPerson.value,
-  (person) => {
+  person => {
     if (!person || person.id.startsWith('branch_')) {
       panels.editorOpen.value = false
     }

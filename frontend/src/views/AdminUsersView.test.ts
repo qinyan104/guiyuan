@@ -65,8 +65,9 @@ describe('AdminUsersView', () => {
     await wrapper.get('.role-select .app-select__trigger').trigger('click')
     await flushPromises()
 
-    const adminOption = [...document.body.querySelectorAll('.app-select__option')]
-      .find((option) => option.textContent?.trim() === '协修') as HTMLElement | undefined
+    const adminOption = [...document.body.querySelectorAll('.app-select__option')].find(
+      option => option.textContent?.trim() === '协修',
+    ) as HTMLElement | undefined
     expect(adminOption).not.toBeNull()
     adminOption?.click()
     await flushPromises()

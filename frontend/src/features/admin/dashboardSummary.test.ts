@@ -12,7 +12,7 @@ describe('buildDashboardOverview', () => {
       backupLoading: false,
     })
 
-    expect(result.cards.map((card) => card.id)).toEqual(['publications', 'create'])
+    expect(result.cards.map(card => card.id)).toEqual(['publications', 'create'])
   })
 
   it('shows loading backup text while backup is running', () => {
@@ -24,6 +24,6 @@ describe('buildDashboardOverview', () => {
       backupLoading: true,
     })
 
-    expect(result.cards.find((card) => card.id === 'backup')?.value).toBe('备份中…')
+    expect(result.cards.find(card => card.id === 'backup')?.value).toBe('备份中…')
   })
 })

@@ -69,9 +69,11 @@ describe('auth session bootstrap', () => {
 
   it('does not clear a token written by a successful login while startup refresh is still settling', async () => {
     let rejectRefresh!: (reason?: unknown) => void
-    httpPost.mockReturnValueOnce(new Promise((_resolve, reject) => {
-      rejectRefresh = reject
-    }))
+    httpPost.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectRefresh = reject
+      }),
+    )
 
     const bootstrap = bootstrapAuthSession()
     applyAuthenticatedSession({

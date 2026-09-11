@@ -49,8 +49,8 @@ export function usePersonAccounts(options: UsePersonAccountsOptions) {
 
   const selectableAccounts = computed(() => accounts.value.filter(canSelectAccount))
 
-  const isAllSelected = computed(() =>
-    selectableAccounts.value.length > 0 && selectedAccountIds.value.size === selectableAccounts.value.length
+  const isAllSelected = computed(
+    () => selectableAccounts.value.length > 0 && selectedAccountIds.value.size === selectableAccounts.value.length,
   )
 
   async function loadAccounts() {
@@ -77,9 +77,7 @@ export function usePersonAccounts(options: UsePersonAccountsOptions) {
       derivedResult.value = await deriveAccounts(options.publicationId)
       showDerivedResult.value = true
       if (derivedResult.value.length > 0) {
-        const copyAll = derivedResult.value
-          .map(a => `${a.personName}: ${a.username} / ${a.password}`)
-          .join('\n')
+        const copyAll = derivedResult.value.map(a => `${a.personName}: ${a.username} / ${a.password}`).join('\n')
         options.copyText(copyAll, `已创建 ${derivedResult.value.length} 个账号，凭证已复制`)
       } else {
         showToast('没有需要派生的账号')

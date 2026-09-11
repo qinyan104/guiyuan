@@ -9,15 +9,12 @@ import DarkModeToggle from '../components/DarkModeToggle.vue'
 import { useRoute } from 'vue-router'
 
 import WorkbenchDirectionPreview from '../components/WorkbenchDirectionPreview.vue'
-import {
-  getWorkbenchDirection,
-  workbenchDirections,
-} from '../features/design/workbenchDirections'
+import { getWorkbenchDirection, workbenchDirections } from '../features/design/workbenchDirections'
 
 const route = useRoute()
 
 const direction = computed(() => getWorkbenchDirection(route.params.directionId as string | undefined) ?? null)
-const directionIndex = computed(() => workbenchDirections.findIndex((item) => item.id === direction.value?.id))
+const directionIndex = computed(() => workbenchDirections.findIndex(item => item.id === direction.value?.id))
 const previousDirection = computed(() =>
   directionIndex.value > 0 ? workbenchDirections[directionIndex.value - 1] : null,
 )

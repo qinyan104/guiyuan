@@ -31,16 +31,26 @@ class PublicationTreeLoaderTest {
     private FamilyRepository familyRepository;
     @Mock
     private FamilyMemberRepository familyMemberRepository;
-    @Mock
-    private PublicationRepository publicationRepository;
-    @Mock
-    private BranchMergeService branchMergeService;
-    
-    private PublicationTreeLoader treeLoader;
-
-    @BeforeEach
-    void setUp() {
-        treeLoader = new PublicationTreeLoader(personRepository, familyRepository, familyMemberRepository, publicationRepository, branchMergeService);
+    @Mock
+
+    private PublicationRepository publicationRepository;
+
+    @Mock
+
+    private BranchMergeService branchMergeService;
+
+    
+
+    private PublicationTreeLoader treeLoader;
+
+
+
+    @BeforeEach
+
+    void setUp() {
+
+        treeLoader = new PublicationTreeLoader(personRepository, familyRepository, familyMemberRepository, publicationRepository, branchMergeService);
+
     }
 
     @Test

@@ -21,8 +21,14 @@ describe('PersonAccountsHeader', () => {
     expect(wrapper.text()).toContain('9')
     expect(wrapper.text()).toContain('加载失败')
 
-    await wrapper.findAll('button').find(button => button.text().includes('派生账号'))?.trigger('click')
-    await wrapper.findAll('button').find(button => button.text().includes('清理空悬账号'))?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find(button => button.text().includes('派生账号'))
+      ?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find(button => button.text().includes('清理空悬账号'))
+      ?.trigger('click')
     await wrapper.get('.error-dismiss').trigger('click')
 
     expect(wrapper.emitted('derive')).toHaveLength(1)

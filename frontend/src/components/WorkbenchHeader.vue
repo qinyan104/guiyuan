@@ -22,7 +22,8 @@ const showCollabDialog = ref(false)
 const headerRoot = ref<HTMLElement | null>(null)
 const activeMenu = ref<'research' | 'export' | null>(null)
 
-const route = useRoute(); const router = useRouter()
+const route = useRoute()
+const router = useRouter()
 const context = inject<WorkbenchHeaderContext | null>(PUBLICATION_CONTEXT_KEY, null)
 
 const isOwner = computed(() => context?.currentAccessRole?.value === 'OWNER')
@@ -182,7 +183,6 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick, { capture: true })
   document.removeEventListener('keydown', handleDocumentKeydown)
 })
-
 </script>
 
 <template>

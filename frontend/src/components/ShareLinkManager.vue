@@ -1,12 +1,7 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import ConfirmDialog from './ConfirmDialog.vue'
-import {
-  createShareLink,
-  listShareLinks,
-  revokeShareLink,
-  type ShareLinkSummary,
-} from '../api/shareManage'
+import { createShareLink, listShareLinks, revokeShareLink, type ShareLinkSummary } from '../api/shareManage'
 import { getUserErrorMessage } from '../api/http'
 
 const props = defineProps<{
@@ -27,7 +22,7 @@ const pendingRevokeLinkId = ref<number | null>(null)
 // Newly created token (shown once)
 const newToken = ref<string | null>(null)
 const newTokenCopied = ref(false)
-const newShareUrl = computed(() => newToken.value ? `${window.location.origin}/share/${newToken.value}` : '')
+const newShareUrl = computed(() => (newToken.value ? `${window.location.origin}/share/${newToken.value}` : ''))
 
 async function load() {
   loading.value = true
@@ -86,7 +81,9 @@ function copyShareUrl() {
   const url = `${window.location.origin}/share/${newToken.value}`
   navigator.clipboard.writeText(url).then(() => {
     newTokenCopied.value = true
-    setTimeout(() => { newTokenCopied.value = false }, 2000)
+    setTimeout(() => {
+      newTokenCopied.value = false
+    }, 2000)
   })
 }
 

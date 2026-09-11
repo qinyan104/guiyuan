@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = withDefaults(defineProps<{
-  src?: string
-  name?: string
-  size?: 'sm' | 'md' | 'lg'
-  tone?: string
-}>(), {
-  src: '',
-  name: '',
-  size: 'sm',
-  tone: '',
-})
+const props = withDefaults(
+  defineProps<{
+    src?: string
+    name?: string
+    size?: 'sm' | 'md' | 'lg'
+    tone?: string
+  }>(),
+  {
+    src: '',
+    name: '',
+    size: 'sm',
+    tone: '',
+  },
+)
 
 const initial = computed(() => (props.name.trim() || '总').charAt(0).toUpperCase())
 </script>

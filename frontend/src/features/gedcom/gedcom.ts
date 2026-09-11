@@ -41,14 +41,10 @@ export async function mergeGedcom(pubId: number, file: File): Promise<GedcomMerg
   const formData = new FormData()
   formData.append('file', file)
 
-  const resp = await http.post<ApiResponse<GedcomMergeResult>>(
-    `/publications/${pubId}/gedcom/merge`,
-    formData,
-    {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 120_000,
-    }
-  )
+  const resp = await http.post<ApiResponse<GedcomMergeResult>>(`/publications/${pubId}/gedcom/merge`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120_000,
+  })
 
   if (resp.data.code !== 200) {
     throw new Error(resp.data.message || 'GEDCOM 合并失败')
@@ -68,11 +64,11 @@ export function downloadGedcom(pubId: number): void {
   fetch(url, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
-    .then((resp) => {
+    .then(resp => {
       if (!resp.ok) throw new Error('导出失败')
       return resp.blob()
     })
-    .then((blob) => {
+    .then(blob => {
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
       a.download = `family-${pubId}.ged`
@@ -81,7 +77,7 @@ export function downloadGedcom(pubId: number): void {
       document.body.removeChild(a)
       URL.revokeObjectURL(a.href)
     })
-    .catch((err) => {
+    .catch(err => {
       console.error('GEDCOM 导出失败:', err)
       throw err
     })

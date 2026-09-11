@@ -117,9 +117,10 @@ function looksLikePersonalName(value: string): boolean {
   return !/(之|为|时期|中兴|建国|即位|在位|亡国|复位|称帝|末主|嫡系|后代|先君)/.test(value)
 }
 
-function inferImperialPresentation(
-  member: SuccessionSampleRuler | SuccessionSampleRelative,
-): { displayName: string; titleName?: string } {
+function inferImperialPresentation(member: SuccessionSampleRuler | SuccessionSampleRelative): {
+  displayName: string
+  titleName?: string
+} {
   if (member.displayName || member.titleName) {
     return {
       displayName: member.displayName ?? member.name,
@@ -129,8 +130,7 @@ function inferImperialPresentation(
 
   const [noteTitle, noteTail] = member.note.split('·', 2)
   const hasTitleMarker = /[帝王宗主侯公祖皇]/.test(member.name)
-  const displayName =
-    hasTitleMarker && noteTail && looksLikePersonalName(noteTail) ? noteTail : member.name
+  const displayName = hasTitleMarker && noteTail && looksLikePersonalName(noteTail) ? noteTail : member.name
   const titleName = (() => {
     const value = hasTitleMarker ? member.name : noteTitle || undefined
     return value === displayName ? undefined : value
@@ -197,7 +197,8 @@ function createSuccessionSample(definition: SuccessionSampleDefinition): Publica
     }
 
     // Check by name first, then by displayName (for references to rulers)
-    const existingId = personIdByName.get(child.name) ?? (child.displayName ? personIdByName.get(child.displayName) : undefined)
+    const existingId =
+      personIdByName.get(child.name) ?? (child.displayName ? personIdByName.get(child.displayName) : undefined)
     if (existingId) {
       return existingId
     }
@@ -205,7 +206,7 @@ function createSuccessionSample(definition: SuccessionSampleDefinition): Publica
     return createPerson(child)
   }
 
-  const rulerIds = definition.rulers.map((ruler) => createPerson(ruler, 'emperor'))
+  const rulerIds = definition.rulers.map(ruler => createPerson(ruler, 'emperor'))
 
   definition.rulers.forEach((ruler, index) => {
     const rulerId = rulerIds[index]
@@ -220,7 +221,7 @@ function createSuccessionSample(definition: SuccessionSampleDefinition): Publica
     }
   })
 
-  definition.branches?.forEach((branch) => {
+  definition.branches?.forEach(branch => {
     const parentId = personIdByName.get(branch.parent)
     if (!parentId) {
       throw new Error(`未找到王朝示例父节点：${branch.parent}`)
@@ -232,8 +233,7 @@ function createSuccessionSample(definition: SuccessionSampleDefinition): Publica
 
   return {
     title: definition.title ?? `${definition.label}世系示例图`,
-    subtitle:
-      definition.subtitle ?? '按关键君主串联皇统承续关系进行简化建模，便于快速预览前端排版效果。',
+    subtitle: definition.subtitle ?? '按关键君主串联皇统承续关系进行简化建模，便于快速预览前端排版效果。',
     focusFamilyId: 'f1',
     people,
     families,
@@ -246,12 +246,62 @@ const successionSampleDefinitions: SuccessionSampleDefinition[] = [
     label: '唐朝',
     group: '隋唐五代',
     rulers: [
-      { name: '唐高祖', note: '李渊建唐', consort: { name: '窦皇后', gender: 'female', birth: '569年', death: '613年', note: '太穆皇后', clan: '扶风窦氏' } },
-      { name: '唐太宗', note: '贞观之治', consort: { name: '长孙皇后', gender: 'female', birth: '601年', death: '636年', note: '文德皇后', clan: '洛阳长孙氏' } },
-      { name: '唐高宗', note: '永徽之治', consort: { name: '武则天', gender: 'female', birth: '624年', death: '705年', note: '则天皇后·武周皇帝', highlightRole: 'emperor', displayName: '武曌', titleName: '则天皇帝' } },
-      { name: '唐中宗', note: '神龙复辟', consort: { name: '韦皇后', gender: 'female', death: '710年', note: '中宗韦后', clan: '京兆韦氏' } },
+      {
+        name: '唐高祖',
+        note: '李渊建唐',
+        consort: {
+          name: '窦皇后',
+          gender: 'female',
+          birth: '569年',
+          death: '613年',
+          note: '太穆皇后',
+          clan: '扶风窦氏',
+        },
+      },
+      {
+        name: '唐太宗',
+        note: '贞观之治',
+        consort: {
+          name: '长孙皇后',
+          gender: 'female',
+          birth: '601年',
+          death: '636年',
+          note: '文德皇后',
+          clan: '洛阳长孙氏',
+        },
+      },
+      {
+        name: '唐高宗',
+        note: '永徽之治',
+        consort: {
+          name: '武则天',
+          gender: 'female',
+          birth: '624年',
+          death: '705年',
+          note: '则天皇后·武周皇帝',
+          highlightRole: 'emperor',
+          displayName: '武曌',
+          titleName: '则天皇帝',
+        },
+      },
+      {
+        name: '唐中宗',
+        note: '神龙复辟',
+        consort: { name: '韦皇后', gender: 'female', death: '710年', note: '中宗韦后', clan: '京兆韦氏' },
+      },
       { name: '唐睿宗', note: '让位玄宗' },
-      { name: '唐玄宗', note: '开元盛世', consort: { name: '杨玉环', gender: 'female', birth: '719年', death: '756年', note: '杨贵妃', displayName: '杨贵妃' } },
+      {
+        name: '唐玄宗',
+        note: '开元盛世',
+        consort: {
+          name: '杨玉环',
+          gender: 'female',
+          birth: '719年',
+          death: '756年',
+          note: '杨贵妃',
+          displayName: '杨贵妃',
+        },
+      },
       { name: '唐肃宗', note: '安史之乱中继位' },
       { name: '唐代宗', note: '乱后收束' },
       { name: '唐德宗', note: '中唐转折' },
@@ -289,10 +339,7 @@ const successionSampleDefinitions: SuccessionSampleDefinition[] = [
       },
       {
         parent: '唐睿宗',
-        children: [
-          { name: '李成器', birth: '679年', death: '742年', note: '让皇帝·李宪' },
-          '唐玄宗',
-        ],
+        children: [{ name: '李成器', birth: '679年', death: '742年', note: '让皇帝·李宪' }, '唐玄宗'],
       },
       {
         parent: '唐玄宗',
@@ -308,7 +355,7 @@ const successionSampleDefinitions: SuccessionSampleDefinition[] = [
 export const defaultSampleId = 'ming'
 
 export const builtinSamples: BuiltinSampleRecord[] = [
-  ...successionSampleDefinitions.map((definition) => ({
+  ...successionSampleDefinitions.map(definition => ({
     id: definition.id,
     label: definition.label,
     group: definition.group,
@@ -322,7 +369,7 @@ export const builtinSamples: BuiltinSampleRecord[] = [
   },
 ]
 
-const builtinSampleIndex = new Map(builtinSamples.map((sample) => [sample.id, sample]))
+const builtinSampleIndex = new Map(builtinSamples.map(sample => [sample.id, sample]))
 
 export function getBuiltinSampleById(id: string): BuiltinSampleRecord | undefined {
   return builtinSampleIndex.get(id)

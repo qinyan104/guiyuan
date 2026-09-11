@@ -187,14 +187,16 @@ describe('App auth bootstrap', () => {
     })
 
     await flushPromises()
-    
+
     // Simulate the event
-    window.dispatchEvent(new CustomEvent('concurrency-conflict', {
-      detail: { message: 'Conflict!' }
-    }))
-    
+    window.dispatchEvent(
+      new CustomEvent('concurrency-conflict', {
+        detail: { message: 'Conflict!' },
+      }),
+    )
+
     await wrapper.vm.$nextTick()
-    
+
     // BaseDialog teleports to body, so check document body
     expect(document.body.textContent).toContain('数据版本冲突')
     expect(document.body.textContent).toContain('Conflict!')

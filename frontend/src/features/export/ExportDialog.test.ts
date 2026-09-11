@@ -11,7 +11,7 @@ describe('ExportDialog', () => {
       },
     })
 
-    const tabLabels = wrapper.findAll('.tab-btn').map((button) => button.text())
+    const tabLabels = wrapper.findAll('.tab-btn').map(button => button.text())
     expect(tabLabels).toEqual(['PNG 图片', '矢量 SVG', '分享网页'])
 
     const text = wrapper.text()

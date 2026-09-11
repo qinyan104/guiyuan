@@ -8,7 +8,12 @@ import {
   type ValidationIssue,
   type ValidationResult,
 } from '../../types/family'
-import { normalizePublicationData, normalizeSettings, validatePublicationData, validateSettings } from '../validation/draftSchema'
+import {
+  normalizePublicationData,
+  normalizeSettings,
+  validatePublicationData,
+  validateSettings,
+} from '../validation/draftSchema'
 
 function cloneJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
@@ -54,7 +59,7 @@ function coerceDraftPackage(input: unknown, savedAt = new Date().toISOString()):
   const usesWrappedPublication = isRecord(input.publication)
   const rawPublication = usesWrappedPublication ? input.publication : input
   const rawSettings = usesWrappedPublication ? input.settings : defaultSettings
-  const version = usesWrappedPublication ? input.version ?? DRAFT_PACKAGE_VERSION : DRAFT_PACKAGE_VERSION
+  const version = usesWrappedPublication ? (input.version ?? DRAFT_PACKAGE_VERSION) : DRAFT_PACKAGE_VERSION
 
   if (version !== DRAFT_PACKAGE_VERSION) {
     return {
@@ -110,12 +115,12 @@ export async function createPortablePublication(publication: PublicationData): P
   const next = JSON.parse(JSON.stringify(publication)) as PublicationData
   const people = Object.values(next.people)
 
-  const tasks = people.map(async (person) => {
+  const tasks = people.map(async person => {
     if (person.avatarUrl && isPortablePhotoUrl(person.avatarUrl)) {
       try {
         const response = await fetch(person.avatarUrl)
         if (!response.ok) return
-        
+
         const blob = await response.blob()
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader()

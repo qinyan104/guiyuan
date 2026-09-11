@@ -18,7 +18,7 @@ export function usePublicationListFilters(publications: Ref<PublicationSummary[]
     let list = [...publications.value]
     const q = searchQuery.value.trim().toLowerCase()
     if (q) {
-      list = list.filter((p) => {
+      list = list.filter(p => {
         const matchTitle = (p.title || '').toLowerCase().includes(q)
         const matchSubtitle = (p.subtitle || '').toLowerCase().includes(q)
         const matchOrigin = (p.info?.ancestralOrigin || '').toLowerCase().includes(q)

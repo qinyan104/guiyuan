@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import DarkModeToggle from '../components/DarkModeToggle.vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -60,7 +60,7 @@ provide(PUBLICATION_CONTEXT_KEY, {
 })
 
 // Watch for route param changes (unlikely but handle it)
-watch(sampleId, (newId) => {
+watch(sampleId, newId => {
   const s = getBuiltinSampleById(newId)
   if (s) {
     pub.replaceReactiveObject(pub.publication, s.publication)

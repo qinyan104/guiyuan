@@ -2,21 +2,24 @@
 import { ref, toRef, watch } from 'vue'
 import { useFocusTrap } from '../composables/useFocusTrap'
 
-const props = withDefaults(defineProps<{
-  visible: boolean
-  title?: string
-  /** 点击遮罩层关闭 */
-  closeOnOverlay?: boolean
-  /** 最大宽度 */
-  maxWidth?: string
-  /** z-index 层级 token 名 */
-  zIndex?: string
-}>(), {
-  title: undefined,
-  closeOnOverlay: true,
-  maxWidth: '520px',
-  zIndex: 'var(--z-modal)',
-})
+const props = withDefaults(
+  defineProps<{
+    visible: boolean
+    title?: string
+    /** 点击遮罩层关闭 */
+    closeOnOverlay?: boolean
+    /** 最大宽度 */
+    maxWidth?: string
+    /** z-index 层级 token 名 */
+    zIndex?: string
+  }>(),
+  {
+    title: undefined,
+    closeOnOverlay: true,
+    maxWidth: '520px',
+    zIndex: 'var(--z-modal)',
+  },
+)
 
 const emit = defineEmits<{
   (event: 'update:visible', value: boolean): void
@@ -38,9 +41,12 @@ function handleOverlayClick() {
 }
 
 // 阻止背景滚动
-watch(() => props.visible, (v) => {
-  document.body.style.overflow = v ? 'hidden' : ''
-})
+watch(
+  () => props.visible,
+  v => {
+    document.body.style.overflow = v ? 'hidden' : ''
+  },
+)
 </script>
 
 <template>

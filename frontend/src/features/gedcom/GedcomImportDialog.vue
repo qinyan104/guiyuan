@@ -31,7 +31,10 @@ function onFileSelect(e: Event) {
   const input = e.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
     const file = input.files[0]
-    if (file.size > 10 * 1024 * 1024) { error.value = '文件过大，请上传 10MB 以内的文件'; return }
+    if (file.size > 10 * 1024 * 1024) {
+      error.value = '文件过大，请上传 10MB 以内的文件'
+      return
+    }
     selectedFile.value = file
     error.value = null
     result.value = null
@@ -43,7 +46,10 @@ function onDrop(e: DragEvent) {
   const files = e.dataTransfer?.files
   if (files && files.length > 0) {
     const file = files[0]
-    if (file.size > 10 * 1024 * 1024) { error.value = '文件过大，请上传 10MB 以内的文件'; return }
+    if (file.size > 10 * 1024 * 1024) {
+      error.value = '文件过大，请上传 10MB 以内的文件'
+      return
+    }
     selectedFile.value = file
     error.value = null
     result.value = null

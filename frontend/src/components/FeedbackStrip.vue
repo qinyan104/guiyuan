@@ -14,7 +14,7 @@
  *   .feedback-strip--warning — 警告
  *   .feedback-strip--info    — 信息
  */
-import { computed } from "vue"
+import { computed } from 'vue'
 
 const props = defineProps<{
   errorMessage?: string
@@ -27,31 +27,31 @@ const emit = defineEmits<{
   dismiss: []
 }>()
 
-type Variant = "success" | "error" | "warning" | "info"
+type Variant = 'success' | 'error' | 'warning' | 'info'
 
 const variant = computed<Variant | null>(() => {
-  if (props.errorMessage) return "error"
-  if (props.warningMessage) return "warning"
-  if (props.infoMessage) return "info"
-  if (props.statusMessage) return "success"
+  if (props.errorMessage) return 'error'
+  if (props.warningMessage) return 'warning'
+  if (props.infoMessage) return 'info'
+  if (props.statusMessage) return 'success'
   return null
 })
 
-const message = computed(() =>
-  props.errorMessage || props.warningMessage || props.infoMessage || props.statusMessage || "",
+const message = computed(
+  () => props.errorMessage || props.warningMessage || props.infoMessage || props.statusMessage || '',
 )
 
 const labels: Record<Variant, string> = {
-  success: "操作完成",
-  error:   "需要处理",
-  warning: "请注意",
-  info:    "提示",
+  success: '操作完成',
+  error: '需要处理',
+  warning: '请注意',
+  info: '提示',
 }
 
-const variantLabel = computed(() => (variant.value ? labels[variant.value] : ""))
+const variantLabel = computed(() => (variant.value ? labels[variant.value] : ''))
 
 function dismiss() {
-  emit("dismiss")
+  emit('dismiss')
 }
 </script>
 

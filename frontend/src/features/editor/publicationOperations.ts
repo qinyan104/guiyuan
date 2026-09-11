@@ -73,7 +73,7 @@ function getNextEntityId(publication: PublicationData, prefix: 'p' | 'f'): strin
   const collection = prefix === 'p' ? Object.keys(publication.people) : Object.keys(publication.families)
   let maxId = 0
 
-  collection.forEach((id) => {
+  collection.forEach(id => {
     if (!id.startsWith(prefix)) {
       return
     }
@@ -101,11 +101,11 @@ function createPerson(publication: PublicationData, input: { name: string; gende
 }
 
 function findAdultFamilyIdForPerson(publication: PublicationData, personId: string): string | undefined {
-  return listFamilies(publication).find((family) => family.adults.includes(personId))?.id
+  return listFamilies(publication).find(family => family.adults.includes(personId))?.id
 }
 
 function findParentFamilyIdForPerson(publication: PublicationData, personId: string): string | undefined {
-  return listFamilies(publication).find((family) => family.children.includes(personId))?.id
+  return listFamilies(publication).find(family => family.children.includes(personId))?.id
 }
 
 function ensureAdultFamily(publication: PublicationData, personId: string): FamilyUnit {
@@ -127,14 +127,14 @@ function ensureAdultFamily(publication: PublicationData, personId: string): Fami
 
 function normalizeFamilyMembers(publication: PublicationData, family: FamilyUnit) {
   const normalizedAdults: string[] = []
-  family.adults.forEach((adultId) => {
+  family.adults.forEach(adultId => {
     if (isPersonId(adultId) && publication.people[adultId] && !normalizedAdults.includes(adultId)) {
       normalizedAdults.push(adultId)
     }
   })
 
   const normalizedChildren: string[] = []
-  family.children.forEach((childId) => {
+  family.children.forEach(childId => {
     if (publication.people[childId] && !normalizedAdults.includes(childId) && !normalizedChildren.includes(childId)) {
       normalizedChildren.push(childId)
     }
@@ -158,22 +158,22 @@ function ensureVisibleFamilyForPerson(publication: PublicationData, personId: st
 }
 
 function pruneFamilies(publication: PublicationData) {
-  Object.values(publication.families).forEach((family) => {
+  Object.values(publication.families).forEach(family => {
     normalizeFamilyMembers(publication, family)
   })
 
   Object.values(publication.families)
-    .filter((family) => family.adults.length === 0)
-    .forEach((family) => {
+    .filter(family => family.adults.length === 0)
+    .forEach(family => {
       const orphanChildIds = [...family.children]
       delete publication.families[family.id]
 
-      orphanChildIds.forEach((childId) => {
+      orphanChildIds.forEach(childId => {
         ensureVisibleFamilyForPerson(publication, childId)
       })
     })
 
-  Object.values(publication.families).forEach((family) => {
+  Object.values(publication.families).forEach(family => {
     normalizeFamilyMembers(publication, family)
   })
 }
@@ -191,8 +191,8 @@ function syncSelectionAndFocus(
     ) ?? ''
 
   const selectedPersonId =
-    [...(input.selectionCandidates ?? []), Object.keys(publication.people)[0]].find(
-      (personId): personId is string => Boolean(personId && publication.people[personId]),
+    [...(input.selectionCandidates ?? []), Object.keys(publication.people)[0]].find((personId): personId is string =>
+      Boolean(personId && publication.people[personId]),
     ) ?? ''
 
   publication.focusFamilyId = focusFamilyId
@@ -213,8 +213,8 @@ function resolveSpouse(publication: PublicationData, personId: string): Person |
     return null
   }
 
-  const spouseId = publication.families[familyId].adults.find((adultId) => adultId !== personId)
-  return spouseId ? publication.people[spouseId] ?? null : null
+  const spouseId = publication.families[familyId].adults.find(adultId => adultId !== personId)
+  return spouseId ? (publication.people[spouseId] ?? null) : null
 }
 
 function resolveChildren(publication: PublicationData, personId: string): Person[] {
@@ -224,7 +224,7 @@ function resolveChildren(publication: PublicationData, personId: string): Person
   }
 
   return publication.families[familyId].children
-    .map((childId) => publication.people[childId])
+    .map(childId => publication.people[childId])
     .filter((person): person is Person => Boolean(person))
 }
 
@@ -235,7 +235,7 @@ function resolveParents(publication: PublicationData, personId: string): Person[
   }
 
   return publication.families[familyId].adults
-    .map((adultId) => publication.people[adultId])
+    .map(adultId => publication.people[adultId])
     .filter((person): person is Person => Boolean(person))
 }
 
@@ -247,20 +247,20 @@ export function summarizeDeleteImpact(publication: PublicationData, personId: st
 
   const spouse = resolveSpouse(publication, personId)
   const spouseNames = spouse ? [spouse.name] : []
-  const parentNames = resolveParents(publication, personId).map((parent) => parent.name)
-  const childNames = resolveChildren(publication, personId).map((child) => child.name)
+  const parentNames = resolveParents(publication, personId).map(parent => parent.name)
+  const childNames = resolveChildren(publication, personId).map(child => child.name)
 
   const nextPublication = cloneJson(publication)
-  Object.values(nextPublication.families).forEach((family) => {
-    family.adults = family.adults.filter((adultId) => adultId !== personId)
-    family.children = family.children.filter((childId) => childId !== personId)
+  Object.values(nextPublication.families).forEach(family => {
+    family.adults = family.adults.filter(adultId => adultId !== personId)
+    family.children = family.children.filter(childId => childId !== personId)
   })
   delete nextPublication.people[personId]
 
   const beforeFamilyIds = new Set(Object.keys(publication.families))
   pruneFamilies(nextPublication)
   const afterFamilyIds = new Set(Object.keys(nextPublication.families))
-  const removedFamilyIds = [...beforeFamilyIds].filter((familyId) => !afterFamilyIds.has(familyId))
+  const removedFamilyIds = [...beforeFamilyIds].filter(familyId => !afterFamilyIds.has(familyId))
 
   return {
     spouseNames,
@@ -270,7 +270,10 @@ export function summarizeDeleteImpact(publication: PublicationData, personId: st
   }
 }
 
-export function applyRelationshipAction(publication: PublicationData, action: RelationshipAction): PublicationOperationResult {
+export function applyRelationshipAction(
+  publication: PublicationData,
+  action: RelationshipAction,
+): PublicationOperationResult {
   const nextPublication = cloneJson(publication)
   const publicationIssues = validatePublicationData(nextPublication)
   if (publicationIssues.length > 0) {
@@ -384,7 +387,7 @@ export function applyRelationshipAction(publication: PublicationData, action: Re
     case 'focus-branch': {
       const family = ensureAdultFamily(nextPublication, action.personId)
       if (family.adults[0] !== action.personId) {
-        family.adults = [action.personId, ...family.adults.filter((adultId) => adultId !== action.personId)]
+        family.adults = [action.personId, ...family.adults.filter(adultId => adultId !== action.personId)]
       }
 
       focusCandidates = [family.id]
@@ -459,12 +462,12 @@ export function applyRelationshipAction(publication: PublicationData, action: Re
       }
 
       const family = nextPublication.families[familyId]
-      const spouseId = family.adults.find((adultId) => adultId !== action.personId)
+      const spouseId = family.adults.find(adultId => adultId !== action.personId)
       if (!spouseId) {
         return fail('personId', `${primaryPerson.name} 当前没有配偶关系。`)
       }
 
-      family.adults = family.adults.filter((adultId) => adultId !== spouseId)
+      family.adults = family.adults.filter(adultId => adultId !== spouseId)
       ensureVisibleFamilyForPerson(nextPublication, spouseId)
       pruneFamilies(nextPublication)
       focusCandidates = [nextPublication.focusFamilyId, family.id]
@@ -480,7 +483,7 @@ export function applyRelationshipAction(publication: PublicationData, action: Re
       }
 
       const family = nextPublication.families[familyId]
-      family.children = family.children.filter((childId) => childId !== action.personId)
+      family.children = family.children.filter(childId => childId !== action.personId)
       const ownFamilyId = ensureVisibleFamilyForPerson(nextPublication, action.personId)
       pruneFamilies(nextPublication)
       focusCandidates = [ownFamilyId, nextPublication.focusFamilyId, family.id]
@@ -491,20 +494,20 @@ export function applyRelationshipAction(publication: PublicationData, action: Re
 
     case 'delete-person': {
       const spouseId = resolveSpouse(nextPublication, action.personId)?.id
-      const childIds = resolveChildren(nextPublication, action.personId).map((child) => child.id)
-      const parentIds = resolveParents(nextPublication, action.personId).map((parent) => parent.id)
+      const childIds = resolveChildren(nextPublication, action.personId).map(child => child.id)
+      const parentIds = resolveParents(nextPublication, action.personId).map(parent => parent.id)
       const adultFamilyId = findAdultFamilyIdForPerson(nextPublication, action.personId)
       const parentFamilyId = findParentFamilyIdForPerson(nextPublication, action.personId)
 
-      Object.values(nextPublication.families).forEach((family) => {
-        family.adults = family.adults.filter((adultId) => adultId !== action.personId)
-        family.children = family.children.filter((childId) => childId !== action.personId)
+      Object.values(nextPublication.families).forEach(family => {
+        family.adults = family.adults.filter(adultId => adultId !== action.personId)
+        family.children = family.children.filter(childId => childId !== action.personId)
       })
       delete nextPublication.people[action.personId]
 
       pruneFamilies(nextPublication)
 
-      const childBranchFamilyIds = childIds.map((childId) => findAdultFamilyIdForPerson(nextPublication, childId))
+      const childBranchFamilyIds = childIds.map(childId => findAdultFamilyIdForPerson(nextPublication, childId))
       focusCandidates = [nextPublication.focusFamilyId, adultFamilyId, ...childBranchFamilyIds, parentFamilyId]
       selectionCandidates = [spouseId, ...childIds, ...parentIds]
       historyLabel = `删除人物 · ${primaryPerson.name}`

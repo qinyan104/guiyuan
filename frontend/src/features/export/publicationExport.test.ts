@@ -103,14 +103,16 @@ describe('createStandalonePublicationSvg', () => {
     const image = document.createElementNS('http://www.w3.org/2000/svg', 'image')
     image.setAttribute('href', '/missing-photo.png')
     svg.appendChild(image)
-    vi.stubGlobal('fetch', vi.fn(async () => ({
-      ok: false,
-      status: 404,
-      blob: async () => new Blob(),
-    })))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: false,
+        status: 404,
+        blob: async () => new Blob(),
+      })),
+    )
 
-    await expect(createStandalonePublicationSvg({ svgElement: svg, layout, title: 'test' }))
-      .rejects.toThrow('图片')
+    await expect(createStandalonePublicationSvg({ svgElement: svg, layout, title: 'test' })).rejects.toThrow('图片')
   })
 
   it('includes compact-card styles and removes transient canvas state', async () => {
@@ -158,11 +160,7 @@ describe('createStandalonePublicationSvg', () => {
   })
 })
 
-function createLayout(
-  width: number,
-  height: number,
-  cards: PublicationLayout['cards'] = [],
-): PublicationLayout {
+function createLayout(width: number, height: number, cards: PublicationLayout['cards'] = []): PublicationLayout {
   return {
     width,
     height,

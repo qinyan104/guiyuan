@@ -38,8 +38,12 @@ describe('ConfirmDialog', () => {
       attachTo: document.body,
     })
 
-    expect(document.body.querySelector<HTMLButtonElement>('button[data-role="cancel"]')?.textContent?.trim()).toBe('取消')
-    expect(document.body.querySelector<HTMLButtonElement>('button[data-role="confirm"]')?.textContent?.trim()).toBe('确认')
+    expect(document.body.querySelector<HTMLButtonElement>('button[data-role="cancel"]')?.textContent?.trim()).toBe(
+      '取消',
+    )
+    expect(document.body.querySelector<HTMLButtonElement>('button[data-role="confirm"]')?.textContent?.trim()).toBe(
+      '确认',
+    )
     wrapper.unmount()
   })
 
