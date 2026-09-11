@@ -48,6 +48,10 @@ public class ReviewController {
                                                         HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
+        if (status != null && !status.isBlank()
+                && !(status.equals("pending") || status.equals("approved") || status.equals("rejected"))) {
+            return ApiResponse.error(400, "审核状态无效");
+        }
         return ApiResponse.success(reviewService.listReviews(pubId, status));
     }
 
