@@ -1,6 +1,8 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.dto.ChangeNicknameRequest;
+import com.genealogy.server.dto.ChangePasswordRequest;
 import com.genealogy.server.util.UploadContentValidator;
 import com.genealogy.server.model.Person;
 import com.genealogy.server.model.PersonAccount;
@@ -62,10 +64,10 @@ public class ProfileController {
 
     @Operation(summary = "修改密码", description = "用户修改自己的登录密码")
     @PutMapping("/password")
-    public ApiResponse<Void> changePassword(@RequestBody Map<String, String> body, Authentication authentication) {
+    public ApiResponse<Void> changePassword(@RequestBody(required = false) ChangePasswordRequest body, Authentication authentication) {
         String username = authentication.getName();
-        String oldPassword = body.get("oldPassword");
-        String newPassword = body.get("newPassword");
+        String oldPassword = body == null ? null : body.oldPassword();
+        String newPassword = body == null ? null : body.newPassword();
 
         if (oldPassword == null || oldPassword.isBlank()) {
             return ApiResponse.error(400, "请输入当前密码");
@@ -83,9 +85,9 @@ public class ProfileController {
 
     @Operation(summary = "修改昵称", description = "用户修改自己的昵称")
     @PutMapping("/nickname")
-    public ApiResponse<Void> changeNickname(@RequestBody Map<String, String> body, Authentication authentication) {
+    public ApiResponse<Void> changeNickname(@RequestBody(required = false) ChangeNicknameRequest body, Authentication authentication) {
         String username = authentication.getName();
-        String nickname = body.get("nickname");
+        String nickname = body == null ? null : body.nickname();
 
         if (nickname == null || nickname.isBlank()) {
             return ApiResponse.error(400, "昵称不能为空");
