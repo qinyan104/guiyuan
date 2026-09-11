@@ -14,12 +14,15 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
+@Validated
 @RequestMapping("/api/publications/{pubId}/reviews")
 @Tag(name = "审核", description = "族谱变更审核")
 public class ReviewController {
@@ -43,7 +46,7 @@ public class ReviewController {
 
     @Operation(summary = "获取审核列表", description = "获取族谱的审核记录列表")
     @GetMapping
-    public ApiResponse<List<Map<String, Object>>> list(@Parameter(description = "族谱ID") @PathVariable Long pubId,
+    public ApiResponse<List<Map<String, Object>>> list(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId,
                                                         @Parameter(description = "审核状态筛选") @RequestParam(required = false) String status,
                                                         HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
@@ -57,7 +60,7 @@ public class ReviewController {
 
     @Operation(summary = "获取审核详情", description = "获取指定审核记录的详细信息")
     @GetMapping("/{id}")
-    public ApiResponse<Map<String, Object>> detail(@Parameter(description = "族谱ID") @PathVariable Long pubId, @Parameter(description = "审核记录ID") @PathVariable Long id,
+    public ApiResponse<Map<String, Object>> detail(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId, @Parameter(description = "审核记录ID") @PathVariable @Positive(message = "审核记录 ID 必须为正数") Long id,
                                                     HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
@@ -66,7 +69,7 @@ public class ReviewController {
 
     @Operation(summary = "通过审核", description = "批准指定的审核记录")
     @PostMapping("/{id}/approve")
-    public ApiResponse<Void> approve(@Parameter(description = "族谱ID") @PathVariable Long pubId, @Parameter(description = "审核记录ID") @PathVariable Long id,
+    public ApiResponse<Void> approve(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId, @Parameter(description = "审核记录ID") @PathVariable @Positive(message = "审核记录 ID 必须为正数") Long id,
                                       HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
@@ -76,7 +79,7 @@ public class ReviewController {
 
     @Operation(summary = "拒绝审核", description = "拒绝指定的审核记录并填写原因")
     @PostMapping("/{id}/reject")
-    public ApiResponse<Void> reject(@Parameter(description = "族谱ID") @PathVariable Long pubId, @Parameter(description = "审核记录ID") @PathVariable Long id,
+    public ApiResponse<Void> reject(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId, @Parameter(description = "审核记录ID") @PathVariable @Positive(message = "审核记录 ID 必须为正数") Long id,
                                      @RequestBody(required = false) ReviewRejectRequest body,
                                      HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
@@ -90,7 +93,7 @@ public class ReviewController {
 
     @Operation(summary = "批量审核操作", description = "批量通过或拒绝审核记录")
     @PostMapping("/batch")
-    public ApiResponse<Void> batch(@Parameter(description = "族谱ID") @PathVariable Long pubId,
+    public ApiResponse<Void> batch(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId,
                                     @Valid @RequestBody(required = false) ReviewBatchRequest body,
                                     HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
