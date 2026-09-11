@@ -2,6 +2,8 @@ package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.dto.ApiResponse;
+import com.genealogy.server.dto.BatchDeleteUsersRequest;
+import com.genealogy.server.dto.ChangeUserRoleRequest;
 import com.genealogy.server.dto.ConsistencyReport;
 import com.genealogy.server.dto.CreateUserRequest;
 import com.genealogy.server.dto.ResetPasswordRequest;
@@ -15,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -126,9 +129,9 @@ public class AdminController {
     @Operation(summary = "修改用户角色", description = "修改指定用户的角色")
     @PutMapping("/users/{id}/role")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ApiResponse<Void> changeRole(@Parameter(description = "用户ID") @PathVariable Long id, @RequestBody(required = false) Map<String, String> body, HttpServletRequest request) {
+    public ApiResponse<Void> changeRole(@Parameter(description = "用户ID") @PathVariable Long id, @RequestBody(required = false) ChangeUserRoleRequest body, HttpServletRequest request) {
         String username = currentUserResolver.authenticatedUsername(request);
-        String newRole = body == null ? null : body.get("role");
+        String newRole = body == null ? null : body.role();
         if (newRole == null || newRole.isBlank()) {
             return ApiResponse.error(400, "角色不能为空");
         }
@@ -143,11 +146,14 @@ public class AdminController {
     @Operation(summary = "批量删除用户", description = "根据ID列表批量删除用户")
     @PostMapping("/users/batch-delete")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<Map<String, Object>> batchDeleteUsers(@RequestBody(required = false) Map<String, List<Long>> body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> batchDeleteUsers(@Valid @RequestBody(required = false) BatchDeleteUsersRequest body, HttpServletRequest request) {
         String username = currentUserResolver.authenticatedUsername(request);
-        List<Long> ids = body == null ? null : body.get("ids");
+        List<Long> ids = body == null ? null : body.ids();
         if (ids == null || ids.isEmpty()) {
             return ApiResponse.error(400, "请选择要删除的用户 IDs");
+        }
+        if (ids.stream().distinct().count() != ids.size()) {
+            return ApiResponse.error(400, "用户 ID 不能重复");
         }
         int deleted = userService.batchDeleteUsers(ids);
         auditLogService.record(username, "ADMIN_BATCH_DELETE_USERS",
