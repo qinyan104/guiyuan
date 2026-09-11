@@ -19,12 +19,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 
 @RestController
+@Validated
 @RequestMapping("/api/admin")
 @Tag(name = "管理员", description = "管理员操作（用户管理、备份、一致性检查）")
 public class AdminController {
@@ -100,7 +102,7 @@ public class AdminController {
     @Operation(summary = "删除用户", description = "根据用户ID删除用户")
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<Void> deleteUser(@Parameter(description = "用户ID") @PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<Void> deleteUser(@Parameter(description = "用户ID") @PathVariable @Positive(message = "用户 ID 必须为正数") Long id, HttpServletRequest request) {
         String username = currentUserResolver.authenticatedUsername(request);
 
         User user = userService.findById(id).orElse(null);
@@ -115,7 +117,7 @@ public class AdminController {
     @Operation(summary = "重置用户密码", description = "管理员重置指定用户的密码")
     @PutMapping("/users/{id}/password")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<Void> resetPassword(@Parameter(description = "用户ID") @PathVariable Long id, @Valid @RequestBody ResetPasswordRequest body, HttpServletRequest request) {
+    public ApiResponse<Void> resetPassword(@Parameter(description = "用户ID") @PathVariable @Positive(message = "用户 ID 必须为正数") Long id, @Valid @RequestBody ResetPasswordRequest body, HttpServletRequest request) {
         String username = currentUserResolver.authenticatedUsername(request);
 
         userService.resetPassword(id, body.getNewPassword());
@@ -129,7 +131,7 @@ public class AdminController {
     @Operation(summary = "修改用户角色", description = "修改指定用户的角色")
     @PutMapping("/users/{id}/role")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ApiResponse<Void> changeRole(@Parameter(description = "用户ID") @PathVariable Long id, @RequestBody(required = false) ChangeUserRoleRequest body, HttpServletRequest request) {
+    public ApiResponse<Void> changeRole(@Parameter(description = "用户ID") @PathVariable @Positive(message = "用户 ID 必须为正数") Long id, @RequestBody(required = false) ChangeUserRoleRequest body, HttpServletRequest request) {
         String username = currentUserResolver.authenticatedUsername(request);
         String newRole = body == null ? null : body.role();
         if (newRole == null || newRole.isBlank()) {
