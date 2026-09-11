@@ -95,8 +95,12 @@ public class FileController {
             return ApiResponse.error("不支持的文件格式，仅允许图片和 PDF 文件");
         }
         try {
-            if (!UploadContentValidator.hasExpectedSignature(file.getBytes(), mimeType)) {
+            byte[] content = file.getBytes();
+            if (!UploadContentValidator.hasExpectedSignature(content, mimeType)) {
                 return ApiResponse.error("文件内容与声明的格式不一致");
+            }
+            if (mimeType.startsWith("image/") && !UploadContentValidator.hasValidImageDimensions(content, mimeType)) {
+                return ApiResponse.error("图片内容无效或尺寸超出限制");
             }
         } catch (IOException e) {
             return ApiResponse.error("无法读取文件内容");

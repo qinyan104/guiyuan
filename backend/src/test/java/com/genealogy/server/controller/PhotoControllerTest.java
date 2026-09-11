@@ -24,6 +24,10 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -44,8 +48,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
 @Import({ WebConfig.class, CurrentUserResolver.class })
 @WithMockUser
-@TestPropertySource(properties = "app.photo.max-file-size-bytes=4")
+@TestPropertySource(properties = "app.photo.max-file-size-bytes=1048576")
 class PhotoControllerTest {
+
+    private static byte[] validJpeg() throws Exception {
+        BufferedImage image = new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpg", output);
+        return output.toByteArray();
+    }
+
+    private static byte[] oversizedJpeg() {
+        byte[] data = new byte[1048577];
+        data[0] = (byte) 0xFF;
+        data[1] = (byte) 0xD8;
+        data[2] = (byte) 0xFF;
+        return data;
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -97,12 +116,12 @@ class PhotoControllerTest {
         savedPhoto.setId(100L);
         savedPhoto.setPersonDbId(5L);
         savedPhoto.setMimeType("image/jpeg");
-        savedPhoto.setData(new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+        savedPhoto.setData(validJpeg());
         when(photoRepository.save(any(Photo.class))).thenReturn(savedPhoto);
         when(personRepository.save(any(Person.class))).thenReturn(person);
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+                "file", "photo.jpg", "image/jpeg", validJpeg());
 
         mockMvc.perform(multipart("/api/photos")
                 .file(file)
@@ -123,7 +142,7 @@ class PhotoControllerTest {
                 .require(any(UserSubject.class), eq(10L), eq(AccessPermission.EDIT));
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.bmp", "image/bmp", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+                "file", "photo.bmp", "image/bmp", validJpeg());
 
         mockMvc.perform(multipart("/api/photos")
                 .file(file)
@@ -140,7 +159,7 @@ class PhotoControllerTest {
     @Test
     void uploadPhotoTooLarge() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 1});
+                "file", "photo.jpg", "image/jpeg", oversizedJpeg());
 
         mockMvc.perform(multipart("/api/photos")
                 .file(file)
@@ -167,7 +186,7 @@ class PhotoControllerTest {
                 .thenReturn(Optional.empty());
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+                "file", "photo.jpg", "image/jpeg", validJpeg());
 
         mockMvc.perform(multipart("/api/photos")
                 .file(file)
@@ -301,7 +320,7 @@ class PhotoControllerTest {
         when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+                "file", "photo.jpg", "image/jpeg", validJpeg());
 
         mockMvc.perform(multipart("/api/photos")
                 .file(file)

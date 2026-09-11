@@ -71,12 +71,16 @@ public class PhotoController {
         if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
             return ApiResponse.error("仅支持 JPG、PNG、GIF、WebP 格式的图片");
         }
-        if (!UploadContentValidator.hasExpectedSignature(file.getBytes(), contentType)) {
-            return ApiResponse.error("文件内容与声明的格式不一致");
-        }
-
         if (file.getSize() > maxPhotoSizeBytes) {
             return ApiResponse.error("图片大小不能超过 " + formatMegabytes(maxPhotoSizeBytes));
+        }
+
+        byte[] content = file.getBytes();
+        if (!UploadContentValidator.hasExpectedSignature(content, contentType)) {
+            return ApiResponse.error("文件内容与声明的格式不一致");
+        }
+        if (!UploadContentValidator.hasValidImageDimensions(content, contentType)) {
+            return ApiResponse.error("图片内容无效或尺寸超出限制");
         }
 
         UserSubject subject = currentUserResolver.requireSubject(request);

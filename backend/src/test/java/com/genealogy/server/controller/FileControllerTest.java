@@ -17,6 +17,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,8 +35,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
             excludeAutoConfiguration = SecurityAutoConfiguration.class)
 @Import(WebConfig.class)
 @WithMockUser
-@TestPropertySource(properties = "app.upload.max-file-size-bytes=8")
+@TestPropertySource(properties = "app.upload.max-file-size-bytes=1048576")
 public class FileControllerTest {
+
+    private static byte[] validImage(String format) throws Exception {
+        BufferedImage image = new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(image, format, output);
+        return output.toByteArray();
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -69,7 +80,7 @@ public class FileControllerTest {
     @Test
     public void testUploadFileSuccess() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "test.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+                "file", "test.jpg", "image/jpeg", validImage("jpg"));
 
         mockMvc.perform(multipart("/api/upload").file(file).requestAttr("currentUsername", "testuser"))
                 .andExpect(status().isOk())
@@ -117,7 +128,7 @@ public class FileControllerTest {
     @Test
     public void testUploadFileTooLarge() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "large.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 1, 2, 3, 4, 5});
+                "file", "large.jpg", "image/jpeg", new byte[1048577]);
 
         mockMvc.perform(multipart("/api/upload").file(file).requestAttr("currentUsername", "testuser"))
                 .andExpect(status().isOk())
@@ -140,7 +151,7 @@ public class FileControllerTest {
     @Test
     public void testUploadPngFile() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "image.png", "image/png", new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
+                "file", "image.png", "image/png", validImage("png"));
 
         mockMvc.perform(multipart("/api/upload").file(file).requestAttr("currentUsername", "testuser"))
                 .andExpect(status().isOk())
