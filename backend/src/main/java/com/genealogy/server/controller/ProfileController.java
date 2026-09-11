@@ -44,6 +44,9 @@ public class ProfileController {
     @Value("${app.upload.dir:uploads/avatars}")
     private String avatarUploadDir;
 
+    @Value("${app.avatar.max-file-size-bytes:5242880}")
+    private long maxAvatarSizeBytes;
+
     public ProfileController(UserService userService,
                              PersonAccountRepository personAccountRepository,
                              PersonRepository personRepository,
@@ -99,10 +102,13 @@ public class ProfileController {
         if (file.isEmpty()) {
             return ApiResponse.error(400, "文件不能为空");
         }
+        if (file.getSize() > maxAvatarSizeBytes) {
+            return ApiResponse.error(400, "头像大小不能超过 5MB");
+        }
 
         // Validate file type
         String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
+        if (contentType == null || !Set.of("image/jpeg", "image/png", "image/gif", "image/webp").contains(contentType)) {
             return ApiResponse.error(400, "仅支持图片文件");
         }
 
