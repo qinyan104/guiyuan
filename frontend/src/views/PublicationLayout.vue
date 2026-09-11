@@ -9,6 +9,7 @@ import { useFeedback } from '../composables/useFeedback'
 import { usePublicationLoading } from '../composables/usePublicationLoading'
 import { usePublicationPersistence } from '../composables/usePublicationPersistence'
 import { usePublicationState } from '../composables/usePublicationState'
+import { useHistoryShortcuts } from '../composables/useHistoryShortcuts'
 import { defaultSettings } from '../data/sampleFamily'
 import {
   clearConflictDraft,
@@ -425,22 +426,7 @@ provide(PUBLICATION_CONTEXT_KEY, {
   viewportPan,
 })
 
-function handleHistoryShortcut(event: KeyboardEvent) {
-  const target = event.target as HTMLElement | null
-  if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
-  if (!(event.ctrlKey || event.metaKey)) return
-
-  const key = event.key.toLowerCase()
-  if (key === 'z' && !event.shiftKey) {
-    event.preventDefault()
-    history.undoChange()
-    return
-  }
-  if (key === 'y' || (key === 'z' && event.shiftKey)) {
-    event.preventDefault()
-    history.redoChange()
-  }
-}
+useHistoryShortcuts(history)
 
 async function reloadFromServerAfterConflict() {
   await load(true)
@@ -554,13 +540,11 @@ function dismissRecoveryDraft() {
 
 onMounted(() => {
   load()
-  window.addEventListener('keydown', handleHistoryShortcut)
   window.addEventListener('beforeunload', protectBrowserLeave)
   document.addEventListener('visibilitychange', preserveRecoveryWhenHidden)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleHistoryShortcut)
   window.removeEventListener('beforeunload', protectBrowserLeave)
   document.removeEventListener('visibilitychange', preserveRecoveryWhenHidden)
   history.disposeHistory()
