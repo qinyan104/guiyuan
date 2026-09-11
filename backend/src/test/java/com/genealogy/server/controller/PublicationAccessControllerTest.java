@@ -113,6 +113,18 @@ class PublicationAccessControllerTest {
     }
 
     @Test
+    void addAccessRejectsMalformedUserId() throws Exception {
+        mockMvc.perform(post("/api/publications/100/access")
+                        .requestAttr("currentUsername", "testuser")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":\"not-a-number\",\"role\":\"EDITOR\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+
+        verify(accessRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
     void mergeBranchShouldDelegateToPublicationService() throws Exception {
         mockMvc.perform(post("/api/publications/100/access/person-9/merge")
                         .requestAttr("currentUsername", "testuser")

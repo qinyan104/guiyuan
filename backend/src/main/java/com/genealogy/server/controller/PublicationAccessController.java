@@ -77,13 +77,21 @@ public class PublicationAccessController {
 
     @Operation(summary = "添加协作者", description = "为族谱添加新的协作者")
     @PostMapping
-    public ApiResponse<Map<String, Object>> addAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> addAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
 
-        Long targetUserId = ((Number) body.get("userId")).longValue();
-        String role = (String) body.get("role");
+        Object rawUserId = body == null ? null : body.get("userId");
+        if (!(rawUserId instanceof Number)) {
+            throw new BadRequestException("用户 ID 必须是数字");
+        }
+        Long targetUserId = ((Number) rawUserId).longValue();
+        Object rawRole = body.get("role");
+        if (!(rawRole instanceof String)) {
+            throw new BadRequestException("角色不能为空");
+        }
+        String role = (String) rawRole;
 
         if (!ALLOWED_ROLES.contains(role)) {
             throw new BadRequestException("角色必须是 EDITOR 或 VIEWER");
@@ -104,7 +112,11 @@ public class PublicationAccessController {
         access.setPublicationId(id);
         access.setUserId(targetUserId);
         access.setRole(role);
-        access.setRedactionProfile((String) body.get("redactionProfile"));
+        Object redactionProfile = body.get("redactionProfile");
+        if (redactionProfile != null && !(redactionProfile instanceof String)) {
+            throw new BadRequestException("脱敏配置必须是字符串");
+        }
+        access.setRedactionProfile((String) redactionProfile);
         access.setCreatedBy(subject.getUserId());
         access = accessRepository.save(access);
 
@@ -119,12 +131,16 @@ public class PublicationAccessController {
     @Operation(summary = "修改协作者权限", description = "修改协作者的角色和脱敏配置")
     @PutMapping("/{userId}")
     public ApiResponse<Void> updateAccess(@Parameter(description = "族谱ID") @PathVariable Long id, @Parameter(description = "用户ID") @PathVariable Long userId,
-                                          @RequestBody Map<String, Object> body, HttpServletRequest request) {
+                                          @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
         String username = currentUserResolver.requireUser(request).getUsername();
         UserSubject subject = currentUserResolver.requireSubject(request);
         authorizationService.require(subject, id, AccessPermission.MANAGE_ACCESS);
 
-        String newRole = (String) body.get("role");
+        Object rawRole = body == null ? null : body.get("role");
+        if (!(rawRole instanceof String)) {
+            throw new BadRequestException("角色不能为空");
+        }
+        String newRole = (String) rawRole;
         if (!ALLOWED_ROLES.contains(newRole)) {
             throw new BadRequestException("角色必须是 EDITOR 或 VIEWER");
         }
@@ -138,7 +154,11 @@ public class PublicationAccessController {
 
         access.setRole(newRole);
         if (body.containsKey("redactionProfile")) {
-            access.setRedactionProfile((String) body.get("redactionProfile"));
+            Object redactionProfile = body.get("redactionProfile");
+            if (redactionProfile != null && !(redactionProfile instanceof String)) {
+                throw new BadRequestException("脱敏配置必须是字符串");
+            }
+            access.setRedactionProfile((String) redactionProfile);
         }
         accessRepository.save(access);
 
