@@ -126,9 +126,9 @@ public class AdminController {
     @Operation(summary = "修改用户角色", description = "修改指定用户的角色")
     @PutMapping("/users/{id}/role")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ApiResponse<Void> changeRole(@Parameter(description = "用户ID") @PathVariable Long id, @RequestBody Map<String, String> body, HttpServletRequest request) {
+    public ApiResponse<Void> changeRole(@Parameter(description = "用户ID") @PathVariable Long id, @RequestBody(required = false) Map<String, String> body, HttpServletRequest request) {
         String username = currentUserResolver.authenticatedUsername(request);
-        String newRole = body.get("role");
+        String newRole = body == null ? null : body.get("role");
         if (newRole == null || newRole.isBlank()) {
             return ApiResponse.error(400, "角色不能为空");
         }
@@ -143,9 +143,9 @@ public class AdminController {
     @Operation(summary = "批量删除用户", description = "根据ID列表批量删除用户")
     @PostMapping("/users/batch-delete")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<Map<String, Object>> batchDeleteUsers(@RequestBody Map<String, List<Long>> body, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> batchDeleteUsers(@RequestBody(required = false) Map<String, List<Long>> body, HttpServletRequest request) {
         String username = currentUserResolver.authenticatedUsername(request);
-        List<Long> ids = body.get("ids");
+        List<Long> ids = body == null ? null : body.get("ids");
         if (ids == null || ids.isEmpty()) {
             return ApiResponse.error(400, "请选择要删除的用户 IDs");
         }

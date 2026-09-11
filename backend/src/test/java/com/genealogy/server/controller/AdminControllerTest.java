@@ -213,6 +213,18 @@ public class AdminControllerTest {
     }
 
     @Test
+    public void testChangeRoleRejectsNullBody() throws Exception {
+        mockMvc.perform(put("/api/admin/users/1/role")
+                .requestAttr("currentUsername", "admin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("null"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400));
+
+        verify(userService, never()).changeUserRole(anyLong(), anyString());
+    }
+
+    @Test
     public void testCheckConsistency() throws Exception {
         ConsistencyReport report = new ConsistencyReport();
         report.setTotalIssues(0);
