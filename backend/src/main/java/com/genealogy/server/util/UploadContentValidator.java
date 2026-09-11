@@ -1,5 +1,9 @@
 package com.genealogy.server.util;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -18,6 +22,25 @@ public final class UploadContentValidator {
             case "application/pdf" -> startsWithAscii(data, "%PDF-");
             default -> false;
         };
+    }
+
+    /**
+     * Decodes raster images and rejects implausibly large dimensions.
+     * WebP is left to the signature check because the JDK has no built-in WebP reader.
+     */
+    public static boolean hasValidImageDimensions(byte[] data, String mimeType) {
+        if (data == null || mimeType == null || "image/webp".equals(mimeType)) return true;
+        if (!("image/jpeg".equals(mimeType) || "image/png".equals(mimeType) || "image/gif".equals(mimeType))) {
+            return false;
+        }
+        try {
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(data));
+            if (image == null) return false;
+            long pixels = (long) image.getWidth() * image.getHeight();
+            return image.getWidth() <= 10_000 && image.getHeight() <= 10_000 && pixels <= 50_000_000L;
+        } catch (IOException | RuntimeException e) {
+            return false;
+        }
     }
 
     private static boolean startsWith(byte[] data, int... signature) {
