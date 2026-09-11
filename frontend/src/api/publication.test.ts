@@ -10,6 +10,7 @@ vi.mock('./http', () => ({
 }))
 
 import http from './http'
+import { defaultSettings, samplePublication } from '../data/sampleFamily'
 import { getPublication } from './publication'
 
 describe('getPublication', () => {
@@ -17,7 +18,7 @@ describe('getPublication', () => {
     vi.mocked(http.get).mockResolvedValue({
       data: {
         code: 200,
-        data: { id: 7, revision: 1, publication: {}, settings: {} },
+        data: { id: 7, revision: 1, publication: samplePublication, settings: defaultSettings },
       },
     })
     const onDownloadProgress = vi.fn()
@@ -28,5 +29,16 @@ describe('getPublication', () => {
     )
 
     expect(http.get).toHaveBeenCalledWith('/publications/7', { onDownloadProgress })
+  })
+
+  it('rejects malformed publication data at the API boundary', async () => {
+    vi.mocked(http.get).mockResolvedValue({
+      data: {
+        code: 200,
+        data: { id: 7, revision: 1, publication: { people: {}, families: {} }, settings: {} },
+      },
+    })
+
+    await expect(getPublication(7)).rejects.toThrow('服务器返回的族谱数据无效')
   })
 })

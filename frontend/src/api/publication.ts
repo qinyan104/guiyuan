@@ -1,6 +1,7 @@
 import http, { unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/api'
 import type { PublicationData, PublicationSettings, PublicationInfo } from '../types/family'
+import { formatValidationIssues, validatePublicationData } from '../features/validation/draftSchema'
 
 export interface PublicationSummary {
   id: number
@@ -32,16 +33,39 @@ export async function listPublications(): Promise<PublicationSummary[]> {
   return unwrapApiResponse(http.get<ApiResponse<PublicationSummary[]>>('/publications'))
 }
 
+function validatePublicationLoadResult(input: unknown): PublicationLoadResult {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+    throw new Error('服务器返回的族谱数据格式无效。')
+  }
+
+  const result = input as Partial<PublicationLoadResult>
+  const issues = validatePublicationData(result.publication)
+  if (issues.length > 0) {
+    throw new Error(`服务器返回的族谱数据无效：${formatValidationIssues(issues)}`)
+  }
+
+  if (typeof result.settings !== 'object' || result.settings === null || Array.isArray(result.settings)) {
+    throw new Error('服务器返回的排版设置格式无效。')
+  }
+
+  if (typeof result.id !== 'number' || typeof result.revision !== 'number') {
+    throw new Error('服务器返回的族谱版本信息无效。')
+  }
+
+  return result as PublicationLoadResult
+}
+
 export async function getPublication(
   id: number,
   onDownloadProgress?: (event: PublicationDownloadProgress) => void,
 ): Promise<PublicationLoadResult> {
-  return unwrapApiResponse(
+  const result = await unwrapApiResponse(
     http.get<ApiResponse<PublicationLoadResult>>(
       `/publications/${id}`,
       onDownloadProgress ? { onDownloadProgress } : undefined,
     ),
   )
+  return validatePublicationLoadResult(result)
 }
 
 export async function createPublication(
