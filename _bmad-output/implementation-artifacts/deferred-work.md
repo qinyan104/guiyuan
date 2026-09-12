@@ -40,3 +40,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-restore-repository-quality-gates.md`
   summary: 将管理员用户列表 API 的位置参数收敛为具名查询对象。
   evidence: 当前四个同类型位置参数依赖调用顺序，格式化后的调用仍容易在扩展筛选条件时传错。
+- source_spec: `_bmad-output/implementation-artifacts/spec-harden-upload-storage.md`
+  summary: 将上传文件系统操作提取为可测试的存储模块，并评估以可信目录句柄抵御上传根目录 symlink/junction 替换。
+  evidence: 本轮已阻止目标文件覆盖并限制补偿删除范围；若威胁模型包含可并发修改服务器本地上传目录的攻击者，单纯规范化 Path 无法消除目录替换竞态，需要更深的存储边界设计和平台兼容验证。

@@ -15,6 +15,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Positive;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +24,12 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Set;
 import java.util.UUID;
 
@@ -38,6 +39,7 @@ import java.util.UUID;
 @Tag(name = "文件", description = "文件上传管理")
 public class FileController {
 
+    private static final Logger log = LoggerFactory.getLogger(FileController.class);
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
             ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf"
     );
@@ -46,7 +48,7 @@ public class FileController {
             "image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"
     );
 
-    private final String uploadDir;
+    private final Path uploadRoot;
     private final long maxFileSizeBytes;
     private final String publicBaseUrl;
     private final UploadedFileRepository uploadedFileRepository;
@@ -59,7 +61,7 @@ public class FileController {
                           UploadedFileRepository uploadedFileRepository,
                           CurrentUserResolver currentUserResolver,
                           PublicationAuthorizationService authorizationService) {
-        this.uploadDir = new File(uploadDir).getAbsolutePath() + File.separator;
+        this.uploadRoot = Path.of(uploadDir).toAbsolutePath().normalize();
         this.maxFileSizeBytes = maxFileSizeBytes;
         this.publicBaseUrl = publicBaseUrl == null ? "" : publicBaseUrl.replaceAll("/+$", "");
         this.uploadedFileRepository = uploadedFileRepository;
@@ -72,6 +74,11 @@ public class FileController {
     public ApiResponse<String> uploadFile(@Parameter(description = "要上传的文件") @RequestParam("file") MultipartFile file,
                                           @RequestParam(value = "publicationId", required = false) @Positive(message = "族谱 ID 必须为正数") Long publicationId,
                                           HttpServletRequest request) {
+        UserSubject subject = currentUserResolver.requireSubject(request);
+        if (publicationId != null) {
+            authorizationService.require(subject, publicationId, AccessPermission.EDIT);
+        }
+
         if (file.isEmpty()) {
             return ApiResponse.error("文件不能为空");
         }
@@ -106,22 +113,21 @@ public class FileController {
             return ApiResponse.error("无法读取文件内容");
         }
 
+        Path path = null;
         try {
-            File dir = new File(uploadDir);
-            if (!dir.exists()) {
-                dir.mkdirs();
+            Files.createDirectories(uploadRoot);
+            String newFilename = UUID.randomUUID() + extension;
+            Path candidatePath = uploadRoot.resolve(newFilename).normalize();
+            if (!candidatePath.startsWith(uploadRoot)) {
+                throw new IOException("上传目标路径无效");
+            }
+            OutputStream outputStream = Files.newOutputStream(
+                    candidatePath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            path = candidatePath;
+            try (outputStream; InputStream inputStream = file.getInputStream()) {
+                inputStream.transferTo(outputStream);
             }
 
-            String newFilename = UUID.randomUUID().toString() + extension;
-            Path path = Paths.get(uploadDir + newFilename);
-            try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, path, StandardCopyOption.REPLACE_EXISTING);
-            }
-
-            UserSubject subject = currentUserResolver.requireSubject(request);
-            if (publicationId != null) {
-                authorizationService.require(subject, publicationId, AccessPermission.EDIT);
-            }
             UploadedFile uploadedFile = new UploadedFile();
             uploadedFile.setStorageKey(newFilename);
             uploadedFile.setOriginalName(originalFilename);
@@ -132,9 +138,12 @@ public class FileController {
             uploadedFile = uploadedFileRepository.save(uploadedFile);
             String fileUrl = (publicBaseUrl.isBlank() ? "" : publicBaseUrl) + "/api/files/" + uploadedFile.getId();
             return ApiResponse.success("上传成功", fileUrl);
-
         } catch (IOException e) {
+            deletePartialUpload(path, e);
             return ApiResponse.error("文件上传失败，请稍后重试");
+        } catch (RuntimeException e) {
+            deletePartialUpload(path, e);
+            throw e;
         }
     }
     @GetMapping("/files/{id}")
@@ -147,15 +156,33 @@ public class FileController {
         } else if (!uploadedFile.getOwnerUserId().equals(subject.getUserId())) {
             throw new ForbiddenException("无权访问该文件");
         }
-        Path root = Paths.get(uploadDir).normalize();
-        Path path = root.resolve(uploadedFile.getStorageKey()).normalize();
-        if (!path.startsWith(root) || !Files.isRegularFile(path)) {
+        Path path = uploadRoot.resolve(uploadedFile.getStorageKey()).normalize();
+        if (!path.startsWith(uploadRoot) || !Files.isRegularFile(path)) {
             throw new NotFoundException("文件不存在");
         }
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, uploadedFile.getMimeType())
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
                 .body(Files.readAllBytes(path));
+    }
+
+    private void deletePartialUpload(Path path, Exception originalException) {
+        if (path == null) {
+            return;
+        }
+        Path normalizedPath = path.toAbsolutePath().normalize();
+        if (!uploadRoot.equals(normalizedPath.getParent())) {
+            SecurityException cleanupException = new SecurityException("拒绝清理上传根目录外的文件");
+            originalException.addSuppressed(cleanupException);
+            log.warn("拒绝清理上传根目录外的路径 {}", normalizedPath);
+            return;
+        }
+        try {
+            Files.deleteIfExists(normalizedPath);
+        } catch (IOException | SecurityException cleanupException) {
+            originalException.addSuppressed(cleanupException);
+            log.warn("清理失败的上传文件 {} 时出错", normalizedPath.getFileName(), cleanupException);
+        }
     }
 
     private String formatMegabytes(long bytes) {
