@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Size;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +32,8 @@ public class UserController {
         if (q == null || q.trim().isEmpty()) {
             return ApiResponse.success(List.of());
         }
-        List<Map<String, Object>> users = userRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(q, q)
+        List<Map<String, Object>> users = userRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(q, q, PageRequest.of(0, 50))
+                .getContent()
                 .stream()
                 .map(user -> {
                     Map<String, Object> m = new LinkedHashMap<>();
@@ -40,7 +42,6 @@ public class UserController {
                     m.put("nickname", user.getNickname() != null ? user.getNickname() : user.getUsername());
                     return m;
                 })
-                .limit(50)
                 .toList();
         return ApiResponse.success(users);
     }

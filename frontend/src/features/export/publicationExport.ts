@@ -586,6 +586,38 @@ export function createPrintPageSvg(sourceSvg: SVGSVGElement, page: PrintLayoutPa
   return svg
 }
 
+export function sanitizeStandaloneSvg(svg: SVGSVGElement): SVGSVGElement {
+  const safe = svg.cloneNode(true) as SVGSVGElement
+  const forbiddenElements = new Set(['script', 'foreignobject', 'iframe', 'object', 'embed', 'audio', 'video'])
+  const hrefAttributes = ['href', 'xlink:href']
+  const safeImageData = /^data:image\/(png|jpeg|gif|webp);/i
+
+  const elements = [safe, ...safe.querySelectorAll('*')]
+  elements.forEach(element => {
+    if (forbiddenElements.has(element.localName.toLowerCase())) {
+      element.remove()
+      return
+    }
+    for (const attribute of [...element.attributes]) {
+      const name = attribute.name.toLowerCase()
+      const value = attribute.value.trim().toLowerCase()
+      if (name.startsWith('on')) {
+        element.removeAttribute(attribute.name)
+      } else if (hrefAttributes.includes(name) && value && !value.startsWith('#') && !safeImageData.test(attribute.value.trim())) {
+        element.removeAttribute(attribute.name)
+      } else if (name === 'style') {
+        element.setAttribute(attribute.name, attribute.value.replace(/url\s*\([^)]*\)/gi, 'none'))
+      }
+    }
+  })
+  safe.querySelectorAll('style').forEach(style => {
+    style.textContent = (style.textContent || '')
+      .replace(/@import[^;]+;?/gi, '')
+      .replace(/url\s*\((?!\s*['"]?data:image\/(?:png|jpeg|gif|webp);)[^)]*\)/gi, 'none')
+  })
+  return safe
+}
+
 export function serializeSvg(svg: SVGSVGElement, includeXmlHeader = true): string {
   const serialized = new XMLSerializer().serializeToString(svg)
   return includeXmlHeader ? `${XML_HEADER}\n${serialized}\n` : serialized

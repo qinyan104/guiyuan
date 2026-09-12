@@ -1,5 +1,5 @@
 import type { PublicationData, PublicationSettings } from '../../types/family'
-import { escapeHtml, serializeSvg } from './publicationExport'
+import { escapeHtml, sanitizeStandaloneSvg, serializeSvg } from './publicationExport'
 import { createPortablePublication } from '../persistence/draftPersistence'
 import { isPersonDeceased } from '../../lib/personStatus'
 import { buildAllExportThemesCss, getThemeCssVariables, THEME_PRESETS, type ThemeMode } from './exportTheme'
@@ -761,7 +761,7 @@ export async function generateShareHtml(options: ShareHtmlOptions): Promise<stri
   onProgress?.('capturing', 30)
 
   // Phase 3: Serialize SVG
-  const svgMarkup = serializeSvg(standaloneSvg, false)
+  const svgMarkup = serializeSvg(sanitizeStandaloneSvg(standaloneSvg), false)
   onProgress?.('building', 40)
 
   // Phase 4: Create portable publication (inline photos)

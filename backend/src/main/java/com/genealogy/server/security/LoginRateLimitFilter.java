@@ -23,6 +23,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     private static final int IP_LIMIT = 10;
     private static final long WINDOW_MS = 300_000; // 5 minutes
     private static final long BLOCK_MS = 900_000;  // 15 minutes
+    private static final int MAX_TRACKED_IPS = 10_000;
 
     private final ConcurrentMap<String, List<Instant>> ipAttempts = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Instant> ipBlocked = new ConcurrentHashMap<>();
@@ -46,6 +47,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
 
         String ip = getClientIp(request);
         Instant now = Instant.now();
+        ipBlocked.entrySet().removeIf(entry -> !now.isBefore(entry.getValue()));
 
         // Check IP block
         Instant ipBlockExpiry = ipBlocked.get(ip);
@@ -65,13 +67,29 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     }
 
     private void recordIpAttempt(String ip, Instant now) {
-        List<Instant> attempts = ipAttempts.computeIfAbsent(ip, k -> new java.util.ArrayList<>());
+        ipAttempts.entrySet().removeIf(entry -> {
+            List<Instant> values = entry.getValue();
+            synchronized (values) {
+                values.removeIf(t -> t.plusMillis(WINDOW_MS).isBefore(now));
+                return values.isEmpty();
+            }
+        });
+        List<Instant> attempts = ipAttempts.computeIfAbsent(ip, k -> {
+            if (ipAttempts.size() >= MAX_TRACKED_IPS) {
+                ipAttempts.entrySet().stream().findAny().ifPresent(entry -> ipAttempts.remove(entry.getKey(), entry.getValue()));
+            }
+            return new java.util.ArrayList<>();
+        });
         synchronized (attempts) {
             attempts.removeIf(t -> t.plusMillis(WINDOW_MS).isBefore(now));
             attempts.add(now);
             if (attempts.size() >= IP_LIMIT) {
+                if (ipBlocked.size() >= MAX_TRACKED_IPS) {
+                    ipBlocked.keySet().stream().findAny().ifPresent(ipBlocked::remove);
+                }
                 ipBlocked.put(ip, now.plusMillis(BLOCK_MS));
                 attempts.clear();
+                ipAttempts.remove(ip, attempts);
             }
         }
     }
@@ -89,8 +107,12 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         // Only trust X-Forwarded-For if the direct client is a loopback/proxy address.
         // This prevents attackers from spoofing the header to bypass rate limiting.
         if (isTrustedProxy(remoteAddr)) {
+            String realIp = request.getHeader("X-Real-IP");
+            if (realIp != null && !realIp.isBlank()) {
+                return realIp.trim();
+            }
             String xff = request.getHeader("X-Forwarded-For");
-            if (xff != null && !xff.isEmpty()) {
+            if (xff != null && !xff.isBlank()) {
                 return xff.split(",")[0].trim();
             }
         }

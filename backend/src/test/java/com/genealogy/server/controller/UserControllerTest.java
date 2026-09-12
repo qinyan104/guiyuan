@@ -7,6 +7,8 @@ import com.genealogy.server.security.JwtService;
 import com.genealogy.server.service.RefreshTokenService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -47,8 +49,9 @@ public class UserControllerTest {
         user.setUsername("testuser");
         user.setNickname("Alice");
 
-        when(userRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase("test", "test"))
-                .thenReturn(List.of(user));
+        when(userRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(
+                "test", "test", PageRequest.of(0, 50)))
+                .thenReturn(new PageImpl<>(List.of(user)));
 
         mockMvc.perform(get("/api/users/search?q=test")
                 .contentType(MediaType.APPLICATION_JSON))

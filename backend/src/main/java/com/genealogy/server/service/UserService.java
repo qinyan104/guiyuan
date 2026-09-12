@@ -166,6 +166,9 @@ public class UserService {
     public void resetPassword(Long userId, String newPassword) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("用户不存在"));
+        if ("SUPER_ADMIN".equals(user.getRole())) {
+            throw new ForbiddenException("不能通过管理员重置超级管理员密码");
+        }
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }

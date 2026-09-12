@@ -187,7 +187,7 @@ cd backend
    ```bash
    cp release/.env.example release/.env
    ```
-   编辑 `release/.env`，设置强口令（`MYSQL_ROOT_PASSWORD`、`MYSQL_PASSWORD`、`JWT_SECRET` 等）。
+   编辑 `release/.env`，设置强口令（`MYSQL_ROOT_PASSWORD`、`MYSQL_PASSWORD`、`JWT_SECRET`、`INITIAL_ADMIN_PASSWORD` 等）。生产环境应通过 HTTPS 反向代理访问，数据库和后端端口不直接暴露到公网。
 
 2. 一键构建并启动服务：
    ```bash
@@ -245,7 +245,7 @@ guiyuan/
 ## 安全与运维提示
 
 - **密钥隔离**：切勿将 `.env.local`、`release/.env` 或包含真实私钥的文件提交至代码仓库。
-- **默认凭证**：默认管理员密码（`root` / `123456`）仅用于初次启动，进入生产环境后必须第一时间修改。
+- **默认凭证**：开发环境可使用默认管理员账号；生产环境必须在首次启动前设置 `INITIAL_ADMIN_PASSWORD`，系统会自动替换开发初始密码，禁止使用 `123456`。
 - **数据卷安全**：执行 `docker compose down -v` 会彻底清除数据库持久化卷，生产环境谨慎使用 `-v` 参数。
 
 ---

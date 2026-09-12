@@ -8,6 +8,7 @@ vi.mock('../persistence/draftPersistence', () => ({
 }))
 
 import { buildEmbeddedScript, buildHtmlTemplate, buildInfoHeader, generateShareHtml } from './shareHtmlExport'
+import { sanitizeStandaloneSvg } from './publicationExport'
 
 const samplePublication: PublicationData = {
   title: '\u674e\u6c0f\u5b97\u8c31',
@@ -41,6 +42,20 @@ const samplePublication: PublicationData = {
     familyMotto: '\u6566\u4eb2\u7766\u65cf',
   },
 }
+
+describe('sanitizeStandaloneSvg', () => {
+  it('removes scripts, event handlers, and unsafe references while preserving image data', () => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svg.innerHTML = '<script>alert(1)</script><g onload="alert(2)" href="javascript:alert(3)"><image href="data:image/png;base64,abc" /></g>'
+
+    const sanitized = sanitizeStandaloneSvg(svg)
+
+    expect(sanitized.querySelector('script')).toBeNull()
+    expect(sanitized.querySelector('[onload]')).toBeNull()
+    expect(sanitized.querySelector('g')?.getAttribute('href')).toBeNull()
+    expect(sanitized.querySelector('image')?.getAttribute('href')).toContain('data:image/')
+  })
+})
 
 const sampleSettings: PublicationSettings = {
   ...defaultSettings,

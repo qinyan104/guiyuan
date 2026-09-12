@@ -239,6 +239,15 @@ class UserServiceTest {
     }
 
     @Test
+    void resetPassword_superAdmin_throwsAndDoesNotSave() {
+        User user = makeUser(1L, "root", "SUPER_ADMIN");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        assertThrows(ForbiddenException.class, () -> userService.resetPassword(1L, "newPwd"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     void resetPassword_userNotFound_throws() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 

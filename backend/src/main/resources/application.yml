@@ -46,6 +46,7 @@ app:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
   public-base-url: ${APP_PUBLIC_BASE_URL:}
   secure-cookie: ${APP_SECURE_COOKIE:false}
+  initial-admin-password: ${INITIAL_ADMIN_PASSWORD:}
   upload:
     dir: ${APP_UPLOAD_DIR:uploads}
     max-file-size-bytes: ${APP_UPLOAD_MAX_FILE_SIZE_BYTES:26214400}

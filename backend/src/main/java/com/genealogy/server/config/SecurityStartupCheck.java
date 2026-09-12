@@ -4,6 +4,7 @@ import com.genealogy.server.model.User;
 import com.genealogy.server.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -22,6 +23,9 @@ public class SecurityStartupCheck implements CommandLineRunner {
     private final BCryptPasswordEncoder passwordEncoder;
     private final Environment environment;
 
+    @Value("${app.initial-admin-password:}")
+    private String initialAdminPassword;
+
     public SecurityStartupCheck(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, Environment environment) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -37,8 +41,14 @@ public class SecurityStartupCheck implements CommandLineRunner {
         userRepository.findByUsername("root").ifPresent(admin -> {
             if (isDefaultAdminPassword(admin)) {
                 if (isProductionProfile()) {
-                    throw new IllegalStateException(
-                            "Production startup blocked: default admin account 'root' still uses password 123456.");
+                    if (!isAcceptableInitialPassword(initialAdminPassword)) {
+                        throw new IllegalStateException(
+                                "Production startup blocked: set INITIAL_ADMIN_PASSWORD to a non-default password.");
+                    }
+                    admin.setPassword(passwordEncoder.encode(initialAdminPassword));
+                    userRepository.save(admin);
+                    log.info("Default admin password replaced from INITIAL_ADMIN_PASSWORD during first production startup.");
+                    return;
                 }
                 log.warn("===========================================================");
                 log.warn("  SECURITY WARNING: Default admin account 'root' is using");
@@ -47,6 +57,16 @@ public class SecurityStartupCheck implements CommandLineRunner {
                 log.warn("===========================================================");
             }
         });
+    }
+
+    private boolean isAcceptableInitialPassword(String password) {
+        return password != null
+                && password.length() >= 8
+                && password.length() <= 100
+                && password.matches(".*[a-z].*")
+                && password.matches(".*[A-Z].*")
+                && password.matches(".*\\d.*")
+                && !"123456".equals(password);
     }
 
     private boolean isDefaultAdminPassword(User admin) {
