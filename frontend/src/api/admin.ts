@@ -19,12 +19,7 @@ export interface AdminUserPage {
   totalPages: number
 }
 
-export async function adminListUsers(
-  page = 0,
-  size = 50,
-  query = '',
-  role = '',
-): Promise<AdminUserPage> {
+export async function adminListUsers(page = 0, size = 50, query = '', role = ''): Promise<AdminUserPage> {
   return unwrapApiResponse(
     http.get<ApiResponse<AdminUserPage>>('/admin/users', { params: { page, size, query, role } }),
   )

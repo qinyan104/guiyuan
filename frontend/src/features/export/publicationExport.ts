@@ -603,7 +603,12 @@ export function sanitizeStandaloneSvg(svg: SVGSVGElement): SVGSVGElement {
       const value = attribute.value.trim().toLowerCase()
       if (name.startsWith('on')) {
         element.removeAttribute(attribute.name)
-      } else if (hrefAttributes.includes(name) && value && !value.startsWith('#') && !safeImageData.test(attribute.value.trim())) {
+      } else if (
+        hrefAttributes.includes(name) &&
+        value &&
+        !value.startsWith('#') &&
+        !safeImageData.test(attribute.value.trim())
+      ) {
         element.removeAttribute(attribute.name)
       } else if (name === 'style') {
         element.setAttribute(attribute.name, attribute.value.replace(/url\s*\([^)]*\)/gi, 'none'))

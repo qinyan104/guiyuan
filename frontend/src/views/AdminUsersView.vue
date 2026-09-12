@@ -103,7 +103,12 @@ async function loadUsers(page = 0) {
   const requestId = ++usersRequestId
   loading.value = true
   try {
-    const result = await adminListUsers(page, pageSize, searchQuery.value.trim(), activeTab.value === 'all' ? '' : activeTab.value)
+    const result = await adminListUsers(
+      page,
+      pageSize,
+      searchQuery.value.trim(),
+      activeTab.value === 'all' ? '' : activeTab.value,
+    )
     if (requestId !== usersRequestId) return
     users.value = result.items
     currentPage.value = result.page

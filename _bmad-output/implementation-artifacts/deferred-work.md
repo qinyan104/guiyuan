@@ -13,3 +13,30 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-frontend-high-risk-dependencies.md`
   summary: 单独治理前端开发依赖审计漏洞，目标是让完整 `npm audit` 也清零。
   evidence: 本轮按 spec 只治理生产依赖；`npm ci` 后普通 audit 摘要仍提示 7 个 dev-scope 漏洞（1 low、5 high、1 critical）。
+- source_spec: none
+  summary: 修复文件上传鉴权顺序，并为文件系统与数据库写入增加失败补偿清理。
+  evidence: 从项目锐评修复计划中拆分；上传安全可独立实现并通过控制器与存储失败路径测试验证。
+- source_spec: none
+  summary: 将镜像发布和生产部署约束在完整 CI 成功之后。
+  evidence: 从项目锐评修复计划中拆分；CI/CD 门禁可独立修改工作流并验证事件与提交 SHA 传递。
+- source_spec: none
+  summary: 收敛 Spring 多配置源，并将 Flyway baseline 改为显式运维开关。
+  evidence: 从项目锐评修复计划中拆分；配置治理涉及部署兼容性，应独立审查和验证。
+- source_spec: none
+  summary: 按稳定接口逐步拆分 kinship 与大型 Vue 组件。
+  evidence: 从项目锐评修复计划中拆分；模块重构范围较大且不应与质量门禁修复混在同一变更中。
+- source_spec: none
+  summary: 重整 README 信息结构，并以可验证证据替换宣传性表述。
+  evidence: 从项目锐评修复计划中拆分；文档调整可独立评审，不影响本轮恢复质量门禁。
+- source_spec: `_bmad-output/implementation-artifacts/spec-restore-repository-quality-gates.md`
+  summary: 补充默认管理员密码替换的持久化调用验证。
+  evidence: `SecurityStartupCheckTest` 只断言实体字段变化，删除 `userRepository.save` 后仍可能通过。
+- source_spec: `_bmad-output/implementation-artifacts/spec-restore-repository-quality-gates.md`
+  summary: 补充非默认管理员密码不会被初始密码覆盖的回归测试。
+  evidence: 现有启动安全测试只覆盖默认密码分支，未固定已有强密码的保留行为。
+- source_spec: `_bmad-output/implementation-artifacts/spec-restore-repository-quality-gates.md`
+  summary: 为仓库级配置文件增加 UTF-8 BOM 自动检查。
+  evidence: 本轮手工移除了 Compose 文件 BOM，但现有门禁无法阻止同类编码问题再次进入仓库。
+- source_spec: `_bmad-output/implementation-artifacts/spec-restore-repository-quality-gates.md`
+  summary: 将管理员用户列表 API 的位置参数收敛为具名查询对象。
+  evidence: 当前四个同类型位置参数依赖调用顺序，格式化后的调用仍容易在扩展筛选条件时传错。

@@ -111,7 +111,10 @@ const {
   handleDragLeave: handleChildDragLeave,
   handleDrop: handleChildDrop,
   handleDragEnd: handleChildDragEnd,
-} = useChildDragAndDrop(() => props.childItems, payload => emit('move-child', payload))
+} = useChildDragAndDrop(
+  () => props.childItems,
+  payload => emit('move-child', payload),
+)
 
 function getGenderClass(g: Gender) {
   return g === 'male' ? 'is-male' : g === 'female' ? 'is-female' : 'is-unknown'

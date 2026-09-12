@@ -46,7 +46,8 @@ const samplePublication: PublicationData = {
 describe('sanitizeStandaloneSvg', () => {
   it('removes scripts, event handlers, and unsafe references while preserving image data', () => {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    svg.innerHTML = '<script>alert(1)</script><g onload="alert(2)" href="javascript:alert(3)"><image href="data:image/png;base64,abc" /></g>'
+    svg.innerHTML =
+      '<script>alert(1)</script><g onload="alert(2)" href="javascript:alert(3)"><image href="data:image/png;base64,abc" /></g>'
 
     const sanitized = sanitizeStandaloneSvg(svg)
 

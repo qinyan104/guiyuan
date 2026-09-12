@@ -15,7 +15,9 @@ export function useChildDragAndDrop<T extends { person: { id: string } }>(
     event.preventDefault()
     dragOverChildId.value = id
   }
-  const handleDragLeave = () => { dragOverChildId.value = null }
+  const handleDragLeave = () => {
+    dragOverChildId.value = null
+  }
   const reset = () => {
     draggingChildId.value = null
     dragOverChildId.value = null
@@ -33,5 +35,13 @@ export function useChildDragAndDrop<T extends { person: { id: string } }>(
     }
   }
 
-  return { draggingChildId, dragOverChildId, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd: reset }
+  return {
+    draggingChildId,
+    dragOverChildId,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleDragEnd: reset,
+  }
 }
