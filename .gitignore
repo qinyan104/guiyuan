@@ -32,6 +32,7 @@ backend/vrain_py/
 
 # Docker deployment
 release/.env
+release/.env.dev
 
 # Local deployment bundle
 /guiyuan/

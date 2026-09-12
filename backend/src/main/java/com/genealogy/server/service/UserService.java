@@ -13,6 +13,8 @@ import com.genealogy.server.repository.PersonRepository;
 import com.genealogy.server.repository.PublicationAccessRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.util.HashUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -193,6 +195,22 @@ public class UserService {
 
     public List<User> listAllUsers() {
         return userRepository.findAll();
+    }
+
+    public Page<User> listUsers(String query, String role, Pageable pageable) {
+        String normalizedQuery = query == null ? "" : query.trim();
+        String normalizedRole = role == null ? "" : role.trim();
+        if (!normalizedRole.isEmpty() && !normalizedQuery.isEmpty()) {
+            return userRepository.findByRoleAndQuery(normalizedRole, normalizedQuery, pageable);
+        }
+        if (!normalizedRole.isEmpty()) {
+            return userRepository.findByRole(normalizedRole, pageable);
+        }
+        if (!normalizedQuery.isEmpty()) {
+            return userRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(
+                    normalizedQuery, normalizedQuery, pageable);
+        }
+        return userRepository.findAll(pageable);
     }
 
     /**

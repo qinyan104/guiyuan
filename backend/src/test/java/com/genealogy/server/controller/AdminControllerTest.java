@@ -14,6 +14,8 @@ import com.genealogy.server.service.RefreshTokenService;
 import com.genealogy.server.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -85,7 +87,8 @@ public class AdminControllerTest {
         user2.setNickname("Bob");
         user2.setRole("USER");
 
-        when(userService.listAllUsers()).thenReturn(List.of(user1, user2));
+        when(userService.listUsers("", "", PageRequest.of(0, 50)))
+                .thenReturn(new PageImpl<>(List.of(user1, user2), PageRequest.of(0, 50), 2));
         when(userService.getAvatarUrls(anyList())).thenReturn(Map.of());
 
         mockMvc.perform(get("/api/admin/users")
@@ -93,15 +96,17 @@ public class AdminControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data[0].id").value(1))
-                .andExpect(jsonPath("$.data[0].username").value("alice"))
-                .andExpect(jsonPath("$.data[0].nickname").value("Alice"))
-                .andExpect(jsonPath("$.data[0].role").value("ADMIN"))
-                .andExpect(jsonPath("$.data[1].id").value(2))
-                .andExpect(jsonPath("$.data[1].username").value("bob"))
-                .andExpect(jsonPath("$.data[1].nickname").value("Bob"))
-                .andExpect(jsonPath("$.data[1].role").value("USER"));
+                .andExpect(jsonPath("$.data.items").isArray())
+                .andExpect(jsonPath("$.data.items[0].id").value(1))
+                .andExpect(jsonPath("$.data.items[0].username").value("alice"))
+                .andExpect(jsonPath("$.data.items[0].nickname").value("Alice"))
+                .andExpect(jsonPath("$.data.items[0].role").value("ADMIN"))
+                .andExpect(jsonPath("$.data.items[1].id").value(2))
+                .andExpect(jsonPath("$.data.items[1].username").value("bob"))
+                .andExpect(jsonPath("$.data.items[1].nickname").value("Bob"))
+                .andExpect(jsonPath("$.data.items[1].role").value("USER"))
+                .andExpect(jsonPath("$.data.total").value(2))
+                .andExpect(jsonPath("$.data.totalPages").value(1));
     }
 
     @Test

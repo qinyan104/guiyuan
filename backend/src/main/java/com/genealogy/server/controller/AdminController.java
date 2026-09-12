@@ -23,6 +23,8 @@ import jakarta.validation.constraints.Positive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
@@ -64,11 +66,22 @@ public class AdminController {
     @Operation(summary = "获取用户列表", description = "获取系统中所有用户的列表")
     @GetMapping("/users")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<List<Map<String, Object>>> listUsers() {
-        List<User> allUsers = userService.listAllUsers();
+    public ApiResponse<Map<String, Object>> listUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(defaultValue = "") String query,
+            @RequestParam(defaultValue = "") String role) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new BadRequestException("分页参数无效");
+        }
+        if (!role.isBlank() && !List.of("SUPER_ADMIN", "ADMIN", "USER").contains(role)) {
+            throw new BadRequestException("角色筛选参数无效");
+        }
+        Page<User> userPage = userService.listUsers(query, role, PageRequest.of(page, size));
+        List<User> usersOnPage = userPage.getContent();
         Map<Long, String> avatarUrls = userService.getAvatarUrls(
-                allUsers.stream().map(User::getId).toList());
-        List<Map<String, Object>> users = allUsers.stream()
+                usersOnPage.stream().map(User::getId).toList());
+        List<Map<String, Object>> users = usersOnPage.stream()
                 .map(u -> {
                     Map<String, Object> m = new java.util.LinkedHashMap<>();
                     m.put("id", u.getId());
@@ -80,7 +93,12 @@ public class AdminController {
                     return m;
                 })
                 .toList();
-        return ApiResponse.success(users);
+        return ApiResponse.success(Map.of(
+                "items", users,
+                "page", userPage.getNumber(),
+                "size", userPage.getSize(),
+                "total", userPage.getTotalElements(),
+                "totalPages", userPage.getTotalPages()));
     }
 
     @Operation(summary = "创建用户", description = "管理员创建新用户")

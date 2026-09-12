@@ -179,7 +179,20 @@ cd backend
 
 ---
 
-## Docker 生产部署
+## Docker 部署
+
+### 本地 HTTP 开发
+
+本地开发使用独立的 Compose 配置，Refresh Cookie 不启用 `Secure`，避免 HTTP 环境下登录续期失效：
+
+```bash
+cp release/.env.dev.example release/.env.dev
+docker compose --env-file release/.env.dev -f release/docker-compose.dev.yml up --build -d
+```
+
+该配置不启用 production profile，不应直接用于公网部署。
+
+### Docker 生产部署
 
 生产部署配置文件位于 [`release/`](release/)：
 

@@ -23,15 +23,21 @@ describe('AdminUsersView', () => {
     vi.mocked(adminDeleteUser).mockReset()
     vi.mocked(adminChangeRole).mockReset()
 
-    vi.mocked(adminListUsers).mockResolvedValue([
-      {
-        id: 7,
-        username: 'alice',
-        nickname: 'Alice',
-        role: 'USER',
-        createdAt: '2026-05-10T12:00:00Z',
-      },
-    ])
+    vi.mocked(adminListUsers).mockResolvedValue({
+      items: [
+        {
+          id: 7,
+          username: 'alice',
+          nickname: 'Alice',
+          role: 'USER',
+          createdAt: '2026-05-10T12:00:00Z',
+        },
+      ],
+      page: 0,
+      size: 50,
+      total: 1,
+      totalPages: 1,
+    })
     vi.mocked(adminDeleteUser).mockResolvedValue()
     vi.mocked(adminChangeRole).mockResolvedValue()
   })

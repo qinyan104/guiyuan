@@ -6,9 +6,11 @@
 
 ```text
 release/
-  .env.example               # 环境变量模板
-  .env                        # 你的环境变量（不提交到 Git）
-  docker-compose.yml          # 源码部署（本地构建镜像）
+  .env.example               # 生产环境变量模板
+  .env.dev.example            # 本地 HTTP 开发环境变量模板
+  .env                        # 你的生产环境变量（不提交到 Git）
+  docker-compose.dev.yml      # 本地 HTTP 开发部署
+  docker-compose.yml          # 生产源码部署（本地构建镜像）
   docker-compose.deploy.yml   # 镜像部署（拉取已发布镜像）
   backend.Dockerfile          # 后端镜像构建文件
   frontend.Dockerfile         # 前端镜像构建文件
@@ -28,11 +30,22 @@ cp release/.env.example release/.env
 | `MYSQL_ROOT_PASSWORD` | MySQL root 密码 | `your-root-password` |
 | `MYSQL_PASSWORD` | 应用数据库密码 | `your-db-password` |
 | `JWT_SECRET` | JWT 签名密钥（≥32字符） | `openssl rand -base64 64` |
-| `APP_CORS_ALLOWED_ORIGINS` | 允许的跨域来源 | `http://localhost:5173` |
+| `APP_CORS_ALLOWED_ORIGINS` | 允许的跨域来源 | 生产 HTTPS 域名 |
+| `INITIAL_ADMIN_PASSWORD` | 首次生产启动管理员密码 | 强密码 |
+| `APP_SECURE_COOKIE` | Refresh Cookie 安全开关 | `true` |
 
-> ⚠️ 不要使用 `.env.example` 中的默认值，特别是 `JWT_SECRET`。
+> ⚠️ 不要使用 `.env.example` 中的默认值，特别是 `JWT_SECRET` 和 `INITIAL_ADMIN_PASSWORD`。生产部署必须使用 HTTPS。
 
-## 2. 源码部署（推荐）
+## 2. 本地 HTTP 开发
+
+```bash
+cp release/.env.dev.example release/.env.dev
+docker compose --env-file release/.env.dev -f release/docker-compose.dev.yml up --build -d
+```
+
+本地开发使用 `APP_SECURE_COOKIE=false`，不要将此配置暴露到公网。
+
+## 3. 源码生产部署（推荐）
 
 适合有完整仓库源码的场景，更新时重新构建镜像。
 
@@ -57,7 +70,7 @@ docker compose --env-file release/.env -f release/docker-compose.yml up --build 
 
 ```bash
 docker compose --env-file release/.env -f release/docker-compose.yml ps
-curl -fsS http://localhost:8080/api/health
+curl -fsS http://localhost:5173/api/health
 ```
 
 停止：
@@ -66,7 +79,7 @@ curl -fsS http://localhost:8080/api/health
 docker compose --env-file release/.env -f release/docker-compose.yml down
 ```
 
-## 3. 镜像部署
+## 4. 镜像生产部署
 
 适合已有镜像仓库时使用，不本地编译源码。
 
@@ -84,7 +97,7 @@ docker compose --env-file release/.env -f release/docker-compose.deploy.yml up -
 
 GitHub Actions 默认只构建并推送镜像，不会连接生产服务器。启用自动部署前，需要配置仓库变量 `DEPLOY_ENABLED=true`，以及 `DEPLOY_HOST`、`DEPLOY_USER`、`DEPLOY_KEY` secrets；`DEPLOY_PATH` 可选，默认 `/opt/guiyuan`。也可以从 Actions 手动运行 CD，并将 `deploy` 设为 `true`。
 
-## 4. 访问
+## 5. 访问
 
 部署完成后，浏览器打开：
 
@@ -92,15 +105,13 @@ GitHub Actions 默认只构建并推送镜像，不会连接生产服务器。�
 http://localhost:5173
 ```
 
-**默认管理员账号：**
+**管理员账号：**
 
-| 用户名 | 密码 |
-|--------|------|
-| root | 123456 |
+生产环境首次启动使用 `INITIAL_ADMIN_PASSWORD` 配置的密码；开发环境才使用 `root / 123456`。
 
-> ⚠️ 首次登录后请立即修改密码。
+> ⚠️ 生产环境禁止使用默认密码。
 
-## 5. 数据与备份
+## 6. 数据与备份
 
 - `mysql-data` 卷：数据库数据
 - `backend-uploads` 卷：上传的照片文件
@@ -111,14 +122,14 @@ http://localhost:5173
 
 数据库备份需要定期复制到主机以外的受控存储，并至少定期执行一次恢复演练。管理员页面的“下载备份”不能替代异地备份。
 
-## 6. 技术说明
+## 7. 技术说明
 
 - 后端使用 `eclipse-temurin:17-jre-alpine`，以非 root 用户运行
 - 前端通过 Nginx 提供静态站点，已配置 gzip 压缩和安全头
 - 所有服务已设置日志轮转（单文件 10MB，保留 3 个）
 - 可通过 `JAVA_OPTS` 自定义 JVM 内存参数（默认 `-Xms256m -Xmx512m`）
 
-## 7. 注意事项
+## 8. 注意事项
 
 - Windows 用户：仓库路径不要包含中文或非 ASCII 字符
 - 不要同时运行两套 compose 文件（源码部署和镜像部署互斥）

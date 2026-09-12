@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import {
   adminListUsers,
   adminCreateUser,
@@ -25,6 +25,11 @@ const { showToast } = useToast()
 const usersQuote = computed(() => lexicon.users.quote.replace(/\\n/g, '\n'))
 const users = ref<AdminUser[]>([])
 const loading = ref(true)
+const currentPage = ref(0)
+const totalUsers = ref(0)
+const totalPages = ref(0)
+const pageSize = 50
+let usersRequestId = 0
 
 const activeTab = ref<'all' | 'SUPER_ADMIN' | 'ADMIN' | 'USER'>('all')
 
@@ -72,16 +77,13 @@ type CreateUserPayload = {
 }
 
 const tabCounts = computed(() => ({
-  all: users.value.length,
+  all: totalUsers.value,
   SUPER_ADMIN: users.value.filter(u => u.role === 'SUPER_ADMIN').length,
   ADMIN: users.value.filter(u => u.role === 'ADMIN').length,
   USER: users.value.filter(u => u.role === 'USER').length,
 }))
 
-const filteredUsers = computed(() => {
-  if (activeTab.value === 'all') return users.value
-  return users.value.filter(u => u.role === activeTab.value)
-})
+const filteredUsers = computed(() => users.value)
 
 const showPasswordPlain = ref(false)
 
@@ -95,29 +97,41 @@ function generateRandomPassword() {
   showPasswordPlain.value = true
 }
 
-const displayedUsers = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return filteredUsers.value
-  return filteredUsers.value.filter(
-    u =>
-      u.username.toLowerCase().includes(q) ||
-      (u.nickname && u.nickname.toLowerCase().includes(q)) ||
-      String(u.id).includes(q) ||
-      String(u.id).padStart(4, '0').includes(q) ||
-      (roleConfig[u.role]?.label && roleConfig[u.role].label.toLowerCase().includes(q)),
-  )
-})
+const displayedUsers = computed(() => filteredUsers.value)
 
-async function loadUsers() {
+async function loadUsers(page = 0) {
+  const requestId = ++usersRequestId
   loading.value = true
   try {
-    users.value = await adminListUsers()
+    const result = await adminListUsers(page, pageSize, searchQuery.value.trim(), activeTab.value === 'all' ? '' : activeTab.value)
+    if (requestId !== usersRequestId) return
+    users.value = result.items
+    currentPage.value = result.page
+    totalUsers.value = result.total
+    totalPages.value = result.totalPages
   } catch {
+    if (requestId !== usersRequestId) return
     users.value = []
+    totalUsers.value = 0
+    totalPages.value = 0
   } finally {
-    loading.value = false
+    if (requestId === usersRequestId) loading.value = false
   }
 }
+
+function changeTab(tab: typeof activeTab.value) {
+  activeTab.value = tab
+}
+
+function goToPage(page: number) {
+  if (page >= 0 && page < totalPages.value && !loading.value) {
+    loadUsers(page)
+  }
+}
+
+watch([searchQuery, activeTab], () => {
+  loadUsers(0)
+})
 
 onMounted(() => {
   loadUsers()
@@ -277,7 +291,7 @@ function formatDate(dateStr: string) {
           :key="tab"
           class="glass-tab"
           :class="{ 'is-active': activeTab === tab }"
-          @click="activeTab = tab"
+          @click="changeTab(tab)"
         >
           {{ tab === 'all' ? '全部账号' : roleConfig[tab].label }}
           <span class="tab-count">{{ tabCounts[tab] }}</span>
@@ -365,8 +379,14 @@ function formatDate(dateStr: string) {
         </div>
       </div>
 
+      <div v-if="!loading && totalPages > 1" class="pagination-bar">
+        <button class="btn btn--sm" :disabled="currentPage === 0" @click="goToPage(currentPage - 1)">上一页</button>
+        <span>第 {{ currentPage + 1 }} / {{ totalPages }} 页，共 {{ totalUsers }} 人</span>
+        <button class="btn btn--sm" :disabled="currentPage >= totalPages - 1" @click="goToPage(currentPage + 1)">下一页</button>
+      </div>
+
       <!-- Empty State -->
-      <div v-else-if="!loading" class="empty-state">
+      <div v-if="!loading && displayedUsers.length === 0" class="empty-state">
         <div class="empty-icon">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
         </div>
@@ -941,6 +961,16 @@ function formatDate(dateStr: string) {
   font-size: var(--text-label-12, 12px);
   color: var(--color-neutral-5);
   line-height: 1.4;
+}
+
+/* ── Pagination ── */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--color-neutral-6);
+  font-size: var(--text-label-12, 12px);
 }
 
 /* ── Empty State ── */

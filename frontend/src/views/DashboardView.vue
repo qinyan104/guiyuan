@@ -34,9 +34,9 @@ async function loadDashboard() {
 
     if (isAdmin()) {
       try {
-        const adminUsers = await adminListUsers()
-        userCount.value = adminUsers.length
-        users.value = adminUsers
+        const adminUsers = await adminListUsers(0, 5)
+        userCount.value = adminUsers.total
+        users.value = adminUsers.items
       } catch {
         userCount.value = 0
         users.value = []

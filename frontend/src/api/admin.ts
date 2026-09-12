@@ -11,8 +11,23 @@ export interface AdminUser {
   avatarUrl?: string
 }
 
-export async function adminListUsers(): Promise<AdminUser[]> {
-  return unwrapApiResponse(http.get<ApiResponse<AdminUser[]>>('/admin/users'))
+export interface AdminUserPage {
+  items: AdminUser[]
+  page: number
+  size: number
+  total: number
+  totalPages: number
+}
+
+export async function adminListUsers(
+  page = 0,
+  size = 50,
+  query = '',
+  role = '',
+): Promise<AdminUserPage> {
+  return unwrapApiResponse(
+    http.get<ApiResponse<AdminUserPage>>('/admin/users', { params: { page, size, query, role } }),
+  )
 }
 
 export async function adminCreateUser(
