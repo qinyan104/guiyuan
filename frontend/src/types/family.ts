@@ -179,6 +179,8 @@ export interface PublicationContext {
 
   saveToServer: () => Promise<void>
 
+  markDirty?: () => void
+
   reloadFromServer?: () => Promise<void>
 
   serverPublicationId: Ref<number | null>

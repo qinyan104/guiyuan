@@ -1,8 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { authenticatedRequest, loginPage } from '../helpers/auth'
-
-const TEST_USER = process.env.E2E_USERNAME || 'e2e_test'
-const TEST_PASS = process.env.E2E_PASSWORD || 'test1234'
+import { authenticatedRequest, loginPage, TEST_PASSWORD, TEST_USERNAME } from '../helpers/auth'
 const PUB_TITLE = 'E2E 搜索测试谱'
 const BLANK_PUB = { people: {}, families: {}, focusFamilyId: '' }
 const DEF_SETTINGS = { paper: 'A3', layoutMode: 'modern', cardWidth: 160, generationGap: 100, siblingGap: 40, partnerGap: 20, fontScale: 1, zoom: 1, showCard: true, showDeath: true, showAge: true, showNote: true, showPhoto: true, paddingX: 40, paddingY: 40 }
@@ -13,7 +10,7 @@ test.describe('Search & Share', () => {
     await page.addInitScript(() => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
-    authToken = await loginPage(page, TEST_USER, TEST_PASS)
+    authToken = await loginPage(page, TEST_USERNAME, TEST_PASSWORD)
   })
 
   test('should find publication via global search', async ({ page }) => {

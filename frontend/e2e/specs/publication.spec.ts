@@ -1,8 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { loginPage } from '../helpers/auth'
-
-const TEST_USER = process.env.E2E_USERNAME || 'e2e_test'
-const TEST_PASS = process.env.E2E_PASSWORD || 'test1234'
+import { loginPage, TEST_PASSWORD, TEST_USERNAME } from '../helpers/auth'
 
 const PUB_TITLE = 'E2E 测试族谱'
 const PUB_SUBTITLE = '丙午年自动化测试版'
@@ -15,7 +12,7 @@ test.describe('Publication CRUD', () => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
 
-    await loginPage(page, TEST_USER, TEST_PASS)
+    await loginPage(page, TEST_USERNAME, TEST_PASSWORD)
   })
 
   test('should create a new publication and redirect to workbench', async ({ page }) => {

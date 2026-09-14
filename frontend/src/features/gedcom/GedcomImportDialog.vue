@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
+import { PUBLICATION_CONTEXT_KEY } from '../../types/family'
 import { importGedcom, mergeGedcom, type GedcomImportResult, type GedcomMergeResult } from './gedcom'
 
 const props = defineProps<{
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const context = inject(PUBLICATION_CONTEXT_KEY, null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
 const importMode = ref<'new' | 'merge'>('new')
@@ -74,7 +76,14 @@ async function handleImport() {
 
   try {
     if (importMode.value === 'merge' && props.currentPubId) {
+      if (context) {
+        await context.saveToServer()
+        if (context.syncStatus.value !== 'saved') {
+          throw new Error('当前修改尚未保存，请完成同步或处理冲突后再合并。')
+        }
+      }
       result.value = await mergeGedcom(props.currentPubId, selectedFile.value)
+      await context?.reloadFromServer?.()
     } else {
       result.value = await importGedcom(selectedFile.value)
     }
@@ -193,7 +202,7 @@ function handleClose() {
                   />
                   <span class="mode-option__label">
                     <strong>合并到当前族谱</strong>
-                    <small>将 GEDCOM 中的人物和家庭添加到当前族谱（跳过已存在的）</small>
+                    <small>将文件中的人物和家庭全部新增到当前族谱，重复导入会产生重复记录</small>
                   </span>
                 </label>
               </div>

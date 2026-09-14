@@ -1,19 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { ensureTestUser } from '../helpers/auth'
-
-const TEST_USER = process.env.E2E_USERNAME || 'e2e_test'
-const TEST_PASS = process.env.E2E_PASSWORD || 'test1234'
+import { TEST_PASSWORD, TEST_USERNAME } from '../helpers/auth'
 
 // Dismiss the onboarding guide overlay that blocks clicks
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
   })
-})
-
-// Provision the test user through the admin API because public registration is disabled after bootstrap.
-test.beforeAll(async ({ request }) => {
-  await ensureTestUser(request, TEST_USER, TEST_PASS)
 })
 
 test.describe('Login Flow', () => {
@@ -28,8 +20,8 @@ test.describe('Login Flow', () => {
     const usernameInput = page.locator('form .input-group').filter({ hasText: '账号' }).locator('input')
     const passwordInput = page.locator('form .input-group').filter({ hasText: '密码' }).locator('input')
 
-    await usernameInput.fill(TEST_USER)
-    await passwordInput.fill(TEST_PASS)
+    await usernameInput.fill(TEST_USERNAME)
+    await passwordInput.fill(TEST_PASSWORD)
     await page.locator('button.submit-btn').click()
 
     // Should redirect to dashboard after login
@@ -59,8 +51,8 @@ test.describe('Login Flow', () => {
     await page.goto('/login')
     const usernameInput = page.locator('form .input-group').filter({ hasText: '账号' }).locator('input')
     const passwordInput = page.locator('form .input-group').filter({ hasText: '密码' }).locator('input')
-    await usernameInput.fill(TEST_USER)
-    await passwordInput.fill(TEST_PASS)
+    await usernameInput.fill(TEST_USERNAME)
+    await passwordInput.fill(TEST_PASSWORD)
     await page.locator('button.submit-btn').click()
     await page.waitForURL(/\/$|\/dashboard/)
 

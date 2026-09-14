@@ -71,8 +71,12 @@ describe('validatePublicationData', () => {
     )
   })
 
-  it('rejects an empty subtitle', () => {
-    const broken = { ...samplePublication, subtitle: '' }
+  it('accepts an empty subtitle from GEDCOM imports and the new-publication form', () => {
+    expect(validatePublicationData({ ...samplePublication, subtitle: '' })).toEqual([])
+  })
+
+  it.each([undefined, null, 123])('rejects a non-string subtitle: %s', subtitle => {
+    const broken = { ...samplePublication, subtitle }
     expect(validatePublicationData(broken)).toEqual(
       expect.arrayContaining([expect.objectContaining({ code: 'invalid-root', path: 'subtitle' })]),
     )

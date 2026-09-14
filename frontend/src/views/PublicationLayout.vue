@@ -96,6 +96,7 @@ const {
   buildPersistedSignature,
   clearScheduledSave,
   scheduleAutosave,
+  markDirty,
   saveRecoverySnapshot,
   saveToServer,
   dispose: disposePersistence,
@@ -175,6 +176,10 @@ function initializeLargeStateAfterPaint(
       },
     })
     baselineReady.value = true
+    if (serverPublicationId.value && serializeTrackedState(pub.publication, pub.settings) !== signature) {
+      syncStatus.value = 'pending'
+      scheduleAutosave()
+    }
     await detectViewerPerson()
     markOpenPerformance('background-init-end')
   }
@@ -421,6 +426,7 @@ provide(PUBLICATION_CONTEXT_KEY, {
   history,
   syncStatus,
   saveToServer,
+  markDirty,
   reloadFromServer: () => load(true),
   serverPublicationId,
   viewportPan,
@@ -1005,4 +1011,3 @@ defineExpose({ pub, saveToServer, reloadFromServerAfterConflict, restoreConflict
   color: #fff;
 }
 </style>
-

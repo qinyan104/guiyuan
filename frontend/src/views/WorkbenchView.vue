@@ -153,6 +153,7 @@ const relActions = useRelationshipActions({
 
 const personEditor = usePersonEditor(context.pub, () => {
   fileOps.hasUnsavedFileChanges.value = true
+  context.markDirty?.()
 })
 
 const selectedKinshipLabel = computed(() => context.pub.getKinshipNote(context.pub.selectedPersonId.value))
@@ -187,6 +188,7 @@ function openEditor() {
 
 function closeEditor() {
   panels.editorOpen.value = false
+  if (fileOps.hasUnsavedFileChanges.value) void context.saveToServer().catch(() => undefined)
 }
 
 function updateSettings(patch: Partial<PublicationSettings>) {

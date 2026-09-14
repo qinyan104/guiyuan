@@ -43,3 +43,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-harden-upload-storage.md`
   summary: 将上传文件系统操作提取为可测试的存储模块，并评估以可信目录句柄抵御上传根目录 symlink/junction 替换。
   evidence: 本轮已阻止目标文件覆盖并限制补偿删除范围；若威胁模型包含可并发修改服务器本地上传目录的攻击者，单纯规范化 Path 无法消除目录替换竞态，需要更深的存储边界设计和平台兼容验证。
+- source_spec: none
+  summary: 将 CD 改为只在 CI 全绿后构建、推送和可选部署经验证的提交 SHA。
+  evidence: 从本轮 CI/CD 修复中拆分；CD 门禁可独立修改工作流、审查权限与事件语义并单独验证。

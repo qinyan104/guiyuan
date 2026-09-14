@@ -14,6 +14,15 @@ import { defaultSettings, samplePublication } from '../data/sampleFamily'
 import { getPublication } from './publication'
 
 describe('getPublication', () => {
+  it('opens an imported publication without a subtitle', async () => {
+    const publication = { ...samplePublication, subtitle: '' }
+    vi.mocked(http.get).mockResolvedValue({
+      data: { code: 200, data: { id: 7, revision: 0, publication, settings: defaultSettings } },
+    })
+
+    await expect(getPublication(7)).resolves.toMatchObject({ publication })
+  })
+
   it('forwards response download progress to the caller', async () => {
     vi.mocked(http.get).mockResolvedValue({
       data: {

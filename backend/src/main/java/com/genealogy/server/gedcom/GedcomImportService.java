@@ -79,7 +79,7 @@ public class GedcomImportService {
 
     /**
      * 合并导入 GEDCOM 到现有族谱
-     * 策略：添加 GEDCOM 中的新人物和新家庭，跳过已存在的
+     * 文件内编号不代表跨文件人物身份，导入的人物和家庭全部分配新编号。
      */
     @Transactional
     public ImportResult mergeIntoPublication(InputStream file, Long pubId) throws IOException {
@@ -90,40 +90,42 @@ public class GedcomImportService {
         Map<String, Object> existingMap = publicationService.loadPublication(pubId);
         @SuppressWarnings("unchecked")
         Map<String, Object> pubJson = (Map<String, Object>) existingMap.get("publication");
-        PublicationData existing = PublicationData.fromMap(pubJson);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> people = (Map<String, Object>) pubJson.get("people");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> families = (Map<String, Object>) pubJson.get("families");
+        Map<String, String> personIds = allocateImportIds(people.keySet(), gedcomData.people().keySet(), "p");
+        Map<String, String> familyIds = allocateImportIds(families.keySet(), gedcomData.families().keySet(), "f");
 
-        // 合并：添加不存在的人物和家庭
-        int newPersons = 0;
-        int newFamilies = 0;
-
-        for (var entry : gedcomData.people().entrySet()) {
-            String key = entry.getKey();
-            if (!existing.people().containsKey(key)) {
-                existing.people().put(key, entry.getValue());
-                newPersons++;
-            }
-        }
-
-        for (var entry : gedcomData.families().entrySet()) {
-            String key = entry.getKey();
-            if (!existing.families().containsKey(key)) {
-                existing.families().put(key, entry.getValue());
-                newFamilies++;
-            }
-        }
+        // Preserve existing maps, including photo and mount-point metadata.
+        // ponytail: imports append records; cross-file person matching requires explicit review.
+        gedcomData.people().forEach((id, person) -> {
+            Map<String, Object> data = person.toMap();
+            data.put("id", personIds.get(id));
+            people.put(personIds.get(id), data);
+        });
+        gedcomData.families().forEach((id, family) -> {
+            String familyId = familyIds.get(id);
+            families.put(familyId, new FamilyUnit(familyId,
+                    family.adults().stream().map(personIds::get).toList(),
+                    family.children().stream().map(personIds::get).toList(),
+                    family.branchMode()).toMap());
+        });
+        int newPersons = gedcomData.people().size();
+        int newFamilies = gedcomData.families().size();
 
         // 更新现有族谱
         @SuppressWarnings("unchecked")
         Map<String, Object> settings = (Map<String, Object>) existingMap.get("settings");
         String settingsJson = settings != null ? objectMapper.writeValueAsString(settings) : defaultSettingsJson();
-        String infoJson = existing.info() != null ? objectMapper.writeValueAsString(existing.info()) : null;
+        String infoJson = pubJson.get("info") != null ? objectMapper.writeValueAsString(pubJson.get("info")) : null;
 
         publicationService.updatePublication(
             pubId,
             (Long) existingMap.get("revision"),
-            existing.title(),
-            existing.subtitle(),
-            existing.toMap(),
+            (String) pubJson.get("title"),
+            (String) pubJson.get("subtitle"),
+            pubJson,
             settingsJson,
             infoJson
         );
@@ -132,6 +134,19 @@ public class GedcomImportService {
         warnings.add(0, String.format("合并完成：新增 %d 个人物，%d 个家庭", newPersons, newFamilies));
 
         return new ImportResult(pubId, newPersons, newFamilies, warnings);
+    }
+
+    private Map<String, String> allocateImportIds(Set<String> existingIds, Set<String> importedIds, String prefix) {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        int counter = 0;
+        for (String id : importedIds) {
+            String nextId;
+            do {
+                nextId = prefix + (++counter);
+            } while (existingIds.contains(nextId));
+            mapping.put(id, nextId);
+        }
+        return mapping;
     }
 
     /**

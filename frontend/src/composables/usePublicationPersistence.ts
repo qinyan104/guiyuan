@@ -56,6 +56,12 @@ export function usePublicationPersistence(options: PublicationPersistenceOptions
     }, delay)
   }
 
+  function markDirty() {
+    if (!options.baselineReady.value || !options.serverPublicationId.value || syncStatus.value === 'conflict') return
+    syncStatus.value = 'pending'
+    scheduleAutosave()
+  }
+
   function saveRecoverySnapshot(message: string) {
     if (
       options.loading.value ||
@@ -165,6 +171,7 @@ export function usePublicationPersistence(options: PublicationPersistenceOptions
     buildPersistedSignature,
     clearScheduledSave,
     scheduleAutosave,
+    markDirty,
     saveRecoverySnapshot,
     saveToServer,
     dispose,

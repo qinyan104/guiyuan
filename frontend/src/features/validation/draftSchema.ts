@@ -167,8 +167,8 @@ export function validatePublicationData(input: unknown): ValidationIssue[] {
     issues.push(issue('invalid-root', 'title', '族谱标题不能为空。'))
   }
 
-  if (!isString(publication.subtitle) || !publication.subtitle.trim()) {
-    issues.push(issue('invalid-root', 'subtitle', '族谱副标题不能为空。'))
+  if (!isString(publication.subtitle)) {
+    issues.push(issue('invalid-root', 'subtitle', '族谱副标题必须是字符串。'))
   }
 
   if (!isString(publication.focusFamilyId) || !publication.focusFamilyId.trim()) {

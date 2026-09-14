@@ -62,6 +62,34 @@ describe('fetchBinaryResource', () => {
   })
 })
 
+describe('request payloads', () => {
+  it('keeps FormData multipart while still serializing JSON requests', async () => {
+    const form = new FormData()
+    form.append('file', new Blob(['gedcom']), 'family.ged')
+    const multipartAdapter = vi.fn(async config => ({
+      data: null,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    }))
+    const jsonAdapter = vi.fn(async config => ({
+      data: null,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    }))
+
+    await http.post('/gedcom/import', form, { adapter: multipartAdapter })
+    await http.post('/publications/1', { title: '家谱' }, { adapter: jsonAdapter })
+
+    expect(multipartAdapter.mock.calls[0][0].data).toBe(form)
+    expect(jsonAdapter.mock.calls[0][0].data).toBe(JSON.stringify({ title: '家谱' }))
+    expect(jsonAdapter.mock.calls[0][0].headers['Content-Type']).toContain('application/json')
+  })
+})
+
 describe('shouldRetryAuthRefresh', () => {
   it('skips auth endpoints to avoid refresh loops', () => {
     expect(shouldRetryAuthRefresh({ url: '/auth/refresh' })).toBe(false)

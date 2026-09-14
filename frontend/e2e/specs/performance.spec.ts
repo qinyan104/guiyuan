@@ -1,8 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { authenticatedRequest, loginPage, loginViaApi } from '../helpers/auth'
-
-const TEST_USER = process.env.E2E_USERNAME || 'e2e_test'
-const TEST_PASS = process.env.E2E_PASSWORD || 'test1234'
+import { authenticatedRequest, loginPage, loginViaApi, TEST_PASSWORD, TEST_USERNAME } from '../helpers/auth'
 const PEOPLE_COUNT = Number(process.env.PERF_PEOPLE ?? 1000)
 const SETTINGS = {
   paper: 'A3',
@@ -114,7 +111,7 @@ test.describe('Publication browser performance', () => {
     expect(PEOPLE_COUNT).toBeGreaterThanOrEqual(2)
     expect(PEOPLE_COUNT).toBeLessThanOrEqual(10000)
 
-    authToken = await loginViaApi(request, TEST_USER, TEST_PASS)
+    authToken = await loginViaApi(request, TEST_USERNAME, TEST_PASSWORD)
     const response = await authenticatedRequest(request, authToken, '/api/publications', {
       method: 'POST',
       data: {
@@ -161,7 +158,7 @@ test.describe('Publication browser performance', () => {
       }
     })
 
-    await loginPage(page, TEST_USER, TEST_PASS)
+    await loginPage(page, TEST_USERNAME, TEST_PASSWORD)
     const profiler = process.env.E2E_CPU_PROFILE ? await context.newCDPSession(page) : null
     if (profiler) {
       await profiler.send('Profiler.enable')

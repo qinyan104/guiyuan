@@ -1,8 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { authenticatedRequest, loginPage, loginViaApi } from '../helpers/auth'
-
-const TEST_USER = process.env.E2E_USERNAME || 'e2e_test'
-const TEST_PASS = process.env.E2E_PASSWORD || 'test1234'
+import { authenticatedRequest, loginPage, loginViaApi, TEST_PASSWORD, TEST_USERNAME } from '../helpers/auth'
 const PUB_TITLE = 'E2E 工作台测试谱'
 const DEF_SETTINGS = { paper: 'A3', layoutMode: 'modern', cardWidth: 160, generationGap: 100, siblingGap: 40, partnerGap: 20, fontScale: 1, zoom: 1, showCard: true, showDeath: true, showAge: true, showNote: true, showPhoto: true, paddingX: 40, paddingY: 40 }
 
@@ -49,12 +46,12 @@ test.describe('Workbench / Person Editing', () => {
     await page.addInitScript(() => {
       try { localStorage.setItem('genealogy_onboarding_done', '1') } catch {}
     })
-    authToken = await loginPage(page, TEST_USER, TEST_PASS)
+    authToken = await loginPage(page, TEST_USERNAME, TEST_PASSWORD)
   })
 
   test.beforeAll(async ({ request }) => {
     // Create a test publication with a root person
-    const token = await loginViaApi(request, TEST_USER, TEST_PASS)
+    const token = await loginViaApi(request, TEST_USERNAME, TEST_PASSWORD)
     const resp = await authenticatedRequest(request, token, '/api/publications', {
       method: 'POST',
       data: {
@@ -71,7 +68,7 @@ test.describe('Workbench / Person Editing', () => {
   test.afterAll(async ({ request }) => {
     // Cleanup: delete the test publication
     if (publicationId) {
-      const token = await loginViaApi(request, TEST_USER, TEST_PASS)
+      const token = await loginViaApi(request, TEST_USERNAME, TEST_PASSWORD)
       await authenticatedRequest(request, token, `/api/publications/${publicationId}`, { method: 'DELETE' }).catch(() => {})
     }
   })

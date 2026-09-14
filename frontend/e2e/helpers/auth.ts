@@ -1,4 +1,4 @@
-import type { APIRequestContext, Page } from '@playwright/test'
+import type { APIRequestContext, APIResponse, Page } from '@playwright/test'
 
 type AuthResponse = {
   data?: {
@@ -7,7 +7,9 @@ type AuthResponse = {
 }
 
 type UserListResponse = {
-  data?: Array<{ id: number; username: string }>
+  data?: {
+    items?: Array<{ id: number; username: string }>
+  }
 }
 
 type ApiOptions = {
@@ -16,11 +18,42 @@ type ApiOptions = {
   headers?: Record<string, string>
 }
 
+export const TEST_USERNAME = process.env.E2E_USERNAME ?? 'e2e_test'
+export const TEST_PASSWORD = process.env.E2E_PASSWORD ?? 'E2e_Test_123'
+
 const E2E_API_BASE_URL = process.env.E2E_API_BASE_URL?.replace(/\/$/, '')
 
 function resolveApiUrl(url: string): string {
   if (!E2E_API_BASE_URL || !url.startsWith('/api')) return url
-  return `${E2E_API_BASE_URL}${url.slice('/api'.length)}`
+  const path = E2E_API_BASE_URL.endsWith('/api') ? url.slice('/api'.length) : url
+  return `${E2E_API_BASE_URL}${path}`
+}
+
+async function readResponseJson<T>(response: APIResponse, stage: string, username: string): Promise<T> {
+  const text = await response.text()
+  if (!response.ok()) {
+    const detail = text.trim() ? `: ${text}` : ''
+    throw new Error(`E2E user provisioning failed during ${stage} for ${username}: HTTP ${response.status()}${detail}`)
+  }
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    throw new Error(
+      `E2E user provisioning failed during ${stage} for ${username}: HTTP ${response.status()} returned invalid JSON`,
+    )
+  }
+}
+
+async function requireSuccessfulResponse(
+  response: APIResponse,
+  stage: string,
+  username: string,
+): Promise<void> {
+  const text = await response.text()
+  if (!response.ok()) {
+    const detail = text.trim() ? `: ${text}` : ''
+    throw new Error(`E2E user provisioning failed during ${stage} for ${username}: HTTP ${response.status()}${detail}`)
+  }
 }
 
 export async function loginViaApi(
@@ -31,31 +64,62 @@ export async function loginViaApi(
   const response = await request.post(resolveApiUrl('/api/auth/login'), {
     data: { username, password },
   })
-  const body = JSON.parse(await response.text()) as AuthResponse
-  const token = body.data?.token
-  if (response.status() === 404 && username !== 'root') {
-    await ensureTestUser(request, username, password)
-    return loginViaApi(request, username, password)
+  const text = await response.text()
+  let body: AuthResponse = {}
+  try {
+    body = JSON.parse(text) as AuthResponse
+  } catch {
+    // The status-aware error below is more useful than a raw JSON parse error.
   }
+  const token = body.data?.token
   if (!response.ok() || !token) {
-    throw new Error(`E2E login failed for ${username}: ${response.status()}`)
+    throw new Error(`E2E login failed for ${username}: HTTP ${response.status()}`)
   }
   return token
 }
 
-export async function ensureTestUser(request: APIRequestContext, username: string, password: string): Promise<void> {
-  const adminToken = await loginViaApi(request, 'root', '123456')
-  const listResponse = await authenticatedRequest(request, adminToken, '/api/admin/users')
-  const listBody = JSON.parse(await listResponse.text()) as UserListResponse
-  const exists = listBody.data?.some((user) => user.username === username)
-  if (exists) return
+export async function ensureTestUser(
+  request: APIRequestContext,
+  username: string,
+  password: string,
+): Promise<void> {
+  if (username === 'root') {
+    await loginViaApi(request, username, password)
+    return
+  }
 
-  const createResponse = await authenticatedRequest(request, adminToken, '/api/admin/users', {
-    method: 'POST',
-    data: { username, password, nickname: username, role: 'USER' },
-  })
-  if (!createResponse.ok() && createResponse.status() !== 400) {
-    throw new Error(`E2E user provisioning failed for ${username}: ${createResponse.status()}`)
+  const adminToken = await loginViaApi(request, 'root', '123456')
+  const listResponse = await authenticatedRequest(
+    request,
+    adminToken,
+    `/api/admin/users?query=${encodeURIComponent(username)}&size=100`,
+  )
+  const listBody = await readResponseJson<UserListResponse>(listResponse, 'listing users', username)
+  const existingUser = listBody.data?.items?.find((user) => user.username === username)
+
+  if (existingUser) {
+    const resetResponse = await authenticatedRequest(
+      request,
+      adminToken,
+      `/api/admin/users/${existingUser.id}/password`,
+      {
+        method: 'PUT',
+        data: { newPassword: password },
+      },
+    )
+    await requireSuccessfulResponse(resetResponse, 'resetting password', username)
+  } else {
+    const createResponse = await authenticatedRequest(request, adminToken, '/api/admin/users', {
+      method: 'POST',
+      data: { username, password, nickname: username, role: 'USER' },
+    })
+    await requireSuccessfulResponse(createResponse, 'creating user', username)
+  }
+
+  try {
+    await loginViaApi(request, username, password)
+  } catch (error) {
+    throw new Error(`E2E user provisioning failed during credential verification for ${username}`, { cause: error })
   }
 }
 
