@@ -59,4 +59,30 @@ describe('tokenStore', () => {
     expect(localStorage.getItem('authUsername')).toBeNull()
     expect(localStorage.getItem('authRole')).toBeNull()
   })
+
+  it('isolates throwing session listeners and still completes session cleanup', async () => {
+    const { clearSession, getAccessToken, onSessionCleared, setAccessToken, setUsername } = await loadTokenStore()
+
+    const reached: string[] = []
+    const offThrowing = onSessionCleared(() => {
+      reached.push('throwing')
+      throw new Error('listener failed')
+    })
+    const offHealthy = onSessionCleared(() => reached.push('healthy'))
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      setAccessToken('access-token-123')
+      setUsername('alice')
+
+      expect(() => clearSession()).not.toThrow()
+
+      expect(reached).toEqual(['throwing', 'healthy'])
+      expect(getAccessToken()).toBeNull()
+      expect(localStorage.getItem('authUsername')).toBeNull()
+    } finally {
+      errorSpy.mockRestore()
+      offThrowing()
+      offHealthy()
+    }
+  })
 })

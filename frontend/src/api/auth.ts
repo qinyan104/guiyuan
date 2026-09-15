@@ -1,12 +1,6 @@
 import http, { unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/api'
-import {
-  getAccessToken,
-  clearAccessToken,
-  getUsername as _getUsername,
-  getRole as _getRole,
-  clearSession,
-} from './tokenStore'
+import { getAccessToken, getUsername as _getUsername, getRole as _getRole, clearSession } from './tokenStore'
 import { applyAuthenticatedSession } from './authSession'
 
 export interface LoginRequest {
@@ -38,8 +32,8 @@ export async function logout() {
   } catch {
     // ignore server errors on logout
   }
+  // clearSession 已包含 clearAccessToken 的清理与广播，不要重复调用。
   clearSession()
-  clearAccessToken()
 }
 
 export function getToken(): string | null {

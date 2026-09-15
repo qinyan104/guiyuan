@@ -13,6 +13,7 @@ import {
   serializeSvg,
 } from './publicationExport'
 import { DEFAULT_DROP_LINE_PRINT_PROFILE } from './dropLinePrint'
+import http from '../../api/http'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -106,6 +107,31 @@ describe('createStandalonePublicationSvg', () => {
     paperPixelHeight: 100,
     titleAreaHeight: 0,
   }
+
+  it.each([undefined, 'blob:expired'])('从原始地址导出，不依赖显示结果 %s', async display => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    const image = document.createElementNS('http://www.w3.org/2000/svg', 'image')
+    image.setAttribute('data-original-photo-url', '/api/photos/42?v=2')
+    if (display) image.setAttribute('href', display)
+    svg.appendChild(image)
+    const get = vi.spyOn(http, 'get').mockResolvedValue({ data: new Blob(['photo'], { type: 'image/png' }) })
+    try {
+      const embedded = await createStandalonePublicationSvg({ svgElement: svg, layout, title: '测试' })
+      expect(embedded.querySelector('image')?.getAttribute('href')).toMatch(/^data:image\/png;base64,/)
+      expect(get).toHaveBeenCalledWith('/api/photos/42?v=2', expect.anything())
+      const linked = await createStandalonePublicationSvg({
+        svgElement: svg,
+        layout,
+        title: '测试',
+        embedImages: false,
+      })
+      expect(linked.querySelector('image')?.getAttribute('href')).toBe('/api/photos/42?v=2')
+      expect(linked.querySelector('image')?.hasAttribute('data-original-photo-url')).toBe(false)
+      expect(image.getAttribute('href')).toBe(display ?? null)
+    } finally {
+      get.mockRestore()
+    }
+  })
 
   it('fails instead of reporting success when an image cannot be embedded', async () => {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')

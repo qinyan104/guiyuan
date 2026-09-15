@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './specs',
+  // 这组用例自带隔离服务与端口，由 e2e/person-photos.config.ts 运行。
+  testIgnore: 'person-photos*.spec.ts',
   globalSetup: './global-setup.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

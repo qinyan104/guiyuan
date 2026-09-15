@@ -49,6 +49,13 @@ describe('classifyError', () => {
     expect(classified.userMessage).toBe('请求超时，请检查网络后重试')
   })
 
+  it('treats the fetch adapter ETIMEDOUT code as a timeout', () => {
+    const classified = classifyError({ code: 'ETIMEDOUT', message: 'Network Error' })
+
+    expect(classified.category).toBe('network')
+    expect(classified.userMessage).toBe('请求超时，请检查网络后重试')
+  })
+
   it('falls back to unknown for plain errors, preserving their message', () => {
     const classified = classifyError(new Error('boom'))
 

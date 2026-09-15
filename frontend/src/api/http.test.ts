@@ -42,8 +42,14 @@ describe('fetchBinaryResource', () => {
     const getSpy = vi.spyOn(http, 'get').mockResolvedValue({ data: new Blob(['x']) } as never)
 
     await fetchBinaryResource('/api/photos/7')
+    await fetchBinaryResource('/uploads/legacy/photo.png')
 
-    expect(getSpy).toHaveBeenCalledWith('/api/photos/7', {
+    expect(getSpy).toHaveBeenNthCalledWith(1, '/api/photos/7', {
+      baseURL: '',
+      responseType: 'blob',
+    })
+    // 其它同源受保护资源同样不能因为不是“照片路径”而丢掉凭证。
+    expect(getSpy).toHaveBeenNthCalledWith(2, '/uploads/legacy/photo.png', {
       baseURL: '',
       responseType: 'blob',
     })
@@ -58,7 +64,53 @@ describe('fetchBinaryResource', () => {
       baseURL: '',
       responseType: 'blob',
       skipAuth: true,
+      adapter: 'fetch',
+      withCredentials: false,
     })
+  })
+})
+
+describe('公开图片凭证边界', () => {
+  // 分享代理真实路径形如 /api/shares/{token}/photos/{id}，必须与 ShareView 改写结果一致。
+  it.each(['/api/shares/demo-token/photos/1', 'https://cdn.example/a.png'])('%s 不携带凭证', async url => {
+    const { setAccessToken, clearSession } = await import('./tokenStore')
+    setAccessToken('residual')
+    const get = vi.spyOn(http, 'get').mockResolvedValue({ data: new Blob() })
+    try {
+      await fetchBinaryResource(url)
+      expect(get).toHaveBeenCalledWith(
+        url,
+        expect.objectContaining({
+          skipAuth: true,
+          adapter: 'fetch',
+          withCredentials: false,
+        }),
+      )
+    } finally {
+      get.mockRestore()
+      clearSession()
+    }
+  })
+
+  it('公开分享资源在残留 token 下也不注入 Authorization', async () => {
+    const { setAccessToken, clearSession } = await import('./tokenStore')
+    setAccessToken('residual-token')
+    try {
+      const requestInterceptor = (http as unknown as HttpWithInterceptorHandlers).interceptors.request.handlers[0]
+        .fulfilled
+      const shareRequest = requestInterceptor({
+        headers: { Authorization: 'Bearer residual-token' },
+        skipAuth: true,
+      }) as { headers: Record<string, unknown> }
+      expect(shareRequest.headers.Authorization).toBeUndefined()
+
+      const privateRequest = requestInterceptor({ headers: {} }) as {
+        headers: Record<string, unknown>
+      }
+      expect(privateRequest.headers.Authorization).toBe('Bearer residual-token')
+    } finally {
+      clearSession()
+    }
   })
 })
 

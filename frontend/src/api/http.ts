@@ -143,6 +143,26 @@ export function isSameOriginUrl(url: string): boolean {
   }
 }
 
+/** 仅同源人物私有照片需要走认证下载（用于显示层判断）。 */
+export function isPrivatePersonPhotoUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url, window.location.href)
+    return parsed.origin === window.location.origin && /^\/api\/photos\/\d+$/.test(parsed.pathname)
+  } catch {
+    return false
+  }
+}
+
+/** 公开分享资源：任何人凭链接即可读取，必须不带本地凭证。 */
+function isPublicShareResourceUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url, window.location.href)
+    return parsed.origin === window.location.origin && parsed.pathname.startsWith('/api/shares/')
+  } catch {
+    return false
+  }
+}
+
 /**
  * 获取二进制资源（人物照片、导出需要内嵌的图片等）。
  *
@@ -150,12 +170,16 @@ export function isSameOriginUrl(url: string): boolean {
  * `READ_FULL` 权限，结果静默 401（导出丢图、草稿转 Base64 失败）。
  * 改走统一的 `http` 实例后，既会带上凭证/401 续期，错误也能被分类。
  *
- * 跨域地址不注入凭证，避免把 token 泄露给第三方。
+ * 只有跨域地址和公开分享资源才省略凭证：前者避免把 token 泄露给第三方，
+ * 后者由分享令牌授权，带登录态反而会因残留 token 失效而被拒绝。
  */
 export async function fetchBinaryResource(url: string): Promise<Blob> {
   const config: PublicRequestConfig = { baseURL: '', responseType: 'blob' }
-  if (!isSameOriginUrl(url)) {
+  if (!isSameOriginUrl(url) || isPublicShareResourceUrl(url)) {
     config.skipAuth = true
+    // XHR 的 withCredentials=false 仍会发送同源 Cookie；fetch 可真正省略凭证。
+    config.adapter = 'fetch'
+    config.withCredentials = false
   }
   const resp = await http.get<Blob>(url, config)
   return resp.data

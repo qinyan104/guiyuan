@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { usePersonPhoto } from '../composables/usePersonPhoto'
 import { useFeedback } from '../composables/useFeedback'
 import FeedbackStrip from '../components/FeedbackStrip.vue'
 import BranchMountManager from './BranchMountManager.vue'
@@ -45,6 +46,11 @@ const props = defineProps<{
   branchActionLabel: string
   kinshipLabel?: string | null
 }>()
+
+const photoUrl = usePersonPhoto(
+  () => props.person.avatarUrl,
+  () => props.open,
+)
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -199,10 +205,10 @@ onBeforeUnmount(() => {
             <div class="ped-sidebar">
               <div class="ped-avatar-container">
                 <label :class="['ped-avatar-wrap', { 'has-avatar': Boolean(person.avatarUrl) }]" title="点击上传/更换人物照片">
-                  <img v-if="person.avatarUrl" :src="person.avatarUrl" class="ped-avatar-img" />
+                  <img v-if="photoUrl" :src="photoUrl" class="ped-avatar-img" alt="人物照片" />
                   <div v-else class="ped-avatar-placeholder">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="9" r="4" /><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" /></svg>
-                    <span class="ped-avatar-tip">上传照片</span>
+                    <span class="ped-avatar-tip">{{ person.avatarUrl ? '点击更换照片' : '上传照片' }}</span>
                   </div>
                   <input type="file" accept="image/*" class="ped-avatar-file-input" @change="handleUploadAvatar" />
                 </label>

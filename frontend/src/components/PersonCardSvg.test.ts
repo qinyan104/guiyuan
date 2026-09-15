@@ -1,7 +1,9 @@
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
+import http from '../api/http'
 
 import { defaultSettings } from '../data/sampleFamily'
+import { stubObjectUrl } from '../test-utils/objectUrl'
 import type { Person, PositionedCard, PublicationSettings } from '../types/family'
 import PersonCardSvg from './PersonCardSvg.vue'
 
@@ -20,6 +22,31 @@ const card: PositionedCard = {
 }
 
 describe('PersonCardSvg', () => {
+  it('显示租用地址，同时保留待导出的原始地址', async () => {
+    const get = vi.spyOn(http, 'get').mockResolvedValue({ data: new Blob() })
+    const objectUrl = stubObjectUrl(() => 'blob:card')
+    const source = { ...person, avatarUrl: '/api/photos/1' }
+    const wrapper = mount(PersonCardSvg, {
+      props: {
+        person: source,
+        card,
+        settings: { ...defaultSettings, showCard: true, showPhoto: true },
+        selected: false,
+      },
+    })
+    try {
+      expect(wrapper.get('image').attributes('data-original-photo-url')).toBe('/api/photos/1')
+      expect(wrapper.get('image').attributes('href')).toBeUndefined()
+      await flushPromises()
+      expect(wrapper.get('image').attributes('href')).toBe('blob:card')
+      expect(source.avatarUrl).toBe('/api/photos/1')
+    } finally {
+      wrapper.unmount()
+      get.mockRestore()
+      objectUrl.restore()
+    }
+  })
+
   it('uses the configured card corner radius', () => {
     const wrapper = mount(PersonCardSvg, {
       props: {

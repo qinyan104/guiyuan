@@ -1,8 +1,11 @@
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
+import http from '../api/http'
+import * as photoApi from '../api/photo'
 
 import PersonEditorDrawer from './PersonEditorDrawer.vue'
 import type { Person } from '../types/family'
+import { stubObjectUrl } from '../test-utils/objectUrl'
 
 const person: Person = {
   id: 'p1',
@@ -46,7 +49,10 @@ describe('PersonEditorDrawer', () => {
     expect(wrapper.findAll('button').some(button => button.text().includes('查看详情页'))).toBe(false)
   })
 
-  it('renders contextual chips when kinship or lineage suggestion is available', () => {
+  it('renders contextual chips when kinship or lineage suggestion is available', async () => {
+    const get = vi.spyOn(http, 'get').mockResolvedValue({ data: new Blob() })
+    const upload = vi.spyOn(photoApi, 'uploadPhoto').mockResolvedValue(42)
+    const objectUrl = stubObjectUrl(() => 'blob:editor')
     const wrapper = mount(PersonEditorDrawer, {
       props: {
         open: true,
@@ -84,5 +90,23 @@ describe('PersonEditorDrawer', () => {
     expect(wrapper.text()).toContain('长房')
     expect(wrapper.text()).not.toContain('当前人物')
     expect(wrapper.text()).not.toContain('建议补录卒年')
+    try {
+      const input = wrapper.get('input[type="file"]')
+      Object.defineProperty(input.element, 'files', {
+        value: [new File(['photo'], 'photo.png', { type: 'image/png' })],
+      })
+      await input.trigger('change')
+      await flushPromises()
+      expect(wrapper.emitted('update-person-field')?.[0]).toEqual([{ field: 'avatarUrl', value: '/api/photos/42' }])
+      await wrapper.setProps({ person: { ...person, avatarUrl: '/api/photos/42' } })
+      await flushPromises()
+      expect(wrapper.get('.ped-avatar-img').attributes('src')).toBe('blob:editor')
+      expect(wrapper.props('person').avatarUrl).toBe('/api/photos/42')
+    } finally {
+      wrapper.unmount()
+      get.mockRestore()
+      upload.mockRestore()
+      objectUrl.restore()
+    }
   })
 })

@@ -46,3 +46,12 @@
 - source_spec: none
   summary: 将 CD 改为只在 CI 全绿后构建、推送和可选部署经验证的提交 SHA。
   evidence: 从本轮 CI/CD 修复中拆分；CD 门禁可独立修改工作流、审查权限与事件语义并单独验证。
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-authenticated-person-photos.md`
+  summary: 让账号头像（UserAvatar/个人资料/后台用户列表）同样走认证加载。
+  evidence: 这些界面仍用 `<img :src="/api/photos/{id}">` 直连，受同一条 Bearer 边界影响；本故事冻结范围明确排除账号头像，需另开故事处理。
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-authenticated-person-photos.md`
+  summary: 让 `usePersonPhoto` 暴露加载失败状态与重试入口。
+  evidence: 目前失败与「暂无照片」不可区分，画布上表现为静默空白；矩阵只要求「不显示旧照片、不永久缓存失败」，未要求失败态 UI。
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-authenticated-person-photos.md`
+  summary: 统一三处「是否私有照片地址」的判定逻辑。
+  evidence: `api/http.ts`、`features/persistence/draftPersistence.ts` 与 `views/ShareView.vue` 各自实现一套规则，其中 ShareView 用 `split('/').pop()` 解析，带查询参数时会得到 NaN。

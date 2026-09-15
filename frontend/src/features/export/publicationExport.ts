@@ -531,9 +531,14 @@ export async function createStandalonePublicationSvg(options: CreateStandaloneSv
   // Embed images as base64 to ensure they are visible in standalone files
   const images = Array.from(svg.querySelectorAll('image'))
   const shouldEmbedImages = options.embedImages ?? true
+  // 卡片把显示用的租用地址（blob:）写在 href 上，同时用 data-original-photo-url 保留
+  // 原始资源地址；导出必须以原始地址为准，否则会内嵌一个已失效的 blob。
+  // 该属性由 PersonCardSvg.vue 写入，缺失时回退到 href/xlink:href。
   await Promise.all(
     images.map(async img => {
-      const href = img.getAttribute('href') || img.getAttribute('xlink:href')
+      const href =
+        img.getAttribute('data-original-photo-url') || img.getAttribute('href') || img.getAttribute('xlink:href')
+      img.removeAttribute('data-original-photo-url')
       if (!href || !isSafeExportImageUrl(href)) {
         throw new Error(`导出图片地址不安全：${href || '空地址'}`)
       }

@@ -45,9 +45,24 @@ export function setAccessToken(token: string): void {
   removeStoredAccessToken()
 }
 
+const sessionClearListeners = new Set<() => void>()
+
+export function onSessionCleared(listener: () => void): () => void {
+  sessionClearListeners.add(listener)
+  return () => sessionClearListeners.delete(listener)
+}
+
 export function clearAccessToken(): void {
   accessToken = null
   removeStoredAccessToken()
+  for (const listener of sessionClearListeners) {
+    // 一个监听器抛错不应中断其余监听器，也不应让 clearSession 半途退出。
+    try {
+      listener()
+    } catch (error) {
+      console.error('[tokenStore] 会话清理监听器执行失败', error)
+    }
+  }
 }
 
 export function getUsername(): string | null {
@@ -77,7 +92,7 @@ export function setRole(r: string): void {
 }
 
 export function clearSession(): void {
-  accessToken = null
+  clearAccessToken()
   username = null
   role = null
   try {

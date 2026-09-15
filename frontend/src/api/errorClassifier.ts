@@ -118,7 +118,8 @@ export function classifyError(error: unknown): ClassifiedError {
 
   // 2. 网络层错误（无 response）
   if (!httpStatus) {
-    const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout')
+    // ETIMEDOUT 来自 axios 的 fetch 适配器（二进制资源下载使用该适配器）。
+    const isTimeout = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.message?.includes('timeout')
     return {
       category: 'network',
       userMessage: isTimeout ? '请求超时，请检查网络后重试' : CATEGORY_MESSAGES.network,

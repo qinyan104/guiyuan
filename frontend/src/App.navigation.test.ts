@@ -9,7 +9,11 @@ import { defaultSettings } from './data/sampleFamily'
 enableAutoUnmount(afterEach)
 
 vi.mock('./api/authSession', () => ({ bootstrapAuthSession: vi.fn(async () => true) }))
-vi.mock('./api/tokenStore', () => ({ getAccessToken: () => 'test-token', getUsername: () => null }))
+vi.mock('./api/tokenStore', () => ({
+  getAccessToken: () => 'test-token',
+  getUsername: () => null,
+  onSessionCleared: () => () => undefined,
+}))
 vi.mock('./api/auth', () => ({ getUsername: () => '测试用户', getRole: () => 'USER' }))
 vi.mock('./api/publication', () => ({
   getPublication: vi.fn(async (id: number) => ({

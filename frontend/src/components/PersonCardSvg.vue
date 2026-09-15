@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { usePersonPhoto } from '../composables/usePersonPhoto'
 
 import { getPersonStatusLabel, isPersonDeceased } from '../lib/personStatus'
 import type { Person, PositionedCard, PublicationSettings } from '../types/family'
@@ -14,6 +15,11 @@ const props = defineProps<{
   kinshipNote?: string | null // 当前查看者与此人的亲属关系称谓
   hasShadow?: boolean
 }>()
+
+const photoUrl = usePersonPhoto(
+  () => props.person.avatarUrl,
+  () => props.settings.showCard && props.settings.showPhoto,
+)
 
 const emit = defineEmits<{
   (event: 'select', personId: string): void
@@ -482,7 +488,8 @@ function handleMouseLeave() {
         :ry="isOu ? 0 : 4"
       />
       <image
-        :href="person.avatarUrl"
+        :href="photoUrl"
+        :data-original-photo-url="person.avatarUrl"
         :x="card.width / 2 - photoWidth / 2"
         :y="photoY"
         :width="photoWidth"
