@@ -33,17 +33,20 @@ public class UserService {
     private final PersonAccountRepository personAccountRepository;
     private final PersonRepository personRepository;
     private final PublicationAccessRepository publicationAccessRepository;
+    private final RefreshTokenService refreshTokenService;
 
     public UserService(UserRepository userRepository,
                        BCryptPasswordEncoder passwordEncoder,
                        PersonAccountRepository personAccountRepository,
                        PersonRepository personRepository,
-                       PublicationAccessRepository publicationAccessRepository) {
+                       PublicationAccessRepository publicationAccessRepository,
+                       RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.personAccountRepository = personAccountRepository;
         this.personRepository = personRepository;
         this.publicationAccessRepository = publicationAccessRepository;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -142,6 +145,7 @@ public class UserService {
             throw new ForbiddenException("不能删除超级管理员账号");
         }
         deleteUserLinks(userId);
+        revokeRefreshTokens(userId);
         userRepository.deleteById(userId);
     }
 
@@ -154,6 +158,7 @@ public class UserService {
                 continue;
             }
             deleteUserLinks(id);
+            revokeRefreshTokens(id);
             userRepository.delete(user);
             deleted++;
         }
@@ -165,6 +170,7 @@ public class UserService {
         personAccountRepository.deleteByUserId(userId);
     }
 
+    @Transactional
     public void resetPassword(Long userId, String newPassword) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("用户不存在"));
@@ -173,6 +179,7 @@ public class UserService {
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        revokeRefreshTokens(userId);
     }
 
     @Transactional
@@ -184,6 +191,11 @@ public class UserService {
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        revokeRefreshTokens(user.getId());
+    }
+
+    private void revokeRefreshTokens(Long userId) {
+        refreshTokenService.revokeAllForUser(userId);
     }
 
     public void changeNickname(String username, String nickname) {

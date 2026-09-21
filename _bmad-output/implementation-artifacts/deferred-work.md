@@ -55,3 +55,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-authenticated-person-photos.md`
   summary: 统一三处「是否私有照片地址」的判定逻辑。
   evidence: `api/http.ts`、`features/persistence/draftPersistence.ts` 与 `views/ShareView.vue` 各自实现一套规则，其中 ShareView 用 `split('/').pop()` 解析，带查询参数时会得到 NaN。
+- source_spec: `_bmad-output/implementation-artifacts/spec-phase1-security-hardening.md`
+  summary: 停用派生账号时同步撤销已有 refresh token，并评估 access token 的即时失效策略。
+  evidence: 本阶段修复了密码变更和删除用户的 token 撤销，但现有停用账号流程不会撤销会话；该问题是既有行为，未纳入本阶段冻结范围。
+- source_spec: `_bmad-output/implementation-artifacts/spec-phase1-security-hardening.md`
+  summary: 为 refresh token rotation 增加并发消费和 token-family 重放检测。
+  evidence: 当前刷新校验、撤销、创建不是原子消费，严格单次使用和被盗 token 重放检测需要独立的会话模型设计。

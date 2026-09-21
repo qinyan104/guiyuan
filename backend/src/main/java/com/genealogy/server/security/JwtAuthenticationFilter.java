@@ -53,9 +53,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String username = jwtService.extractUsername(jwt);
-        String role = jwtService.extractRole(jwt);
         userRepository.findByUsername(username).ifPresent(user -> {
-            setAuthentication(request, username, role, user.getId());
+            // The role claim is historical client data; authorization must use the
+            // current database role so demoted users cannot retain privileges.
+            setAuthentication(request, username, user.getRole(), user.getId());
         });
     }
 

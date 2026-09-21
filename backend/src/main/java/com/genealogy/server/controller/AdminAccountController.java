@@ -70,7 +70,7 @@ public class AdminAccountController {
     public ApiResponse<Void> disable(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId, @Parameter(description = "人物数据库ID") @PathVariable @Positive(message = "人物 ID 必须为正数") Long personDbId, HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
-        accountDerivationService.disableAccount(personDbId);
+        accountDerivationService.disableAccount(pubId, personDbId);
         return ApiResponse.success("账号已停用", null);
     }
 
@@ -79,7 +79,7 @@ public class AdminAccountController {
     public ApiResponse<Void> enable(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId, @Parameter(description = "人物数据库ID") @PathVariable @Positive(message = "人物 ID 必须为正数") Long personDbId, HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
-        accountDerivationService.enableAccount(personDbId);
+        accountDerivationService.enableAccount(pubId, personDbId);
         return ApiResponse.success("账号已启用", null);
     }
 
@@ -88,7 +88,7 @@ public class AdminAccountController {
     public ApiResponse<Map<String, String>> resetPassword(@Parameter(description = "族谱ID") @PathVariable @Positive(message = "族谱 ID 必须为正数") Long pubId, @Parameter(description = "人物数据库ID") @PathVariable @Positive(message = "人物 ID 必须为正数") Long personDbId, HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
-        String newPassword = accountDerivationService.resetPassword(personDbId);
+        String newPassword = accountDerivationService.resetPassword(pubId, personDbId);
         return ApiResponse.success("密码已重置", Map.of("newPassword", newPassword));
     }
 

@@ -58,7 +58,7 @@ public class GedcomController {
             HttpServletResponse response) throws IOException {
 
         UserSubject subject = currentUserResolver.requireSubject(request);
-        authorizationService.require(subject, pubId, AccessPermission.READ_FULL);
+        authorizationService.require(subject, pubId, AccessPermission.EXPORT_FULL);
 
         response.setContentType("text/plain; charset=UTF-8");
         response.setHeader("Content-Disposition",

@@ -49,7 +49,7 @@ public class AccountDerivationService {
             // 双重校验：death 字段有值也视为已故
             if (person.getDeath() != null && !person.getDeath().isBlank()) continue;
 
-            Optional<PersonAccount> existingAccount = personAccountRepository.findByPersonDbId(person.getId());
+            Optional<PersonAccount> existingAccount = personAccountRepository.findByPersonDbIdAndPublicationId(person.getId(), publicationId);
             if (existingAccount.isPresent()) {
                 PersonAccount existing = existingAccount.get();
                 Long userId = existing.getUserId();
@@ -135,7 +135,7 @@ public class AccountDerivationService {
 
     @Transactional
     public void deleteAccount(Long publicationId, Long personDbId) {
-        PersonAccount pa = personAccountRepository.findByPersonDbId(personDbId)
+        PersonAccount pa = personAccountRepository.findByPersonDbIdAndPublicationId(personDbId, publicationId)
                 .orElseThrow(() -> new NotFoundException("未找到该人物的账号"));
 
         // 清理派生账号带来的 VIEWER 协作权限记录
@@ -177,24 +177,24 @@ public class AccountDerivationService {
     }
 
     @Transactional
-    public void disableAccount(Long personDbId) {
-        PersonAccount pa = personAccountRepository.findByPersonDbId(personDbId)
+    public void disableAccount(Long publicationId, Long personDbId) {
+        PersonAccount pa = personAccountRepository.findByPersonDbIdAndPublicationId(personDbId, publicationId)
                 .orElseThrow(() -> new NotFoundException("未找到该人物的账号"));
         pa.setStatus("disabled");
         personAccountRepository.save(pa);
     }
 
     @Transactional
-    public void enableAccount(Long personDbId) {
-        PersonAccount pa = personAccountRepository.findByPersonDbId(personDbId)
+    public void enableAccount(Long publicationId, Long personDbId) {
+        PersonAccount pa = personAccountRepository.findByPersonDbIdAndPublicationId(personDbId, publicationId)
                 .orElseThrow(() -> new NotFoundException("未找到该人物的账号"));
         pa.setStatus("active");
         personAccountRepository.save(pa);
     }
 
     @Transactional
-    public String resetPassword(Long personDbId) {
-        PersonAccount pa = personAccountRepository.findByPersonDbId(personDbId)
+    public String resetPassword(Long publicationId, Long personDbId) {
+        PersonAccount pa = personAccountRepository.findByPersonDbIdAndPublicationId(personDbId, publicationId)
                 .orElseThrow(() -> new NotFoundException("未找到该人物的账号"));
         if (pa.getUserId() == null) {
             throw new NotFoundException("该账号已失效，请重新派生");

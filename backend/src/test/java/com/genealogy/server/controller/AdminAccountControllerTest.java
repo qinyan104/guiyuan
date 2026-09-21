@@ -153,7 +153,7 @@ public class AdminAccountControllerTest {
 
     @Test
     void disableAccountShouldCallService() throws Exception {
-        doNothing().when(accountDerivationService).disableAccount(10L);
+        doNothing().when(accountDerivationService).disableAccount(1L, 10L);
 
         mockMvc.perform(put("/api/publications/1/accounts/10/disable")
                         .requestAttr("currentUsername", "admin")
@@ -162,14 +162,14 @@ public class AdminAccountControllerTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("账号已停用"));
 
-        verify(accountDerivationService).disableAccount(10L);
+        verify(accountDerivationService).disableAccount(1L, 10L);
     }
 
     // ---- enable ----
 
     @Test
     void enableAccountShouldCallService() throws Exception {
-        doNothing().when(accountDerivationService).enableAccount(10L);
+        doNothing().when(accountDerivationService).enableAccount(1L, 10L);
 
         mockMvc.perform(put("/api/publications/1/accounts/10/enable")
                         .requestAttr("currentUsername", "admin")
@@ -178,14 +178,14 @@ public class AdminAccountControllerTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("账号已启用"));
 
-        verify(accountDerivationService).enableAccount(10L);
+        verify(accountDerivationService).enableAccount(1L, 10L);
     }
 
     // ---- resetPassword ----
 
     @Test
     void resetPasswordShouldReturnNewPassword() throws Exception {
-        when(accountDerivationService.resetPassword(10L)).thenReturn("NewPass123");
+        when(accountDerivationService.resetPassword(1L, 10L)).thenReturn("NewPass123");
 
         mockMvc.perform(post("/api/publications/1/accounts/10/reset-password")
                         .requestAttr("currentUsername", "admin")
@@ -195,7 +195,7 @@ public class AdminAccountControllerTest {
                 .andExpect(jsonPath("$.message").value("密码已重置"))
                 .andExpect(jsonPath("$.data.newPassword").value("NewPass123"));
 
-        verify(accountDerivationService).resetPassword(10L);
+        verify(accountDerivationService).resetPassword(1L, 10L);
     }
 
     // ---- deleteAccount ----

@@ -56,6 +56,7 @@ class ReviewServiceTest {
         Person p = new Person();
         p.setId(id);
         p.setName(name);
+        p.setPublicationId(1L);
         return p;
     }
 
@@ -64,6 +65,31 @@ class ReviewServiceTest {
         u.setId(id);
         u.setUsername(username);
         return u;
+    }
+
+    @Test
+    void scopedReviewLookup_rejectsDifferentPublication() {
+        when(changeRequestRepository.findByIdAndPublicationId(9L, 2L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class,
+                () -> reviewService.getReviewDetail(2L, 9L));
+        verify(personRepository, never()).findById(anyLong());
+    }
+
+    @Test
+    void scopedApproval_rejectsPersonFromDifferentPublication() {
+        ChangeRequest request = makeChangeRequest(9L, 10L, "name", "旧名", "新名", "pending", 1L);
+        Person person = makePerson(10L, "张三");
+        person.setPublicationId(3L);
+        when(changeRequestRepository.findByIdAndPublicationId(9L, 2L))
+                .thenReturn(Optional.of(request));
+        when(personRepository.findById(10L)).thenReturn(Optional.of(person));
+
+        assertThrows(NotFoundException.class,
+                () -> reviewService.approve(2L, 9L, 7L));
+        verify(personRepository, never()).save(any(Person.class));
+        verify(changeRequestRepository, never()).save(any(ChangeRequest.class));
     }
 
     // ==================== listReviews ====================

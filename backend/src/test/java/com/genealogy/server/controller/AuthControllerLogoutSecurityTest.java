@@ -64,6 +64,16 @@ class AuthControllerLogoutSecurityTest {
     }
 
     @Test
+    void logoutShouldRevokeRefreshAuthorizationHeaderWithoutCookie() throws Exception {
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Refresh refresh-header-123"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Set-Cookie", containsString("refresh_token=;")));
+
+        verify(refreshTokenService).revokeRefreshToken("refresh-header-123");
+    }
+
+    @Test
     void registerShouldRejectWeakPassword() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)

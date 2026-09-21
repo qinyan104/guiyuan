@@ -39,6 +39,7 @@ class UserServiceTest {
     @Mock private PersonAccountRepository personAccountRepository;
     @Mock private PersonRepository personRepository;
     @Mock private PublicationAccessRepository publicationAccessRepository;
+    @Mock private RefreshTokenService refreshTokenService;
     @InjectMocks private UserService userService;
 
     // ---- Helper ----
@@ -206,6 +207,7 @@ class UserServiceTest {
         userService.deleteUser(2L);
 
         verify(userRepository).deleteById(2L);
+        verify(refreshTokenService).revokeAllForUser(2L);
     }
 
     @Test
@@ -236,6 +238,7 @@ class UserServiceTest {
 
         assertEquals("$2a$newEncoded", user.getPassword());
         verify(userRepository).save(user);
+        verify(refreshTokenService).revokeAllForUser(2L);
     }
 
     @Test
@@ -536,6 +539,7 @@ class UserServiceTest {
 
         assertEquals("$2a$newEnc", user.getPassword());
         verify(userRepository).save(user);
+        verify(refreshTokenService).revokeAllForUser(1L);
     }
 
     @Test

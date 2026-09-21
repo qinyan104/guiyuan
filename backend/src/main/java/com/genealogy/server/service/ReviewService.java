@@ -73,11 +73,18 @@ public class ReviewService {
     }
 
     public Map<String, Object> getReviewDetail(Long requestId) {
-        ChangeRequest cr = changeRequestRepository.findById(requestId)
-                .orElseThrow(() -> new NotFoundException("审批记录不存在"));
+        return getReviewDetail(null, requestId);
+    }
 
-        String personName = personRepository.findById(cr.getPersonDbId())
-                .map(Person::getName).orElse("未知");
+    public Map<String, Object> getReviewDetail(Long publicationId, Long requestId) {
+        ChangeRequest cr = findRequest(publicationId, requestId);
+
+        Person person = personRepository.findById(cr.getPersonDbId())
+                .orElseThrow(() -> new NotFoundException("人物记录不存在"));
+        if (publicationId != null && !publicationId.equals(person.getPublicationId())) {
+            throw new NotFoundException("人物记录不存在");
+        }
+        String personName = person.getName();
         String submitterName = userRepository.findById(cr.getSubmittedBy())
                 .map(User::getUsername).orElse("未知");
 
@@ -100,8 +107,12 @@ public class ReviewService {
 
     @Transactional
     public void approve(Long requestId, Long reviewerId) {
-        ChangeRequest cr = changeRequestRepository.findById(requestId)
-                .orElseThrow(() -> new NotFoundException("审批记录不存在"));
+        approve(null, requestId, reviewerId);
+    }
+
+    @Transactional
+    public void approve(Long publicationId, Long requestId, Long reviewerId) {
+        ChangeRequest cr = findRequest(publicationId, requestId);
 
         if (!"pending".equals(cr.getStatus())) {
             throw new BadRequestException("该修改已被处理");
@@ -109,6 +120,9 @@ public class ReviewService {
 
         Person person = personRepository.findById(cr.getPersonDbId())
                 .orElseThrow(() -> new NotFoundException("人物记录不存在"));
+        if (publicationId != null && !publicationId.equals(person.getPublicationId())) {
+            throw new NotFoundException("人物记录不存在");
+        }
 
         String field = cr.getFieldName();
         String value = cr.getNewValue();
@@ -135,8 +149,12 @@ public class ReviewService {
 
     @Transactional
     public void reject(Long requestId, Long reviewerId, String reason) {
-        ChangeRequest cr = changeRequestRepository.findById(requestId)
-                .orElseThrow(() -> new NotFoundException("审批记录不存在"));
+        reject(null, requestId, reviewerId, reason);
+    }
+
+    @Transactional
+    public void reject(Long publicationId, Long requestId, Long reviewerId, String reason) {
+        ChangeRequest cr = findRequest(publicationId, requestId);
 
         if (!"pending".equals(cr.getStatus())) {
             throw new BadRequestException("该修改已被处理");
@@ -153,14 +171,26 @@ public class ReviewService {
 
     @Transactional
     public void batchAction(List<Long> ids, String action, Long reviewerId, String reason) {
+        batchAction(null, ids, action, reviewerId, reason);
+    }
+
+    @Transactional
+    public void batchAction(Long publicationId, List<Long> ids, String action, Long reviewerId, String reason) {
         for (Long id : ids) {
             if ("approve".equals(action)) {
-                approve(id, reviewerId);
+                approve(publicationId, id, reviewerId);
             } else if ("reject".equals(action)) {
-                reject(id, reviewerId, reason);
+                reject(publicationId, id, reviewerId, reason);
             } else {
                 throw new BadRequestException("无效的操作: " + action);
             }
         }
+    }
+
+    private ChangeRequest findRequest(Long publicationId, Long requestId) {
+        return (publicationId == null
+                ? changeRequestRepository.findById(requestId)
+                : changeRequestRepository.findByIdAndPublicationId(requestId, publicationId))
+                .orElseThrow(() -> new NotFoundException("审批记录不存在"));
     }
 }

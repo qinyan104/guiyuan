@@ -64,7 +64,7 @@ public class ReviewController {
                                                     HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
-        return ApiResponse.success(reviewService.getReviewDetail(id));
+        return ApiResponse.success(reviewService.getReviewDetail(pubId, id));
     }
 
     @Operation(summary = "通过审核", description = "批准指定的审核记录")
@@ -73,7 +73,7 @@ public class ReviewController {
                                       HttpServletRequest request) {
         UserSubject subject = currentUserResolver.requireSubject(request);
         requireOwnerOrSuperAdmin(subject, pubId);
-        reviewService.approve(id, subject.getUserId());
+        reviewService.approve(pubId, id, subject.getUserId());
         return ApiResponse.success("已通过", null);
     }
 
@@ -87,7 +87,7 @@ public class ReviewController {
         if (body == null || body.reason() == null || body.reason().isBlank()) {
             return ApiResponse.error(400, "拒绝原因不能为空");
         }
-        reviewService.reject(id, subject.getUserId(), body.reason());
+        reviewService.reject(pubId, id, subject.getUserId(), body.reason());
         return ApiResponse.success("已拒绝", null);
     }
 
@@ -109,7 +109,7 @@ public class ReviewController {
         if (!(action.equals("approve") || action.equals("reject"))) {
             return ApiResponse.error(400, "审核操作必须是 approve 或 reject");
         }
-        reviewService.batchAction(body.ids(), action, subject.getUserId(), body.reason());
+        reviewService.batchAction(pubId, body.ids(), action, subject.getUserId(), body.reason());
         return ApiResponse.success("批量操作完成", null);
     }
 }

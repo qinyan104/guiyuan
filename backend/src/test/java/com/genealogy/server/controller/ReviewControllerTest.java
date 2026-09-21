@@ -92,7 +92,7 @@ public class ReviewControllerTest {
     public void testApproveReview() throws Exception {
         setupUserMocks();
         doNothing().when(authorizationService).require(any(), eq(1L), any());
-        doNothing().when(reviewService).approve(1L, 1L);
+        doNothing().when(reviewService).approve(1L, 1L, 1L);
 
         mockMvc.perform(post("/api/publications/1/reviews/1/approve")
                 .requestAttr("currentUsername", "testuser")
@@ -100,14 +100,14 @@ public class ReviewControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
-        verify(reviewService).approve(1L, 1L);
+        verify(reviewService).approve(1L, 1L, 1L);
     }
 
     @Test
     public void testRejectReview() throws Exception {
         setupUserMocks();
         doNothing().when(authorizationService).require(any(), eq(1L), any());
-        doNothing().when(reviewService).reject(1L, 1L, "信息有误");
+        doNothing().when(reviewService).reject(1L, 1L, 1L, "信息有误");
 
         mockMvc.perform(post("/api/publications/1/reviews/1/reject")
                 .requestAttr("currentUsername", "testuser")
@@ -116,7 +116,7 @@ public class ReviewControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
-        verify(reviewService).reject(1L, 1L, "信息有误");
+        verify(reviewService).reject(1L, 1L, 1L, "信息有误");
     }
 
     @Test

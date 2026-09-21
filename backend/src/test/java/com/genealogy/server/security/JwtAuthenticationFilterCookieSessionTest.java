@@ -45,6 +45,32 @@ class JwtAuthenticationFilterCookieSessionTest {
     }
 
     @Test
+    void usesCurrentDatabaseRoleInsteadOfStaleJwtRole() throws Exception {
+        JwtService jwtService = mock(JwtService.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        FilterChain filterChain = mock(FilterChain.class);
+
+        com.genealogy.server.model.User user = new com.genealogy.server.model.User();
+        user.setId(7L);
+        user.setUsername("alice");
+        user.setRole("USER");
+
+        when(jwtService.isTokenValid("access-123")).thenReturn(true);
+        when(jwtService.extractUsername("access-123")).thenReturn("alice");
+        when(userRepository.findByUsername("alice")).thenReturn(Optional.of(user));
+
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userRepository);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/admin/users");
+        request.addHeader("Authorization", "Bearer access-123");
+
+        filter.doFilter(request, new MockHttpServletResponse(), filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
+                .anySatisfy(authority -> assertThat(authority.getAuthority()).isEqualTo("ROLE_USER"));
+        verify(jwtService, never()).extractRole("access-123");
+    }
+
+    @Test
     void stillAuthenticatesRequestFromValidBearerToken() throws Exception {
         JwtService jwtService = mock(JwtService.class);
         RefreshTokenService refreshTokenService = mock(RefreshTokenService.class);

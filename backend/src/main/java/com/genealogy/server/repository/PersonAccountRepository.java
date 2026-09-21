@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface PersonAccountRepository extends JpaRepository<PersonAccount, Long> {
     List<PersonAccount> findByPublicationId(Long publicationId);
     Optional<PersonAccount> findByPersonDbId(Long personDbId);
+    Optional<PersonAccount> findByPersonDbIdAndPublicationId(Long personDbId, Long publicationId);
     Optional<PersonAccount> findByUserId(Long userId);
     List<PersonAccount> findByUserIdIn(Collection<Long> userIds);
     void deleteByUserId(Long userId);

@@ -146,6 +146,12 @@ public class AuthController {
             HttpServletResponse response) {
 
         String refreshToken = extractCookie(request, REFRESH_COOKIE_NAME);
+        if (refreshToken == null) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Refresh ")) {
+                refreshToken = authHeader.substring(8);
+            }
+        }
         if (refreshToken != null) {
             refreshTokenService.revokeRefreshToken(refreshToken);
         }
