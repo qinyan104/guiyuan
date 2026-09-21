@@ -3,6 +3,7 @@ package com.genealogy.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.genealogy.server.auth.AccessSubject;
 import com.genealogy.server.exception.NotFoundException;
 import com.genealogy.server.model.AuditLog;
 import com.genealogy.server.model.Publication;
@@ -151,6 +152,11 @@ public class PublicationQueryService {
      */
     @Transactional(readOnly = true)
     public Map<String, Object> loadPublication(Long publicationId) {
+        return loadPublication(publicationId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> loadPublication(Long publicationId, AccessSubject subject) {
         long startedAt = System.nanoTime();
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new NotFoundException("Publication not found"));
@@ -160,7 +166,7 @@ public class PublicationQueryService {
         Map<String, Map<String, Object>> families = new LinkedHashMap<>();
 
         // 加载联邦数据（根谱 + 已挂载分支，深度上限 3）
-        treeLoader.loadFederatedData(publicationId, 3, "", people, families);
+        treeLoader.loadFederatedData(publicationId, 3, "", people, families, subject);
         long treeLoadMs = elapsedMillis(startedAt) - publicationQueryMs;
 
         Map<String, Object> publicationJson = new LinkedHashMap<>();

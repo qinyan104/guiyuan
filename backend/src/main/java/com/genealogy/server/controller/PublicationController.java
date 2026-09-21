@@ -101,7 +101,7 @@ public class PublicationController {
                 }
             }
 
-            Map<String, Object> data = publicationService.loadPublication(id);
+            Map<String, Object> data = publicationService.loadPublication(id, subject);
             long loadMs = elapsedMillis(startedAt) - authMs;
             long redactStartedAt = System.nanoTime();
 

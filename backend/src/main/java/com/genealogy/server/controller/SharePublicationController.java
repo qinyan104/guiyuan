@@ -64,7 +64,7 @@ public class SharePublicationController {
     @GetMapping
     public ApiResponse<Map<String, Object>> getPublication(@Parameter(description = "分享令牌") @PathVariable String token) {
         ShareSubject subject = shareTokenResolver.resolveSubject(token);
-        Map<String, Object> fullData = publicationService.loadPublication(subject.getSharePublicationId());
+        Map<String, Object> fullData = publicationService.loadPublication(subject.getSharePublicationId(), subject);
         Map<String, Object> redacted = viewProjector.projectRedacted(fullData, subject, token);
         return ApiResponse.success(redacted);
     }

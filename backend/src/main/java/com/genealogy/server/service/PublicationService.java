@@ -1,6 +1,7 @@
 package com.genealogy.server.service;
 
 import com.genealogy.server.auth.UserSubject;
+import com.genealogy.server.auth.AccessSubject;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.exception.ConflictException;
 import com.genealogy.server.exception.NotFoundException;
@@ -93,6 +94,10 @@ public class PublicationService {
      */
     public Map<String, Object> loadPublication(Long publicationId) {
         return queryService.loadPublication(publicationId);
+    }
+
+    public Map<String, Object> loadPublication(Long publicationId, AccessSubject subject) {
+        return queryService.loadPublication(publicationId, subject);
     }
 
     /**

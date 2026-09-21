@@ -1,6 +1,7 @@
 package com.genealogy.server.controller;
 
 import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.AccessSubject;
 import com.genealogy.server.auth.ShareSubject;
 import com.genealogy.server.auth.UserSubject;
 import com.genealogy.server.auth.CurrentUserResolver;
@@ -94,7 +95,7 @@ class MobileControllerTest {
                 person("p1", "张三", false, null, null, null, null),
                 person("p2", "李四", true, "1900-01-01", "1980-01-01", null, "public note")
         );
-        when(publicationService.loadPublication(10L)).thenReturn(fullData);
+        when(publicationService.loadPublication(eq(10L), any(AccessSubject.class))).thenReturn(fullData);
         when(viewProjector.projectRedacted(eq(fullData), any(ShareSubject.class), eq("share-123")))
                 .thenReturn(redactedData);
 
@@ -126,7 +127,7 @@ class MobileControllerTest {
                 person("p1", "张三", false, null, null, null, null),
                 person("p2", "李四", true, "1900-01-01", "1980-01-01", null, "public note")
         );
-        when(publicationService.loadPublication(10L)).thenReturn(fullData);
+        when(publicationService.loadPublication(eq(10L), any(AccessSubject.class))).thenReturn(fullData);
         when(viewProjector.projectRedacted(eq(fullData), any(ShareSubject.class), eq("share-123")))
                 .thenReturn(redactedData);
 
@@ -165,7 +166,7 @@ class MobileControllerTest {
 
         Map<String, Object> fullData = publicationData(person("p1", "张三", false, "2000-01-01", null, "24", "secret note"));
         Map<String, Object> redactedData = publicationData(person("p1", "张三", false, null, null, null, null));
-        when(publicationService.loadPublication(10L)).thenReturn(fullData);
+        when(publicationService.loadPublication(eq(10L), any(AccessSubject.class))).thenReturn(fullData);
         when(viewProjector.projectRedacted(eq(fullData), any(ShareSubject.class), eq("share-123")))
                 .thenReturn(redactedData);
 
@@ -189,7 +190,7 @@ class MobileControllerTest {
 
         Map<String, Object> fullData = publicationData(person("p1", "张三", false, "2000-01-01", null, "24", "secret note"));
         Map<String, Object> redactedData = publicationData(person("p1", "张三", false, null, null, null, null));
-        when(publicationService.loadPublication(10L)).thenReturn(fullData);
+        when(publicationService.loadPublication(eq(10L), any(AccessSubject.class))).thenReturn(fullData);
         when(viewProjector.projectRedacted(eq(fullData), isNull(String.class), isNull(String.class)))
                 .thenReturn(redactedData);
 

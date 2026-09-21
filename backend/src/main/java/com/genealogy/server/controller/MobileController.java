@@ -176,7 +176,7 @@ public class MobileController {
             throw new ForbiddenException("无权访问该族谱");
         }
 
-        Map<String, Object> data = publicationService.loadPublication(pubId);
+        Map<String, Object> data = publicationService.loadPublication(pubId, subject);
         if (shareSubject != null) {
             data = viewProjector.projectRedacted(data, shareSubject, shareToken);
         } else {

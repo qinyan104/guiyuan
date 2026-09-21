@@ -1,5 +1,7 @@
 package com.genealogy.server.service;
 
+import com.genealogy.server.auth.AccessPermission;
+import com.genealogy.server.auth.AccessSubject;
 import com.genealogy.server.model.Family;
 import com.genealogy.server.model.FamilyMember;
 import com.genealogy.server.model.Person;
@@ -7,6 +9,7 @@ import com.genealogy.server.model.Publication;
 import com.genealogy.server.repository.FamilyMemberRepository;
 import com.genealogy.server.repository.FamilyRepository;
 import com.genealogy.server.repository.PersonRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -26,6 +29,7 @@ public class PublicationTreeLoader {
     private final FamilyMemberRepository familyMemberRepository;
     private final com.genealogy.server.repository.PublicationRepository publicationRepository;
     private final BranchMergeService branchMergeService;
+    private final PublicationAuthorizationService authorizationService;
 
     private record LoadKey(Long publicationId, Long rootPersonDbId, String idPrefix) {}
 
@@ -34,18 +38,38 @@ public class PublicationTreeLoader {
                                  FamilyMemberRepository familyMemberRepository,
                                  com.genealogy.server.repository.PublicationRepository publicationRepository,
                                  BranchMergeService branchMergeService) {
+        this(personRepository, familyRepository, familyMemberRepository, publicationRepository, branchMergeService, null);
+    }
+
+    @Autowired
+    public PublicationTreeLoader(PersonRepository personRepository,
+                                 FamilyRepository familyRepository,
+                                 FamilyMemberRepository familyMemberRepository,
+                                 com.genealogy.server.repository.PublicationRepository publicationRepository,
+                                 BranchMergeService branchMergeService,
+                                 PublicationAuthorizationService authorizationService) {
         this.personRepository = personRepository;
         this.familyRepository = familyRepository;
         this.familyMemberRepository = familyMemberRepository;
         this.publicationRepository = publicationRepository;
         this.branchMergeService = branchMergeService;
+        this.authorizationService = authorizationService;
     }
 
-    public void loadFederatedData(Long publicationId, 
-                                  int maxDepth, 
-                                  String idPrefix, 
-                                  Map<String, Map<String, Object>> allPeople, 
+    public void loadFederatedData(Long publicationId,
+                                  int maxDepth,
+                                  String idPrefix,
+                                  Map<String, Map<String, Object>> allPeople,
                                   Map<String, Map<String, Object>> allFamilies) {
+        loadFederatedData(publicationId, maxDepth, idPrefix, allPeople, allFamilies, null);
+    }
+
+    public void loadFederatedData(Long publicationId,
+                                  int maxDepth,
+                                  String idPrefix,
+                                  Map<String, Map<String, Object>> allPeople,
+                                  Map<String, Map<String, Object>> allFamilies,
+                                  AccessSubject subject) {
         loadRecursive(
                 publicationId,
                 null,
@@ -55,7 +79,8 @@ public class PublicationTreeLoader {
                 allPeople,
                 allFamilies,
                 new HashSet<>(),
-                new HashMap<>()
+                new HashMap<>(),
+                subject
         );
     }
 
@@ -67,7 +92,8 @@ public class PublicationTreeLoader {
                                Map<String, Map<String, Object>> allPeople, 
                                Map<String, Map<String, Object>> allFamilies,
                                Set<LoadKey> loaded,
-                               Map<Long, Optional<String>> publicationTitleCache) {
+                               Map<Long, Optional<String>> publicationTitleCache,
+                               AccessSubject subject) {
         if (currentDepth > maxDepth || !loaded.add(new LoadKey(publicationId, rootPersonDbId, idPrefix))) {
             return;
         }
@@ -124,11 +150,16 @@ public class PublicationTreeLoader {
                     if (person.getTargetRootPersonId() != null) {
                         target.put("rootPersonId", person.getTargetRootPersonId());
                     }
-                    personJson.put("mountPointTarget", target);
-                    
-                    // Recursive load
-                    String nextPrefix = idPrefix + "branch_" + person.getTargetPublicationId() + "_";
-                    loadRecursive(person.getTargetPublicationId(), person.getTargetRootPersonId(), currentDepth + 1, maxDepth, nextPrefix, allPeople, allFamilies, loaded, publicationTitleCache);
+                    boolean canReadTarget = subject == null || authorizationService == null
+                            || authorizationService.can(subject, person.getTargetPublicationId(), AccessPermission.READ_FULL)
+                            || authorizationService.can(subject, person.getTargetPublicationId(), AccessPermission.READ_REDACTED);
+                    if (canReadTarget) {
+                        personJson.put("mountPointTarget", target);
+
+                        // Recursive load only after checking the caller's access to the target publication.
+                        String nextPrefix = idPrefix + "branch_" + person.getTargetPublicationId() + "_";
+                        loadRecursive(person.getTargetPublicationId(), person.getTargetRootPersonId(), currentDepth + 1, maxDepth, nextPrefix, allPeople, allFamilies, loaded, publicationTitleCache, subject);
+                    }
                 }
             }
             allPeople.put(federatedId, personJson);
