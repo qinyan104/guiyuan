@@ -73,6 +73,7 @@ public class UserService {
     public User loginAndReturnUser(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new NotFoundException("用户不存在"));
+        rejectDisabledPersonAccount(user.getId());
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             // Legacy SHA-256 fallback + auto-migration
@@ -92,6 +93,18 @@ public class UserService {
 
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
+    }
+
+    public boolean isAuthenticationAllowed(Long userId) {
+        return personAccountRepository.findByUserId(userId)
+                .map(account -> !"disabled".equalsIgnoreCase(account.getStatus()))
+                .orElse(true);
+    }
+
+    private void rejectDisabledPersonAccount(Long userId) {
+        if (!isAuthenticationAllowed(userId)) {
+            throw new ForbiddenException("账号已停用");
+        }
     }
 
     public boolean isSuperAdmin(String username) {
@@ -194,8 +207,12 @@ public class UserService {
         revokeRefreshTokens(user.getId());
     }
 
-    private void revokeRefreshTokens(Long userId) {
+    public void revokeRefreshTokensForUser(Long userId) {
         refreshTokenService.revokeAllForUser(userId);
+    }
+
+    private void revokeRefreshTokens(Long userId) {
+        revokeRefreshTokensForUser(userId);
     }
 
     public void changeNickname(String username, String nickname) {

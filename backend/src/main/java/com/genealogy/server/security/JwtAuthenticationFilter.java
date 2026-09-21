@@ -1,5 +1,6 @@
 package com.genealogy.server.security;
 
+import com.genealogy.server.repository.PersonAccountRepository;
 import com.genealogy.server.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,11 +22,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final PersonAccountRepository personAccountRepository;
 
     public JwtAuthenticationFilter(JwtService jwtService,
-                                   UserRepository userRepository) {
+                                   UserRepository userRepository,
+                                   PersonAccountRepository personAccountRepository) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
+        this.personAccountRepository = personAccountRepository;
     }
 
     @Override
@@ -54,6 +58,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String username = jwtService.extractUsername(jwt);
         userRepository.findByUsername(username).ifPresent(user -> {
+            boolean disabled = personAccountRepository.findByUserId(user.getId())
+                    .map(account -> "disabled".equalsIgnoreCase(account.getStatus()))
+                    .orElse(false);
+            if (disabled) {
+                return;
+            }
             // The role claim is historical client data; authorization must use the
             // current database role so demoted users cannot retain privileges.
             setAuthentication(request, username, user.getRole(), user.getId());

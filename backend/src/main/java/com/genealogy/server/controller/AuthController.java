@@ -121,6 +121,12 @@ public class AuthController {
         }
 
         User user = userOpt.get();
+        if (!userService.isAuthenticationAllowed(user.getId())) {
+            refreshTokenService.revokeRefreshToken(refreshToken);
+            clearRefreshCookie(response);
+            clearRefreshCookie(response, LEGACY_REFRESH_COOKIE_PATH);
+            return ApiResponse.error(403, "账号已停用");
+        }
 
         // Rotate: revoke old, issue new
         refreshTokenService.revokeRefreshToken(refreshToken);

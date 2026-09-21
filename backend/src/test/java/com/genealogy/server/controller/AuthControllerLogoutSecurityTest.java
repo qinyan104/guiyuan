@@ -3,6 +3,7 @@ package com.genealogy.server.controller;
 import com.genealogy.server.config.SecurityConfig;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.repository.AuditLogRepository;
+import com.genealogy.server.repository.PersonAccountRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.security.JwtAuthenticationFilter;
 import com.genealogy.server.security.JwtService;
@@ -44,6 +45,9 @@ class AuthControllerLogoutSecurityTest {
 
     @MockBean
     private UserRepository userRepository;
+
+    @MockBean
+    private PersonAccountRepository personAccountRepository;
 
     @MockBean
     private RefreshTokenService refreshTokenService;
@@ -94,6 +98,7 @@ class AuthControllerLogoutSecurityTest {
 
         when(refreshTokenService.validateRefreshToken("refresh-123")).thenReturn(Optional.of(7L));
         when(userService.findById(7L)).thenReturn(Optional.of(user));
+        when(userService.isAuthenticationAllowed(7L)).thenReturn(true);
         when(refreshTokenService.createRefreshToken(7L)).thenReturn("refresh-456");
         when(jwtService.generateAccessToken("alice", "ADMIN")).thenReturn("access-456");
 

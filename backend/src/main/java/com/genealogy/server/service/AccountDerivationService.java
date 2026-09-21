@@ -182,6 +182,9 @@ public class AccountDerivationService {
                 .orElseThrow(() -> new NotFoundException("未找到该人物的账号"));
         pa.setStatus("disabled");
         personAccountRepository.save(pa);
+        if (pa.getUserId() != null) {
+            userService.revokeRefreshTokensForUser(pa.getUserId());
+        }
     }
 
     @Transactional
