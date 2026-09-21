@@ -3,6 +3,7 @@ package com.genealogy.server.service;
 import com.genealogy.server.exception.BadRequestException;
 import com.genealogy.server.model.Photo;
 import com.genealogy.server.repository.PhotoRepository;
+import com.genealogy.server.util.UploadContentValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,9 @@ import java.util.Base64;
 public class PhotoService {
 
     private static final Logger log = LoggerFactory.getLogger(PhotoService.class);
+    private static final long MAX_BASE64_PHOTO_BYTES = 10 * 1024 * 1024;
+    private static final java.util.Set<String> ALLOWED_IMAGE_TYPES = java.util.Set.of(
+            "image/jpeg", "image/png", "image/gif", "image/webp");
 
     private final PhotoRepository photoRepository;
 
@@ -72,7 +76,10 @@ public class PhotoService {
         if (mimeStart < 0 || mimeEnd <= mimeStart) {
             throw new BadRequestException("头像 Base64 数据缺少有效的 MIME 类型");
         }
-        String mimeType = header.substring(mimeStart + 1, mimeEnd);
+        String mimeType = header.substring(mimeStart + 1, mimeEnd).toLowerCase(java.util.Locale.ROOT);
+        if (!ALLOWED_IMAGE_TYPES.contains(mimeType)) {
+            throw new BadRequestException("仅支持 JPG、PNG、GIF、WebP 格式的头像");
+        }
         String base64Data = base64Url.substring(commaIndex + 1).replaceAll("\\s", "");
 
         byte[] dataBytes;
@@ -80,6 +87,12 @@ public class PhotoService {
             dataBytes = Base64.getMimeDecoder().decode(base64Data);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("头像 Base64 数据无法解码", e);
+        }
+
+        if (dataBytes.length > MAX_BASE64_PHOTO_BYTES
+                || !UploadContentValidator.hasExpectedSignature(dataBytes, mimeType)
+                || !UploadContentValidator.hasValidImageDimensions(dataBytes, mimeType)) {
+            throw new BadRequestException("头像内容无效或超出大小限制");
         }
 
         log.info("正在导入 Base64 头像 (personDbId: {}, mimeType: {}, size: {} bytes)", personDbId, mimeType, dataBytes.length);

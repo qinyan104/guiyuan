@@ -117,7 +117,7 @@ class PhotoServiceTest {
 
     @Test
     void base64AvatarWithValidPayload_isStored() {
-        String payload = Base64.getEncoder().encodeToString(new byte[]{1, 2, 3});
+        String payload = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
         when(photoRepository.save(any(Photo.class))).thenAnswer(invocation -> {
             Photo saved = invocation.getArgument(0);
             saved.setId(7L);
@@ -131,6 +131,16 @@ class PhotoServiceTest {
         verify(photoRepository).save(saved.capture());
         assertThat(saved.getValue().getMimeType()).isEqualTo("image/png");
         assertThat(saved.getValue().getPersonDbId()).isEqualTo(PERSON_DB_ID);
+    }
+
+    @Test
+    void base64AvatarWithSvgMimeType_isRejected() {
+        String payload = Base64.getEncoder().encodeToString("<svg/>".getBytes());
+
+        assertThatThrownBy(() -> service.handlePersonAvatar(
+                PERSON_DB_ID, "data:image/svg+xml;base64," + payload, false))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("仅支持");
     }
 
     private Photo photo(Long id, Long personDbId) {

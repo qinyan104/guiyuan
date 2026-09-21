@@ -179,6 +179,9 @@ public class MobileController {
         Map<String, Object> data = publicationService.loadPublication(pubId);
         if (shareSubject != null) {
             data = viewProjector.projectRedacted(data, shareSubject, shareToken);
+        } else {
+            // Mobile search never returns full living-person data, even to full readers.
+            data = viewProjector.projectRedacted(data, (String) null, null);
         }
         @SuppressWarnings("unchecked")
         Map<String, Object> pubJson = (Map<String, Object>) data.get("publication");

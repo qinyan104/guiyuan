@@ -7,6 +7,7 @@ import com.genealogy.server.auth.CurrentUserResolver;
 import com.genealogy.server.config.WebConfig;
 import com.genealogy.server.model.PublicationShareLink;
 import com.genealogy.server.model.User;
+import com.genealogy.server.repository.PersonAccountRepository;
 import com.genealogy.server.repository.UserRepository;
 import com.genealogy.server.security.JwtService;
 import com.genealogy.server.service.AuditLogService;
@@ -32,8 +33,8 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -59,6 +60,9 @@ class MobileControllerTest {
 
     @MockBean
     private UserRepository userRepository;
+
+    @MockBean
+    private PersonAccountRepository personAccountRepository;
 
     @MockBean
     private PublicationService publicationService;
@@ -175,7 +179,7 @@ class MobileControllerTest {
     }
 
     @Test
-    void loggedInSearchShouldKeepFullDataAndSkipShareRedaction() throws Exception {
+    void loggedInSearchShouldReturnRedactedData() throws Exception {
         User user = new User();
         user.setId(7L);
         user.setUsername("alice");
@@ -184,7 +188,10 @@ class MobileControllerTest {
         when(authorizationService.can(any(UserSubject.class), eq(10L), eq(AccessPermission.READ_FULL))).thenReturn(true);
 
         Map<String, Object> fullData = publicationData(person("p1", "张三", false, "2000-01-01", null, "24", "secret note"));
+        Map<String, Object> redactedData = publicationData(person("p1", "张三", false, null, null, null, null));
         when(publicationService.loadPublication(10L)).thenReturn(fullData);
+        when(viewProjector.projectRedacted(eq(fullData), isNull(String.class), isNull(String.class)))
+                .thenReturn(redactedData);
 
         mockMvc.perform(get("/api/mobile/publications/10/search")
                         .requestAttr("currentUsername", "alice")
@@ -192,11 +199,11 @@ class MobileControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].name").value("张三"))
-                .andExpect(jsonPath("$.data[0].birth").value("2000-01-01"))
-                .andExpect(jsonPath("$.data[0].age").value("24"))
-                .andExpect(jsonPath("$.data[0].note").value("secret note"));
+                .andExpect(jsonPath("$.data[0].birth").isEmpty())
+                .andExpect(jsonPath("$.data[0].age").isEmpty())
+                .andExpect(jsonPath("$.data[0].note").isEmpty());
 
-        verify(viewProjector, never()).projectRedacted(any(), any(ShareSubject.class), any());
+        verify(viewProjector).projectRedacted(eq(fullData), isNull(String.class), isNull(String.class));
     }
 
     private PublicationShareLink shareLink(Long publicationId, String redactionProfileJson) {
